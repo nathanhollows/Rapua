@@ -354,3 +354,13 @@ func deterministicShuffle(items []string, seed string) []string {
 
 	return result
 }
+
+// Submission returns the order submitted when it was wrong. Like a quiz, a
+// sorting block can complete on a wrong answer, so this reads correctness.
+func (b *SortingBlock) Submission(_ map[string][]string, state PlayerState) json.RawMessage {
+	data, err := b.parsePlayerData(state)
+	if err != nil || data.IsCorrect {
+		return nil
+	}
+	return marshalSubmission(map[string][]string{"player_order": data.PlayerOrder})
+}

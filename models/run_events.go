@@ -34,6 +34,27 @@ const (
 	EventRunCompleted EventType = "run_completed"
 )
 
+// AllEventTypes is the taxonomy, in the order the events tend to happen. Go
+// cannot enumerate constants, so a type added above belongs here too, and a
+// test reads this list to insist every reader has decided what to do with each
+// one: both surfaces drop what they do not name, and a dropped event is a
+// silent hole.
+//
+//nolint:gochecknoglobals // A definition, not state: one place lists the taxonomy.
+var AllEventTypes = []EventType{
+	EventRunStarted,
+	EventRunNamed,
+	EventObjectivesListed,
+	EventObjectiveViewed,
+	EventBlockAnswered,
+	EventObjectiveContextCompleted,
+	EventSectionFinished,
+	EventUploadAdded,
+	EventNotificationSent,
+	EventNotificationRead,
+	EventRunCompleted,
+}
+
 // RunEvent is one thing that happened to one run.
 //
 // Append-only: nothing updates or deletes a row.
@@ -63,6 +84,10 @@ type BlockAnsweredData struct {
 	// Points column carries what was credited, zero whenever the block did not
 	// complete or the gate declined.
 	PointsAwarded int `json:"points_awarded"`
+	// Submitted is what the player sent when the submission did not solve the
+	// block, for blocks that report one (game.SubmissionReporter). A solve
+	// carries nothing: the block's state is where the final answer lives.
+	Submitted json.RawMessage `json:"submitted,omitempty"`
 }
 
 // RunNamedData is the payload of an EventRunNamed row.

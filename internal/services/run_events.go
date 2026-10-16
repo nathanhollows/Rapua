@@ -120,9 +120,11 @@ func recordRunCompleted(
 // answeredEvent records one graded answer, right or wrong.
 //
 // pointsAwarded is what the block computed. Points on the returned event is the
-// credited delta, set by the caller.
+// credited delta, set by the caller. submitted is the unsolved submission's
+// input, nil when there is none to keep.
 func answeredEvent(
 	team *models.Run, block blocks.Block, objectiveID string, completed bool, pointsAwarded int,
+	submitted json.RawMessage,
 ) *models.RunEvent {
 	event := eventBase(team.Code, team.QuestID, models.EventBlockAnswered)
 	event.BlockID = block.GetID()
@@ -131,6 +133,7 @@ func answeredEvent(
 		BlockType:     block.GetType(),
 		Completed:     completed,
 		PointsAwarded: pointsAwarded,
+		Submitted:     submitted,
 	})
 	return event
 }

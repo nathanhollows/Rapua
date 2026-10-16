@@ -235,3 +235,18 @@ func firstValue(input map[string][]string, key string) string {
 	}
 	return ""
 }
+
+// Submission returns the position that fell outside the area, with how far
+// outside it was.
+func (b *GeofenceBlock) Submission(_ map[string][]string, state PlayerState) json.RawMessage {
+	if state.IsComplete() {
+		return nil
+	}
+	var data geofenceBlockData
+	if err := json.Unmarshal(state.GetPlayerData(), &data); err != nil {
+		return nil
+	}
+	return marshalSubmission(map[string]float64{
+		"lat": data.Lat, "lng": data.Lng, "accuracy": data.Accuracy, "metres_away": data.MetresAway,
+	})
+}

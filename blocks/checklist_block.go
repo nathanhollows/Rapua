@@ -183,3 +183,17 @@ func (b *ChecklistBlock) ValidatePlayerInput(state PlayerState, input map[string
 
 	return newState, nil
 }
+
+// Submission returns the items checked so far. The form posts on every tick, so
+// this is where a team's progress through the list is recorded: the state keeps
+// only the latest set, and nothing else dates the earlier ones.
+func (b *ChecklistBlock) Submission(_ map[string][]string, state PlayerState) json.RawMessage {
+	if state.IsComplete() {
+		return nil
+	}
+	var data checklistPlayerData
+	if err := json.Unmarshal(state.GetPlayerData(), &data); err != nil {
+		return nil
+	}
+	return marshalSubmission(map[string][]string{"checked_items": data.CheckedItems})
+}

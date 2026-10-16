@@ -125,3 +125,11 @@ func (b *PasswordBlock) ValidatePlayerInput(state PlayerState, input map[string]
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
+
+// Submission returns the guess when it was wrong.
+func (b *PasswordBlock) Submission(input map[string][]string, state PlayerState) json.RawMessage {
+	if state.IsComplete() || len(input["answer"]) == 0 {
+		return nil
+	}
+	return marshalSubmission(map[string]string{"answer": reportText(input["answer"][0])})
+}

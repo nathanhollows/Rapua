@@ -257,3 +257,15 @@ func scannedValue(input map[string][]string) (string, ScanModality, error) {
 	}
 	return "", "", errors.New("scan a code or type it in")
 }
+
+// Submission returns the code that did not match, and how it was read.
+func (b *ScanBlock) Submission(input map[string][]string, state PlayerState) json.RawMessage {
+	if state.IsComplete() {
+		return nil
+	}
+	scanned, modality, err := scannedValue(input)
+	if err != nil {
+		return nil
+	}
+	return marshalSubmission(map[string]any{"scanned": reportText(scanned), "modality": modality})
+}

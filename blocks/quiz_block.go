@@ -392,3 +392,13 @@ func NewQuizBlock(base BaseBlock) *QuizBlock {
 		UnlockedContent: "",
 	}
 }
+
+// Submission returns the options chosen when they were wrong. A quiz without
+// retries completes on a wrong answer, so this cannot go by completion.
+func (b *QuizBlock) Submission(_ map[string][]string, state PlayerState) json.RawMessage {
+	var data QuizPlayerData
+	if err := json.Unmarshal(state.GetPlayerData(), &data); err != nil || data.IsCorrect {
+		return nil
+	}
+	return marshalSubmission(map[string][]string{"selected_options": data.SelectedOptions})
+}

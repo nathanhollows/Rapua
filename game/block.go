@@ -48,6 +48,16 @@ type Block interface {
 	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
 }
 
+// SubmissionReporter is implemented by blocks that record what a submission
+// carried when it did not solve the block: a wrong guess, an incomplete
+// checklist, a position outside the area. A block that cannot be failed, or
+// whose state already is the whole record (free text), does not implement it.
+type SubmissionReporter interface {
+	// Submission returns what the player submitted, as JSON, or nil when there
+	// is nothing to keep. state is the result of validation.
+	Submission(input map[string][]string, state PlayerState) json.RawMessage
+}
+
 // Blocks is a slice of Block.
 type Blocks []Block
 

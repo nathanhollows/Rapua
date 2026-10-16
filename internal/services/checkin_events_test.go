@@ -408,3 +408,58 @@ func TestCheckInService_ConcurrentCompletionsRecordOneEvent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 1, count, "and one completion, not two")
 }
+
+// The detail of a wrong answer reaches the row, nested as an object rather than
+// quoted as a string, so the corpus can query into it without decoding twice.
+func TestCheckInService_WrongAnswerCarriesWhatWasSubmitted(t *testing.T) {
+	f := setupCompletingSubmission(t, "password", repositories.NewRunEventRepository)
+	ctx := context.Background()
+
+	_, err := f.blockService.UpdateBlock(ctx, f.block, map[string][]string{
+		"prompt": {"Say it"}, "answer": {"secret"},
+	})
+	require.NoError(t, err)
+
+	_, _, err = f.svc.ValidateAndUpdateBlockState(ctx, f.team, map[string][]string{
+		"block": {f.block.GetID()}, "answer": {"nope"},
+	})
+	require.NoError(t, err)
+
+	stored, err := repositories.NewRunEventRepository(f.dbc).ListByRun(ctx, f.team.Code)
+	require.NoError(t, err)
+
+	var answered *models.RunEvent
+	for i := range stored {
+		if stored[i].Type == models.EventBlockAnswered {
+			answered = &stored[i]
+		}
+	}
+	require.NotNil(t, answered)
+
+	var raw map[string]any
+	require.NoError(t, json.Unmarshal(answered.Data, &raw))
+	assert.Equal(t, map[string]any{"answer": "nope"}, raw["submitted"])
+}
+
+// A right answer, and a block that does not report, leave the key out entirely.
+func TestCheckInService_RightAnswerCarriesNoSubmission(t *testing.T) {
+	f := setupCompletingSubmission(t, "free_text", repositories.NewRunEventRepository)
+	ctx := context.Background()
+
+	_, _, err := f.svc.ValidateAndUpdateBlockState(ctx, f.team, map[string][]string{
+		"block": {f.block.GetID()}, "response": {"the answer"},
+	})
+	require.NoError(t, err)
+
+	stored, err := repositories.NewRunEventRepository(f.dbc).ListByRun(ctx, f.team.Code)
+	require.NoError(t, err)
+
+	for _, e := range stored {
+		if e.Type != models.EventBlockAnswered {
+			continue
+		}
+		var raw map[string]any
+		require.NoError(t, json.Unmarshal(e.Data, &raw))
+		assert.NotContains(t, raw, "submitted")
+	}
+}

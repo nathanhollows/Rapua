@@ -132,3 +132,11 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	state.SetPointsAwarded(b.Points)
 	return state, nil
 }
+
+// Submission returns the guess when it was wrong.
+func (b *PincodeBlock) Submission(input map[string][]string, state PlayerState) json.RawMessage {
+	if state.IsComplete() {
+		return nil
+	}
+	return marshalSubmission(map[string]string{"pincode": reportText(input["pincode"][0])})
+}

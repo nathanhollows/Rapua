@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -115,7 +116,7 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 	}
 	defer func() { _ = tx.Rollback() }()
 
-	won, err := s.applyAnswer(ctx, tx, &team, block, blockContext, state, plan)
+	won, err := s.applyAnswer(ctx, tx, &team, block, blockContext, state, data, plan)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -140,6 +141,7 @@ func (s *CheckInService) applyAnswer(
 	block blocks.Block,
 	blockContext game.BlockContext,
 	state blocks.PlayerState,
+	input map[string][]string,
 	plan completionPlan,
 ) (bool, error) {
 	// The read that decided the block was incomplete happened outside this
@@ -187,7 +189,16 @@ func (s *CheckInService) applyAnswer(
 		objectiveID = block.GetOwnerID()
 	}
 
-	answerEvent := answeredEvent(team, block, objectiveID, state.IsComplete(), state.GetPointsAwarded())
+	// Safe inside the transaction: the answer is pure, reading the state and the
+	// input already in hand, never the database.
+	var submitted json.RawMessage
+	if reporter, ok := block.(game.SubmissionReporter); ok {
+		submitted = reporter.Submission(input, state)
+	}
+
+	answerEvent := answeredEvent(
+		team, block, objectiveID, state.IsComplete(), state.GetPointsAwarded(), submitted,
+	)
 	// The payload carries what the block computed; the column carries what the
 	// score moved by.
 	answerEvent.Points = credited

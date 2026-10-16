@@ -74,7 +74,7 @@ twice would double the sum. Every other event carries 0.
 | `run_named` | a player names or renames their run | `{name}` | no |
 | `objectives_listed` | a player opens the list of objectives | nothing | yes |
 | `objective_viewed` | a player opens an objective they can reach | `objective_id` | yes |
-| `block_answered` | a graded answer is submitted, right or wrong | `objective_id`, `block_id`, `{block_type, completed, points_awarded}`, credited `points` | yes |
+| `block_answered` | a graded answer is submitted, right or wrong | `objective_id`, `block_id`, `{block_type, completed, points_awarded, submitted?}`, credited `points` | yes |
 | `objective_context_completed` | an objective context clears, once per context | `objective_id`, `{context, points}` | yes |
 | `section_finished` | a player chooses to end a section | `objective_id` | yes |
 | `upload_added` | a run uploads media | `block_id`, `{url, media_type}` | yes |
@@ -91,6 +91,12 @@ Notes that matter when reading the table:
 - `block_answered`'s `completed` means the submission completed the block, which
   is not the same as the answer being right: only the block knows what right
   means.
+- `block_answered`'s `submitted` is what the player sent when the submission was
+  not a correct solve, and only for the blocks that report one
+  (`game.SubmissionReporter`: password, pincode, scan, geofence, quiz, sorting,
+  checklist). A geofence attempt carries the reported position, a checklist tick
+  the items checked so far. A solve carries nothing, because the block's state is
+  where the final answer lives.
 - `notification_sent` carries the words because the `notifications` table filters
   dismissed rows out of every read, so the log is the copy of the message that
   survives a dismissal.
@@ -102,6 +108,29 @@ Notes that matter when reading the table:
   zone can hold interactive blocks, so its completion lands whenever those do,
   and the block answers that cleared it draw already; the content is also on the
   page at the moment it closes. Only proof completions get a row.
+
+## Reading a submission
+
+`submitted` is present exactly when the submission was not a correct solve,
+whatever the row's `completed` says: a quiz without retries completes on a wrong
+answer, so `completed: true` with `submitted` set is a wrong answer the block
+closed anyway. Absent means nothing was recorded. Present and empty
+(`{"selected_options":[]}`, `{"answer":""}`) means the player submitted nothing,
+which is data: a tick that cleared the last box, or a form sent without a value.
+
+Attempts and timing come from the rows themselves. Count `block_answered` rows per
+`block_id` for how many tries a block took, and read the `created_at` deltas for
+how long each one took. A checklist's rows are the only record of how a team moved
+through the list, since its state holds the latest set and nothing else dates the
+earlier ones.
+
+Do not drop these rows as duplicated by state. A solve's detail is recoverable
+from `run_block_states`, but the timeline is not: state carries no timestamps, and
+some blocks overwrite the attempt they replaced (a geofence keeps only its last
+position).
+
+Free text is left out to shape the study extract rather than to protect the
+player: the response still sits in `run_block_states`.
 
 ## What is deliberately not recorded
 
@@ -172,7 +201,8 @@ stall, however long it ran, because the walk-off never happened.
 ## Adding an event type
 
 1. Add the constant and, if it carries anything, a payload struct to
-   `models/run_events.go`. Payloads are plain data with JSON tags.
+   `models/run_events.go`, and add the type to `models.AllEventTypes` beside it.
+   Payloads are plain data with JSON tags.
 2. Add a constructor to `internal/services/run_events.go`, so call sites never
    build a type string by hand and the taxonomy cannot drift.
 3. Record it at the call site with `RecordWithTx` inside the transaction that
@@ -184,4 +214,6 @@ stall, however long it ran, because the walk-off never happened.
 5. Consider the readers: a new type that the run log should draw needs a case in
    `runLogEntryFor`, and one the journal should show needs a case in
    `journal_service.go`. An unhandled type is simply not drawn, which is the
-   right default for noise.
+   right default for noise. `TestEventTaxonomy_EveryTypeIsDecided` holds the
+   decision for every type in `models.AllEventTypes`, and fails until the new
+   one has a row: not drawn is a decision, and it has to be written down.

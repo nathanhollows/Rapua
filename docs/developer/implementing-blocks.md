@@ -142,6 +142,34 @@ func (b *YourBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 
 A validating block that completes must call `SetPointsAwarded` on every completing path: the value it computes is what the run is credited and what the event log records. A completion that never sets it earns nothing, and nothing will say so.
 
+#### Reporting what a failed submission carried
+
+The run event stream records that a submission happened, and for a block that can be failed it also keeps *what* was submitted: a wrong guess, a checklist ticked part way, a position outside the area. State keeps the latest value and nothing dates it, so the stream is the only place a study can see the attempts themselves.
+
+Implement [`game.SubmissionReporter`](https://github.com/nathanhollows/Rapua/blob/main/game/block.go) when a failure carries something worth keeping:
+
+```go
+// Submission returns what the player sent, or nil where there is nothing to
+// keep. It is read only when the submission did not solve the block, and it
+// must be pure: it reads the input and the state it is handed and changes
+// nothing.
+func (b *YourBlock) Submission(input map[string][]string, state PlayerState) json.RawMessage {
+    if state.IsComplete() || len(input["answer"]) == 0 {
+        return nil
+    }
+    return marshalSubmission(map[string]string{"answer": reportText(input["answer"][0])})
+}
+```
+
+Four rules, each of which the tests behind this will hold you to:
+
+- **Pure.** It is called inside the submission's transaction, after the write is known to have been won, so it must not touch the database or anything else shared.
+- **Nil means nothing to keep**, and the field is omitted entirely (it is `omitempty`). An empty value is not the same as no value: a password posted empty is data.
+- **Cap anything the player types** with `reportText`. A reported value goes into an append-only table that every view of the run reads whole, so a long one is paid for forever.
+- **Report the failure, not the state.** A retry-less quiz completes on a wrong answer, so key on whether the answer was right (`IsCorrect`), not on whether the block completed; keying on completion silently drops exactly the answers a study wants.
+
+A block that cannot be failed, or whose state already is the whole record (`free_text` keeps the response itself), does not implement the interface. `TestSubmission_EveryInteractiveBlockDecides` in `blocks/submission_reporter_test.go` insists on that choice: a block that requires validation either reports, or joins the exempt map with a reason saying why its state is enough.
+
 ### 3. Create Player Data Structure
 
 If your block needs to track player progress or state, define a player data structure:
