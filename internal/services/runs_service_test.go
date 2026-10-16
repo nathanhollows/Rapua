@@ -474,8 +474,4 @@ func TestRunService_CompletionCountsProofNotReveal(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, completed, 1)
 	assert.Equal(t, "cleared", completed[0].Slug)
-
-	counts, err := runService.CountCompletedObjectivesByRun(ctx, p.QuestID)
-	require.NoError(t, err)
-	assert.Equal(t, 1, counts[runCode])
 }

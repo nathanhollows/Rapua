@@ -208,7 +208,6 @@ type RunService interface {
 	GetRunLog(ctx context.Context, quest *models.Quest, team *models.Run) (services.RunLog, error)
 	GetRunProgress(ctx context.Context, questID, runCode string) (services.RunProgress, error)
 	GetQuestRunSummaries(ctx context.Context, questID string) (map[string]services.RunSummary, error)
-	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 	// LastSeenByRun returns each run's most recent block interaction, keyed by run code.
 	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
 }

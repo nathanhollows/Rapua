@@ -43,11 +43,6 @@ type ObjectiveContextCompletionRepository interface {
 		runCode string,
 		blockContext game.BlockContext,
 	) ([]string, error)
-	CountCompletedObjectivesByRun(
-		ctx context.Context,
-		questID string,
-		blockContext game.BlockContext,
-	) (map[string]int, error)
 }
 
 type objectiveContextCompletionRepository struct {
@@ -155,34 +150,4 @@ func (r *objectiveContextCompletionRepository) FindCompletedObjectiveIDsOrdered(
 		return nil, err
 	}
 	return ids, nil
-}
-
-// CountCompletedObjectivesByRun replaces run.CheckIns as the source of a
-// run's progress count: check-ins are no longer written once a quest is
-// objective-built, so anything counting them stays at zero forever.
-func (r *objectiveContextCompletionRepository) CountCompletedObjectivesByRun(
-	ctx context.Context,
-	questID string,
-	blockContext game.BlockContext,
-) (map[string]int, error) {
-	var rows []struct {
-		RunCode string `bun:"run_code"`
-		Count   int    `bun:"count"`
-	}
-	err := r.db.NewSelect().
-		TableExpr("objective_context_completions AS occ").
-		ColumnExpr("occ.run_code AS run_code").
-		ColumnExpr("COUNT(*) AS count").
-		Join("JOIN objectives AS o ON o.id = occ.objective_id").
-		Where("o.quest_id = ? AND occ.context = ?", questID, blockContext).
-		Group("occ.run_code").
-		Scan(ctx, &rows)
-	if err != nil {
-		return nil, err
-	}
-	counts := make(map[string]int, len(rows))
-	for _, row := range rows {
-		counts[row.RunCode] = row.Count
-	}
-	return counts, nil
 }

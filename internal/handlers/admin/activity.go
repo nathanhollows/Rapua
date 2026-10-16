@@ -12,12 +12,12 @@ import (
 func (h *Handler) Activity(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
+	summaries, err := h.runService.GetQuestRunSummaries(r.Context(), user.CurrentQuestID)
 	if err != nil {
 		h.handleError(
 			w,
 			r,
-			"Activity: counting completed objectives",
+			"Activity: building run summaries",
 			"Error loading team relations",
 			"Could not load data",
 			err,
@@ -25,7 +25,7 @@ func (h *Handler) Activity(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.ActivityTracker(user.CurrentQuest, completedCounts)
+	c := templates.ActivityTracker(user.CurrentQuest, summaries)
 	err = templates.Layout(c, *user, "Activity", "Activity").Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Activity: rendering template", "error", err)
@@ -134,13 +134,13 @@ func subtractObjectivesByID(all, exclude []models.Objective) []models.Objective 
 func (h *Handler) ActivityStats(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	completedCounts, err := h.runService.CountCompletedObjectivesByRun(r.Context(), user.CurrentQuestID)
+	summaries, err := h.runService.GetQuestRunSummaries(r.Context(), user.CurrentQuestID)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(), "ActivityStats: counting completed objectives", "error", err)
+		h.logger.ErrorContext(r.Context(), "ActivityStats: building run summaries", "error", err)
 		return
 	}
 
-	err = templates.ActivityStats(user.CurrentQuest, completedCounts).Render(r.Context(), w)
+	err = templates.ActivityStats(user.CurrentQuest, summaries).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "ActivityStats: rendering template", "error", err)
 	}

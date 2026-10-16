@@ -5,6 +5,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -25,39 +26,55 @@ func countNotStarted(runs []models.Run) int {
 	return count
 }
 
-// countFinished counts runs that have completed every objective. completedCounts
-// is keyed by run code (see RunService.CountCompletedObjectivesByRun).
-func countFinished(runs []models.Run, totalObjectives int, completedCounts map[string]int) int {
-	if totalObjectives == 0 {
-		return 0
-	}
+// countRunning counts the runs still playing: started, and not yet finished.
+func countRunning(runs []models.Run, summaries map[string]services.RunSummary) int {
 	count := 0
 	for _, run := range runs {
-		if completedCounts[run.Code] >= totalObjectives {
+		if run.HasStarted && summaries[run.Code].Status != services.StatusFinished {
 			count++
 		}
 	}
 	return count
 }
 
-// Median, not mean: dormant runs drag an average down and mask a healthy event.
-func medianProgress(runs []models.Run, completedCounts map[string]int) int {
-	progress := make([]int, 0, len(runs))
+// countFinished counts the runs whose own story ended, which is the run's
+// completion rather than every objective proved: a branch the run cut is work
+// it never owed.
+func countFinished(runs []models.Run, summaries map[string]services.RunSummary) int {
+	count := 0
 	for _, run := range runs {
-		if run.HasStarted {
-			progress = append(progress, completedCounts[run.Code])
+		if summaries[run.Code].Status == services.StatusFinished {
+			count++
 		}
 	}
-	if len(progress) == 0 {
+	return count
+}
+
+// medianShare is the middle started run's progress, as a percentage of what
+// that run owes. A share, because two runs on one quest need not be the same
+// length; a median rather than a mean, because one run still on its first
+// objective should not read as the whole game stalling.
+//
+// A run that owes nothing has no share and sits the round out.
+func medianShare(runs []models.Run, summaries map[string]services.RunSummary) int {
+	shares := make([]int, 0, len(runs))
+	for _, run := range runs {
+		summary, known := summaries[run.Code]
+		if !known || !run.HasStarted || summary.Total == 0 {
+			continue
+		}
+		shares = append(shares, summary.Done*percentScale/summary.Total)
+	}
+	if len(shares) == 0 {
 		return 0
 	}
-	sort.Ints(progress)
+	sort.Ints(shares)
 
-	mid := len(progress) / 2
-	if len(progress)%2 == 1 {
-		return progress[mid]
+	mid := len(shares) / 2
+	if len(shares)%2 == 1 {
+		return shares[mid]
 	}
-	return (progress[mid-1] + progress[mid]) / 2
+	return (shares[mid-1] + shares[mid]) / 2
 }
 
 func countUnread(notifications []models.Notification) int {
