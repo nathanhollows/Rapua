@@ -49,10 +49,7 @@ func (r *sectionFinishRepository) InsertWithTx(
 func (r *sectionFinishRepository) FindFinishedByQuest(
 	ctx context.Context, questID string,
 ) (map[string][]string, error) {
-	var rows []struct {
-		RunCode     string `bun:"run_code"`
-		ObjectiveID string `bun:"objective_id"`
-	}
+	var rows []runObjectiveRow
 	err := r.db.NewSelect().
 		TableExpr("section_finishes AS sf").
 		ColumnExpr("sf.run_code AS run_code").
@@ -64,11 +61,7 @@ func (r *sectionFinishRepository) FindFinishedByQuest(
 		return nil, err
 	}
 
-	byRun := make(map[string][]string)
-	for _, row := range rows {
-		byRun[row.RunCode] = append(byRun[row.RunCode], row.ObjectiveID)
-	}
-	return byRun, nil
+	return groupByRun(rows), nil
 }
 
 // insertSectionFinish reports whether this call is the one that recorded the

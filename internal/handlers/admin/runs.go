@@ -99,7 +99,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 	team, err := h.runService.GetRunByCode(r.Context(), runCode)
 	if err != nil || team == nil || team.QuestID != user.CurrentQuestID {
 		h.logger.WarnContext(r.Context(),
-			"TeamOverview: team not found or access denied",
+			"RunOverview: team not found or access denied",
 			"error",
 			err,
 			"run_code",
@@ -112,11 +112,11 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// A filter click swaps the card alone, keeping scroll and skipping the other queries.
-	if r.Header.Get("Hx-Target") == "run-log-card" {
+	if r.Header.Get("Hx-Target") == admin.RunLogCardTarget {
 		runLog, logErr := h.runService.GetRunLog(r.Context(), &user.CurrentQuest, team)
 		if logErr != nil {
 			h.handleError(
-				w, r, "TeamOverview: building the run log", "Error loading data", "Could not load data", logErr,
+				w, r, "RunOverview: building the run log", "Error loading data", "Could not load data", logErr,
 			)
 			return
 		}
@@ -129,7 +129,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 
 	err = h.runService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.handleError(w, r, "TeamOverview: loading scans", "Error loading data", "Could not load data", err)
+		h.handleError(w, r, "RunOverview: loading scans", "Error loading data", "Could not load data", err)
 		return
 	}
 
@@ -138,7 +138,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		h.handleError(
 			w,
 			r,
-			"TeamOverview: getting notifications",
+			"RunOverview: getting notifications",
 			"Error getting notifications",
 			"Could not load data",
 			err,
@@ -148,7 +148,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 
 	progress, err := h.runService.GetRunProgress(r.Context(), user.CurrentQuestID, team.Code)
 	if err != nil {
-		h.handleError(w, r, "TeamOverview: loading progress", "Error loading data", "Could not load data", err)
+		h.handleError(w, r, "RunOverview: loading progress", "Error loading data", "Could not load data", err)
 		return
 	}
 
@@ -156,7 +156,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 
 	runLog, err := h.runService.GetRunLog(r.Context(), &user.CurrentQuest, team)
 	if err != nil {
-		h.handleError(w, r, "TeamOverview: building the run log", "Error loading data", "Could not load data", err)
+		h.handleError(w, r, "RunOverview: building the run log", "Error loading data", "Could not load data", err)
 		return
 	}
 
@@ -179,7 +179,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 		h.handleError(
 			w,
 			r,
-			"TeamOverview: rendering template",
+			"RunOverview: rendering template",
 			"Error rendering page",
 			"error",
 			err,
@@ -194,7 +194,7 @@ func (h *Handler) RunOverview(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) runOverviewUploads(ctx context.Context, team *models.Run) []*models.Upload {
 	uploads, err := h.uploadService.Search(ctx, map[string]string{"run_code": team.Code})
 	if err != nil {
-		h.logger.WarnContext(ctx, "TeamOverview: failed to load uploads", "error", err, "run_code", team.Code)
+		h.logger.WarnContext(ctx, "RunOverview: failed to load uploads", "error", err, "run_code", team.Code)
 		return []*models.Upload{}
 	}
 	return uploads

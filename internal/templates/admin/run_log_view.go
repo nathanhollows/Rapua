@@ -50,6 +50,11 @@ func runLogFilter(entries []services.RunLogEntry, show string) []services.RunLog
 	return shown
 }
 
+// RunLogCardTarget is the id of the timeline card and the Hx-Target its filters
+// send. RunOverview renders the card alone for that request, so the markup and
+// the handler have to agree on it.
+const RunLogCardTarget = "run-log-card"
+
 func runLogHref(runCode, show string) string {
 	if show == "" {
 		return "/admin/runs/" + runCode
@@ -75,17 +80,7 @@ func runStatus(run models.Run, log services.RunLog) services.TeamStatus {
 	if len(log.Segments) == 0 {
 		return services.StatusStarted
 	}
-	switch log.Segments[len(log.Segments)-1].Class {
-	case services.CadencePlaying:
-		return services.StatusPlaying
-	case services.CadenceIdle:
-		return services.StatusIdle
-	case services.CadenceStalled:
-		return services.StatusStalled
-	case services.CadenceAbandoned:
-		return services.StatusAbandoned
-	}
-	return services.StatusStarted
+	return log.Segments[len(log.Segments)-1].Class.Status()
 }
 
 func runLogQuietLine(entry services.RunLogEntry) string {
@@ -102,6 +97,8 @@ func runLogQuietTint(class services.CadenceClass) string {
 	case services.CadenceAbandoned:
 		return "text-error"
 	case services.CadencePlaying:
+		// Playing earns no quiet line to tint, and naming it here is what makes
+		// a new class a compile-time question rather than a silent default.
 		return ""
 	}
 	return ""

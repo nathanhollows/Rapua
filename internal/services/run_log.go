@@ -42,6 +42,22 @@ const (
 	CadenceAbandoned CadenceClass = "abandoned"
 )
 
+// Status is the class as a badge. The strip's bands and the lists' words are
+// one fact told twice, so the mapping lives here rather than in each reader.
+func (c CadenceClass) Status() TeamStatus {
+	switch c {
+	case CadencePlaying:
+		return StatusPlaying
+	case CadenceIdle:
+		return StatusIdle
+	case CadenceStalled:
+		return StatusStalled
+	case CadenceAbandoned:
+		return StatusAbandoned
+	}
+	return StatusStarted
+}
+
 const (
 	// Multiples of the run's own pace.
 	cadenceIdleAt      = 2
@@ -235,7 +251,7 @@ func capTail(bands []cadenceBand, played time.Duration) []cadenceBand {
 
 // finishTime is zero while the run is unfinished.
 func finishTime(events []models.RunEvent) time.Time {
-	finishedAt := time.Time{}
+	var finishedAt time.Time
 	for i := range events {
 		if events[i].Type == models.EventRunCompleted {
 			finishedAt = events[i].CreatedAt
@@ -277,7 +293,7 @@ func runLogEntries(
 ) []RunLogEntry {
 	tries := make(map[string]int)
 	entries := make([]RunLogEntry, 0, len(events))
-	lastMeaningful := time.Time{}
+	var lastMeaningful time.Time
 	for i := range events {
 		event := events[i]
 		meaningful := slices.Contains(meaningfulTypes, event.Type)
@@ -299,7 +315,7 @@ func runLogEntries(
 			lastMeaningful = event.CreatedAt
 		}
 
-		gap := time.Duration(0)
+		var gap time.Duration
 		if i > 0 {
 			gap = event.CreatedAt.Sub(events[i-1].CreatedAt)
 		}

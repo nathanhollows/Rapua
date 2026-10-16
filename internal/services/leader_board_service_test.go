@@ -457,6 +457,68 @@ func TestLeaderBoardService_TiesAgreeWithTheOrder(t *testing.T) {
 	}
 }
 
+// Sorting by status follows how much attention a run wants rather than the
+// alphabet, where "abandoned" would sort above "finished" and say nothing:
+// ascending ends on the walk-offs, descending starts with them.
+func TestLeaderBoardService_SortsByAttention(t *testing.T) {
+	service := setupLeaderboardService(t)
+
+	ctx := context.Background()
+	teams := []models.Run{
+		{ID: "a", Code: "T001", Name: "Walked off", HasStarted: true},
+		{ID: "b", Code: "T002", Name: "Finished", HasStarted: true},
+		{ID: "c", Code: "T003", Name: "Moving", HasStarted: true},
+	}
+	status := map[string]services.RunSummary{
+		"T001": {Done: 1, Total: 3, Status: services.StatusAbandoned},
+		"T002": {Done: 3, Total: 3, Status: services.StatusFinished},
+		"T003": {Done: 2, Total: 3, Status: services.StatusPlaying},
+	}
+
+	result, err := service.GetLeaderBoardData(ctx, teams, nil, status, "progress", "status", "asc")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if result[0].Code != "T002" || result[2].Code != "T001" {
+		t.Errorf("Expected finished first and abandoned last, got %s then %s",
+			result[0].Code, result[2].Code)
+	}
+
+	desc, err := service.GetLeaderBoardData(ctx, teams, nil, status, "progress", "status", "desc")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if desc[0].Code != "T001" {
+		t.Errorf("Expected the walk-off first when descending, got %s", desc[0].Code)
+	}
+}
+
+// A run that owes nothing reads as no share, whatever its progress says. The
+// pair below cannot come out of the progress model (a run owes at least what it
+// has proved), and that is the point: the rule no longer leans on an invariant
+// nothing enforces, so the comparison stays one comparison for every pair.
+func TestLeaderBoardService_OwedNothingIsNoShare(t *testing.T) {
+	service := setupLeaderboardService(t)
+
+	ctx := context.Background()
+	teams := []models.Run{
+		{ID: "a", Code: "T001", Name: "Owes nothing", HasStarted: true},
+		{ID: "b", Code: "T002", Name: "Under way", HasStarted: true},
+	}
+	progress := map[string]services.RunSummary{
+		"T001": {Done: 5, Total: 0, Status: services.StatusStalled},
+		"T002": {Done: 1, Total: 3, Status: services.StatusPlaying},
+	}
+
+	result, err := service.GetLeaderBoardData(ctx, teams, nil, progress, "progress", "progress", "asc")
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if result[0].Code != "T002" {
+		t.Errorf("Expected a share to outrank a run with none, got %s first", result[0].Code)
+	}
+}
+
 func TestLeaderBoardService_EmptyTeamsList(t *testing.T) {
 	service := setupLeaderboardService(t)
 

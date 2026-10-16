@@ -165,35 +165,67 @@ func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData) {
 	}
 }
 
+// statusLadder is the statuses ordered by how much attention the run wants,
+// least first: a finished run wants none, a walk-off wants the most. Sorting by
+// status is only useful if the order follows this, and the alphabet does not.
+//
+//nolint:gochecknoglobals // A definition, not state: one place says the order.
+var statusLadder = []TeamStatus{
+	StatusFinished,
+	StatusNotStarted,
+	StatusStarted,
+	StatusPlaying,
+	StatusIdle,
+	StatusStalled,
+	StatusAbandoned,
+}
+
+// statusAttention is where a status sits on that ladder. An unknown status
+// wants nothing, the same as a finished run.
+func statusAttention(status TeamStatus) int {
+	for i, candidate := range statusLadder {
+		if candidate == status {
+			return i
+		}
+	}
+	return 0
+}
+
 // sortLeaderBoardData sorts the leaderboard data by the specified field and order.
 func (s *LeaderBoardService) sortLeaderBoardData(data []LeaderBoardTeamData, field SortField, order SortOrder) {
-	sort.Slice(data, func(i, j int) bool {
-		var result bool
-
-		switch field {
-		case SortByRank:
-			result = data[i].Rank < data[j].Rank
-		case SortByCode:
-			result = data[i].Code < data[j].Code
-		case SortByName:
-			result = data[i].Name < data[j].Name
-		case SortByPoints:
-			result = data[i].Points < data[j].Points
-		case SortByLastSeen:
-			result = data[i].LastSeen.Before(data[j].LastSeen)
-		case SortByProgress:
-			result = fractionBefore(data[j], data[i])
-		case SortByStatus:
-			result = string(data[i].Status) < string(data[j].Status)
-		default:
-			result = data[i].Rank < data[j].Rank
-		}
-
+	sort.SliceStable(data, func(i, j int) bool {
+		// Descending asks the same question the other way round rather than
+		// negating the answer: a negated less-than is true of both halves of a
+		// tie, which is not an order at all.
 		if order == SortDesc {
-			return !result
+			return sortBefore(data[j], data[i], field)
 		}
-		return result
+		return sortBefore(data[i], data[j], field)
 	})
+}
+
+// sortBefore is whether a comes before b under one field, ascending. Progress
+// reads by share, so its rule is the leaderboard's own order rather than a
+// comparison of the rows.
+func sortBefore(a, b LeaderBoardTeamData, field SortField) bool {
+	switch field {
+	case SortByRank:
+		return a.Rank < b.Rank
+	case SortByCode:
+		return a.Code < b.Code
+	case SortByName:
+		return a.Name < b.Name
+	case SortByPoints:
+		return a.Points < b.Points
+	case SortByLastSeen:
+		return a.LastSeen.Before(b.LastSeen)
+	case SortByProgress:
+		return fractionBefore(b, a)
+	case SortByStatus:
+		return statusAttention(a.Status) < statusAttention(b.Status)
+	default:
+		return a.Rank < b.Rank
+	}
 }
 
 // GetDefaultSortForRankingScheme returns the default sort field for a ranking scheme.

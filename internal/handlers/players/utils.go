@@ -105,7 +105,6 @@ type RunService interface {
 	LoadQuest(ctx context.Context, run *models.Run) error
 	StartPlaying(ctx context.Context, runCode string) error
 	FindAll(ctx context.Context, questID string) ([]models.Run, error)
-	CountCompletedObjectivesByRun(ctx context.Context, questID string) (map[string]int, error)
 	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
 	GetQuestRunSummaries(ctx context.Context, questID string) (map[string]services.RunSummary, error)
 }

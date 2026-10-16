@@ -16,6 +16,11 @@ type journalChip struct {
 	Kinds []services.JournalEntryKind
 }
 
+// JournalTarget is the id of the diary's root and the Hx-Target its tabs send.
+// The Journal handler renders the feed alone for that request, so the markup
+// and the handler have to agree on it.
+const JournalTarget = "journal"
+
 // journalChipsList is the filter set, everything first. The three named chips
 // partition the feed; the opening and reset lines ride with everything only,
 // because they are the bookends rather than entries in a filter's sense.

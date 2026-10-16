@@ -13,24 +13,10 @@ import (
 
 // Every event type has to be decided by both surfaces, because both default to
 // not drawn: a type added without a case is invisible in the admin's log and
-// the player's diary, and nothing complains. The list of types is written by
-// hand (Go cannot enumerate constants) and matched against the table, so a new
-// type fails here until somebody writes down what it should do.
+// the player's diary, and nothing complains. The list comes from
+// models.AllEventTypes, which sits beside the constants, so a new type fails
+// this test until somebody writes down what it should do.
 func TestEventTaxonomy_EveryTypeIsDecided(t *testing.T) {
-	types := []models.EventType{
-		models.EventRunStarted,
-		models.EventRunNamed,
-		models.EventObjectivesListed,
-		models.EventObjectiveViewed,
-		models.EventBlockAnswered,
-		models.EventObjectiveContextCompleted,
-		models.EventSectionFinished,
-		models.EventUploadAdded,
-		models.EventNotificationSent,
-		models.EventNotificationRead,
-		models.EventRunCompleted,
-	}
-
 	payload := func(value any) json.RawMessage {
 		data, err := json.Marshal(value)
 		require.NoError(t, err)
@@ -181,7 +167,7 @@ func TestEventTaxonomy_EveryTypeIsDecided(t *testing.T) {
 	for _, tc := range cases {
 		decided[tc.event.Type] = true
 	}
-	for _, eventType := range types {
+	for _, eventType := range models.AllEventTypes {
 		assert.True(t, decided[eventType], "%s has no decision here", eventType)
 	}
 }

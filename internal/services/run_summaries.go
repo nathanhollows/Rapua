@@ -113,15 +113,5 @@ func runCadenceStatus(
 	if quiet < 0 {
 		return StatusStarted
 	}
-	switch cadenceClass(quiet, baseline, true) {
-	case CadencePlaying:
-		return StatusPlaying
-	case CadenceIdle:
-		return StatusIdle
-	case CadenceStalled:
-		return StatusStalled
-	case CadenceAbandoned:
-		return StatusAbandoned
-	}
-	return StatusStarted
+	return cadenceClass(quiet, baseline, true).Status()
 }

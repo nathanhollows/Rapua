@@ -204,7 +204,6 @@ type RunService interface {
 	// LoadRelations loads all relations for a team
 	LoadRelations(ctx context.Context, team *models.Run) error
 
-	BuildObjectiveSectionMap(ctx context.Context, questID string) (map[string]services.ObjectiveSectionInfo, error)
 	GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error)
 	GetRunLog(ctx context.Context, quest *models.Quest, team *models.Run) (services.RunLog, error)
 	GetRunProgress(ctx context.Context, questID, runCode string) (services.RunProgress, error)

@@ -228,39 +228,6 @@ func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
 	return tx.Commit()
 }
 
-// ObjectiveSectionInfo names the section an objective sits in, for admin
-// screens that show where a player's outstanding work belongs.
-type ObjectiveSectionInfo struct {
-	SectionTitle string
-}
-
-// BuildObjectiveSectionMap maps each objective to the section holding it. The
-// root is not a section anyone means by the word: it holds everything, so
-// naming it tells a reader nothing.
-func (s *RunService) BuildObjectiveSectionMap(
-	ctx context.Context, questID string,
-) (map[string]ObjectiveSectionInfo, error) {
-	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
-	if err != nil {
-		return nil, fmt.Errorf("loading objective tree: %w", err)
-	}
-
-	byID := make(map[string]models.Objective, len(objectives))
-	for _, obj := range objectives {
-		byID[obj.ID] = obj
-	}
-
-	sections := make(map[string]ObjectiveSectionInfo, len(objectives))
-	for _, obj := range objectives {
-		parent, ok := byID[obj.ParentID]
-		if !ok || parent.ParentID == "" {
-			continue
-		}
-		sections[obj.ID] = ObjectiveSectionInfo{SectionTitle: parent.Title}
-	}
-	return sections, nil
-}
-
 // GetIncompleteObjectives returns the quest's reveal-context objectives still
 // incomplete for this run: an unordered "what's outstanding" list for admin
 // dashboards.

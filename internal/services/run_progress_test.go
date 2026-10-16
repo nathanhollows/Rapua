@@ -1,12 +1,52 @@
 package services_test
 
 import (
+	"context"
+	"errors"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// A stream that will not read fails the progress read rather than quietly
+// dropping the map's marks: a degrade looks like a run that has done nothing,
+// and the page has a message of its own for a read that failed.
+func TestGetRunProgress_StreamFailureSurfaces(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	parents := createTestParents(t, dbc)
+	insertTestTeam(t, dbc, "R001", parents.QuestID)
+
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	transactor := db.NewTransactor(dbc)
+	svc := services.NewRunService(
+		transactor,
+		repositories.NewRunRepository(dbc),
+		services.NewCreditService(
+			transactor,
+			repositories.NewCreditRepository(dbc),
+			repositories.NewRunStartLogRepository(dbc),
+			nil,
+		),
+		blockStateRepo,
+		repositories.NewObjectiveRepository(dbc),
+		repositories.NewObjectiveContextCompletionRepository(dbc),
+		repositories.NewSectionFinishRepository(dbc),
+		repositories.NewBlockRepository(dbc, blockStateRepo),
+		failingEventRepo{err: errors.New("stream unavailable")},
+	)
+
+	_, err := svc.GetRunProgress(ctx, parents.QuestID, "R001")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "stream unavailable")
+}
 
 // progressTree is a root, a lone leaf and a section of three, ordered the way
 // the repository returns a tree: parents before children.

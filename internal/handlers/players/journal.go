@@ -40,7 +40,7 @@ func (h *PlayerHandler) Journal(w http.ResponseWriter, r *http.Request) {
 	data := templates.JournalParams{Run: *team, View: view, Show: r.URL.Query().Get("show")}
 
 	// A filter click swaps the feed alone, keeping the scroll.
-	if r.Header.Get("Hx-Target") == "journal" {
+	if r.Header.Get("Hx-Target") == templates.JournalTarget {
 		if renderErr := templates.Journal(data).Render(r.Context(), w); renderErr != nil {
 			h.logger.ErrorContext(r.Context(), "rendering the journal feed", "error", renderErr.Error())
 		}

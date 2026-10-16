@@ -106,10 +106,7 @@ func insertCompletion(
 func (r *objectiveContextCompletionRepository) FindCompletedByQuest(
 	ctx context.Context, questID string, blockContext game.BlockContext,
 ) (map[string][]string, error) {
-	var rows []struct {
-		RunCode     string `bun:"run_code"`
-		ObjectiveID string `bun:"objective_id"`
-	}
+	var rows []runObjectiveRow
 	// The log has no quest column, so go through the objective.
 	err := r.db.NewSelect().
 		TableExpr("objective_context_completions AS occ").
@@ -122,11 +119,7 @@ func (r *objectiveContextCompletionRepository) FindCompletedByQuest(
 		return nil, err
 	}
 
-	byRun := make(map[string][]string)
-	for _, row := range rows {
-		byRun[row.RunCode] = append(byRun[row.RunCode], row.ObjectiveID)
-	}
-	return byRun, nil
+	return groupByRun(rows), nil
 }
 
 func (r *objectiveContextCompletionRepository) FindCompletedObjectiveIDs(

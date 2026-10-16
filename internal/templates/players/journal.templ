@@ -22,7 +22,7 @@ type JournalParams struct {
 // their own times.
 templ Journal(data JournalParams) {
 	{{ shown := filteredEntries(data.View.Entries, data.Show) }}
-	<div id="journal" class="flex flex-col gap-3">
+	<div id={ JournalTarget } class="flex flex-col gap-3">
 		@journalTabs(data.Show)
 		if len(shown) == 0 {
 			if len(data.View.Entries) == 0 {
@@ -55,7 +55,7 @@ templ journalTabs(show string) {
 				role="tab"
 				href={ templ.URL(journalChipHref(chip.Slug)) }
 				hx-get={ templ.URL(journalChipHref(chip.Slug)) }
-				hx-target="#journal"
+				hx-target={ "#" + JournalTarget }
 				hx-swap="outerHTML"
 				hx-push-url="false"
 				class={ "tab", templ.KV("tab-active", show == chip.Slug) }

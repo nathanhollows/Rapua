@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -53,9 +54,12 @@ func (s *RunService) GetRunProgress(ctx context.Context, questID, runCode string
 		}
 	}
 
-	return BuildRunProgress(
-		navigation.InPlay(objectives), state.ProofCompleted, s.runActivity(ctx, runCode), locked,
-	), nil
+	activity, err := s.runActivity(ctx, runCode)
+	if err != nil {
+		return RunProgress{}, err
+	}
+
+	return BuildRunProgress(navigation.InPlay(objectives), state.ProofCompleted, activity, locked), nil
 }
 
 // RunActivity is what the run has done, as the map needs it.
@@ -78,11 +82,10 @@ func BuildRunProgress(
 }
 
 // runActivity reads what the run has done, from its stream.
-func (s *RunService) runActivity(ctx context.Context, runCode string) RunActivity {
+func (s *RunService) runActivity(ctx context.Context, runCode string) (RunActivity, error) {
 	events, err := s.runEventRepo.ListByRun(ctx, runCode)
 	if err != nil {
-		// The marks are decoration on the map, so degrade rather than fail the page.
-		return RunActivity{}
+		return RunActivity{}, fmt.Errorf("reading the run's stream: %w", err)
 	}
 
 	activity := RunActivity{Touched: make(map[string]bool), Closed: make(map[string]bool)}
@@ -99,7 +102,7 @@ func (s *RunService) runActivity(ctx context.Context, runCode string) RunActivit
 			activity.Finished = true
 		}
 	}
-	return activity
+	return activity, nil
 }
 
 func childrenByParent(inPlay []models.Objective) map[string][]string {

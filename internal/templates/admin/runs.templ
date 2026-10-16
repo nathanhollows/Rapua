@@ -994,7 +994,7 @@ templ cadenceScript() {
 
 templ RunLogCard(log services.RunLog, show, runCode string) {
 	{{ shown := runLogFilter(log.Entries, show) }}
-	<div id="run-log-card" class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
+	<div id={ RunLogCardTarget } class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
 		<div class="card-body p-6 pb-4">
 			<div class="flex flex-wrap items-center justify-between gap-3 mb-1">
 				<h2 class="card-title text-lg">Timeline</h2>
@@ -1002,7 +1002,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 					<a
 						href={ templ.URL(runLogHref(runCode, "")) }
 						hx-get={ templ.URL(runLogHref(runCode, "")) }
-						hx-target="#run-log-card"
+						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
 						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "") }
@@ -1010,7 +1010,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 					<a
 						href={ templ.URL(runLogHref(runCode, "progress")) }
 						hx-get={ templ.URL(runLogHref(runCode, "progress")) }
-						hx-target="#run-log-card"
+						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
 						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "progress") }
@@ -1018,7 +1018,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 					<a
 						href={ templ.URL(runLogHref(runCode, "messages")) }
 						hx-get={ templ.URL(runLogHref(runCode, "messages")) }
-						hx-target="#run-log-card"
+						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
 						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "messages") }
@@ -1026,7 +1026,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 					<a
 						href={ templ.URL(runLogHref(runCode, "navigation")) }
 						hx-get={ templ.URL(runLogHref(runCode, "navigation")) }
-						hx-target="#run-log-card"
+						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
 						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "navigation") }
