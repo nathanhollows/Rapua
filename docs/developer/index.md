@@ -27,6 +27,7 @@ Welcome to the Rapua developer documentation. This section contains technical in
 ## Development
 
 - [Contributing](contributing) - Guidelines for contributing to Rapua
+- [Comment Guidelines](comment-guidelines) - How comments are written, and what they are for
 - [Implementing Blocks](implementing-blocks) - How to create new block types
 
 ## Roadmap
