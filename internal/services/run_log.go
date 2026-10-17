@@ -187,7 +187,7 @@ func BuildRunLog(
 		quiet = now.Sub(last)
 	}
 
-	entries := runLogEntries(events, byID, blockNames, baseline)
+	entries := runLogEntries(withoutPresenceAfter(events, finishedAt), byID, blockNames, baseline)
 
 	// The running quiet has no ending row, so its line opens the feed.
 	if finishedAt.IsZero() && baseline > 0 && quiet > 0 {
@@ -328,6 +328,23 @@ func runLogEntries(
 		}
 	}
 	return entries
+}
+
+// withoutPresenceAfter drops views and listings past the finish. Older streams
+// recorded them, and they sit beyond the axis where no window can reach them.
+func withoutPresenceAfter(events []models.RunEvent, finishedAt time.Time) []models.RunEvent {
+	if finishedAt.IsZero() {
+		return events
+	}
+	kept := make([]models.RunEvent, 0, len(events))
+	for _, event := range events {
+		presence := event.Type == models.EventObjectiveViewed || event.Type == models.EventObjectivesListed
+		if presence && event.CreatedAt.After(finishedAt) {
+			continue
+		}
+		kept = append(kept, event)
+	}
+	return kept
 }
 
 // QuestBaseline is the pace a run too young for its own borrows. Zero when the

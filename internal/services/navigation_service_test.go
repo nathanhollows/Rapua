@@ -217,3 +217,33 @@ func TestNavigationService_GetPreviewObjectiveView(t *testing.T) {
 	assert.Equal(t, []string{"previewed"}, availableSlugs(view),
 		"a preview shows the one objective it was asked for")
 }
+
+// A finished team browsing its old objectives is not playing, and a row past
+// the finish falls outside the run's timeline.
+func TestNavigationService_RecordsPresenceOnlyWhileTheRunIsOpen(t *testing.T) {
+	svc, teamRepo, instanceRepo, dbc, cleanup := setupNavigationService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	_, root, run := navQuest(t, dbc, teamRepo, instanceRepo)
+	events := repositories.NewRunEventRepository(dbc)
+
+	require.NoError(t, svc.RecordObjectiveView(ctx, run, root.ID))
+	require.NoError(t, svc.RecordObjectivesListed(ctx, run))
+
+	require.NoError(t, events.Record(ctx, &models.RunEvent{
+		RunCode: run.Code, QuestID: run.QuestID, Type: models.EventRunCompleted,
+	}))
+	require.NoError(t, svc.RecordObjectiveView(ctx, run, root.ID))
+	require.NoError(t, svc.RecordObjectivesListed(ctx, run))
+
+	got, err := events.ListByRun(ctx, run.Code)
+	require.NoError(t, err)
+	types := make([]models.EventType, len(got))
+	for i := range got {
+		types[i] = got[i].Type
+	}
+	assert.Equal(t, []models.EventType{
+		models.EventObjectiveViewed, models.EventObjectivesListed, models.EventRunCompleted,
+	}, types)
+}

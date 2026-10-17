@@ -50,6 +50,10 @@ func (f failingEventRepo) TimesByType(
 	return nil, f.err
 }
 
+func (f failingEventRepo) RunCompleted(context.Context, string) (bool, error) {
+	return false, f.err
+}
+
 func (f failingEventRepo) RunCompletedWithTx(context.Context, *bun.Tx, string) (bool, error) {
 	return false, f.err
 }

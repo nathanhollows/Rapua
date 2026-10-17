@@ -23,6 +23,24 @@ func event(runCode, questID string, eventType models.EventType) *models.RunEvent
 	return &models.RunEvent{RunCode: runCode, QuestID: questID, Type: eventType}
 }
 
+func TestRunEventRepository_RunCompletedOutsideATransaction(t *testing.T) {
+	repo, dbc, cleanup := setupRunEventRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	parents := createTestParents(t, dbc)
+	runCode := createTestTeam(t, dbc, parents.QuestID)
+
+	done, err := repo.RunCompleted(ctx, runCode)
+	require.NoError(t, err)
+	assert.False(t, done)
+
+	require.NoError(t, repo.Record(ctx, event(runCode, parents.QuestID, models.EventRunCompleted)))
+	done, err = repo.RunCompleted(ctx, runCode)
+	require.NoError(t, err)
+	assert.True(t, done)
+}
+
 // The finish guard reads inside the caller's transaction, so a second
 // completion racing the first sees the row the first committed.
 func TestRunEventRepository_RunCompleted(t *testing.T) {

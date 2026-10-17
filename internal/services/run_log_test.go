@@ -136,6 +136,24 @@ func TestBuildRunLog_FinishedRunsStopAtTheFinish(t *testing.T) {
 	assert.Equal(t, services.CadenceIdle, log.Entries[2].Cadence)
 }
 
+// Streams written before presence stopped being recorded after a finish carry
+// views past it, which no window on the axis can reach.
+func TestBuildRunLog_DropsViewsPastTheFinish(t *testing.T) {
+	events := []models.RunEvent{
+		ev(at(0), models.EventRunStarted, nil),
+		ev(at(2), models.EventObjectiveViewed, nil),
+		ev(at(10), models.EventRunCompleted, nil),
+		ev(at(20), models.EventObjectivesListed, nil),
+		ev(at(21), models.EventObjectiveViewed, nil),
+	}
+
+	log := services.BuildRunLog(events, journalTree(), 0, at(100))
+
+	for _, entry := range log.Entries {
+		assert.False(t, entry.Time.After(at(10)), "nothing drawn sits past the axis")
+	}
+}
+
 // Tries are counted from the stream, per block, up to and including the row.
 func TestBuildRunLog_CountsTriesPerBlock(t *testing.T) {
 	var events []models.RunEvent

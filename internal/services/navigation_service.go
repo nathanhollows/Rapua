@@ -215,12 +215,25 @@ func (s *NavigationService) FinishSection(
 func (s *NavigationService) RecordObjectiveView(
 	ctx context.Context, team *models.Run, objectiveID string,
 ) error {
-	return s.runEventRepo.Record(ctx, objectiveViewedEvent(team, objectiveID))
+	return s.recordPresence(ctx, team, objectiveViewedEvent(team, objectiveID))
 }
 
 // RecordObjectivesListed notes that a run opened the list of objectives.
 func (s *NavigationService) RecordObjectivesListed(ctx context.Context, team *models.Run) error {
-	return s.runEventRepo.Record(ctx, objectivesListedEvent(team))
+	return s.recordPresence(ctx, team, objectivesListedEvent(team))
+}
+
+// recordPresence skips a finished run: a team browsing its old objectives is
+// not playing, and rows past the finish fall outside the run's timeline.
+func (s *NavigationService) recordPresence(ctx context.Context, team *models.Run, event *models.RunEvent) error {
+	finished, err := s.runEventRepo.RunCompleted(ctx, team.Code)
+	if err != nil {
+		return fmt.Errorf("checking whether the run has finished: %w", err)
+	}
+	if finished {
+		return nil
+	}
+	return s.runEventRepo.Record(ctx, event)
 }
 
 // ensureObjectiveTeamRelationsLoaded loads the quest and messages: the player

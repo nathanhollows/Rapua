@@ -35,6 +35,9 @@ type RunEventRepository interface {
 		ctx context.Context, questID string, types []models.EventType, since time.Time,
 	) (map[string][]time.Time, error)
 
+	// RunCompleted reports whether the run has recorded its completion, for
+	// callers with no transaction and no race to lose.
+	RunCompleted(ctx context.Context, runCode string) (bool, error)
 	// RunCompletedWithTx reports whether the run has already recorded its
 	// completion. Read inside the caller's transaction, where the write lock
 	// makes the answer decisive against a second completion racing the first.
@@ -69,6 +72,14 @@ func (r *runEventRepository) RecordWithTx(ctx context.Context, tx *bun.Tx, event
 	stamp(event)
 	_, err := tx.NewInsert().Model(event).Exec(ctx)
 	return err
+}
+
+func (r *runEventRepository) RunCompleted(ctx context.Context, runCode string) (bool, error) {
+	return r.db.NewSelect().
+		Model((*models.RunEvent)(nil)).
+		Where("run_code = ?", runCode).
+		Where("type = ?", models.EventRunCompleted).
+		Exists(ctx)
 }
 
 func (r *runEventRepository) RunCompletedWithTx(
