@@ -425,7 +425,7 @@ func admittedChildren(
 		for _, id := range completedIDs {
 			admitted[id] = true
 		}
-		for _, id := range deterministicShuffleIDs(ids, completedIDs, runCode, parent.MaxNext) {
+		for _, id := range deterministicShuffleIDs(ids, completedIDs, runCode, parent.ID, parent.MaxNext) {
 			admitted[id] = true
 		}
 
