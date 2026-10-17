@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type mockUploadStorage struct{}
+type mockUploadStorage struct{ deleted []string }
 
 func (m *mockUploadStorage) Upload(
 	_ context.Context,
@@ -24,6 +24,11 @@ func (m *mockUploadStorage) Upload(
 		return nil, "", errors.New("storage upload error")
 	}
 	return map[string]string{"original": "https://cdn.example.com/" + filename}, "delete-token", nil
+}
+
+func (m *mockUploadStorage) Delete(_ context.Context, deleteData string) error {
+	m.deleted = append(m.deleted, deleteData)
+	return nil
 }
 
 func (m *mockUploadStorage) Type() string {
@@ -141,4 +146,30 @@ func TestUploadService_Search(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The file reaches storage before the row is written, so a row that fails to
+// land would otherwise leave a file nothing refers to.
+func TestUploadService_UploadFile_RemovesTheFileWhenTheRowFails(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+	storage := &mockUploadStorage{}
+	svc := services.NewUploadService(
+		db.NewTransactor(dbc), repositories.NewUploadRepository(dbc),
+		repositories.NewRunEventRepository(dbc), storage,
+	)
+
+	fileHeader := &multipart.FileHeader{
+		Filename: "photo.jpg",
+		Header:   map[string][]string{"Content-Type": {"image/jpeg"}},
+	}
+	// A run that does not exist trips the event's foreign key inside the
+	// transaction, after the file has been stored.
+	result, err := svc.UploadFile(context.Background(), nil, fileHeader, services.UploadMetadata{
+		QuestID: "no-such-quest", RunID: "NOPE", BlockID: "b",
+	})
+
+	require.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, []string{"delete-token"}, storage.deleted)
 }

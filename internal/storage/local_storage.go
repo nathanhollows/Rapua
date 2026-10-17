@@ -2,11 +2,13 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -64,6 +66,7 @@ func (s *LocalStorage) Upload(
 	}
 	defer outFile.Close()
 
+	deleteData := filePath
 	filePath = config.SiteURL(filePath)
 
 	// Copy the file to the destination
@@ -73,7 +76,30 @@ func (s *LocalStorage) Upload(
 	}
 
 	// New filepath for the file
-	return map[string]string{"original": filePath}, "", nil
+	return map[string]string{"original": filePath}, deleteData, nil
+}
+
+// Delete removes the file at the path Upload returned. A file already gone is
+// not an error, so a retried cleanup stays safe.
+func (s *LocalStorage) Delete(ctx context.Context, deleteData string) error {
+	select {
+	case <-ctx.Done():
+		return fmt.Errorf("context cancelled: %w", ctx.Err())
+	default:
+	}
+
+	// The path comes back from a database row, so it must still sit inside the
+	// storage root before anything is removed.
+	rel, err := filepath.Rel(s.basePath, deleteData)
+	if err != nil || rel == "." || strings.HasPrefix(rel, "..") {
+		return fmt.Errorf("refusing to delete outside storage: %q", deleteData)
+	}
+
+	err = os.Remove(deleteData)
+	if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("failed to delete file: %w", err)
+	}
+	return nil
 }
 
 // Type returns the storage type.

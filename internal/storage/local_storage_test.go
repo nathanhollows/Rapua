@@ -138,3 +138,35 @@ func TestLocalStorage_Type(t *testing.T) {
 	storage := storage.NewLocalStorage("./test_uploads")
 	assert.Equal(t, "local", storage.Type())
 }
+
+func TestLocalStorage_Delete(t *testing.T) {
+	basePath := t.TempDir()
+	store := storage.NewLocalStorage(basePath)
+	ctx := context.Background()
+
+	_, deleteData, err := store.Upload(ctx, mockMultipartFile("content"), "photo.jpg")
+	require.NoError(t, err)
+	require.NotEmpty(t, deleteData)
+	_, err = os.Stat(deleteData)
+	require.NoError(t, err)
+
+	require.NoError(t, store.Delete(ctx, deleteData))
+	_, err = os.Stat(deleteData)
+	assert.True(t, os.IsNotExist(err), "the file is gone")
+
+	assert.NoError(t, store.Delete(ctx, deleteData), "a retried cleanup is not an error")
+}
+
+// The path is read back from a database row, so it is not trusted to name a
+// file inside the store.
+func TestLocalStorage_Delete_RefusesPathsOutsideTheStore(t *testing.T) {
+	outside := filepath.Join(t.TempDir(), "keep.txt")
+	require.NoError(t, os.WriteFile(outside, []byte("x"), 0o600))
+	store := storage.NewLocalStorage(t.TempDir())
+
+	for _, path := range []string{outside, "", "."} {
+		require.Error(t, store.Delete(context.Background(), path), path)
+	}
+	_, err := os.Stat(outside)
+	assert.NoError(t, err, "the file outside the store is untouched")
+}
