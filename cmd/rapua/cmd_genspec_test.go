@@ -137,3 +137,23 @@ func TestWriteGameSpec_AllRegisteredBlocksPresent(t *testing.T) {
 		}
 	}
 }
+
+// The checked-in spec is generated from code, so a change to the code that is
+// not followed by `rapua genspec` leaves the docs describing something else.
+func TestGameSpec_CheckedInCopyIsFresh(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "game-spec.md")
+	if _, err := writeGameSpec(out); err != nil {
+		t.Fatalf("writeGameSpec() error: %v", err)
+	}
+	want, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("ReadFile() error: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("..", "..", "docs", "developer", "game-spec.md"))
+	if err != nil {
+		t.Fatalf("reading checked-in spec: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Error("docs/developer/game-spec.md is stale: run `go run ./cmd/rapua genspec`")
+	}
+}

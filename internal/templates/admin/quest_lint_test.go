@@ -61,7 +61,7 @@ func TestSystemPageLint_ShowsOnlyItsOwnPage(t *testing.T) {
 		Quest: game.LintResult{
 			Warnings: []game.LintDiag{
 				{Path: "start", Code: "NO_START_BUTTON", Message: "no start button"},
-				{Path: "finish[0]", Code: "NESTING_TOO_DEEP", Message: "finish page note"},
+				{Path: "finish[0]", Code: "FORCED_PASS_THROUGH", Message: "finish page note"},
 			},
 		},
 	}

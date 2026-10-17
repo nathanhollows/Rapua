@@ -125,7 +125,7 @@ func (l *linter) checkSchema() {
 				"for pass_through to hide; mark the sections beneath it instead")
 	}
 	l.checkRootIsContainer()
-	l.checkObjectiveDoc("structure", l.doc.Structure, 0)
+	l.checkObjectiveDoc("structure", l.doc.Structure, 0, 0)
 	for i, b := range l.doc.Start {
 		l.checkBlockDoc(fmt.Sprintf("start[%d]", i), b, ContextStart)
 	}
@@ -134,24 +134,42 @@ func (l *linter) checkSchema() {
 	}
 }
 
-// maxNestingDepth is a UI sanity cap rather than a technical limit: past this
-// the player has more ancestor context to hold than a phone screen can show.
-const maxNestingDepth = 4
+// MaxDrawnDepth is how many sections deep the player's screen ever draws.
+//
+// Past this a section passes through: it still routes, bands and gates, but has
+// no place on the screen and its rows join the nearest section that does. An
+// author's pass_through sections do not count toward it, so marking one lets a
+// deeper level be drawn.
+//
+// This is a gameplay constant that lint reads, not lint policy: the player's
+// screen and navigation.MaxDrawnDepth follow it, and it sits here only because
+// navigation imports game and not the other way round.
+const MaxDrawnDepth = 2
 
 // checkObjectiveDoc validates one node and recurses into its children. depth is
-// the node's own distance from the root, which is depth 0.
-func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc, depth int) {
+// the node's own distance from the root, which is depth 0. drawn is how many
+// sections above it the player's screen draws.
+func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc, depth, drawn int) {
 	l.checkObjectiveIdentity(path, obj)
 	l.checkChildSettings(path, obj)
 
-	if depth > maxNestingDepth {
-		l.warnf(path, "NESTING_TOO_DEEP",
-			"objective %q is %d levels deep; more than %d is hard to navigate on a phone",
-			obj.Slug, depth, maxNestingDepth)
+	childDrawn := drawn
+	isSection := obj.PublishedChildCount() > 0
+	if depth > 0 && isSection && !obj.IsPassThrough() {
+		if drawn >= MaxDrawnDepth {
+			if !obj.IsDraft() {
+				l.warnf(path, "FORCED_PASS_THROUGH",
+					"objective %q is nested more than %d sections deep, so players will not see it as a "+
+						"place and its tasks will appear in the section above; mark it pass_through to "+
+						"make that deliberate", obj.Slug, MaxDrawnDepth)
+			}
+		} else {
+			childDrawn++
+		}
 	}
 
 	for i, child := range obj.Children {
-		l.checkObjectiveDoc(fmt.Sprintf("%s.children[%d]", path, i), child, depth+1)
+		l.checkObjectiveDoc(fmt.Sprintf("%s.children[%d]", path, i), child, depth+1, childDrawn)
 	}
 }
 
@@ -225,11 +243,55 @@ func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
 			"children_max is 0, so this objective completes before any of its %d children are reachable; "+
 				"omit it to require all of them", childCount)
 	}
+	l.checkPassThroughSection(path, obj, childCount)
 	if obj.MaxNext > 0 && obj.Routing != RouteStrategyRandomised {
 		// Import only: the editor hides the field once routing moves away, so
 		// the lint service filters this out (importOnly).
 		l.warnf(path+".max_next", "MAX_NEXT_IGNORED",
 			"max_next only applies to %q routing", string(RouteStrategyRandomised))
+	}
+}
+
+// checkPassThroughSection checks a pass-through section for rules a player
+// would be held to without ever seeing them. The engine can place a finish
+// press on the nearest drawn section, so a ranged band is playable; it is
+// refused as policy, because the button would name a section the player never
+// entered. A band that closes early also removes tasks nothing on screen
+// explained.
+func (l *linter) checkPassThroughSection(path string, obj ObjectiveDoc, childCount int) {
+	if !obj.IsPassThrough() {
+		return
+	}
+	band := obj.Band()
+	if !band.AutoCompletes() {
+		l.errorf(path+".pass_through", "PASS_THROUGH_RANGED_BAND",
+			"a pass-through section that players can finish early would show its finish button "+
+				"inside a section they never entered, naming something they never saw; "+
+				"make children_min and children_max equal, or turn pass_through off")
+		return
+	}
+	if band.Min >= childCount {
+		return
+	}
+	var offered int
+	switch obj.Routing {
+	case RouteStrategyOrdered:
+		offered = 1
+	case RouteStrategyRandomised:
+		offered = childCount
+		if obj.MaxNext > 0 && obj.MaxNext < childCount {
+			offered = obj.MaxNext
+		}
+	case RouteStrategyFreeRoam:
+		offered = childCount
+	default:
+		offered = childCount
+	}
+	if offered > band.Min {
+		l.warnf(path+".pass_through", "PASS_THROUGH_HIDDEN_CHOICE",
+			"this pass-through section asks for %d of %d children but shows players %d at once, so "+
+				"finishing %d would make the rest vanish with no explanation; use randomised routing "+
+				"with max_next of %d", band.Min, childCount, offered, band.Min, band.Min)
 	}
 }
 

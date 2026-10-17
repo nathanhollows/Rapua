@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -53,6 +54,11 @@ var ErrCannotPassThroughRoot = errors.New("the root objective cannot be a pass-t
 // the one mutation path that bypasses lint.
 var ErrInvalidRouting = errors.New("invalid routing")
 
+// ErrPassThroughRangedBand is returned when an edit would leave a pass-through
+// section with a finish button. Lint refuses the same shape in a document
+// (PASS_THROUGH_RANGED_BAND).
+var ErrPassThroughRangedBand = errors.New("a pass-through section must complete on its own")
+
 // ErrInvalidBand mirrors lint's BAND_MIN_EXCEEDS_MAX rule.
 var ErrInvalidBand = errors.New("invalid completion band")
 
@@ -93,7 +99,7 @@ func (s objectiveService) applySettings(
 	ctx context.Context, objective *models.Objective, data ObjectiveUpdateData,
 ) (bool, error) {
 	childCount := 0
-	if data.Band != nil {
+	if data.Band != nil || data.PassThrough != nil {
 		count, err := s.objectiveRepo.FindPublishedChildrenCount(ctx, objective.ID)
 		if err != nil {
 			return false, fmt.Errorf("counting children to check the band: %w", err)
@@ -101,7 +107,15 @@ func (s objectiveService) applySettings(
 		childCount = count
 	}
 
-	return applyObjectiveSettings(objective, data, childCount)
+	changed, err := applyObjectiveSettings(objective, data, childCount)
+	if err != nil {
+		return false, err
+	}
+	if (data.Band != nil || data.PassThrough != nil) && objective.PassThrough && childCount > 0 &&
+		!game.FillBand(objective.ChildrenMin, objective.ChildrenMax, childCount).AutoCompletes() {
+		return false, fmt.Errorf("%w: %q", ErrPassThroughRangedBand, objective.ID)
+	}
+	return changed, nil
 }
 
 // applyDraft publishes or parks the objective when the update names a change.

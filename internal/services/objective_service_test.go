@@ -340,6 +340,55 @@ func TestObjectiveService_UpdateObjective_PassThrough(t *testing.T) {
 	})
 }
 
+// Lint refuses a finishable pass-through in a document, so the editor must not
+// be able to build one the document cannot carry.
+func TestObjectiveService_UpdateObjective_PassThroughNeedsAnAutoCompletingBand(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, questID, root.ID, "Pool")
+	require.NoError(t, err)
+	for _, title := range []string{"One", "Two", "Three"} {
+		child, createErr := service.CreateObjective(ctx, questID, section.ID, title)
+		require.NoError(t, createErr)
+		published := false
+		require.NoError(t, service.UpdateObjective(ctx, &child, services.ObjectiveUpdateData{Draft: &published}))
+	}
+	on := true
+	one, three := 1, 3
+
+	t.Run("flagging a ranged section is refused", func(t *testing.T) {
+		require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+			Band: &services.BandUpdate{Min: &one, Max: &three},
+		}))
+
+		err := service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{PassThrough: &on})
+		require.ErrorIs(t, err, services.ErrPassThroughRangedBand)
+		assert.False(t, section.PassThrough)
+	})
+
+	t.Run("a fixed band lets it be flagged", func(t *testing.T) {
+		require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+			Band: &services.BandUpdate{Min: &one, Max: &one},
+		}))
+		require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{PassThrough: &on}))
+		assert.True(t, section.PassThrough)
+	})
+
+	t.Run("and then a ranged band is refused", func(t *testing.T) {
+		err := service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+			Band: &services.BandUpdate{Min: &one, Max: &three},
+		})
+		require.ErrorIs(t, err, services.ErrPassThroughRangedBand)
+		require.NotNil(t, section.ChildrenMax)
+		assert.Equal(t, 1, *section.ChildrenMax, "the refused band changed nothing")
+	})
+}
+
 // A band counts published children, so parking one lowers what its section can
 // ever reach. Past an explicit minimum the section can never complete and
 // everything after it stays locked, which lint says about a document and the

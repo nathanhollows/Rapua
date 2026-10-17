@@ -23,7 +23,7 @@ func questLintFixture() services.QuestLint {
 				{Path: "objective:stranded", Code: services.LintOrphaned, Message: "stranded"},
 			},
 			Warnings: []game.LintDiag{
-				{Path: "finish[1]", Code: "NESTING_TOO_DEEP", Message: "finish page note"},
+				{Path: "finish[1]", Code: "FORCED_PASS_THROUGH", Message: "finish page note"},
 			},
 		},
 		Objectives: map[string]game.LintResult{
@@ -65,7 +65,7 @@ func TestQuestLint_ForEditorGivesTheRootTheQuestsShape(t *testing.T) {
 	assert.True(t, result.HasError(services.LintSeveralRoots), "the shape of the tree")
 	assert.True(t, result.HasError(services.LintOrphaned), "and the rows nothing reaches")
 	assert.False(t, result.HasError("INVALID_CONTEXT"), "but not the start page's blocks")
-	assert.False(t, result.HasWarning("NESTING_TOO_DEEP"), "nor the finish page's")
+	assert.False(t, result.HasWarning("FORCED_PASS_THROUGH"), "nor the finish page's")
 }
 
 // A run that never happened is not a clean one, and every accessor has to say

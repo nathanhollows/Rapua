@@ -656,6 +656,115 @@ func TestLint_MaxNextIgnoredWithoutRandomisedRouting_Warning(t *testing.T) {
 
 // --- Nesting depth ---
 
+// Marking a section pass-through is how an author makes a deep level deliberate,
+// and it also gives the level below it room to be drawn.
+func TestLint_PassThroughClearsTheForcedWarning(t *testing.T) {
+	doc := validDoc()
+	node := leaf(doc)
+	for i := range 2 {
+		node.Routing = game.RouteStrategyFreeRoam
+		node.Children = []game.ObjectiveDoc{{
+			Slug:  fmt.Sprintf("deep-%d", i),
+			Title: fmt.Sprintf("Deep %d", i),
+		}}
+		node = &node.Children[0]
+	}
+	// stage-one and lobby fill the two drawn places, so deep-0 is past the cut.
+	require.Contains(t, warningCodes(game.Lint(doc, newTestRegistry())), "FORCED_PASS_THROUGH")
+
+	// Passing lobby through gives its place to deep-0.
+	leaf(doc).PassThrough = boolPtr(true)
+	assert.NotContains(t, warningCodes(game.Lint(doc, newTestRegistry())), "FORCED_PASS_THROUGH")
+}
+
+// A parked section is mid-edit, so nagging about where it would sit once
+// published is the noise the warning exists to avoid.
+func TestLint_ForcedPassThroughIgnoresDrafts(t *testing.T) {
+	doc := validDoc()
+	node := leaf(doc)
+	node.Routing = game.RouteStrategyFreeRoam
+	node.Children = []game.ObjectiveDoc{{
+		Slug: "deep", Title: "Deep", Draft: boolPtr(true), Routing: game.RouteStrategyFreeRoam,
+		Children: []game.ObjectiveDoc{{Slug: "deeper", Title: "Deeper"}},
+	}}
+
+	assert.NotContains(t, warningCodes(game.Lint(doc, newTestRegistry())), "FORCED_PASS_THROUGH")
+}
+
+// --- Pass-through sections ---
+
+// pool turns the validDoc section into a pass-through holding n leaves.
+func pool(doc *game.GameDoc, n int) *game.ObjectiveDoc {
+	s := section(doc)
+	s.PassThrough = boolPtr(true)
+	s.Children = nil
+	for i := range n {
+		s.Children = append(s.Children, game.ObjectiveDoc{
+			Slug:  fmt.Sprintf("bird-%d", i),
+			Title: fmt.Sprintf("Bird %d", i),
+		})
+	}
+	return s
+}
+
+func TestLint_PassThroughRangedBand_Error(t *testing.T) {
+	doc := validDoc()
+	pool(doc, 3)
+	section(doc).ChildrenMin = intPtr(1)
+	section(doc).ChildrenMax = intPtr(3)
+
+	assert.True(t, game.Lint(doc, newTestRegistry()).HasError("PASS_THROUGH_RANGED_BAND"))
+}
+
+func TestLint_PassThroughPickOneRandomised_Clean(t *testing.T) {
+	doc := validDoc()
+	s := pool(doc, 5)
+	s.Routing = game.RouteStrategyRandomised
+	s.MaxNext = 1
+	s.ChildrenMin = intPtr(1)
+	s.ChildrenMax = intPtr(1)
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.False(t, result.HasError("PASS_THROUGH_RANGED_BAND"))
+	assert.NotContains(t, warningCodes(result), "PASS_THROUGH_HIDDEN_CHOICE")
+}
+
+func TestLint_PassThroughHidesAChoice_Warning(t *testing.T) {
+	t.Run("free roam shows everything", func(t *testing.T) {
+		doc := validDoc()
+		s := pool(doc, 5)
+		s.Routing = game.RouteStrategyFreeRoam
+		s.ChildrenMin = intPtr(1)
+		s.ChildrenMax = intPtr(1)
+		assert.Contains(t, warningCodes(game.Lint(doc, newTestRegistry())), "PASS_THROUGH_HIDDEN_CHOICE")
+	})
+
+	t.Run("a window wider than the band", func(t *testing.T) {
+		doc := validDoc()
+		s := pool(doc, 5)
+		s.Routing = game.RouteStrategyRandomised
+		s.MaxNext = 3
+		s.ChildrenMin = intPtr(1)
+		s.ChildrenMax = intPtr(1)
+		assert.Contains(t, warningCodes(game.Lint(doc, newTestRegistry())), "PASS_THROUGH_HIDDEN_CHOICE")
+	})
+
+	t.Run("ordered shows one at a time", func(t *testing.T) {
+		doc := validDoc()
+		s := pool(doc, 5)
+		s.Routing = game.RouteStrategyOrdered
+		s.ChildrenMin = intPtr(2)
+		s.ChildrenMax = intPtr(2)
+		assert.NotContains(t, warningCodes(game.Lint(doc, newTestRegistry())), "PASS_THROUGH_HIDDEN_CHOICE")
+	})
+
+	t.Run("requiring all of them hides nothing", func(t *testing.T) {
+		doc := validDoc()
+		pool(doc, 3)
+		assert.NotContains(t, warningCodes(game.Lint(doc, newTestRegistry())), "PASS_THROUGH_HIDDEN_CHOICE")
+	})
+}
+
 func TestLint_NestingTooDeep_Warning(t *testing.T) {
 	doc := validDoc()
 	// validDoc is already root -> section -> leaf, so growing the leaf downwards
@@ -669,12 +778,12 @@ func TestLint_NestingTooDeep_Warning(t *testing.T) {
 		}}
 		node = &node.Children[0]
 	}
-	assert.Contains(t, warningCodes(game.Lint(doc, newTestRegistry())), "NESTING_TOO_DEEP")
+	assert.Contains(t, warningCodes(game.Lint(doc, newTestRegistry())), "FORCED_PASS_THROUGH")
 }
 
 func TestLint_ShallowNesting_NoWarning(t *testing.T) {
 	doc := validDoc()
-	assert.NotContains(t, warningCodes(game.Lint(doc, newTestRegistry())), "NESTING_TOO_DEEP")
+	assert.NotContains(t, warningCodes(game.Lint(doc, newTestRegistry())), "FORCED_PASS_THROUGH")
 }
 
 // warningCodes collects the codes of every warning, for the many assertions

@@ -18,7 +18,8 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - The document is one recursive type. `structure` is the root objective, and every node under `children` has the same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them.
 - Objective slugs must be unique across the whole document, root and sections included. *(`SLUG_DUPLICATE`)*
 - `routing` is required on an objective with children, and must name one of the three strategies: an empty value is an unmade choice, not a default. It is inert on an objective without children, which is not worth reporting: every objective carries one. *(`INVALID_ROUTING`)*
-- Nesting deeper than 4 levels warns: it is hard to navigate on a phone. *(`NESTING_TOO_DEEP`)*
+- The player's screen draws at most 2 sections deep. A section nested further, below 2 that are drawn, passes through: it still routes and bands, but its tasks appear in the section above. Warns so the author can mark it `pass_through` on purpose; sections marked `pass_through` do not count toward the 2. *(`FORCED_PASS_THROUGH`)*
+- A `pass_through` section needs `children_min` equal to `children_max`, because players never see its finish button. *(`PASS_THROUGH_RANGED_BAND`)* Asking for fewer children than it shows at once warns. *(`PASS_THROUGH_HIDDEN_CHOICE`)*
 
 **Import modes**
 - **Create-import** (`POST /admin/quests/import`): omit `id` on objectives and blocks: new UUIDs are generated.

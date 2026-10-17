@@ -1,6 +1,9 @@
 package navigation
 
-import "github.com/nathanhollows/Rapua/v8/models"
+import (
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
 
 // MaxDrawnDepth is how many sections deep the player's screen ever draws.
 //
@@ -8,7 +11,7 @@ import "github.com/nathanhollows/Rapua/v8/models"
 // simply has no place on the screen and its rows join the nearest section that
 // does. The author's tree has no depth limit; the screen has a fixed one, so
 // nesting for a band across four sections costs the player nothing.
-const MaxDrawnDepth = 2
+const MaxDrawnDepth = game.MaxDrawnDepth
 
 // SectionKind says how the player's screen treats a section.
 type SectionKind int
