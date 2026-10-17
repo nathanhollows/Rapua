@@ -15,6 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
 func setupCreditService(
@@ -627,6 +628,52 @@ func TestCreditService_DeductCreditForRunStart_InsufficientCredits(t *testing.T)
 	err = svc.DeductCreditForRunStartWithTx(ctx, tx, user.ID, gofakeit.UUID(), gofakeit.UUID())
 	require.Error(t, err)
 	assert.Equal(t, services.ErrInsufficientCredits, err)
+}
+
+// failingCreditRepo answers every call with the error it was built with, so a
+// test can hand the service a repository failure of an exact shape.
+type failingCreditRepo struct{ err error }
+
+func (f failingCreditRepo) CreateCreditAdjustmentWithTx(
+	context.Context, *bun.Tx, *models.CreditAdjustments,
+) error {
+	return f.err
+}
+
+func (f failingCreditRepo) GetCreditAdjustmentsByUserID(
+	context.Context, string,
+) ([]models.CreditAdjustments, error) {
+	return nil, f.err
+}
+
+func (f failingCreditRepo) GetCreditAdjustmentsByUserIDWithPagination(
+	context.Context, string, int, int,
+) ([]models.CreditAdjustments, error) {
+	return nil, f.err
+}
+
+func (f failingCreditRepo) AddCreditsWithTx(context.Context, *bun.Tx, string, int, int) error {
+	return f.err
+}
+
+func (f failingCreditRepo) DeductOneCreditWithTx(context.Context, *bun.Tx, string) error {
+	return f.err
+}
+
+// The failed deduction is mapped by the repository's sentinel, not its wording:
+// an error that merely reads the same must not start meaning "no credits".
+func TestCreditService_DeductCreditForRunStart_MatchesTheSentinelNotTheMessage(t *testing.T) {
+	lookalike := errors.New("insufficient credits to start team")
+	svc := services.NewCreditService(nil, failingCreditRepo{err: lookalike}, nil, nil)
+
+	err := svc.DeductCreditForRunStartWithTx(context.Background(), &bun.Tx{}, "user", "run", "quest")
+	require.ErrorIs(t, err, lookalike)
+	require.NotErrorIs(t, err, services.ErrInsufficientCredits, "a message is not a sentinel")
+
+	svc = services.NewCreditService(nil, failingCreditRepo{err: repositories.ErrInsufficientCredits}, nil, nil)
+	err = svc.DeductCreditForRunStartWithTx(context.Background(), &bun.Tx{}, "user", "run", "quest")
+	require.ErrorIs(t, err, services.ErrInsufficientCredits,
+		"the repository's sentinel maps to the service's")
 }
 
 func TestCreditService_DeductCreditForRunStart_ConcurrentAccess(t *testing.T) {

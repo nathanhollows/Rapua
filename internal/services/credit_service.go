@@ -29,7 +29,9 @@ type CreditRepository interface {
 	// AddCreditsWithTx atomically increments credits without read-modify-write to prevent lost updates.
 	AddCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCreditsToAdd int, paidCreditsToAdd int) error
 
-	// TryDeductOneCredit atomically deducts one credit from free first, then paid. Returns ErrInsufficientCredits if not possible.
+	// TryDeductOneCredit atomically deducts one credit from free first, then paid.
+	// Returns repositories.ErrInsufficientCredits when the balance cannot cover
+	// it; the service translates that into its own sentinel.
 	DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error
 }
 
@@ -145,8 +147,9 @@ func (s *CreditService) DeductCreditForRunStartWithTx(
 	// Step 1: Atomically deduct one credit (free first, then paid)
 	err := s.creditRepo.DeductOneCreditWithTx(ctx, tx, userID)
 	if err != nil {
-		// Convert repository error to service error for consistency
-		if err.Error() == "insufficient credits to start team" {
+		// The repository's sentinel, not its wording: a message that merely
+		// reads the same must not start meaning this.
+		if errors.Is(err, repositories.ErrInsufficientCredits) {
 			return ErrInsufficientCredits
 		}
 		return err
