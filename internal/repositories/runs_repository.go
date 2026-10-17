@@ -35,8 +35,10 @@ type RunRepository interface {
 	UpdateWithTx(ctx context.Context, tx *bun.Tx, t *models.Run) error
 	// AddPointsWithTx adds delta to a team's points inside a caller's transaction
 	AddPointsWithTx(ctx context.Context, tx *bun.Tx, code string, delta int) error
-	// UpdateTeamStartedWithTx sets the team's hasStarted field to true within a transaction
-	UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) error
+	// UpdateTeamStartedWithTx marks the run started within a transaction. It
+	// reports whether this call did, so the loser of two concurrent starts
+	// learns it lost.
+	UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) (bool, error)
 
 	// Delete removes the team from the database
 	// Requires a transaction as related data will also need to be deleted
@@ -95,15 +97,22 @@ func (r *teamRepository) update(ctx context.Context, db bun.IDB, t *models.Run) 
 	return err
 }
 
-// UpdateTeamStartedWithTx sets the team's hasStarted field to true within a transaction.
-func (r *teamRepository) UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) error {
-	_, err := tx.NewUpdate().
+// UpdateTeamStartedWithTx marks the run started within a transaction. The write
+// is conditional so that the guard and the write cannot be separated by a
+// second start: only one of them matches a row.
+func (r *teamRepository) UpdateTeamStartedWithTx(ctx context.Context, tx *bun.Tx, teamID string) (bool, error) {
+	res, err := tx.NewUpdate().
 		Model(&models.Run{}).
 		Set("has_started = ?", true).
 		Set("started_at = ?", time.Now()).
 		Where("code = ?", teamID).
+		Where("has_started = ?", false).
 		Exec(ctx)
-	return err
+	if err != nil {
+		return false, err
+	}
+	n, err := res.RowsAffected()
+	return n > 0, err
 }
 
 func (r *teamRepository) Delete(ctx context.Context, tx *bun.Tx, questID string, runCode string) error {

@@ -213,12 +213,18 @@ func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
 	// held until the finaliser gets around to it.
 	defer func() { _ = tx.Rollback() }()
 
-	if err := s.creditService.DeductCreditForRunStartWithTx(ctx, tx, userID, team.ID, team.QuestID); err != nil {
-		return fmt.Errorf("deducting credit for team start: %w", err)
+	// The claim comes first: the HasStarted check above can be passed by two
+	// concurrent starts, and only one of them may charge and record.
+	claimed, err := s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code)
+	if err != nil {
+		return fmt.Errorf("updating team as started: %w", err)
+	}
+	if !claimed {
+		return nil
 	}
 
-	if err := s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code); err != nil {
-		return fmt.Errorf("updating team as started: %w", err)
+	if err := s.creditService.DeductCreditForRunStartWithTx(ctx, tx, userID, team.ID, team.QuestID); err != nil {
+		return fmt.Errorf("deducting credit for team start: %w", err)
 	}
 
 	if err := s.runEventRepo.RecordWithTx(ctx, tx, runStartedEvent(team)); err != nil {

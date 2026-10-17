@@ -269,3 +269,25 @@ func TestRunRepository_InsertBatch_UniqueConstraintError(t *testing.T) {
 		"expected error message to indicate unique constraint violation",
 	)
 }
+
+// Two concurrent starts both pass the service's HasStarted check, so the write
+// itself has to say which of them won.
+func TestRunRepository_UpdateTeamStartedWithTx_OnlyOneStartClaims(t *testing.T) {
+	repo, transactor, dbc, cleanup := setupTeamRepo(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	parents := createTestParents(t, dbc)
+	runCode := createTestTeam(t, dbc, parents.QuestID)
+
+	tx, err := transactor.BeginTx(ctx, nil)
+	require.NoError(t, err)
+	first, err := repo.UpdateTeamStartedWithTx(ctx, tx, runCode)
+	require.NoError(t, err)
+	second, err := repo.UpdateTeamStartedWithTx(ctx, tx, runCode)
+	require.NoError(t, err)
+	require.NoError(t, tx.Commit())
+
+	assert.True(t, first, "the first start claims the run")
+	assert.False(t, second, "a second start matches nothing")
+}
