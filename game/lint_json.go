@@ -37,7 +37,7 @@ var (
 		"enable_points": true, "show_leaderboard": true,
 	}
 	knownObjectiveDocFields = map[string]bool{
-		"id": true, "slug": true, "title": true, "description": true, "draft": true,
+		"id": true, "slug": true, "title": true, "description": true, "draft": true, "pass_through": true,
 		"proof": true, "reveal": true,
 		"routing": true, "children_min": true, "children_max": true,
 		"max_next": true, "finish_label": true, "children": true,

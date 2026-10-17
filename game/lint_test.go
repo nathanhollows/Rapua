@@ -773,6 +773,29 @@ func TestLint_RootDraft(t *testing.T) {
 	assert.True(t, result.HasError("ROOT_DRAFT"))
 }
 
+// The root is the quest rather than a place in it, so the flag has nothing to
+// hide there, and the service refuses the same edit.
+func TestLint_RootPassThrough(t *testing.T) {
+	doc := validDoc()
+	doc.Structure.PassThrough = boolPtr(true)
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasError("ROOT_PASS_THROUGH"))
+}
+
+func TestLint_PassThroughOnLeaf(t *testing.T) {
+	doc := validDoc()
+	leaf := &doc.Structure.Children[0].Children[0]
+	leaf.PassThrough = boolPtr(true)
+
+	result := game.Lint(doc, newTestRegistry())
+	assert.Contains(t, warningCodes(result), "PASS_THROUGH_ON_LEAF")
+
+	leaf.PassThrough = boolPtr(false)
+	result = game.Lint(doc, newTestRegistry())
+	assert.NotContains(t, warningCodes(result), "PASS_THROUGH_ON_LEAF", "an explicit false is not a flag")
+}
+
 // A filled band reaching zero because every child is drafted is not the author
 // writing children_max: 0, and blaming that field sends them looking for
 // something nobody set.

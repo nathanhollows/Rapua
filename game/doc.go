@@ -46,9 +46,14 @@ type ObjectiveDoc struct {
 	// statements. A document that never mentions draft (one exported before the
 	// field existed, or written by other tooling) leaves the stored state
 	// alone; only "draft": false publishes something.
-	Draft  *bool               `json:"draft,omitempty"`
-	Proof  ObjectiveContextDoc `json:"proof"`
-	Reveal ObjectiveContextDoc `json:"reveal"`
+	Draft *bool `json:"draft,omitempty"`
+	// PassThrough stops this node being a place the player stands: it still
+	// routes, bands and gates its children, but they are shown as if they sat in
+	// the nearest section that is drawn. A pointer for the same reason Draft is
+	// one: a document that never mentions it leaves the stored state alone.
+	PassThrough *bool               `json:"pass_through,omitempty"`
+	Proof       ObjectiveContextDoc `json:"proof"`
+	Reveal      ObjectiveContextDoc `json:"reveal"`
 
 	// Routing orders the children below. Meaningless without them.
 	Routing RouteStrategy `json:"routing,omitempty"`
@@ -121,6 +126,11 @@ func (o ObjectiveDoc) Band() Band {
 // draft: it is a document with no opinion, which reads as published for a node
 // that has no stored state to keep.
 func (o ObjectiveDoc) IsDraft() bool { return o.Draft != nil && *o.Draft }
+
+// IsPassThrough reports whether the node is held out of the player's view as a
+// place. An omitted key is not a pass-through, for the same reason it is not a
+// draft.
+func (o ObjectiveDoc) IsPassThrough() bool { return o.PassThrough != nil && *o.PassThrough }
 
 // PublishedChildCount is how many of a node's children are in play.
 func (o ObjectiveDoc) PublishedChildCount() int {

@@ -44,6 +44,11 @@ var ErrParkingBreaksBand = errors.New("parking this objective would leave its se
 // refuses the same shape in a document (ROOT_DRAFT).
 var ErrCannotDraftRoot = errors.New("the root objective cannot be a draft")
 
+// ErrCannotPassThroughRoot is returned when an edit would pass the root
+// through. The root is the quest rather than a place in it, so there is nothing
+// for the flag to hide.
+var ErrCannotPassThroughRoot = errors.New("the root objective cannot be a pass-through")
+
 // ErrInvalidRouting mirrors lint's own rejection of a bad routing value, for
 // the one mutation path that bypasses lint.
 var ErrInvalidRouting = errors.New("invalid routing")
@@ -97,6 +102,40 @@ func (s objectiveService) applySettings(
 	}
 
 	return applyObjectiveSettings(objective, data, childCount)
+}
+
+// applyDraft publishes or parks the objective when the update names a change.
+func (s objectiveService) applyDraft(
+	ctx context.Context, objective *models.Objective, data ObjectiveUpdateData,
+) (bool, error) {
+	if data.Draft == nil || *data.Draft == objective.Draft {
+		return false, nil
+	}
+	// The root is the quest rather than a place in it, so parking it takes
+	// every objective out of play at once, and the builder does not list
+	// the root, which leaves nothing on screen explaining why.
+	if *data.Draft && objective.ParentID == "" {
+		return false, fmt.Errorf("%w: %q", ErrCannotDraftRoot, objective.ID)
+	}
+	if *data.Draft {
+		if err := s.checkParkingLeavesBandSatisfiable(ctx, objective); err != nil {
+			return false, err
+		}
+	}
+	objective.Draft = *data.Draft
+	return true, nil
+}
+
+// applyPassThrough applies the pass-through flag when the update names it.
+func applyPassThrough(objective *models.Objective, data ObjectiveUpdateData) (bool, error) {
+	if data.PassThrough == nil || *data.PassThrough == objective.PassThrough {
+		return false, nil
+	}
+	if *data.PassThrough && objective.ParentID == "" {
+		return false, fmt.Errorf("%w: %q", ErrCannotPassThroughRoot, objective.ID)
+	}
+	objective.PassThrough = *data.PassThrough
+	return true, nil
 }
 
 // applyObjectiveSettings applies every setting the update data names, leaving
@@ -373,21 +412,17 @@ func (s objectiveService) UpdateObjective(
 		update = true
 	}
 
-	if data.Draft != nil && *data.Draft != candidate.Draft {
-		// The root is the quest rather than a place in it, so parking it takes
-		// every objective out of play at once, and the builder does not list
-		// the root, which leaves nothing on screen explaining why.
-		if *data.Draft && candidate.ParentID == "" {
-			return fmt.Errorf("%w: %q", ErrCannotDraftRoot, candidate.ID)
-		}
-		if *data.Draft {
-			if err := s.checkParkingLeavesBandSatisfiable(ctx, &candidate); err != nil {
-				return err
-			}
-		}
-		candidate.Draft = *data.Draft
-		update = true
+	draftChanged, err := s.applyDraft(ctx, &candidate, data)
+	if err != nil {
+		return err
 	}
+	update = update || draftChanged
+
+	passThroughChanged, err := applyPassThrough(&candidate, data)
+	if err != nil {
+		return err
+	}
+	update = update || passThroughChanged
 
 	settingsChanged, err := s.applySettings(ctx, &candidate, data)
 	if err != nil {

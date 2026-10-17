@@ -82,6 +82,7 @@ the quest rather than a place in it and is never rendered to a player.
 | slug | string | URL-safe slug, unique per quest |
 | title | string | Name of the objective |
 | draft | bool | Held out of play along with everything beneath it, without moving any of it |
+| pass_through | bool | Stops the section being a place the player stands: it still routes and bands, but its rows join the nearest drawn section |
 | routing | string | How children are offered: `ordered`, `free_roam` or `randomised`. Inert without children |
 | children_min | int | Completion band lower bound. NULL and 0 differ: see the [game spec](/docs/developer/game-spec) |
 | children_max | int | Completion band upper bound |

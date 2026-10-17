@@ -304,6 +304,7 @@ func (s *ImportService) createObjective(
 		Title:       objDoc.Title,
 		Description: valueOrEmpty(objDoc.Description),
 		Draft:       objDoc.IsDraft(),
+		PassThrough: objDoc.IsPassThrough(),
 		Routing:     objDoc.Routing,
 		ChildrenMin: objDoc.ChildrenMin,
 		ChildrenMax: objDoc.ChildrenMax,
@@ -538,6 +539,9 @@ func (s *ImportService) reconcileObjective(
 	// about draft must not publish a section somebody deliberately parked.
 	if objDoc.Draft != nil {
 		existingObj.Draft = *objDoc.Draft
+	}
+	if objDoc.PassThrough != nil {
+		existingObj.PassThrough = *objDoc.PassThrough
 	}
 	existingObj.Routing = objDoc.Routing
 	existingObj.ChildrenMin = objDoc.ChildrenMin

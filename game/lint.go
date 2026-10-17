@@ -119,6 +119,11 @@ func (l *linter) checkSchema() {
 			"the root objective is a draft, which takes the whole quest out of play; "+
 				"draft the sections beneath it instead")
 	}
+	if l.doc.Structure.IsPassThrough() {
+		l.errorf("structure.pass_through", "ROOT_PASS_THROUGH",
+			"the root objective is the quest rather than a place in it, so there is nothing "+
+				"for pass_through to hide; mark the sections beneath it instead")
+	}
 	l.checkRootIsContainer()
 	l.checkObjectiveDoc("structure", l.doc.Structure, 0)
 	for i, b := range l.doc.Start {
@@ -280,6 +285,10 @@ func (l *linter) checkLeafSettings(path string, obj ObjectiveDoc) {
 	if obj.FinishLabel != "" {
 		l.warnf(path+".finish_label", "FINISH_LABEL_UNREACHABLE",
 			"finish_label has no effect on an objective with no children")
+	}
+	if obj.IsPassThrough() {
+		l.warnf(path+".pass_through", "PASS_THROUGH_ON_LEAF",
+			"pass_through has no effect on an objective with no children")
 	}
 }
 

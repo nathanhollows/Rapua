@@ -475,6 +475,78 @@ func TestImportService_ImportUpdate_OmittedDraftKeyLeavesStateAlone(t *testing.T
 	assert.False(t, published[0].Draft)
 }
 
+// Pass-through survives a round trip, so a quest keeps its hidden pools when it
+// is exported and imported back.
+func TestImportService_ImportCreate_CarriesPassThrough(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Zoo")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "shown", Title: "Shown"},
+		{Slug: "birds", Title: "Birds", PassThrough: boolPtr(true)},
+	}
+
+	result, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	bySlug := make(map[string]models.Objective)
+	for _, obj := range importedChildren(t, objectiveRepo, result.QuestID) {
+		bySlug[obj.Slug] = obj
+	}
+	require.Len(t, bySlug, 2)
+	assert.False(t, bySlug["shown"].PassThrough)
+	assert.True(t, bySlug["birds"].PassThrough)
+}
+
+// A document that never mentions pass_through has no opinion about it, so a
+// routine update from tooling that predates the field must not draw a pool the
+// author hid. Only an explicit false clears it.
+func TestImportService_ImportUpdate_OmittedPassThroughKeyLeavesStateAlone(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Zoo")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "birds", Title: "Birds", PassThrough: boolPtr(true)},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	flagged := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, flagged, 1)
+	require.True(t, flagged[0].PassThrough)
+
+	silent := minimalValidDoc("Zoo")
+	silent.Structure.Children = []game.ObjectiveDoc{{Slug: "birds", Title: "Renamed"}}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, silent)
+	require.NoError(t, err)
+
+	after := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, after, 1)
+	assert.Equal(t, "Renamed", after[0].Title, "the update applied")
+	assert.True(t, after[0].PassThrough, "and left the flag where it was")
+
+	explicit := minimalValidDoc("Zoo")
+	explicit.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "birds", Title: "Renamed", PassThrough: boolPtr(false)},
+	}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, explicit)
+	require.NoError(t, err)
+
+	cleared := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, cleared, 1)
+	assert.False(t, cleared[0].PassThrough)
+}
+
 // A document that never mentions the description leaves the stored one alone.
 // Omitting a key and writing an empty one are different statements, the same
 // rule draft follows: a document written by other tooling, or before the field

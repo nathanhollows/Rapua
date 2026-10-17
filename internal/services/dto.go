@@ -29,6 +29,9 @@ type ObjectiveUpdateData struct {
 	// not be offering the control at all, and "not mentioned" has to differ
 	// from "publish this".
 	Draft *bool
+	// PassThrough marks the objective as a section the player never stands in.
+	// A pointer for the same reason Draft is one.
+	PassThrough *bool
 	// Routing names the route strategy. Nil leaves it alone; a set value is
 	// validated before it is applied.
 	Routing *string

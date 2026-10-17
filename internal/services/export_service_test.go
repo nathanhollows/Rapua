@@ -276,3 +276,36 @@ func TestExportService_ExportInstance_CarriesDraft(t *testing.T) {
 	assert.False(t, doc.Structure.Children[0].IsDraft())
 	assert.True(t, doc.Structure.Children[1].IsDraft())
 }
+
+// Pass-through is part of the document, so a quest keeps its hidden pools across
+// an export and import.
+func TestExportService_ExportInstance_CarriesPassThrough(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Zoo", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "shown", Title: "Shown", Position: 0,
+	})
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "birds", Title: "Birds", Position: 1, PassThrough: true,
+	})
+
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 2)
+	assert.False(t, doc.Structure.Children[0].IsPassThrough())
+	assert.True(t, doc.Structure.Children[1].IsPassThrough())
+}

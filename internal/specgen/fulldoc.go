@@ -131,6 +131,17 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			Fields: objectiveContextFields,
 		},
 		{
+			Name: "pass_through",
+			Type: "bool",
+			Description: "Stops this section being a place the player stands. It still routes, bands " +
+				"and gates its children, but they are shown as if they sat in the nearest section that " +
+				"is drawn, so a pool can hand a player one pick without saying it came from a pool. " +
+				"A pass-through section does not count toward the depth the player's screen draws. " +
+				"Omitting the key leaves an existing objective's state alone. The root may not be a " +
+				"pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no " +
+				"children (PASS_THROUGH_ON_LEAF).",
+		},
+		{
 			Name: "routing",
 			Type: "enum",
 			Description: "How players are routed through this objective's children. Required when there " +

@@ -301,6 +301,45 @@ func TestObjectiveService_UpdateObjective_CannotDraftRoot(t *testing.T) {
 	assert.False(t, root.Draft)
 }
 
+func TestObjectiveService_UpdateObjective_PassThrough(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, questID, root.ID, "Pool")
+	require.NoError(t, err)
+
+	t.Run("a form with no opinion leaves it alone", func(t *testing.T) {
+		require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{Title: "Birds"}))
+		assert.False(t, section.PassThrough)
+	})
+
+	t.Run("setting it persists", func(t *testing.T) {
+		on := true
+		require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{PassThrough: &on}))
+		assert.True(t, section.PassThrough)
+
+		reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, section.Slug)
+		require.NoError(t, err)
+		assert.True(t, reloaded.PassThrough)
+	})
+
+	t.Run("a form with no opinion keeps it set", func(t *testing.T) {
+		require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{Title: "Fish"}))
+		assert.True(t, section.PassThrough)
+	})
+
+	t.Run("the root refuses it", func(t *testing.T) {
+		on := true
+		err := service.UpdateObjective(ctx, &root, services.ObjectiveUpdateData{PassThrough: &on})
+		require.ErrorIs(t, err, services.ErrCannotPassThroughRoot)
+		assert.False(t, root.PassThrough)
+	})
+}
+
 // A band counts published children, so parking one lowers what its section can
 // ever reach. Past an explicit minimum the section can never complete and
 // everything after it stays locked, which lint says about a document and the

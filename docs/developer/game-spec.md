@@ -158,6 +158,11 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             ]
           },
           {
+            "name": "pass_through",
+            "type": "bool",
+            "description": "Stops this section being a place the player stands. It still routes, bands and gates its children, but they are shown as if they sat in the nearest section that is drawn, so a pool can hand a player one pick without saying it came from a pool. A pass-through section does not count toward the depth the player's screen draws. Omitting the key leaves an existing objective's state alone. The root may not be a pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no children (PASS_THROUGH_ON_LEAF)."
+          },
+          {
             "name": "routing",
             "type": "enum",
             "description": "How players are routed through this objective's children. Required when there are children, meaningless without them. See enums.routing."
@@ -246,6 +251,11 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
                 "description": "Blocks shown to players while this context is active."
               }
             ]
+          },
+          {
+            "name": "pass_through",
+            "type": "bool",
+            "description": "Stops this section being a place the player stands. It still routes, bands and gates its children, but they are shown as if they sat in the nearest section that is drawn, so a pool can hand a player one pick without saying it came from a pool. A pass-through section does not count toward the depth the player's screen draws. Omitting the key leaves an existing objective's state alone. The root may not be a pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no children (PASS_THROUGH_ON_LEAF)."
           },
           {
             "name": "routing",
