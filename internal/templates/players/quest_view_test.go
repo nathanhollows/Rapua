@@ -308,3 +308,23 @@ func TestQuestView_RowCarriesItsDescription(t *testing.T) {
 
 	assert.Equal(t, "Level 2, past the model-making room.", view.Places[0].Rows[0].Description)
 }
+
+// An author's pass-through is the same cut made on purpose: the flagged section
+// has no place on the screen, and what sat below it is drawn in its stead.
+func TestQuestView_AFlaggedSectionPassesThrough(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("trip", "root", "The trip"),
+		obj("birds", "trip", "Birds"),
+		obj("owl", "birds", "Find the owl"),
+	)
+	rows[2].PassThrough = true
+
+	view := BuildQuestView(viewOf([]models.Objective{rows[3]}, rows))
+
+	require.Len(t, view.Places, 1)
+	assert.Equal(t, "The trip", view.Places[0].Title, "the pool is not a place")
+	assert.Empty(t, view.Places[0].Path)
+	require.Len(t, view.Places[0].Rows, 1)
+	assert.Equal(t, "Find the owl", view.Places[0].Rows[0].Title)
+}

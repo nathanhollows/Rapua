@@ -1,7 +1,6 @@
 package templates
 
 import (
-	"slices"
 	"strconv"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
@@ -81,14 +80,6 @@ type QuestRow struct {
 	// when the proof asks nothing.
 	IconSVG string
 }
-
-// maxDrawnDepth is how many sections deep the player's screen ever draws.
-//
-// Past this a container passes through: it still routes, bands and gates, it
-// simply has no place on the screen and its rows join the nearest section that
-// does. The author's tree has no depth limit; the screen has a fixed one, so
-// nesting for a band across four sections costs the player nothing.
-const maxDrawnDepth = 2
 
 // RoutingRule words a section's routing for players, who are never told
 // "randomised": they are told three of these are theirs, which is the same fact
@@ -266,79 +257,26 @@ type builder struct {
 	view *services.PlayerObjectiveView
 }
 
-// placeFor finds the section a row is shown under, and the drawn sections above
-// it.
-//
-// It walks up to the root collecting ancestors, then keeps only the first
-// maxDrawnDepth of them: the last is the place, the rest are the path, and
-// anything below passes through. Walking from the root down rather than from
-// the row up is what makes the cap count from the top, where an author thinks
-// about it, rather than from wherever the row happens to sit.
+// placeFor finds the section a row is shown under, and the titles of the drawn
+// sections above it.
 func (b builder) placeFor(objective models.Objective) (models.Objective, []string) {
-	var chain []models.Objective
-	seen := map[string]bool{objective.ID: true}
-	for id := objective.ParentID; id != ""; {
-		parent, ok := b.byID[id]
-		// A missing parent is an orphan and a repeat is a cycle. Both are
-		// shapes storage can hold and lint reports; neither is a reason to
-		// hide work the run can still do.
-		if !ok || seen[parent.ID] {
-			break
-		}
-		seen[parent.ID] = true
-		// The root is the quest rather than a place in it.
-		if parent.ParentID == "" {
-			break
-		}
-		chain = append([]models.Objective{parent}, chain...)
-		id = parent.ParentID
-	}
-
-	if len(chain) == 0 {
-		return models.Objective{}, nil
-	}
-	if len(chain) > maxDrawnDepth {
-		chain = chain[:maxDrawnDepth]
-	}
-
-	path := make([]string, 0, len(chain)-1)
-	for _, ancestor := range chain[:len(chain)-1] {
-		path = append(path, ancestor.Title)
-	}
-	return chain[len(chain)-1], path
+	place, path := navigation.PlaceFor(b.byID, objective)
+	return place, titlesOf(path)
 }
 
 // finishPlace finds the drawn container a finishable section's press belongs
-// on: the section itself when the section is drawn, and the nearest drawn
-// ancestor when it sits past the depth cap, which is also where its children
-// group. The root is not a place, so a finishable root lands in the loose
-// group.
+// on.
 func (b builder) finishPlace(section models.Objective) (models.Objective, []string) {
-	if section.ParentID == "" {
-		return models.Objective{}, nil
-	}
+	place, path := navigation.FinishPlaceFor(b.byID, section)
+	return place, titlesOf(path)
+}
 
-	var ancestors []models.Objective
-	seen := map[string]bool{section.ID: true}
-	for id := section.ParentID; id != ""; {
-		parent, ok := b.byID[id]
-		if !ok || seen[parent.ID] || parent.ParentID == "" {
-			break
-		}
-		seen[parent.ID] = true
-		ancestors = append([]models.Objective{parent}, ancestors...)
-		id = parent.ParentID
+func titlesOf(sections []models.Objective) []string {
+	titles := make([]string, 0, len(sections))
+	for _, section := range sections {
+		titles = append(titles, section.Title)
 	}
-
-	chain := slices.Concat(ancestors, []models.Objective{section})
-	if len(chain) > maxDrawnDepth {
-		chain = chain[:maxDrawnDepth]
-	}
-	path := make([]string, 0, len(chain)-1)
-	for _, ancestor := range chain[:len(chain)-1] {
-		path = append(path, ancestor.Title)
-	}
-	return chain[len(chain)-1], path
+	return titles
 }
 
 func (b builder) rowFor(objective models.Objective) QuestRow {
