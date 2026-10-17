@@ -394,6 +394,83 @@ func TestBuildRunLog_EmptyStream(t *testing.T) {
 	assert.Zero(t, log.Baseline)
 }
 
+// The note words an unsolved attempt's input for the reports that read without
+// their block. A quiz's options and a sorting block's order are ids, so the
+// quiz reads as a count and the sorting not at all.
+func TestBuildRunLog_WordsWhatAnUnsolvedAttemptSent(t *testing.T) {
+	cases := []struct {
+		name      string
+		blockType string
+		submitted any
+		completed bool
+		want      string
+	}{
+		{"password", "password", map[string]string{"answer": "hunter2"}, false, `"hunter2"`},
+		{"pincode", "pincode", map[string]string{"pincode": "1234"}, false, `"1234"`},
+		{
+			"scan", "scan",
+			map[string]any{"scanned": "ABC-123", "modality": "typed"}, false,
+			`"ABC-123" (typed)`,
+		},
+		{
+			"scan with no modality", "scan",
+			map[string]any{"scanned": "ABC-123"}, false,
+			`"ABC-123"`,
+		},
+		{
+			"geofence", "geofence",
+			map[string]float64{"metres_away": 140.4}, false,
+			"140 metres away",
+		},
+		{
+			"checklist", "checklist",
+			map[string][]string{"checked_items": {"a", "b", "c"}}, false,
+			"3 ticked",
+		},
+		{
+			"quiz reports a count", "quiz",
+			map[string][]string{"selected_options": {"option_0", "option_2"}}, false,
+			"2 selected",
+		},
+		{
+			"a wrong answer that closed its block", "quiz",
+			map[string][]string{"selected_options": {"option_0"}}, true,
+			"1 selected",
+		},
+		{
+			"sorting is ids, so nothing", "sorting",
+			map[string][]string{"player_order": {"i1", "i2"}}, false, "",
+		},
+		{"a block that never reports", "free_text", nil, false, ""},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			answered := ev(at(2), models.EventBlockAnswered, models.BlockAnsweredData{
+				BlockType: tc.blockType, Completed: tc.completed,
+			})
+			if tc.submitted != nil {
+				data, err := json.Marshal(tc.submitted)
+				require.NoError(t, err)
+				var payload models.BlockAnsweredData
+				require.NoError(t, json.Unmarshal(answered.Data, &payload))
+				payload.Submitted = data
+				answered = ev(at(2), models.EventBlockAnswered, payload)
+			}
+
+			log := services.BuildRunLog(
+				[]models.RunEvent{ev(at(1), models.EventRunStarted, nil), answered},
+				journalTree(), 0, at(3),
+			)
+
+			require.NotEmpty(t, log.Entries)
+			assert.Equal(t, tc.want, log.Entries[0].Submitted)
+			assert.Equal(t, tc.completed, log.Entries[0].Completed,
+				"the note is about the attempt, whether or not the block closed")
+		})
+	}
+}
+
 // The quest's pace pools every run's own waits.
 func TestQuestBaseline(t *testing.T) {
 	times := map[string][]time.Time{

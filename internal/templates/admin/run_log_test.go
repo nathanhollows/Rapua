@@ -46,7 +46,10 @@ func runViewFixture() templates.TeamOverviewData {
 		{Type: models.EventObjectiveViewed, ObjectiveID: "o1", CreatedAt: at(4)},
 		{
 			Type: models.EventBlockAnswered, ObjectiveID: "o1", BlockID: "b1", CreatedAt: at(6),
-			Data: payload(models.BlockAnsweredData{BlockType: "quiz"}),
+			Data: payload(models.BlockAnsweredData{
+				BlockType: "quiz",
+				Submitted: payload(map[string][]string{"selected_options": {"option_0", "option_2"}}),
+			}),
 		},
 		{
 			Type: models.EventBlockAnswered, ObjectiveID: "o1", BlockID: "b1", CreatedAt: at(8),
@@ -215,6 +218,53 @@ func TestRunLogCard_FiltersTheLog(t *testing.T) {
 	assert.Contains(t, messages, "Message received")
 	assert.NotContains(t, messages, "Quiz")
 	assert.NotContains(t, messages, "Finished the run")
+}
+
+// An unsolved attempt's note is drawn under its row, so the timeline shows
+// what was sent rather than only that something was.
+func TestRunLogCard_DrawsWhatAnUnsolvedAttemptSent(t *testing.T) {
+	base := time.Date(2026, 10, 12, 9, 0, 0, 0, time.UTC)
+	sent, err := json.Marshal(map[string]string{"answer": "hunter2"})
+	require.NoError(t, err)
+	data, err := json.Marshal(models.BlockAnsweredData{
+		BlockType: "password", Submitted: sent,
+	})
+	require.NoError(t, err)
+	answered := models.RunEvent{
+		Type: models.EventBlockAnswered, BlockID: "b1", ObjectiveID: "o1",
+		CreatedAt: base.Add(time.Minute),
+		Data:      data,
+	}
+
+	log := services.BuildRunLog(
+		[]models.RunEvent{{Type: models.EventRunStarted, CreatedAt: base}, answered},
+		nil, 0, base.Add(2*time.Minute),
+	)
+	card := render(t, templates.RunLogCard(log, "", "DWMD"))
+
+	assert.Contains(t, card, "hunter2")
+	assert.Contains(t, card, "not completed")
+
+	// A quiz without retries closes on a wrong answer: the note sits under a
+	// row that reads as completed, which is the case the word "failed" got
+	// wrong.
+	selected, err := json.Marshal(map[string][]string{"selected_options": {"option_0", "option_2"}})
+	require.NoError(t, err)
+	completed, err := json.Marshal(models.BlockAnsweredData{
+		BlockType: "quiz", Completed: true, Submitted: selected,
+	})
+	require.NoError(t, err)
+	log = services.BuildRunLog(
+		[]models.RunEvent{
+			{Type: models.EventRunStarted, CreatedAt: base},
+			{Type: models.EventBlockAnswered, ObjectiveID: "o1", CreatedAt: base.Add(time.Minute), Data: completed},
+		},
+		nil, 0, base.Add(2*time.Minute),
+	)
+	card = render(t, templates.RunLogCard(log, "", "DWMD"))
+
+	assert.Contains(t, card, "2 selected")
+	assert.NotContains(t, card, "not completed")
 }
 
 // TestRenderRunViewPreview writes a browsable copy of the page when

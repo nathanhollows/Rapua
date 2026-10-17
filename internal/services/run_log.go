@@ -2,7 +2,9 @@ package services
 
 import (
 	"encoding/json"
+	"fmt"
 	"slices"
+	"strconv"
 	"time"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
@@ -104,8 +106,10 @@ type RunLogEntry struct {
 	// deducts.
 	Points int
 	// Tries counts submissions to this block up to and including this one.
-	Tries   int
-	Message string
+	Tries int
+	// Submitted words an unsolved attempt's input for readers without its block.
+	Submitted string
+	Message   string
 	// MediaURL may outlive the file.
 	MediaURL  string
 	MediaType string
@@ -562,12 +566,77 @@ func runLogAnswerEntry(
 		entry.BlockName = payload.BlockType
 	}
 	entry.Completed = payload.Completed
+	entry.Submitted = submittedNote(payload.BlockType, payload.Submitted)
 	if event.BlockID != "" {
 		tries[event.BlockID]++
 		entry.Tries = tries[event.BlockID]
 	}
 	objectiveInto(&entry, event, byID)
 	return entry, true
+}
+
+// submittedNote words an unsolved attempt's input for the row's second line.
+// A quiz's options and a sorting block's order are ids, which mean nothing
+// without the block, so the quiz reads as a count and the sorting not at all.
+func submittedNote(blockType string, raw json.RawMessage) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	switch blockType {
+	case "password":
+		var payload struct {
+			Answer string `json:"answer"`
+		}
+		if json.Unmarshal(raw, &payload) != nil {
+			return ""
+		}
+		return strconv.Quote(payload.Answer)
+	case "pincode":
+		var payload struct {
+			Pincode string `json:"pincode"`
+		}
+		if json.Unmarshal(raw, &payload) != nil {
+			return ""
+		}
+		return strconv.Quote(payload.Pincode)
+	case "scan":
+		var payload struct {
+			Scanned  string `json:"scanned"`
+			Modality string `json:"modality"`
+		}
+		if json.Unmarshal(raw, &payload) != nil || payload.Scanned == "" {
+			return ""
+		}
+		if payload.Modality == "" {
+			return strconv.Quote(payload.Scanned)
+		}
+		return fmt.Sprintf("%s (%s)", strconv.Quote(payload.Scanned), payload.Modality)
+	case "geofence":
+		var payload struct {
+			MetresAway float64 `json:"metres_away"`
+		}
+		if json.Unmarshal(raw, &payload) != nil {
+			return ""
+		}
+		return fmt.Sprintf("%.0f metres away", payload.MetresAway)
+	case "checklist":
+		var payload struct {
+			Checked []string `json:"checked_items"`
+		}
+		if json.Unmarshal(raw, &payload) != nil {
+			return ""
+		}
+		return fmt.Sprintf("%d ticked", len(payload.Checked))
+	case "quiz":
+		var payload struct {
+			Selected []string `json:"selected_options"`
+		}
+		if json.Unmarshal(raw, &payload) != nil {
+			return ""
+		}
+		return fmt.Sprintf("%d selected", len(payload.Selected))
+	}
+	return ""
 }
 
 func objectiveInto(entry *RunLogEntry, event models.RunEvent, byID map[string]models.Objective) {

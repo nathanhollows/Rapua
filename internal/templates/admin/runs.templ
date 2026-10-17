@@ -1118,7 +1118,7 @@ templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
 		</li>
 	} else {
 		{{ t0, t1 := runLogSpan(entry, log) }}
-		{{ multiline := entry.Kind == services.RunLogMessage || entry.Kind == services.RunLogUpload }}
+		{{ multiline := entry.Kind == services.RunLogMessage || entry.Kind == services.RunLogUpload || entry.Submitted != "" }}
 		<li
 			class={ templ.KV("bg-base-200", index%2 == 0), templ.KV("bg-base-100", index%2 != 0) }
 			data-t0={ fmt.Sprint(t0) }
@@ -1214,20 +1214,25 @@ templ runLogObjectiveLine(verb string, entry services.RunLogEntry) {
 // wrong: the log records completion and worth, and only the block knows what
 // right means.
 templ runLogAnswer(entry services.RunLogEntry) {
-	<span class="text-sm truncate">
-		{ entry.BlockName }
-		if entry.Title != "" {
-			<span class="text-base-content/70"> on </span>
-			if entry.Slug != "" {
-				<a href={ templ.URL("/admin/objective/" + entry.Slug) } class="link">{ entry.Title }</a>
-			} else {
-				{ entry.Title }
+	<div class="min-w-0">
+		<span class="text-sm truncate block">
+			{ entry.BlockName }
+			if entry.Title != "" {
+				<span class="text-base-content/70"> on </span>
+				if entry.Slug != "" {
+					<a href={ templ.URL("/admin/objective/" + entry.Slug) } class="link">{ entry.Title }</a>
+				} else {
+					{ entry.Title }
+				}
 			}
+			if !entry.Completed {
+				<span class="text-base-content/60">— not completed</span>
+			}
+		</span>
+		if entry.Submitted != "" {
+			<span class="mt-0.5 block text-xs text-base-content/70 truncate">{ entry.Submitted }</span>
 		}
-		if !entry.Completed {
-			<span class="text-base-content/60">— not completed</span>
-		}
-	</span>
+	</div>
 	if entry.Points != 0 {
 		<span class={ "badge badge-sm shrink-0 font-semibold", templ.KV("badge-primary", entry.Points > 0), templ.KV("badge-error", entry.Points < 0) }>
 			{ fmt.Sprintf("%+d", entry.Points) }
