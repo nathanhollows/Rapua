@@ -48,10 +48,9 @@ templ Instances(quests []models.Quest, currentQuest models.Quest, templates []mo
 					set my textContent to <.instance-item:not( [style*='display: none'] )/>'s length"
 				>{ fmt.Sprint(len(quests)) }</span> quests
 			</span>
-			<span class="flex items-center gap-1.5 text-xs"><span class="status status-success"></span><span class="opacity-50">Live</span></span>
-			<span class="flex items-center gap-1.5 text-xs"><span class="status status-info"></span><span class="opacity-50">Scheduled</span></span>
-			<span class="flex items-center gap-1.5 text-xs"><span class="status status-warning"></span><span class="opacity-50">Draft</span></span>
-			<span class="flex items-center gap-1.5 text-xs"><span class="status status-error"></span><span class="opacity-50">Closed</span></span>
+			@statusLegendKey(models.Active, "Live")
+			@statusLegendKey(models.Scheduled, "Scheduled")
+			@statusLegendKey(models.Closed, "Closed")
 			<label class="input input-sm flex items-center gap-2 ml-auto w-56">
 				@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
 				<input
@@ -338,15 +337,7 @@ templ instanceItem(quest models.Quest, active bool, anyActive bool, first bool, 
 		<div class="flex items-center gap-3 grow">
 			<!-- Play Status -->
 			<div class="tooltip tooltip-right shrink-0" data-tip={ quest.GetStatus().Description() }>
-				switch quest.GetStatus() {
-					case models.Active:
-						
-						<div class="status status-lg status-success"></div>
-					case models.Scheduled:
-						<div class="status status-lg status-info"></div>
-					case models.Closed:
-						<div class="status status-lg status-error"></div>
-				}
+				@questStatusIcon(quest, "w-5 h-5")
 			</div>
 			<!-- Instance name -->
 			<span
