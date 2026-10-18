@@ -28,8 +28,10 @@ Drag an objective onto another to put it inside. Drag it out to lift it back up.
 An objective's position among its siblings is the order players meet it in,
 where the section above is set to a guided path.
 
-Nesting more than four deep is allowed but warned about: past that there is more
-context to hold than a phone screen shows.
+Players are shown at most two sections deep. A section nested further still
+works, but it passes through: it keeps its rules, and its tasks appear in the
+section above. The editor warns about it so you can mark it pass-through on
+purpose (see below).
 
 ## Routing
 
@@ -72,6 +74,36 @@ it. Nothing inside a draft is marked, so publishing the section restores whateve
 was under it, drafts included.
 
 The quest itself cannot be a draft: that would take the whole game out of play.
+
+## Pass-through
+
+Click the ghost in a section's header to make it pass-through. Players never see
+the section as a place: its tasks are shown in the section above, as though they
+belonged there. It still does its job behind the scenes, so its routing, its
+completion rule and anything that depends on it work exactly as before.
+
+The use is choosing for the player without saying how. Say a zoo trip asks each
+team to study one bird, one fish and one mammal. Make a pass-through section for
+each group, put the species inside, route it randomly and ask for one. Every team
+sees three tasks, and a different animal in each, and nobody learns they were
+drawn from a pool. Picks come from the team's code, so a team sees the same ones
+every time it looks.
+
+A few things to know:
+
+- A section nested more than two deep is passed through whether you mark it or
+  not. The ghost shows on those too, so you can see which levels players will not
+  see. A section you mark does not count toward the two, so marking one lets a
+  deeper level be shown.
+- A pass-through section must complete on its own: set the minimum and maximum to
+  the same number. Otherwise its finish button would appear inside a section the
+  player never entered, naming something they never saw.
+- If it asks for fewer tasks than it shows at once, finishing makes the rest
+  disappear with no explanation. Random order with a window the same size as the
+  number you ask for avoids that.
+- A pass-through section's own content still plays, but its name is never shown.
+- The quest itself cannot be pass-through. An objective with nothing inside can
+  carry the flag, but it does nothing there, and the editor warns about it.
 
 ## Example: a perfumer's garden
 
