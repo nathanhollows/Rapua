@@ -392,6 +392,7 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Post("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEditPost)
 			r.Post("/{slug:[a-z0-9-]+}/settings", adminHandler.ObjectiveSettingsPost)
 			r.Post("/{slug:[a-z0-9-]+}/draft", adminHandler.ObjectiveDraftTogglePost)
+			r.Post("/{slug:[a-z0-9-]+}/pass-through", adminHandler.ObjectivePassThroughTogglePost)
 			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveDelete)
 		})
 

@@ -9,6 +9,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
 // Locations shows admin the quest builder: the game structure with its
@@ -75,11 +76,18 @@ func buildObjectiveTree(
 	objectives []models.Objective, points map[string]int, lint services.QuestLint,
 ) (models.Objective, []*templates.ObjectiveTreeNode) {
 	nodes := make(map[string]*templates.ObjectiveTreeNode, len(objectives))
+	byID := make(map[string]models.Objective, len(objectives))
+	for i := range objectives {
+		byID[objectives[i].ID] = objectives[i]
+	}
 	for i := range objectives {
 		nodes[objectives[i].ID] = &templates.ObjectiveTreeNode{
 			Objective: objectives[i],
 			Points:    points[objectives[i].ID],
 			Lint:      lint.For(objectives[i].ID),
+			// The same cut the player's screen makes, so the author sees which
+			// levels are flattened rather than finding out from a player.
+			Kind: navigation.KindOf(byID, objectives[i]),
 		}
 	}
 

@@ -19,6 +19,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -489,6 +490,117 @@ func TestObjectiveEditPost_Visibility(t *testing.T) {
 	reloaded, err = h.objectiveService.GetByQuestIDAndSlug(ctx, user.CurrentQuestID, objective.Slug)
 	require.NoError(t, err)
 	assert.True(t, reloaded.Draft, "and an absent checkbox parks it again")
+}
+
+func TestObjectivePassThroughTogglePost(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+	pool, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, "Birds")
+	require.NoError(t, err)
+
+	post := func(slug, value string) {
+		req := httptest.NewRequest(
+			http.MethodPost, "/admin/objective/"+slug+"/pass-through",
+			strings.NewReader(url.Values{"pass_through": {value}}.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req = withObjectiveUser(req, user)
+		req = withObjectiveSlug(req, slug)
+		h.ObjectivePassThroughTogglePost(httptest.NewRecorder(), req)
+	}
+	stored := func(slug string) bool {
+		reloaded, getErr := h.objectiveService.GetByQuestIDAndSlug(ctx, user.CurrentQuestID, slug)
+		require.NoError(t, getErr)
+		return reloaded.PassThrough
+	}
+
+	post(pool.Slug, "true")
+	assert.True(t, stored(pool.Slug), "the ghost passes the section through")
+
+	post(pool.Slug, "false")
+	assert.False(t, stored(pool.Slug), "and clicking it again shows the section")
+
+	post(root.Slug, "true")
+	assert.False(t, stored(root.Slug), "the root is refused")
+}
+
+// The root's ghost is never drawn, so the refusal an author can reach is a
+// section that can be finished early: its finish button would name a section
+// the player never entered.
+func TestObjectivePassThroughTogglePost_RefusesARangedBand(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	ctx := context.Background()
+
+	root, err := h.objectiveService.FindRoot(ctx, user.CurrentQuestID)
+	require.NoError(t, err)
+	pool, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, root.ID, "Birds")
+	require.NoError(t, err)
+	for _, title := range []string{"Owl", "Heron"} {
+		child, createErr := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, pool.ID, title)
+		require.NoError(t, createErr)
+		published := false
+		require.NoError(t, h.objectiveService.UpdateObjective(ctx, &child, services.ObjectiveUpdateData{Draft: &published}))
+	}
+	one, two := 1, 2
+	require.NoError(t, h.objectiveService.UpdateObjective(ctx, &pool, services.ObjectiveUpdateData{
+		Band: &services.BandUpdate{Min: &one, Max: &two},
+	}))
+
+	req := httptest.NewRequest(
+		http.MethodPost, "/admin/objective/"+pool.Slug+"/pass-through",
+		strings.NewReader(url.Values{"pass_through": {"true"}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req = withObjectiveUser(req, user)
+	req = withObjectiveSlug(req, pool.Slug)
+	rec := httptest.NewRecorder()
+	h.ObjectivePassThroughTogglePost(rec, req)
+
+	reloaded, err := h.objectiveService.GetByQuestIDAndSlug(ctx, user.CurrentQuestID, pool.Slug)
+	require.NoError(t, err)
+	assert.False(t, reloaded.PassThrough, "the ghost on a ranged section does nothing")
+	assert.NotContains(t, rec.Body.String(), pool.ID, "and the toast does not carry an id")
+}
+
+// The editor shows the cut the player gets, so an author can see which levels
+// are flattened before a player meets them.
+func TestBuildObjectiveTree_MarksHowEachSectionIsDrawn(t *testing.T) {
+	rows := []models.Objective{
+		{ID: "root", Slug: "root", Title: "Root"},
+		{ID: "a", ParentID: "root", Slug: "a", Title: "A"},
+		{ID: "b", ParentID: "a", Slug: "b", Title: "B", PassThrough: true},
+		{ID: "c", ParentID: "b", Slug: "c", Title: "C"},
+		{ID: "d", ParentID: "c", Slug: "d", Title: "D"},
+		{ID: "e", ParentID: "d", Slug: "e", Title: "E"},
+		{ID: "leaf", ParentID: "e", Slug: "leaf", Title: "Leaf"},
+	}
+
+	_, nodes := buildObjectiveTree(rows, nil, services.QuestLint{})
+
+	kinds := map[string]navigation.SectionKind{}
+	var walk func(level []*templates.ObjectiveTreeNode)
+	walk = func(level []*templates.ObjectiveTreeNode) {
+		for _, node := range level {
+			if len(node.Children) > 0 {
+				kinds[node.Objective.Slug] = node.Kind
+			}
+			walk(node.Children)
+		}
+	}
+	walk(nodes)
+
+	assert.Equal(t, navigation.SectionDrawn, kinds["a"])
+	assert.Equal(t, navigation.SectionPassThrough, kinds["b"])
+	assert.Equal(t, navigation.SectionDrawn, kinds["c"], "b gave its place away")
+	assert.Equal(t, navigation.SectionForced, kinds["d"], "past the cut")
+	assert.Equal(t, navigation.SectionForced, kinds["e"])
 }
 
 // A refused move must leave the tree as it was. The handler answers 200 even

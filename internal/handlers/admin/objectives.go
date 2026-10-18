@@ -393,6 +393,45 @@ func (h *Handler) ObjectiveDraftTogglePost(w http.ResponseWriter, r *http.Reques
 	h.handleSuccess(w, r, "Visibility updated")
 }
 
+// ObjectivePassThroughTogglePost touches PassThrough only, the same way the
+// draft toggle touches Draft.
+func (h *Handler) ObjectivePassThroughTogglePost(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.handleError(
+			w, r, "ObjectivePassThroughTogglePost: parsing form", "Could not update pass-through", "error", err,
+		)
+		return
+	}
+
+	user := h.UserFromContext(r.Context())
+	slug := chi.URLParam(r, "slug")
+	objective, err := h.objectiveService.GetByQuestIDAndSlug(r.Context(), user.CurrentQuestID, slug)
+	if err != nil {
+		h.handleError(w, r, "ObjectivePassThroughTogglePost: finding objective", "Objective not found", "error", err)
+		return
+	}
+
+	err = h.objectiveService.UpdateObjective(r.Context(), objective, services.ObjectiveUpdateData{
+		PassThrough: boolPtr(r.FormValue("pass_through") == publishedFormValue),
+	})
+	// The sentinel's own text rather than the wrapped error, which ends in the
+	// objective's id and is no use to an author.
+	for _, refusal := range []error{services.ErrCannotPassThroughRoot, services.ErrPassThroughRangedBand} {
+		if errors.Is(err, refusal) {
+			h.handleError(w, r, "ObjectivePassThroughTogglePost: refused", refusal.Error(), "error", err)
+			return
+		}
+	}
+	if err != nil {
+		h.handleError(
+			w, r, "ObjectivePassThroughTogglePost: updating objective", "Error updating pass-through", "error", err,
+		)
+		return
+	}
+
+	h.handleSuccess(w, r, "Pass-through updated")
+}
+
 // ObjectiveReposition always responds with a flash, never a redirect: the
 // tree re-fetches regardless of outcome, refused moves included.
 func (h *Handler) ObjectiveReposition(w http.ResponseWriter, r *http.Request) {
