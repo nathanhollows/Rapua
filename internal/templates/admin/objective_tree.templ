@@ -6,6 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
 // ObjectiveTreeNode is one objective in the tree. Root has no node of its
@@ -24,6 +25,10 @@ type ObjectiveTreeNode struct {
 	// It rides on the node so the tree refresh brings the badges with it,
 	// rather than needing a second pass to put them back.
 	Lint game.LintResult
+	// Kind is how the player's screen treats this node if it is a section:
+	// drawn, passed through by the author, or flattened by the depth cap. It
+	// is meaningless on a node with no children, which is never a place.
+	Kind navigation.SectionKind
 	// Mark depends on the parent's routing, not on the objective.
 	Mark RailMark
 	// Step is skipped for drafts: a player never meets them.
@@ -104,6 +109,29 @@ func visibilityTip(node *ObjectiveTreeNode) string {
 	default:
 		return "Published: click to park"
 	}
+}
+
+// passThroughTip names what a click on the ghost will do, or why the level is
+// already flattened.
+func passThroughTip(node *ObjectiveTreeNode) string {
+	switch node.Kind {
+	case navigation.SectionPassThrough:
+		return "Pass-through: players never see this section, but its rules still apply. Click to show it."
+	case navigation.SectionForced:
+		return fmt.Sprintf(
+			"Passes through because it is nested more than %d sections deep. Click to mark it on purpose.",
+			navigation.MaxDrawnDepth,
+		)
+	default:
+		return "Pass through: hide this section from players and keep its rules"
+	}
+}
+
+// passThroughShown reports whether the ghost is drawn at rest. A pass-through
+// is uncommon, so an unmarked section keeps the control out of the way until
+// the header is hovered or focused; a marked or flattened one always says so.
+func passThroughShown(node *ObjectiveTreeNode) bool {
+	return node.Kind.Hidden() && !node.Draft
 }
 
 // maxNextValue renders 0 as blank: 0 means no limit, not an explicit cap.
@@ -362,6 +390,39 @@ templ objectiveVisibilityToggle(node *ObjectiveTreeNode) {
 	</button>
 }
 
+// objectivePassThroughToggle posts straight to
+// /admin/objective/{slug}/pass-through. Only sections carry it: a leaf is never
+// a place, so there is nothing for the flag to hide.
+//
+// The fade is on the icon, never the button, because the button carries the
+// tooltip and opacity on it would wash the tooltip out. The button stays
+// focusable while the icon is faded, so a keyboard user reaches it and the
+// header's focus-within reveals it.
+templ objectivePassThroughToggle(node *ObjectiveTreeNode) {
+	<button
+		type="button"
+		class="btn btn-xs btn-ghost btn-circle tooltip objective-passthrough-toggle shrink-0"
+		data-tip={ passThroughTip(node) }
+		data-objective-slug={ node.Objective.Slug }
+		data-pass-through={ fmt.Sprint(node.Objective.PassThrough) }
+		aria-pressed={ fmt.Sprint(node.Objective.PassThrough) }
+		aria-label="Pass through: players do not see this section"
+	>
+		@icon("ghost", templ.Attributes{"class": passThroughIconClass(node)})
+	</button>
+}
+
+func passThroughIconClass(node *ObjectiveTreeNode) string {
+	switch {
+	case node.Objective.PassThrough:
+		return "w-4 h-4 text-primary"
+	case passThroughShown(node):
+		return "w-4 h-4 opacity-50"
+	default:
+		return "w-4 h-4 opacity-0 group-hover/header:opacity-50 group-focus-within/header:opacity-50 transition-opacity"
+	}
+}
+
 // objectiveRoutingPicker's trigger shows the routing currently chosen, not a
 // generic icon. Options are clickable rows, not a <select>; data-routing on
 // the trigger holds the current value for currentSettingsValues/syncSettings
@@ -533,11 +594,11 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 		>
 			@objectiveRailMark(node)
 			<div
-				class={ "objective-group card shadow rounded-2xl bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("objective-parked", node.OutOfPlay) }
+				class={ "objective-group card shadow rounded-2xl bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("objective-parked", node.OutOfPlay), templ.KV("objective-passthrough", passThroughShown(node) && !node.OutOfPlay) }
 				data-routing={ string(node.Objective.Routing) }
 			>
 				<div class="card-body p-0 gap-0">
-					<div class="objective-group-header flex items-center gap-3 px-4 py-2.5 rounded-t-2xl bg-primary/10 border-b border-primary/25">
+					<div class="objective-group-header group/header flex items-center gap-3 px-4 py-2.5 rounded-t-2xl bg-primary/10 border-b border-primary/25">
 						<span class="tooltip tooltip-right" data-tip="Drag to move">
 							@icon("grip-vertical", templ.Attributes{"class": "w-4 h-4 text-base-content cursor-move objective-drag-handle shrink-0"})
 						</span>
@@ -553,6 +614,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 						@objectiveRoutingPicker(node, alignRight)
 						@objectiveBandPicker(node, alignRight)
 						@objectiveAddChildButton(node)
+						@objectivePassThroughToggle(node)
 						@objectiveVisibilityToggle(node)
 						@objectiveCollapseToggle(node)
 					</div>
@@ -947,6 +1009,13 @@ templ objectiveSortableScript() {
 				collapsedGroups.add(groupID);
 			}
 			applyCollapse(collapse);
+			return;
+		}
+		var passThrough = evt.target.closest('.objective-passthrough-toggle');
+		if (passThrough) {
+			postObjectiveUpdate('/admin/objective/' + passThrough.dataset.objectiveSlug + '/pass-through', {
+				pass_through: passThrough.dataset.passThrough !== 'true' ? 'true' : 'false',
+			});
 			return;
 		}
 		var toggle = evt.target.closest('.objective-visibility-toggle');

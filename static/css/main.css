@@ -746,6 +746,29 @@ p.label {
   border-bottom-color: color-mix(in oklch, var(--color-base-content) 18%, transparent);
 }
 
+/* A pass-through section is not a place the player stands, so it drops the box
+   a place gets and keeps only the rail that its row sits on: the rows inside
+   read as belonging to the section above, which is how the player sees them.
+   Both the author's flag and the depth cap's flattening draw this way, because
+   to the player they are the same thing. Colour and border rather than opacity
+   throughout: the header carries tooltips. */
+.objective-group.objective-passthrough {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+}
+/* Child combinators, not descendant ones: a drawn section nested inside a
+   pass-through keeps its own header, and the flat look is only for the one the
+   author marked. */
+.objective-passthrough > .card-body > .objective-group-header {
+  background: transparent;
+  border-bottom-color: color-mix(in oklch, var(--color-base-content) 12%, transparent);
+}
+.objective-passthrough > .card-body > .objective-group-header > a {
+  font-style: italic;
+  font-weight: 500;
+}
+
 /* The system pages hang their padlock where a marker would go, so the gutter
    is one column down the whole page. No line joins them: they are outside the
    quest on purpose, and the top-level routing governs what sits between. */
