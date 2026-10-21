@@ -23,9 +23,12 @@ type Objective struct {
 	Draft bool `bun:"draft,type:boolean"`
 	// PassThrough stops a section being a place the player stands. It still
 	// routes, bands and gates; its rows join the nearest section that is drawn.
-	PassThrough bool   `bun:"pass_through,type:boolean"`
-	Slug        string `bun:"slug,type:varchar(255)"`
-	Title       string `bun:"title,type:varchar(255)"`
+	PassThrough bool `bun:"pass_through,type:boolean"`
+	// Depends holds the objective locked until the run has set every variable
+	// in it.
+	Depends game.DependsField `bun:"depends,type:text,nullzero"`
+	Slug    string            `bun:"slug,type:varchar(255)"`
+	Title   string            `bun:"title,type:varchar(255)"`
 	// Description is the detail a player needs once they are there. The title
 	// is the task and has to stay short enough to read in a list; this is what
 	// will not fit in it.

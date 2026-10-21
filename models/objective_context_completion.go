@@ -9,9 +9,9 @@ import (
 // ObjectiveContextCompletion is an append-only completion log: one row means
 // one objective context (proof or reveal) has cleared for one run. Completion
 // is one-way, so nothing ever updates or deletes a row: presence is the
-// record. The primary key makes the INSERT itself the idempotency guard for
-// firing that context's sets: if the insert succeeds, this call is the one
-// that just completed it; if it conflicts, someone already did. It also
+// record. The primary key makes the INSERT itself the idempotency guard: if
+// the insert succeeds, this call is the one that just completed it; if it
+// conflicts, someone already did. It also
 // doubles as the data source for the player's /journal.
 type ObjectiveContextCompletion struct {
 	RunCode     string            `bun:"run_code,pk,notnull"`

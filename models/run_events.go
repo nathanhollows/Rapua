@@ -88,6 +88,9 @@ type BlockAnsweredData struct {
 	// block, for blocks that report one (game.SubmissionReporter). A solve
 	// carries nothing: the block's state is where the final answer lives.
 	Submitted json.RawMessage `json:"submitted,omitempty"`
+	// Sets lists the variables this answer set for the first time. One the run
+	// had already set is left out, so the stream adds up to run_variables.
+	Sets []string `json:"sets,omitempty"`
 }
 
 // RunNamedData is the payload of an EventRunNamed row.
