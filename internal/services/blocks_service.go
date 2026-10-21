@@ -174,6 +174,49 @@ func (s *BlockService) UpdateBlock(
 	return s.blockRepo.Update(ctx, block)
 }
 
+// ErrVarsNotAllowed is returned when a block is given a variable its kind
+// cannot carry. Lint refuses the same shapes in a document.
+var ErrVarsNotAllowed = errors.New("this block cannot carry that variable")
+
+// UpdateBlockVars replaces what a block sets and what it waits on. Nil leaves
+// a field alone; an empty value clears it. Only a block game.CanSetVars allows
+// sets a variable; only a content block waits on one.
+func (s *BlockService) UpdateBlockVars(
+	ctx context.Context,
+	block blocks.Block,
+	sets *string,
+	depends *[]string,
+) (blocks.Block, error) {
+	newSets := block.GetSets()
+	newDepends := block.GetDepends()
+
+	if sets != nil {
+		switch {
+		case *sets == "":
+		case !game.CanSetVars(block):
+			return nil, fmt.Errorf("%w: %s cannot set a variable", ErrVarsNotAllowed, block.GetName())
+		case !game.ValidVarName(*sets):
+			return nil, fmt.Errorf("%w: %q", ErrInvalidVarName, *sets)
+		}
+		newSets = *sets
+	}
+	if depends != nil {
+		normalised := game.NormaliseDepends(*depends)
+		if len(normalised) > 0 && block.RequiresValidation() {
+			return nil, fmt.Errorf("%w: %s cannot wait on a variable", ErrVarsNotAllowed, block.GetName())
+		}
+		for _, name := range normalised {
+			if !game.ValidVarName(name) {
+				return nil, fmt.Errorf("%w: %q", ErrInvalidVarName, name)
+			}
+		}
+		newDepends = normalised
+	}
+
+	block.SetVars(newSets, newDepends)
+	return s.blockRepo.Update(ctx, block)
+}
+
 // ReorderBlocks reorders the blocks in a location.
 func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) error {
 	return s.blockRepo.Reorder(ctx, blockIDs)

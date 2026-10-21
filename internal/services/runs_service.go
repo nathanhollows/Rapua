@@ -53,6 +53,7 @@ func NewRunService(
 	sectionFinishRepo repositories.SectionFinishRepository,
 	blockRepo repositories.BlockRepository,
 	runEventRepo repositories.RunEventRepository,
+	runVariableRepo repositories.RunVariableRepository,
 ) *RunService {
 	return &RunService{
 		transactor:                     transactor,
@@ -68,6 +69,7 @@ func NewRunService(
 			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 			sectionFinishRepo:              sectionFinishRepo,
 			blockRepo:                      blockRepo,
+			runVariableRepo:                runVariableRepo,
 		},
 		batchSize: batchSize,
 	}

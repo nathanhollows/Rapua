@@ -309,3 +309,29 @@ func TestExportService_ExportInstance_CarriesPassThrough(t *testing.T) {
 	assert.False(t, doc.Structure.Children[0].IsPassThrough())
 	assert.True(t, doc.Structure.Children[1].IsPassThrough())
 }
+
+func TestExportService_ExportInstance_CarriesDepends(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Doors", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "door", Title: "Door", Depends: game.DependsField{"key"},
+	})
+
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 1)
+	assert.Equal(t, game.DependsField{"key"}, doc.Structure.Children[0].Depends)
+}

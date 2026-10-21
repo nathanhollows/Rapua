@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
@@ -755,4 +756,51 @@ func TestObjectiveService_UpdateObjective_RefusesAnOverlongTitle(t *testing.T) {
 	})
 
 	require.ErrorIs(t, err, services.ErrFieldTooLong)
+}
+
+func TestObjectiveService_UpdateObjective_Depends(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	door, err := service.CreateObjective(ctx, questID, root.ID, "Door")
+	require.NoError(t, err)
+
+	t.Run("setting a gate persists it, tidied", func(t *testing.T) {
+		deps := []string{"key", "", "lamp", "key"}
+		require.NoError(t, service.UpdateObjective(ctx, &door, services.ObjectiveUpdateData{Depends: &deps}))
+		assert.Equal(t, game.DependsField{"key", "lamp"}, door.Depends)
+
+		reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, door.Slug)
+		require.NoError(t, err)
+		assert.Equal(t, game.DependsField{"key", "lamp"}, reloaded.Depends)
+	})
+
+	t.Run("a form with no opinion leaves it alone", func(t *testing.T) {
+		require.NoError(t, service.UpdateObjective(ctx, &door, services.ObjectiveUpdateData{Title: "Front door"}))
+		assert.Equal(t, game.DependsField{"key", "lamp"}, door.Depends)
+	})
+
+	t.Run("a bad name is refused and nothing changes", func(t *testing.T) {
+		deps := []string{"Key"}
+		err := service.UpdateObjective(ctx, &door, services.ObjectiveUpdateData{Depends: &deps})
+		require.ErrorIs(t, err, services.ErrInvalidVarName)
+		assert.Equal(t, game.DependsField{"key", "lamp"}, door.Depends)
+	})
+
+	t.Run("an empty list removes the gate", func(t *testing.T) {
+		deps := []string{}
+		require.NoError(t, service.UpdateObjective(ctx, &door, services.ObjectiveUpdateData{Depends: &deps}))
+		assert.Empty(t, door.Depends)
+	})
+
+	t.Run("the root refuses one", func(t *testing.T) {
+		deps := []string{"key"}
+		err := service.UpdateObjective(ctx, &root, services.ObjectiveUpdateData{Depends: &deps})
+		require.ErrorIs(t, err, services.ErrCannotGateRoot)
+		assert.Empty(t, root.Depends)
+	})
 }

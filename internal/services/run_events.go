@@ -124,7 +124,7 @@ func recordRunCompleted(
 // input, nil when there is none to keep.
 func answeredEvent(
 	team *models.Run, block blocks.Block, objectiveID string, completed bool, pointsAwarded int,
-	submitted json.RawMessage,
+	submitted json.RawMessage, sets []string,
 ) *models.RunEvent {
 	event := eventBase(team.Code, team.QuestID, models.EventBlockAnswered)
 	event.BlockID = block.GetID()
@@ -134,6 +134,7 @@ func answeredEvent(
 		Completed:     completed,
 		PointsAwarded: pointsAwarded,
 		Submitted:     submitted,
+		Sets:          sets,
 	})
 	return event
 }

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
@@ -22,14 +23,10 @@ type runStateLoader struct {
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
 	sectionFinishRepo              repositories.SectionFinishRepository
 	blockRepo                      repositories.BlockRepository
+	runVariableRepo                repositories.RunVariableRepository
 }
 
 // load returns a quest's objectives and one run's state against them.
-//
-// The resolver is built in two steps because a depends list can name a section
-// by slug, and a section has no completion row of its own: completion has to be
-// derived before anything can answer whether objective.<slug> is true. Deriving
-// it does not read the resolver, so the order is well founded.
 func (l runStateLoader) load(
 	ctx context.Context, team *models.Run,
 ) ([]models.Objective, navigation.RunState, map[string]bool, error) {
@@ -57,6 +54,16 @@ func (l runStateLoader) load(
 		return nil, navigation.RunState{}, nil, fmt.Errorf("loading finished sections: %w", err)
 	}
 	state.SectionFinished = setOf(finished)
+
+	// Only reachability reads the variables, and only through an objective's
+	// depends, so a quest with no gated objective needs no query.
+	if slices.ContainsFunc(objectives, func(o models.Objective) bool { return len(o.Depends) > 0 }) {
+		vars, err := l.runVariableRepo.FindNamesByRunCode(ctx, team.Code)
+		if err != nil {
+			return nil, navigation.RunState{}, nil, fmt.Errorf("loading run variables: %w", err)
+		}
+		state.Vars = setOf(vars)
+	}
 
 	// Completion is derived once, over every row, drafts included: what a run
 	// did, it did, and a gate it opened stays open even once the objective is

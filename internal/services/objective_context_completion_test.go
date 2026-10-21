@@ -36,6 +36,7 @@ func setupCheckInServiceForObjectives(t *testing.T) (*services.CheckInService, *
 		repositories.NewSectionFinishRepository(dbc),
 		blockRepo,
 		repositories.NewRunEventRepository(dbc),
+		repositories.NewRunVariableRepository(dbc),
 	)
 	return svc, dbc, cleanup
 }

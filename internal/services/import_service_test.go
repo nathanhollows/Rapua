@@ -590,3 +590,59 @@ func TestImportService_OmittedDescriptionLeavesTheStoredOne(t *testing.T) {
 		}
 	}
 }
+
+// A gate is part of how the quest plays, so it is carried in both directions,
+// and a document that leaves depends out removes it rather than keeping it.
+func TestImportService_CarriesDepends(t *testing.T) {
+	svc, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	gated := func(withDepends bool) *game.GameDoc {
+		doc := minimalValidDoc("Gates")
+		door := game.ObjectiveDoc{Slug: "door", Title: "Door"}
+		if withDepends {
+			door.Depends = game.DependsField{"key"}
+		}
+		doc.Structure.Children = []game.ObjectiveDoc{
+			{
+				Slug: "gate", Title: "Gate",
+				Proof: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{{
+					"type":    "choice",
+					"prompt":  "Take the key?",
+					"options": []any{map[string]any{"label": "Take it", "sets": "key"}},
+				}}},
+				Reveal: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{
+					{"type": "text", "content": "The lock clicks.", "depends": []any{"key"}},
+				}},
+			},
+			door,
+		}
+		return doc
+	}
+
+	created, err := svc.ImportCreate(ctx, userID, gated(true))
+	require.NoError(t, err)
+
+	bySlug := func() map[string]models.Objective {
+		out := make(map[string]models.Objective)
+		for _, obj := range importedChildren(t, objectiveRepo, created.QuestID) {
+			out[obj.Slug] = obj
+		}
+		return out
+	}
+	objectives := bySlug()
+	assert.Equal(t, game.DependsField{"key"}, objectives["door"].Depends)
+
+	revealBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, objectives["gate"].ID, game.ContextObjectiveReveal)
+	require.NoError(t, err)
+	require.Len(t, revealBlocks, 1)
+	assert.Equal(t, game.DependsField{"key"}, revealBlocks[0].GetDepends(), "a block's depends rides in its data")
+
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, gated(false))
+	require.NoError(t, err)
+	assert.Empty(t, bySlug()["door"].Depends)
+}

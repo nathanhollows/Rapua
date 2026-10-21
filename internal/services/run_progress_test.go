@@ -41,6 +41,7 @@ func TestGetRunProgress_StreamFailureSurfaces(t *testing.T) {
 		repositories.NewSectionFinishRepository(dbc),
 		repositories.NewBlockRepository(dbc, blockStateRepo),
 		failingEventRepo{err: errors.New("stream unavailable")},
+		repositories.NewRunVariableRepository(dbc),
 	)
 
 	_, err := svc.GetRunProgress(ctx, parents.QuestID, "R001")

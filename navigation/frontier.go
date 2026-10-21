@@ -12,8 +12,8 @@ type Status string
 
 const (
 	// StatusLocked means the run cannot reach this objective. Something above
-	// it is unfinished, its parent's routing has not offered it yet, or its
-	// depends are unmet.
+	// it is unfinished, its parent's routing has not offered it yet, or it
+	// waits on a variable the run has not set.
 	StatusLocked Status = "locked"
 	// StatusAvailable means the run can work on this objective now.
 	StatusAvailable Status = "available"
@@ -47,6 +47,9 @@ type RunState struct {
 	// SectionFinished holds the objectives whose finish button the player has
 	// pressed, from the append-only section-finish log.
 	SectionFinished map[string]bool
+	// Vars holds the variables the run's blocks have set. Only reachability
+	// reads them; completion never does.
+	Vars map[string]bool
 	// RunCode seeds the shuffle for randomised routing, so a run sees a stable
 	// order across requests.
 	RunCode string
@@ -186,11 +189,8 @@ func InPlay(objectives []models.Objective) []models.Objective {
 // was in play when a team cleared it stays complete once it is drafted away, so
 // the gates it opened stay open.
 //
-// It exists separately because a depends list can name a section by slug, and a
-// section completes through its band rather than through a row of its own: the
-// only way to answer "is objective.<slug> true" is to derive completion first.
-// Completion never reads state.Vars, so there is no circularity in computing it
-// before the resolver that reachability then needs.
+// It never reads state.Vars. A gate decides what a run can reach, not what it
+// has done, so an objective cleared before its gate changed stays complete.
 func ComputeCompleted(objectives []models.Objective, state RunState) map[string]bool {
 	t := newTree(objectives)
 	complete := make(map[string]bool, len(objectives))
@@ -230,8 +230,9 @@ func ComputeFrontier(objectives []models.Objective, state RunState, complete map
 		frontier.Status[obj.ID] = StatusLocked
 	}
 	for _, root := range t.roots {
-		// The root has no parent to admit it and no depends above it, so it is
-		// open by definition; everything below is judged against it.
+		// The root has no parent to admit it and cannot wait on a variable
+		// (lint refuses ROOT_DEPENDS), so it is open by definition; everything
+		// below is judged against it.
 		assignStatuses(t, root, true, state, complete, &frontier)
 	}
 
@@ -341,7 +342,9 @@ func bandMet(band game.Band, completedChildren int, finished bool) bool {
 // closes: only the unfinished ones drop to locked.
 //
 // An objective's children are open only while the objective itself is open,
-// unfinished, and past its own proof. Completion and closure are one event.
+// unfinished, and past its own proof. Completion and closure are one event. A
+// child its parent admits still waits for every variable it depends on, so a
+// gated child of an ordered section holds the section there until it opens.
 func assignStatuses(
 	t tree, obj models.Objective, open bool, state RunState, complete map[string]bool, frontier *Frontier,
 ) {
@@ -358,7 +361,7 @@ func assignStatuses(
 	childrenOpen := open && !complete[obj.ID] && proofCleared(obj, state)
 	admitted := admittedChildren(obj, children, complete, state.RunCode)
 	for _, child := range children {
-		childOpen := childrenOpen && admitted[child.ID]
+		childOpen := childrenOpen && admitted[child.ID] && game.DependsMet(child.Depends, state.Vars)
 		assignStatuses(t, child, childOpen, state, complete, frontier)
 	}
 }

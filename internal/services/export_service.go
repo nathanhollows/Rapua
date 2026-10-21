@@ -188,6 +188,7 @@ func buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.Obj
 		Description: optionalString(obj.Description),
 		Draft:       &obj.Draft,
 		PassThrough: &obj.PassThrough,
+		Depends:     obj.Depends,
 		Routing:     obj.Routing,
 		ChildrenMin: obj.ChildrenMin,
 		ChildrenMax: obj.ChildrenMax,

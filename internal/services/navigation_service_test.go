@@ -47,6 +47,7 @@ func setupNavigationService(t *testing.T) (
 		blockRepo,
 		teamRepo,
 		repositories.NewRunEventRepository(dbc),
+		repositories.NewRunVariableRepository(dbc),
 		newTLogger(t),
 	)
 

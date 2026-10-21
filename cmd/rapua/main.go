@@ -94,6 +94,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
 	runEventRepo := repositories.NewRunEventRepository(dbc)
+	runVariableRepo := repositories.NewRunVariableRepository(dbc)
 
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
 	teamRepo := repositories.NewRunRepository(dbc)
@@ -132,6 +133,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		blockRepo,
 		teamRepo,
 		runEventRepo,
+		runVariableRepo,
 		logger,
 	)
 	checkInService := services.NewCheckInService(
@@ -139,7 +141,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		teamRepo, blockService,
 		objectiveRepo, objectiveContextCompletionRepo,
 		sectionFinishRepo, blockRepo,
-		runEventRepo,
+		runEventRepo, runVariableRepo,
 	)
 	notificationService := services.NewNotificationService(transactor, notificationRepo, teamRepo, runEventRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
@@ -152,7 +154,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		transactor, teamRepo, creditService, blockStateRepo,
 		objectiveRepo, objectiveContextCompletionRepo,
 		sectionFinishRepo, blockRepo,
-		runEventRepo,
+		runEventRepo, runVariableRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
 	questService := services.NewQuestService(transactor, instanceRepo, instanceSettingsRepo, blockRepo, objectiveRepo)
@@ -198,9 +200,10 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		logger, blockService, checkInService, questService, leaderBoardService,
 		navigationService, notificationService, runService, uploadService,
 	)
+	variableService := services.NewVariableService(objectiveRepo, blockRepo)
 	adminHandler := admin.NewAdminHandler(
 		logger, accessService, assetGenerator, identityService, blockService, lintService,
-		creditService, creditPurchaseRepo, deleteService, duplicationService,
+		variableService, creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
 		instanceRepo, questService, instanceSettingsService,
 		objectiveService, notificationService,

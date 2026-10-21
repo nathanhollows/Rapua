@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v8/game"
@@ -50,6 +51,15 @@ var ErrCannotDraftRoot = errors.New("the root objective cannot be a draft")
 // for the flag to hide.
 var ErrCannotPassThroughRoot = errors.New("the root objective cannot be a pass-through")
 
+// ErrCannotGateRoot is returned when an edit would make the root wait on a
+// variable. The root is the quest itself and always open, which lint also
+// refuses (ROOT_DEPENDS).
+var ErrCannotGateRoot = errors.New("the root objective cannot wait on a variable")
+
+// ErrInvalidVarName mirrors lint's VAR_NAME_INVALID, for edits that do not go
+// through a document.
+var ErrInvalidVarName = errors.New("invalid variable name")
+
 // ErrInvalidRouting mirrors lint's own rejection of a bad routing value, for
 // the one mutation path that bypasses lint.
 var ErrInvalidRouting = errors.New("invalid routing")
@@ -93,8 +103,7 @@ func NewObjectiveService(
 }
 
 // applySettings validates and applies the settings an update names, refusing
-// any that cannot stand: a depends entry naming its own subtree, or a band
-// its child count can never meet.
+// any that cannot stand, such as a band its child count can never meet.
 func (s objectiveService) applySettings(
 	ctx context.Context, objective *models.Objective, data ObjectiveUpdateData,
 ) (bool, error) {
@@ -149,6 +158,29 @@ func applyPassThrough(objective *models.Objective, data ObjectiveUpdateData) (bo
 		return false, fmt.Errorf("%w: %q", ErrCannotPassThroughRoot, objective.ID)
 	}
 	objective.PassThrough = *data.PassThrough
+	return true, nil
+}
+
+// applyDepends replaces the objective's gate when the update names one. Names
+// are checked here rather than left to lint, because a gate on a name no block
+// could ever set would hold the objective shut with nothing to explain why.
+func applyDepends(objective *models.Objective, data ObjectiveUpdateData) (bool, error) {
+	if data.Depends == nil {
+		return false, nil
+	}
+	depends := game.NormaliseDepends(*data.Depends)
+	for _, name := range depends {
+		if !game.ValidVarName(name) {
+			return false, fmt.Errorf("%w: %q", ErrInvalidVarName, name)
+		}
+	}
+	if slices.Equal(depends, objective.Depends) {
+		return false, nil
+	}
+	if len(depends) > 0 && objective.ParentID == "" {
+		return false, fmt.Errorf("%w: %q", ErrCannotGateRoot, objective.ID)
+	}
+	objective.Depends = depends
 	return true, nil
 }
 
@@ -437,6 +469,12 @@ func (s objectiveService) UpdateObjective(
 		return err
 	}
 	update = update || passThroughChanged
+
+	dependsChanged, err := applyDepends(&candidate, data)
+	if err != nil {
+		return err
+	}
+	update = update || dependsChanged
 
 	settingsChanged, err := s.applySettings(ctx, &candidate, data)
 	if err != nil {

@@ -116,6 +116,7 @@ func setupCompletingSubmission(
 		repositories.NewSectionFinishRepository(dbc),
 		blockRepo,
 		makeEventRepo(dbc),
+		repositories.NewRunVariableRepository(dbc),
 	)
 
 	return completingSubmission{

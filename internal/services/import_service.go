@@ -305,6 +305,7 @@ func (s *ImportService) createObjective(
 		Description: valueOrEmpty(objDoc.Description),
 		Draft:       objDoc.IsDraft(),
 		PassThrough: objDoc.IsPassThrough(),
+		Depends:     game.NormaliseDepends(objDoc.Depends),
 		Routing:     objDoc.Routing,
 		ChildrenMin: objDoc.ChildrenMin,
 		ChildrenMax: objDoc.ChildrenMax,
@@ -543,6 +544,9 @@ func (s *ImportService) reconcileObjective(
 	if objDoc.PassThrough != nil {
 		existingObj.PassThrough = *objDoc.PassThrough
 	}
+	// Unlike the flags above, an omitted gate is no gate: a document that
+	// leaves depends out is saying the objective is open.
+	existingObj.Depends = game.NormaliseDepends(objDoc.Depends)
 	existingObj.Routing = objDoc.Routing
 	existingObj.ChildrenMin = objDoc.ChildrenMin
 	existingObj.ChildrenMax = objDoc.ChildrenMax

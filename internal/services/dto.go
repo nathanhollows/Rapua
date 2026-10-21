@@ -48,6 +48,9 @@ type ObjectiveUpdateData struct {
 	// form that does not offer the field must leave one written on a form that
 	// did alone, and an author clearing it means it.
 	Description *string
+	// Depends replaces the variables the objective waits on. Nil leaves them
+	// alone; an empty slice removes the gate.
+	Depends *[]string
 }
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.

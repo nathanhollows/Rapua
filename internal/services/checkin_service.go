@@ -23,6 +23,7 @@ type CheckInService struct {
 	objectiveRepo                  repositories.ObjectiveRepository
 	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
 	runEventRepo                   repositories.RunEventRepository
+	runVariableRepo                repositories.RunVariableRepository
 	loader                         runStateLoader
 }
 
@@ -35,6 +36,7 @@ func NewCheckInService(
 	sectionFinishRepo repositories.SectionFinishRepository,
 	blockRepo repositories.BlockRepository,
 	runEventRepo repositories.RunEventRepository,
+	runVariableRepo repositories.RunVariableRepository,
 ) *CheckInService {
 	return &CheckInService{
 		transactor:                     transactor,
@@ -43,11 +45,13 @@ func NewCheckInService(
 		objectiveRepo:                  objectiveRepo,
 		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 		runEventRepo:                   runEventRepo,
+		runVariableRepo:                runVariableRepo,
 		loader: runStateLoader{
 			objectiveRepo:                  objectiveRepo,
 			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
 			sectionFinishRepo:              sectionFinishRepo,
 			blockRepo:                      blockRepo,
+			runVariableRepo:                runVariableRepo,
 		},
 	}
 }
@@ -171,6 +175,11 @@ func (s *CheckInService) applyAnswer(
 		}
 	}
 
+	setNow, err := s.setVarsWithTx(ctx, tx, team, block, state, plan)
+	if err != nil {
+		return false, err
+	}
+
 	completedContext := false
 	if plan.objective != nil {
 		inserted, err := s.objectiveContextCompletionRepo.InsertWithTx(
@@ -182,23 +191,7 @@ func (s *CheckInService) applyAnswer(
 		completedContext = inserted
 	}
 
-	// objectiveID is empty for a block the quest owns rather than an objective, so
-	// the column never carries a quest ID.
-	objectiveID := ""
-	if blockContext == game.ContextObjectiveProof || blockContext == game.ContextObjectiveReveal {
-		objectiveID = block.GetOwnerID()
-	}
-
-	// Safe inside the transaction: the answer is pure, reading the state and the
-	// input already in hand, never the database.
-	var submitted json.RawMessage
-	if reporter, ok := block.(game.SubmissionReporter); ok {
-		submitted = reporter.Submission(input, state)
-	}
-
-	answerEvent := answeredEvent(
-		team, block, objectiveID, state.IsComplete(), state.GetPointsAwarded(), submitted,
-	)
+	answerEvent := answerEventFor(team, block, blockContext, state, input, setNow)
 	// The payload carries what the block computed; the column carries what the
 	// score moved by.
 	answerEvent.Points = credited
@@ -222,6 +215,48 @@ func (s *CheckInService) applyAnswer(
 	}
 
 	return true, nil
+}
+
+// answerEventFor builds the event recording one submission. Safe inside the
+// transaction: it is pure, reading the state and the input already in hand,
+// never the database.
+func answerEventFor(
+	team *models.Run, block blocks.Block, blockContext game.BlockContext, state blocks.PlayerState,
+	input map[string][]string, setNow []string,
+) *models.RunEvent {
+	// objectiveID is empty for a block the quest owns rather than an objective, so
+	// the column never carries a quest ID.
+	objectiveID := ""
+	if blockContext == game.ContextObjectiveProof || blockContext == game.ContextObjectiveReveal {
+		objectiveID = block.GetOwnerID()
+	}
+
+	var submitted json.RawMessage
+	if reporter, ok := block.(game.SubmissionReporter); ok {
+		submitted = reporter.Submission(input, state)
+	}
+
+	return answeredEvent(
+		team, block, objectiveID, state.IsComplete(), state.GetPointsAwarded(), submitted, setNow,
+	)
+}
+
+// setVarsWithTx sets what a completed block writes and returns the names it
+// set for the first time. It runs under the same gate as the points: a block
+// the run could not reach saves its state but earns nothing, and a gate it
+// opened would let the player skip whatever stood in front of it.
+func (s *CheckInService) setVarsWithTx(
+	ctx context.Context, tx *bun.Tx, team *models.Run, block blocks.Block, state blocks.PlayerState,
+	plan completionPlan,
+) ([]string, error) {
+	if !plan.awardPoints {
+		return nil, nil
+	}
+	set, err := s.runVariableRepo.InsertWithTx(ctx, tx, team.Code, block.GetID(), game.VarsSetBy(block, state))
+	if err != nil {
+		return nil, fmt.Errorf("setting variables: %w", err)
+	}
+	return set, nil
 }
 
 func (s *CheckInService) validateInPreview(
@@ -252,9 +287,10 @@ func (s *CheckInService) validateInPreview(
 	return state, block, nil
 }
 
-// completionPlan is what a completing submission is entitled to: awardPoints for
-// a start or finish block, which the quest owns and which has no gate to pass, and
-// objective once the context is complete.
+// completionPlan is what a completing submission is entitled to: awardPoints,
+// which also sets the block's variables, for a start or finish block, which the
+// quest owns and which has no gate to pass, or for a block the run can reach;
+// and objective once the context is complete.
 type completionPlan struct {
 	awardPoints bool
 	objective   *models.Objective
@@ -316,11 +352,9 @@ func (s *CheckInService) planCompletion(
 	return plan, nil
 }
 
-// CompleteObjectiveContext logs the completion and applies the context's sets
-// once every block in the context is done. Logging is unconditional even when
-// the context defines no sets. Exported because a content-only context has
-// nothing a player can POST to, so it needs a direct caller outside the
-// POST/validate path. Safe to call unconditionally: the idempotency guard
+// CompleteObjectiveContext logs the completion once every block in the context
+// is done. Exported because a content-only context has nothing a player can
+// POST to, so it needs a direct caller outside the POST/validate path. Safe to call unconditionally: the idempotency guard
 // makes a context that is not done, or already logged, a harmless no-op, and
 // an objective the run cannot yet reach is a no-op for the same reason.
 func (s *CheckInService) CompleteObjectiveContext(
@@ -350,7 +384,7 @@ func (s *CheckInService) CompleteObjectiveContext(
 
 	// A slug is guessable and the objective view completes content-only
 	// contexts on GET, so without this a player could reach a gated objective
-	// directly and fire its sets, opening every downstream gate out of order.
+	// directly and complete it, opening whatever waits on it out of order.
 	objectives, state, complete, err := s.loader.load(ctx, team)
 	if err != nil {
 		return fmt.Errorf("loading run state: %w", err)
@@ -416,6 +450,19 @@ func (s *CheckInService) recordContextCompleted(
 	return nil
 }
 
+// RunVars returns the variables the run has set, for deciding which content
+// blocks it is shown. Preview has no run, so it has set nothing.
+func (s *CheckInService) RunVars(ctx context.Context, team *models.Run) (map[string]bool, error) {
+	if ctx.Value(contextkeys.PreviewKey) != nil {
+		return map[string]bool{}, nil
+	}
+	names, err := s.runVariableRepo.FindNamesByRunCode(ctx, team.Code)
+	if err != nil {
+		return nil, fmt.Errorf("loading run variables: %w", err)
+	}
+	return setOf(names), nil
+}
+
 // IsObjectiveContextPending reports whether an objective's proof or reveal
 // context still has unvalidated required blocks for this team: the same check
 // CompleteObjectiveContext uses internally, exposed for callers (the objective
@@ -430,7 +477,7 @@ func (s *CheckInService) IsObjectiveContextPending(
 
 // ObjectiveIsReachable reports whether a run can be on this objective's page at
 // all: it is in play, its ancestors are open, its parent's routing has offered
-// it, and its depends are met.
+// it, and every variable it waits on is set.
 //
 // This asks the frontier rather than re-deriving a piece of it, because a list
 // that merely leaves an objective out is not a gate: a guessed slug, a printed
