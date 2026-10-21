@@ -74,7 +74,7 @@ twice would double the sum. Every other event carries 0.
 | `run_named` | a player names or renames their run | `{name}` | no |
 | `objectives_listed` | a player opens the list of objectives | nothing | yes |
 | `objective_viewed` | a player opens an objective they can reach | `objective_id` | yes |
-| `block_answered` | a graded answer is submitted, right or wrong | `objective_id`, `block_id`, `{block_type, completed, points_awarded, submitted?}`, credited `points` | yes |
+| `block_answered` | a graded answer is submitted, right or wrong | `objective_id`, `block_id`, `{block_type, completed, points_awarded, submitted?, sets?}`, credited `points` | yes |
 | `objective_context_completed` | an objective context clears, once per context | `objective_id`, `{context, points}` | yes |
 | `section_finished` | a player chooses to end a section | `objective_id` | yes |
 | `upload_added` | a run uploads media | `block_id`, `{url, media_type}` | yes |
@@ -97,6 +97,9 @@ Notes that matter when reading the table:
   checklist). A geofence attempt carries the reported position, a checklist tick
   the items checked so far. A solve carries nothing, because the block's state is
   where the final answer lives.
+- `block_answered`'s `sets` lists the variables that answer set for the first
+  time. A variable the run already had is left out, so the stream adds up to
+  `run_variables`, and an answer the reachability gate declined sets nothing.
 - `notification_sent` carries the words because the `notifications` table filters
   dismissed rows out of every read, so the log is the copy of the message that
   survives a dismissal.

@@ -105,12 +105,51 @@ A few things to know:
 - The quest itself cannot be pass-through. An objective with nothing inside can
   carry the flag, but it does nothing there, and the editor warns about it.
 
+## Keys and locks
+
+An objective can stay locked until a team has done something somewhere else.
+Interactive blocks carry the keys: give a quiz, a scan or a password a variable,
+and completing it sets that variable for the team. A choice sets the variable of
+whichever option the team picks. Click the lock in an objective's header to pick
+the variables it waits for; it opens once every one of them is set.
+
+Several blocks can set the same variable, so "find any one of these" needs no
+section of its own: give each of them the same key. And because a single choice
+sets only one option, two objectives locked on different options of the same
+choice are a fork in the road: a team only ever opens one.
+
+Content blocks can be locked too, and stay hidden until their variables are set.
+A text block beside a quiz can wait on the quiz's key, and appears the moment the
+answer goes in.
+
+The editor marks what is locked. On the quest page a lock with names means the
+objective itself is locked; a faint lock means one of its blocks is hidden, and a
+key means one of its blocks sets something. Hover either to see which.
+
+A few things to know:
+
+- Only interactive blocks set variables, and only content blocks and objectives
+  wait on them. An objective's own completion never sets one: what unlocks things
+  is always something a team did.
+- Once set, a variable stays set. There is no way to lock something again.
+- A lock nothing can ever open is flagged: a variable no block sets, or one only
+  set behind the very lock waiting on it.
+- A section that needs all of its contents cannot be finished if some of them are
+  locked on different options of one choice. Lower its minimum, or move the
+  branches into a section of their own.
+- A section that finishes on its own closes everything inside it. If one objective
+  is locked on a key its neighbours hold, and the section finishes before enough
+  of them are done, it stays locked. The editor warns when that is likely.
+
 ## Example: a perfumer's garden
 
 **Find a top note** (Open Exploration, 1 of 3) — a card on what a top note is,
-then bergamot, lemon verbena, pink pepper.
-**Find a heart note** (Open Exploration, 1 of 3) — rose, jasmine, ylang-ylang.
-**Find a base note** (Open Exploration, 1 of 3) — vetiver, oakmoss, labdanum.
+then bergamot, lemon verbena, pink pepper. Each one's question sets `top_note`.
+**Find a heart note** (Open Exploration, 1 of 3) — rose, jasmine, ylang-ylang,
+each setting `heart_note`.
+**Find a base note** (Open Exploration, 1 of 3) — vetiver, oakmoss, labdanum,
+each setting `base_note`.
 **The still room** (Open Exploration, 2 to 4) — optional, with a finish button.
+**The blending bench** — locked on `top_note`, `heart_note` and `base_note`.
 
-One from each layer, in any order.
+One from each layer, in any order, and the bench opens when a team has all three.

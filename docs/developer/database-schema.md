@@ -83,6 +83,7 @@ the quest rather than a place in it and is never rendered to a player.
 | title | string | Name of the objective |
 | draft | bool | Held out of play along with everything beneath it, without moving any of it |
 | pass_through | bool | Stops the section being a place the player stands: it still routes and bands, but its rows join the nearest drawn section |
+| depends | text | JSON array of variables that must all be set before the objective opens. NULL means no gate |
 | routing | string | How children are offered: `ordered`, `free_roam` or `randomised`. Inert without children |
 | children_min | int | Completion band lower bound. NULL and 0 differ: see the [game spec](/docs/developer/game-spec) |
 | children_max | int | Completion band upper bound |
@@ -96,8 +97,8 @@ the constraint would have.
 
 ### ObjectiveContextCompletion
 An append-only record that a run cleared one of an objective's two contexts. The
-insert is the idempotency guard: a context's `sets` fire on the call that
-recorded the completion, not on every call that finds it done.
+insert is the idempotency guard: the call that recorded the completion is the one
+that writes its event, not every call that finds it done.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -238,17 +239,22 @@ Audit log of when a user started a run. (Was `TeamStartLog`.)
 | quest_id | string | Foreign key to quests.id |
 | run_id | string | Foreign key to runs.id |
 
-### RunVarState
-Stores creator-defined variable values for a run within a quest. (Was `TeamVarState`.)
+### RunVariable
+The variables a run has set. A variable is only ever set, never unset, so a row's
+presence is its value and nothing updates or deletes one. Only an interactive
+block the run could reach sets a variable, under the same gate that awards its
+points; reading them back from block states instead would count blocks a player
+posted to without being able to reach them.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| run_code | string | Part of composite primary key, references runs.code |
-| quest_id | string | Part of composite primary key, references quests.id |
-| var_name | string | Part of composite primary key — the variable's name |
-| var_value | string | The variable's current value |
+| run_code | string | Part of composite primary key, references runs.code, cascades on delete |
+| name | string | Part of composite primary key: the variable |
+| block_id | string | The block that set it first. No foreign key: deleting a block does not take back a gate it opened |
+| created_at | datetime | When it was set |
 
-Surfaced on `Run.VarStates` at runtime; not a bun relation.
+A block's own `sets` and `depends` are not columns: they live in `blocks.data`
+with the rest of the block's fields.
 
 ### FacilitatorToken
 Tokens that allow facilitators to access a quest, optionally scoped to specific objectives.
@@ -305,10 +311,11 @@ This table's shape changed substantially beyond the rename — it no longer has 
 6. **Run to ObjectiveContextCompletions**: One-to-many. What a run cleared, append-only.
 7. **Run to SectionFinishes**: One-to-many. Which sections a player chose to end.
 8. **Run to RunBlockState**: One-to-many. Runs have state for each block they interact with.
-9. **User to Quests**: One-to-many. Users can create multiple quests.
-10. **Quest to Template**: Many-to-one, via `template_id`. Many quests can be created from one template.
-11. **Template to ShareLinks**: One-to-many. A template can have multiple share links.
-12. **User to CreditPurchases**: One-to-many. Purchases feed balance adjustments via `CreditAdjustments`.
+9. **Run to RunVariables**: One-to-many. The variables a run's blocks have set, append-only.
+10. **User to Quests**: One-to-many. Users can create multiple quests.
+11. **Quest to Template**: Many-to-one, via `template_id`. Many quests can be created from one template.
+12. **Template to ShareLinks**: One-to-many. A template can have multiple share links.
+13. **User to CreditPurchases**: One-to-many. Purchases feed balance adjustments via `CreditAdjustments`.
 
 ## Database Indexes
 
@@ -318,6 +325,7 @@ Beyond primary keys, notable explicit indexes (from `internal/migrations/`) incl
 - `idx_objectives_parent_position` — unique, on `objectives (parent_id, position)`, so two siblings cannot share a position. SQLite checks it per statement rather than at commit, which is why every renumber parks its rows clear before settling them
 - `idx_objectives_parent_id` on `objectives (parent_id)`, `idx_objectives_quest_id` on `objectives (quest_id)`
 - `idx_objective_context_completions_run_code` on `objective_context_completions (run_code)`
+- `run_variables` is read by run and its primary key leads with `run_code`, so it needs no index of its own
 - `idx_blocks_owner_id` on `blocks (owner_id)`
 - `idx_teams_instance_id` on `runs (quest_id)`, `idx_teams_id` on `runs (id)`
 - `idx_notifications_team_code` on `notifications (run_code)`

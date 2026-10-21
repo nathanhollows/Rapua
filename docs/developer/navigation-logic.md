@@ -20,7 +20,7 @@ The frontier is every objective's status for one run:
 
 | Status | Meaning |
 |--------|---------|
-| `locked` | Out of reach. Something above it is unfinished, or its parent's routing has not offered it |
+| `locked` | Out of reach. Something above it is unfinished, its parent's routing has not offered it, or it waits on a variable the run has not set |
 | `available` | The run can work on it now |
 | `finishable` | Available, and its band has a range whose minimum is met: the player may finish it or carry on |
 | `complete` | Done, and its branch is closed |
@@ -94,6 +94,28 @@ looks childless once pruned, and it is not a leaf unless the full tree says so.
 Completion is derived over **every** row, drafts included, because it records
 what a run did rather than what it can still reach. An objective cleared before
 it was parked stays cleared, so the gates it opened stay open.
+
+## Depends
+
+An objective's `depends` is a flat list of variable names that must all be set
+before it opens. There is no negation and no comparison, so a gate that has
+opened never closes. Only an interactive block sets a variable, the moment a run
+completes it, and only when the run could reach it: the same gate decides its
+points. A choice sets the variable of each option picked.
+
+Depends is read by reachability alone. Completion never looks at it, so an
+objective a run cleared stays cleared whatever happens to its gate. A gated child
+that its parent's routing has admitted is still locked, which means an ordered
+section stops at a gated child until it opens, and a randomised window can be
+filled by one (lint warns, `DEPENDS_IN_RANDOMISED_WINDOW`). The root cannot wait
+on anything: it is the quest.
+
+Content blocks can depend on variables too, and stay hidden until they are set.
+That is a question for the page rather than the frontier: a hidden block gates
+nothing, because content never has to be completed.
+
+The OR still lives in the tree, as a `min=max=1` section. Depends is the AND, and
+a single-select choice is how a player picks one branch over another.
 
 ## Reachability is a gate, not a filter
 

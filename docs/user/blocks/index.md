@@ -31,6 +31,8 @@ These blocks are the foundation of your game and are used to provide information
 
 These blocks allow you to create interactive elements in your game that require participants to complete a task or answer a question. They can be used to test knowledge, provide feedback, or guide participants through the game.
 
+Any interactive block can carry a key: click the key in its header and name a variable, and completing the block sets it. Static blocks carry a lock instead, and stay hidden until the variables they wait on are set. See [keys and locks](/docs/user/sections#keys-and-locks).
+
 - [Checklist](/docs/user/blocks/checklist)
 - [Choice](/docs/user/blocks/choice)
 - [Clue](/docs/user/blocks/clue)
