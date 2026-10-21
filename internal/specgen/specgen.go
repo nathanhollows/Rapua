@@ -12,9 +12,8 @@ import (
 )
 
 // GenerateBlockSpecs returns the BlockSpec for every registered block type, sorted by type name.
-// Interactive block specs (RequiresValidation) receive `points`; those supporting
-// creator vars also receive `sets`. A block that does neither lists no shared
-// fields at all.
+// Interactive block specs (RequiresValidation) receive `points`, and `sets`
+// where game.CanSetVars allows; content blocks receive `depends` instead.
 func GenerateBlockSpecs() []game.BlockSpec {
 	registered := blocks.GetRegisteredBlocks()
 
@@ -35,6 +34,11 @@ func GenerateBlockSpecs() []game.BlockSpec {
 			// block cannot ship with the spec hiding a field the runtime honours.
 			if reg.Prototype.RequiresValidation() {
 				spec.SharedFields = append(spec.SharedFields, "points")
+				if game.CanSetVars(reg.Prototype) {
+					spec.SharedFields = append(spec.SharedFields, "sets")
+				}
+			} else {
+				spec.SharedFields = append(spec.SharedFields, "depends")
 			}
 			specs = append(specs, spec)
 		}

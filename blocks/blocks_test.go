@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -72,4 +73,65 @@ func TestBlockUniqueness(t *testing.T) {
 			descriptions[block.GetDescription()] = true
 		})
 	}
+}
+
+// Sets and depends ride in every block's data, so a save that goes through a
+// block type's own marshalling must not drop them.
+func TestBlockDataKeepsVars(t *testing.T) {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextObjectiveProof) {
+		t.Run(block.GetType(), func(t *testing.T) {
+			newBlock, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
+				ID:   "1",
+				Type: block.GetType(),
+				Data: json.RawMessage(`{"sets":"met_guide","depends":["a","b"]}`),
+			})
+			require.NoError(t, err)
+			require.NoError(t, newBlock.ParseData())
+			assert.Equal(t, "met_guide", newBlock.GetSets())
+			assert.Equal(t, []string{"a", "b"}, []string(newBlock.GetDepends()))
+
+			var data map[string]any
+			require.NoError(t, json.Unmarshal(newBlock.GetData(), &data))
+			assert.Equal(t, "met_guide", data["sets"])
+			assert.Equal(t, []any{"a", "b"}, data["depends"])
+		})
+	}
+}
+
+// The editor's ordinary autosave goes through UpdateBlockData, which knows
+// nothing of variables and must leave them be.
+func TestBlockAutosaveKeepsVars(t *testing.T) {
+	cases := []struct {
+		blockType string
+		form      map[string][]string
+	}{
+		{"text", map[string][]string{"content": {"Welcome"}}},
+		{"free_text", map[string][]string{"prompt": {"Who?"}, "points": {"5"}}},
+	}
+	for _, c := range cases {
+		t.Run(c.blockType, func(t *testing.T) {
+			block, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
+				ID: "1", Type: c.blockType, Data: json.RawMessage(`{"sets":"met_guide","depends":["a"]}`),
+			})
+			require.NoError(t, err)
+			require.NoError(t, block.ParseData())
+			require.NoError(t, block.UpdateBlockData(c.form))
+
+			var data map[string]any
+			require.NoError(t, json.Unmarshal(block.GetData(), &data))
+			assert.Equal(t, "met_guide", data["sets"])
+			assert.Equal(t, []any{"a"}, data["depends"])
+		})
+	}
+}
+
+// Naming a team completes through its own endpoint, never check-in, so a key
+// on it would never turn.
+func TestTeamNameCannotSetVars(t *testing.T) {
+	block := &blocks.TeamNameChangerBlock{BaseBlock: blocks.BaseBlock{Sets: "named"}}
+	assert.False(t, game.CanSetVars(block))
+	assert.Nil(t, game.DeclaredVars(block))
+	assert.True(t, game.CanSetVars(&blocks.FreeTextBlock{}))
+	assert.False(t, game.CanSetVars(&blocks.ChoiceBlock{}))
+	assert.False(t, game.CanSetVars(&blocks.MarkdownBlock{}))
 }

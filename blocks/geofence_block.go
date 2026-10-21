@@ -145,8 +145,7 @@ func (b *GeofenceBlock) ToYAML() map[string]any {
 	return m
 }
 
-func (b *GeofenceBlock) SupportsVariableSets() bool { return true }
-func (b *GeofenceBlock) RequiresValidation() bool   { return true }
+func (b *GeofenceBlock) RequiresValidation() bool { return true }
 
 // maxAccuracy defaults rather than failing closed, so an imported block without
 // one still tests positions instead of refusing every reading.

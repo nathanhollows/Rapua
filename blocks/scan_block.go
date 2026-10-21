@@ -131,8 +131,7 @@ func (b *ScanBlock) ToYAML() map[string]any {
 	return m
 }
 
-func (b *ScanBlock) SupportsVariableSets() bool { return true }
-func (b *ScanBlock) RequiresValidation() bool   { return true }
+func (b *ScanBlock) RequiresValidation() bool { return true }
 
 // Defaults rather than failing closed, so an imported block still compares.
 func (b *ScanBlock) matchRule() MatchRule {

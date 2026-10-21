@@ -46,6 +46,11 @@ type Block interface {
 	// Validation and Points Calculation
 	RequiresValidation() bool
 	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
+
+	// Variables
+	GetSets() string
+	GetDepends() DependsField
+	SetVars(sets string, depends DependsField)
 }
 
 // SubmissionReporter is implemented by blocks that record what a submission
@@ -69,6 +74,23 @@ type BaseBlock struct {
 	Data    json.RawMessage `json:"-"`
 	Order   int             `json:"-"`
 	Points  int             `json:"-"`
+	// Sets and Depends live in the block's data rather than columns, so every
+	// block type carries them through its own marshalling and the document
+	// round-trips them without a per-type change.
+	Sets    string       `json:"sets,omitempty"`
+	Depends DependsField `json:"depends,omitempty"`
+}
+
+// GetSets returns the variable the block writes when completed.
+func (b *BaseBlock) GetSets() string { return b.Sets }
+
+// GetDepends returns the variables that must be set before the block shows.
+func (b *BaseBlock) GetDepends() DependsField { return b.Depends }
+
+// SetVars replaces the block's sets and depends.
+func (b *BaseBlock) SetVars(sets string, depends DependsField) {
+	b.Sets = sets
+	b.Depends = depends
 }
 
 // RegisteredBlock holds block metadata for the registry.

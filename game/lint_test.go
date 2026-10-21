@@ -16,7 +16,6 @@ type mockRegistry struct {
 	contexts    map[string][]game.BlockContext
 	knownFields map[string][]string
 	interactive map[string]bool
-	docSetsVars map[string][]string // block type → var names returned by DocSetsVars
 }
 
 func (m *mockRegistry) IsValidType(blockType string) bool {
@@ -42,11 +41,29 @@ func (m *mockRegistry) IsInteractive(blockType string) bool {
 	return m.interactive[blockType]
 }
 
-func (m *mockRegistry) DocSetsVars(blockType string, _ game.BlockDoc) []string {
-	if m.docSetsVars == nil {
-		return nil
+// CanSetVars mirrors the real registry: interactive, not a choice, and not
+// team_name, which completes outside check-in.
+func (m *mockRegistry) CanSetVars(blockType string) bool {
+	return m.interactive[blockType] && blockType != "choice" && blockType != "team_name"
+}
+
+// DocVars reads choice options the way the real choice block does.
+func (m *mockRegistry) DocVars(blockType string, doc game.BlockDoc) (game.DocVars, bool) {
+	if blockType != "choice" {
+		return game.DocVars{}, false
 	}
-	return m.docSetsVars[blockType]
+	out := game.DocVars{Exclusive: true}
+	if multi, _ := doc["multi_select"].(bool); multi {
+		out.Exclusive = false
+	}
+	opts, _ := doc["options"].([]any)
+	for _, opt := range opts {
+		o, _ := opt.(map[string]any)
+		if s, _ := o["sets"].(string); s != "" {
+			out.Names = append(out.Names, s)
+		}
+	}
+	return out, true
 }
 
 func (m *mockRegistry) ValidateBlock(_, _ string, _ game.BlockDoc) ([]game.LintDiag, []game.LintDiag) {
@@ -958,7 +975,7 @@ func TestLint_NamesFieldsTheModelHasRetired(t *testing.T) {
 		}
 	}
 	assert.Contains(t, named, "structure.color")
-	assert.Contains(t, named, "structure.depends")
+	assert.NotContains(t, named, "structure.depends")
 	assert.Contains(t, named, "structure.proof.sets")
 }
 
@@ -989,15 +1006,15 @@ func TestLint_AcceptsTheFieldsTheModelStillHas(t *testing.T) {
 	}
 }
 
-// Block-level "sets" went with the variable system. A block still carrying one
-// is naming a field nothing reads.
-func TestLint_NamesBlockLevelSets(t *testing.T) {
+// sets and depends are fields of every block, so a type's own spec need not
+// list them for them to count as known.
+func TestLint_BlockVarsAreKnownFields(t *testing.T) {
 	raw := []byte(`{
 		"rapua": "v8", "name": "Sets", "settings": {},
 		"start": [], "finish": [],
 		"structure": {
 			"slug": "root", "title": "Root",
-			"proof": {"blocks": [{"type": "quiz", "sets": "answered"}]},
+			"proof": {"blocks": [{"type": "quiz", "sets": "answered"}, {"type": "text", "depends": ["answered"]}]},
 			"reveal": {"blocks": []}
 		}
 	}`)
@@ -1005,15 +1022,11 @@ func TestLint_NamesBlockLevelSets(t *testing.T) {
 	// The field check only runs for a type whose fields are known, so the mock
 	// has to declare them the way the real registry does.
 	registry := newTestRegistry()
-	registry.knownFields = map[string][]string{"quiz": {"question", "options"}}
+	registry.knownFields = map[string][]string{"quiz": {"question", "options"}, "text": {"content"}}
 
 	result := game.LintJSON(raw, registry)
 
-	var named []string
 	for _, diag := range append(result.Errors, result.Warnings...) {
-		if diag.Code == "UNKNOWN_FIELD" {
-			named = append(named, diag.Path)
-		}
+		assert.NotEqual(t, "UNKNOWN_FIELD", diag.Code, "unexpected: %s", diag.Path)
 	}
-	assert.Equal(t, []string{"structure.proof.blocks[0].sets"}, named)
 }

@@ -73,6 +73,10 @@ func (b *TeamNameChangerBlock) ToYAML() map[string]any {
 
 // Validation and Points Calculation
 
+// CompletedOutsideCheckIn implements game.CompletedOutsideCheckIn: naming the
+// team goes through its own endpoint, never check-in.
+func (b *TeamNameChangerBlock) CompletedOutsideCheckIn() {}
+
 func (b *TeamNameChangerBlock) RequiresValidation() bool {
 	return true
 }

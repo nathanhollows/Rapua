@@ -25,6 +25,27 @@ type BlockRegistry interface {
 	// ValidateBlock runs block-type-specific structural lint on a block doc,
 	// returning separate error and warning diagnostics.
 	ValidateBlock(blockType, path string, doc BlockDoc) (errors, warnings []LintDiag)
+	// DocVars reports the variables a block type lets the player choose
+	// between, read from a document. ok is false for a block whose only
+	// variable is its own sets field.
+	DocVars(blockType string, doc BlockDoc) (vars DocVars, ok bool)
+	// CanSetVars reports whether a block type can carry its own sets field
+	// (see game.CanSetVars).
+	CanSetVars(blockType string) bool
+}
+
+// DocVars describes the variables a choosing block can write.
+type DocVars struct {
+	Names []string
+	// Exclusive means the player can set only one of Names, so two gates on
+	// different names can never both open.
+	Exclusive bool
+}
+
+// DocVarsReporter is implemented by block types whose player chooses which
+// variables to set, so lint can read them from a document.
+type DocVarsReporter interface {
+	DocVars(doc BlockDoc) DocVars
 }
 
 // BlockDocValidator is implemented by block types that perform structural lint

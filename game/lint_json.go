@@ -38,12 +38,12 @@ var (
 	}
 	knownObjectiveDocFields = map[string]bool{
 		"id": true, "slug": true, "title": true, "description": true, "draft": true, "pass_through": true,
-		"proof": true, "reveal": true,
+		"depends": true, "proof": true, "reveal": true,
 		"routing": true, "children_min": true, "children_max": true,
 		"max_next": true, "finish_label": true, "children": true,
 	}
-	// "sets" left with the variable system: a document still naming it is
-	// naming something that will be read and dropped.
+	// No "sets": only a block can set a variable, so what gates a player is
+	// always something they did rather than somewhere they stood.
 	knownObjectiveContextDocFields = map[string]bool{"blocks": true}
 )
 

@@ -13,14 +13,14 @@ import (
 // ChoiceOption is a single selectable option in a choice block.
 type ChoiceOption struct {
 	Label string `json:"label"`
-	// Sets is the variable name set to "true" when this option is chosen.
+	// Sets is the variable set when this option is chosen. It doubles as the
+	// option's identity in the player's state.
 	Sets string `json:"sets"`
 }
 
 // ChoiceBlock presents a set of labelled options. In single-select mode the player
 // picks exactly one; in multi-select mode they may pick any number. Each chosen
-// option's Sets variable is written as "true". Choice is final — re-submission
-// is a no-op because variables are monotonic.
+// option sets its own variable, so the block's own sets field is never used.
 type ChoiceBlock struct {
 	BaseBlock
 	Prompt      string         `json:"prompt"`
@@ -79,24 +79,41 @@ func (b *ChoiceBlock) UpdateBlockData(input map[string][]string) error {
 		b.ButtonText = bt[0]
 	}
 	b.MultiSelect = len(input["multi_select"]) > 0 && input["multi_select"][0] == "on"
-	// Rebuild options from parallel label[]/sets[] slices sent by the admin form.
 	labels := input["option_label"]
 	sets := input["option_sets"]
 	if labels != nil || sets != nil {
-		count := len(labels)
-		if len(sets) < count {
-			count = len(sets)
-		}
-		opts := make([]ChoiceOption, 0, count)
-		for i := range count {
-			if labels[i] == "" && sets[i] == "" {
-				continue
-			}
-			opts = append(opts, ChoiceOption{Label: labels[i], Sets: sets[i]})
+		opts, err := parseChoiceOptions(labels, sets)
+		if err != nil {
+			return err
 		}
 		b.Options = opts
 	}
 	return nil
+}
+
+// parseChoiceOptions rebuilds options from the parallel label and variable
+// lists the admin form sends. The variable is also the option's identity in a
+// player's state, so a bad or repeated one is refused rather than stored.
+func parseChoiceOptions(labels, sets []string) ([]ChoiceOption, error) {
+	count := min(len(labels), len(sets))
+	opts := make([]ChoiceOption, 0, count)
+	seen := make(map[string]bool, count)
+	for i := range count {
+		if labels[i] == "" && sets[i] == "" {
+			continue
+		}
+		if sets[i] != "" {
+			if !game.ValidVarName(sets[i]) {
+				return nil, fmt.Errorf("%q is not a valid variable name", sets[i])
+			}
+			if seen[sets[i]] {
+				return nil, fmt.Errorf("two options set %q", sets[i])
+			}
+			seen[sets[i]] = true
+		}
+		opts = append(opts, ChoiceOption{Label: labels[i], Sets: sets[i]})
+	}
+	return opts, nil
 }
 
 // ToYAML returns the block's fields for YAML export.
@@ -125,11 +142,10 @@ func (b *ChoiceBlock) ToYAML() map[string]any {
 
 // Validation
 
-func (b *ChoiceBlock) RequiresValidation() bool   { return true }
-func (b *ChoiceBlock) SupportsVariableSets() bool { return true }
+func (b *ChoiceBlock) RequiresValidation() bool { return true }
 
-// ValidatePlayerInput records the player's choice(s). Re-submission after completion
-// is a no-op — choice is final and variables are monotonic.
+// ValidatePlayerInput records the player's choice(s). Re-submission after
+// completion is a no-op: choice is final, and a variable once set stays set.
 func (b *ChoiceBlock) ValidatePlayerInput(
 	state PlayerState,
 	input map[string][]string,
@@ -181,8 +197,37 @@ func (b *ChoiceBlock) ValidatePlayerInput(
 	return state, nil
 }
 
-// GetChosenVars extracts all chosen option var names from state.
-func (b *ChoiceBlock) GetChosenVars(state PlayerState) []string {
+// DeclaredVars implements game.VarDeclarer: every option's variable.
+func (b *ChoiceBlock) DeclaredVars() []string {
+	vars := make([]string, 0, len(b.Options))
+	for _, opt := range b.Options {
+		if opt.Sets != "" {
+			vars = append(vars, opt.Sets)
+		}
+	}
+	return vars
+}
+
+// DocVars implements game.DocVarsReporter, reading the options straight from a
+// document so lint can see them without building the block.
+func (b *ChoiceBlock) DocVars(doc game.BlockDoc) game.DocVars {
+	out := game.DocVars{Exclusive: true}
+	if multi, _ := doc["multi_select"].(bool); multi {
+		out.Exclusive = false
+	}
+	opts, _ := doc["options"].([]any)
+	for _, opt := range opts {
+		m, _ := opt.(map[string]any)
+		if s, _ := m["sets"].(string); s != "" {
+			out.Names = append(out.Names, s)
+		}
+	}
+	return out
+}
+
+// ChosenVars implements game.ChosenVarsReporter: the variables of the options
+// the player picked.
+func (b *ChoiceBlock) ChosenVars(state PlayerState) []string {
 	if state == nil || state.GetPlayerData() == nil {
 		return nil
 	}
@@ -203,7 +248,7 @@ func (b *ChoiceBlock) GetButtonText() string {
 
 // GetChosenLabels returns the display labels for all chosen options.
 func (b *ChoiceBlock) GetChosenLabels(state PlayerState) []string {
-	chosen := b.GetChosenVars(state)
+	chosen := b.ChosenVars(state)
 	labels := make([]string, 0, len(chosen))
 	for _, varName := range chosen {
 		for _, opt := range b.Options {
@@ -243,6 +288,7 @@ func (b *ChoiceBlock) ValidateBlockDoc(path string, doc game.BlockDoc) ([]game.L
 		})
 		return errs, warns
 	}
+	seen := make(map[string]bool, len(opts))
 	for i, opt := range opts {
 		m, ok := opt.(map[string]any)
 		if !ok {
@@ -250,13 +296,31 @@ func (b *ChoiceBlock) ValidateBlockDoc(path string, doc game.BlockDoc) ([]game.L
 		}
 		optPath := fmt.Sprintf("%s.options[%d]", path, i)
 		s, _ := m["sets"].(string)
-		if s == "" {
+		switch {
+		case s == "":
 			errs = append(errs, game.LintDiag{
 				Path:    optPath + ".sets",
 				Code:    "CHOICE_OPTION_MISSING_SETS",
 				Message: "choice option must have a non-empty \"sets\" variable name",
 			})
+		case !game.ValidVarName(s):
+			errs = append(errs, game.LintDiag{
+				Path: optPath + ".sets",
+				Code: "VAR_NAME_INVALID",
+				Message: fmt.Sprintf(
+					"variable %q must be lowercase letters, digits and underscores, not starting with a digit", s,
+				),
+			})
+		case seen[s]:
+			// The variable is also the option's identity in the player's
+			// state, so two options sharing one cannot be told apart.
+			errs = append(errs, game.LintDiag{
+				Path:    optPath + ".sets",
+				Code:    "CHOICE_OPTION_DUPLICATE_SETS",
+				Message: fmt.Sprintf("another option already sets %q, so choosing either would look the same", s),
+			})
 		}
+		seen[s] = true
 		label, _ := m["label"].(string)
 		if label == "" {
 			warns = append(warns, game.LintDiag{

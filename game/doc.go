@@ -51,9 +51,13 @@ type ObjectiveDoc struct {
 	// routes, bands and gates its children, but they are shown as if they sat in
 	// the nearest section that is drawn. A pointer for the same reason Draft is
 	// one: a document that never mentions it leaves the stored state alone.
-	PassThrough *bool               `json:"pass_through,omitempty"`
-	Proof       ObjectiveContextDoc `json:"proof"`
-	Reveal      ObjectiveContextDoc `json:"reveal"`
+	PassThrough *bool `json:"pass_through,omitempty"`
+	// Depends lists the variables that must all be set before this objective
+	// opens. Not a pointer, unlike the flags above: a gate is part of how the
+	// quest plays, so a document that omits it states there is none.
+	Depends DependsField        `json:"depends,omitempty"`
+	Proof   ObjectiveContextDoc `json:"proof"`
+	Reveal  ObjectiveContextDoc `json:"reveal"`
 
 	// Routing orders the children below. Meaningless without them.
 	Routing RouteStrategy `json:"routing,omitempty"`

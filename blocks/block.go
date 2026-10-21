@@ -257,6 +257,22 @@ func (r *registryImpl) ValidateBlock(blockType, path string, doc game.BlockDoc) 
 	return nil, nil
 }
 
+func (r *registryImpl) CanSetVars(blockType string) bool {
+	reg := blockRegistry[blockType]
+	return reg != nil && game.CanSetVars(reg.Prototype)
+}
+
+func (r *registryImpl) DocVars(blockType string, doc game.BlockDoc) (game.DocVars, bool) {
+	reg := blockRegistry[blockType]
+	if reg == nil {
+		return game.DocVars{}, false
+	}
+	if v, ok := reg.Prototype.(game.DocVarsReporter); ok {
+		return v.DocVars(doc), true
+	}
+	return game.DocVars{}, false
+}
+
 func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 	// Check if block type exists in registry
 	registration := blockRegistry[baseBlock.Type]

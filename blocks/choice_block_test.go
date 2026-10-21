@@ -42,7 +42,6 @@ func TestChoiceBlock_Getters(t *testing.T) {
 	assert.Equal(t, 25, block.GetPoints())
 	assert.Contains(t, block.GetIconSVG(), "svg")
 	assert.True(t, block.RequiresValidation())
-	assert.True(t, block.SupportsVariableSets())
 }
 
 func TestChoiceBlock_ParseData(t *testing.T) {
@@ -151,7 +150,7 @@ func TestChoiceBlock_ValidatePlayerInput_SingleSelect(t *testing.T) {
 		require.NoError(t, err)
 		assert.True(t, newState.IsComplete())
 		assert.Equal(t, 20, newState.GetPointsAwarded())
-		assert.Equal(t, []string{"forest"}, block.GetChosenVars(newState))
+		assert.Equal(t, []string{"forest"}, block.ChosenVars(newState))
 	})
 
 	t.Run("only first value accepted even if multiple submitted", func(t *testing.T) {
@@ -160,7 +159,7 @@ func TestChoiceBlock_ValidatePlayerInput_SingleSelect(t *testing.T) {
 			"choice": {"forest", "mountain"},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, []string{"forest"}, block.GetChosenVars(newState))
+		assert.Equal(t, []string{"forest"}, block.ChosenVars(newState))
 	})
 
 	t.Run("invalid choice rejected", func(t *testing.T) {
@@ -187,7 +186,7 @@ func TestChoiceBlock_ValidatePlayerInput_SingleSelect(t *testing.T) {
 
 		newState, err := block.ValidatePlayerInput(completedState, map[string][]string{"choice": {"mountain"}})
 		require.NoError(t, err)
-		assert.Equal(t, []string{"forest"}, block.GetChosenVars(newState)) // unchanged
+		assert.Equal(t, []string{"forest"}, block.ChosenVars(newState)) // unchanged
 	})
 }
 
@@ -209,7 +208,7 @@ func TestChoiceBlock_ValidatePlayerInput_MultiSelect(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.True(t, newState.IsComplete())
-		assert.Equal(t, []string{"forest"}, block.GetChosenVars(newState))
+		assert.Equal(t, []string{"forest"}, block.ChosenVars(newState))
 	})
 
 	t.Run("multiple selections", func(t *testing.T) {
@@ -219,7 +218,7 @@ func TestChoiceBlock_ValidatePlayerInput_MultiSelect(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.True(t, newState.IsComplete())
-		assert.Equal(t, []string{"forest", "river"}, block.GetChosenVars(newState))
+		assert.Equal(t, []string{"forest", "river"}, block.ChosenVars(newState))
 		assert.Equal(t, 15, newState.GetPointsAwarded())
 	})
 
@@ -229,7 +228,7 @@ func TestChoiceBlock_ValidatePlayerInput_MultiSelect(t *testing.T) {
 			"choice": {"mountain", "mountain", "forest"},
 		})
 		require.NoError(t, err)
-		assert.Equal(t, []string{"mountain", "forest"}, block.GetChosenVars(newState))
+		assert.Equal(t, []string{"mountain", "forest"}, block.ChosenVars(newState))
 	})
 
 	t.Run("invalid option rejected", func(t *testing.T) {
@@ -247,14 +246,14 @@ func TestChoiceBlock_ValidatePlayerInput_MultiSelect(t *testing.T) {
 	})
 }
 
-func TestChoiceBlock_GetChosenVars(t *testing.T) {
+func TestChoiceBlock_ChosenVars(t *testing.T) {
 	block := blocks.ChoiceBlock{}
 
-	assert.Nil(t, block.GetChosenVars(nil))
-	assert.Nil(t, block.GetChosenVars(&blocks.MockPlayerState{}))
+	assert.Nil(t, block.ChosenVars(nil))
+	assert.Nil(t, block.ChosenVars(&blocks.MockPlayerState{}))
 
 	state := choiceState("forest", "river")
-	assert.Equal(t, []string{"forest", "river"}, block.GetChosenVars(state))
+	assert.Equal(t, []string{"forest", "river"}, block.ChosenVars(state))
 }
 
 func TestChoiceBlock_GetChosenLabels(t *testing.T) {
@@ -394,4 +393,40 @@ func TestNewChoiceBlock(t *testing.T) {
 	assert.Empty(t, block.Prompt)
 	assert.Empty(t, block.Options)
 	assert.False(t, block.MultiSelect)
+}
+
+func TestChoiceBlock_Vars(t *testing.T) {
+	block := &blocks.ChoiceBlock{
+		MultiSelect: true,
+		Options: []blocks.ChoiceOption{
+			{Label: "Forest", Sets: "forest"},
+			{Label: "River", Sets: "river"},
+			{Label: "Unnamed"},
+		},
+	}
+	assert.Equal(t, []string{"forest", "river"}, game.DeclaredVars(block))
+
+	state := choiceState("forest", "river")
+	assert.Nil(t, game.VarsSetBy(block, state), "nothing is set before the choice completes")
+	state.SetComplete(true)
+	assert.Equal(t, []string{"forest", "river"}, game.VarsSetBy(block, state))
+}
+
+func TestChoiceBlock_UpdateRefusesBadOptionVariables(t *testing.T) {
+	block := &blocks.ChoiceBlock{}
+	err := block.UpdateBlockData(map[string][]string{
+		"option_label": {"Forest"}, "option_sets": {"Forest-Path"},
+	})
+	require.Error(t, err)
+
+	err = block.UpdateBlockData(map[string][]string{
+		"option_label": {"Forest", "Woods"}, "option_sets": {"forest", "forest"},
+	})
+	require.Error(t, err)
+	assert.Empty(t, block.Options, "a refused update stores nothing")
+
+	require.NoError(t, block.UpdateBlockData(map[string][]string{
+		"option_label": {"Forest", "Unnamed yet"}, "option_sets": {"forest", ""},
+	}))
+	assert.Len(t, block.Options, 2)
 }

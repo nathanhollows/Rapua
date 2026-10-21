@@ -43,7 +43,7 @@ func GenerateFullSpec() FullSpec {
 		Document:          documentSpec(),
 		Enums:             enumDefs(),
 		Contexts:          contextDefs(),
-		BlockSharedFields: []game.FieldSpec{pointsFieldSpec()},
+		BlockSharedFields: []game.FieldSpec{pointsFieldSpec(), setsFieldSpec(), dependsFieldSpec()},
 		Blocks:            GenerateBlockSpecs(),
 	}
 }
@@ -61,6 +61,31 @@ func pointsFieldSpec() game.FieldSpec {
 			"as a cost rather than a reward (e.g. paying points to reveal a clue). Ignored unless " +
 			"settings.enable_points is true. An objective's total point value is the sum of its blocks' " +
 			"points; it is not a field set on the objective itself.",
+	}
+}
+
+// setsFieldSpec returns the `sets` field spec used on interactive blocks other
+// than those whose player picks the variable, such as a choice.
+func setsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "sets",
+		Type: "string",
+		Description: "A variable set the moment the player completes this block. Variables are " +
+			"lowercase letters, digits and underscores, and once set stay set. Only interactive " +
+			"blocks set variables (SETS_ON_STATIC_BLOCK); a choice sets the variable of each option " +
+			"picked instead (SETS_ON_CHOICE).",
+	}
+}
+
+// dependsFieldSpec returns the `depends` field spec used on content blocks.
+func dependsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name:  "depends",
+		Type:  "list",
+		Items: &game.FieldSpec{Type: "string"},
+		Description: "Variables that must all be set before this block is shown. Until then it is " +
+			"hidden entirely. Only content blocks can depend on a variable " +
+			"(DEPENDS_ON_INTERACTIVE_BLOCK).",
 	}
 }
 
@@ -140,6 +165,15 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				"Omitting the key leaves an existing objective's state alone. The root may not be a " +
 				"pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no " +
 				"children (PASS_THROUGH_ON_LEAF).",
+		},
+		{
+			Name:  "depends",
+			Type:  "list",
+			Items: &game.FieldSpec{Type: "string"},
+			Description: "Variables that must all be set before this objective opens; until then it " +
+				"shows as locked. Variables are set by interactive blocks and choice options. Absent " +
+				"or empty means no gate. The root is always open (ROOT_DEPENDS), and a gate whose " +
+				"variables are only set behind it can never open (DEPENDS_UNSATISFIABLE).",
 		},
 		{
 			Name: "routing",

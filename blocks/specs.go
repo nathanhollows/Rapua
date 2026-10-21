@@ -370,7 +370,7 @@ func (b *ChoiceBlock) GetSpec() game.BlockSpec {
 	return game.BlockSpec{
 		Type:        "choice",
 		Name:        "Choice",
-		Description: "Presents labelled options; selecting one sets a boolean variable.",
+		Description: "Presents labelled options; each option picked sets its own variable.",
 		Fields: []game.FieldSpec{
 			{Name: "prompt", Type: "string", Required: true,
 				Description: "Question or instruction shown above the choices"},
@@ -386,8 +386,9 @@ func (b *ChoiceBlock) GetSpec() game.BlockSpec {
 						{Name: "label", Type: "string", Required: true,
 							Description: "Display text for this choice"},
 						{Name: "sets", Type: "string", Required: true,
-							Description: "Identifies this option. Recorded in player state when the " +
-								"option is chosen, and used to find its label again"},
+							Description: "The variable set when the player picks this option. It also " +
+								"identifies the option in player state, so each option in a block needs " +
+								"its own (CHOICE_OPTION_DUPLICATE_SETS)"},
 					},
 				}},
 		},

@@ -125,6 +125,11 @@ func (l *linter) checkSchema() {
 				"for pass_through to hide; mark the sections beneath it instead")
 	}
 	l.checkRootIsContainer()
+	if len(l.doc.Structure.Depends) > 0 {
+		l.errorf("structure.depends", "ROOT_DEPENDS",
+			"the root objective is the quest itself and is always open, so it cannot wait on a "+
+				"variable; gate the sections beneath it instead")
+	}
 	l.checkObjectiveDoc("structure", l.doc.Structure, 0, 0)
 	for i, b := range l.doc.Start {
 		l.checkBlockDoc(fmt.Sprintf("start[%d]", i), b, ContextStart)
@@ -174,6 +179,7 @@ func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc, depth, drawn i
 }
 
 func (l *linter) checkObjectiveIdentity(path string, obj ObjectiveDoc) {
+	l.checkDependsNames(path+".depends", obj.Depends)
 	if obj.Slug == "" {
 		l.errorf(path+".slug", "MISSING_SLUG", "objective slug is required")
 	} else if !slugPattern.MatchString(obj.Slug) {
@@ -387,17 +393,22 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 			}
 		}
 	}
+	l.checkBlockVarsDoc(path, typStr, b)
 	if l.registry != nil {
 		known := l.registry.KnownFields(typStr)
 		if known != nil {
-			knownSet := make(map[string]bool, len(known)+3) //nolint:mnd // +3 for promoted fields: type, id, points
+			knownSet := make(map[string]bool, len(known)+5) //nolint:mnd // +5 for the fields every block shares
 			for _, f := range known {
 				knownSet[f] = true
 			}
-			// Promoted fields valid on every block.
+			// Fields valid on every block. sets and depends are judged by
+			// checkBlockVarsDoc, which says why one is wrong rather than
+			// calling it a typo.
 			knownSet["type"] = true
 			knownSet["id"] = true
 			knownSet["points"] = true
+			knownSet["sets"] = true
+			knownSet["depends"] = true
 			for k := range b {
 				if !knownSet[k] {
 					l.warnf(path+"."+k, "UNKNOWN_FIELD",
@@ -442,6 +453,7 @@ func (l *linter) checkSemantic() {
 	l.trackBlockIDs("start", l.doc.Start)
 	l.checkBlockContexts("finish", l.doc.Finish, ContextFinish)
 	l.trackBlockIDs("finish", l.doc.Finish)
+	l.checkVariables()
 }
 
 // collectAndCheckSlugs walks the tree recording slugs. The root is included:
@@ -570,5 +582,3 @@ func (l *linter) warnf(path, code, format string, args ...any) {
 		Message: fmt.Sprintf(format, args...),
 	})
 }
-
-// --- Depends / variable resolution checks ---
