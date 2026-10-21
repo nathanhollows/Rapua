@@ -40,6 +40,7 @@ func setupObjectivePreviewServices(t *testing.T) (*services.CheckInService, *ser
 		repositories.NewSectionFinishRepository(dbc),
 		blockRepo,
 		repositories.NewRunEventRepository(dbc),
+		repositories.NewRunVariableRepository(dbc),
 	)
 	return checkInService, blockService, dbc, cleanup
 }

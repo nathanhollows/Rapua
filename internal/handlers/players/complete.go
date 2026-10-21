@@ -58,7 +58,10 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// If the user is in preview mode, only render the template, not the full layout.
-	template := templates.Complete(*team, pageBlocks, blockStates)
+	template := templates.Complete(
+		*team, pageBlocks, blockStates,
+		h.hiddenBlocks(r.Context(), team, pageBlocks), isPreview(r.Context()),
+	)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
 		template = templates.AppLayout(
 			template, templates.AppChrome{Run: *team}, "Complete", team.Messages,

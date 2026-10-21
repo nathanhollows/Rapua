@@ -108,7 +108,7 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 	zone := blocks.ContextObjectiveProof
 	if !pending {
 		// Content-only zones have nothing a player can POST to, so completion
-		// (sets, logging) for them is only ever triggered from here.
+		// for them is only ever triggered from here.
 		if err := h.checkInService.CompleteObjectiveContext(r.Context(), team, objective.ID, blocks.ContextObjectiveProof); err != nil {
 			h.logger.ErrorContext(r.Context(), "ObjectiveView: completing proof context", "error", err.Error())
 		}
@@ -148,6 +148,7 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 		Zone:        zone,
 		Blocks:      contentBlocks,
 		States:      blockStates,
+		Hidden:      h.hiddenBlocks(r.Context(), team, contentBlocks),
 	}
 	// Only the reveal reads Next, so proof pages skip the frontier lookup.
 	if zone == blocks.ContextObjectiveReveal {
@@ -211,8 +212,8 @@ func (h *PlayerHandler) redirectIfUnreachable(
 		return false
 	}
 
-	// Same treatment as a stale slug: an unmet depends is an expected outcome
-	// of guessing a URL, not a fault worth an error toast.
+	// Same treatment as a stale slug: a gate the run has not opened is an
+	// expected outcome of guessing a URL, not a fault worth an error toast.
 	h.logger.WarnContext(r.Context(), "ObjectiveView: objective not yet reachable",
 		"team", team.Code, "objective", objective.Slug)
 	http.Redirect(w, r, "/objectives", http.StatusFound)
@@ -265,6 +266,7 @@ func (h *PlayerHandler) objectivePreview(w http.ResponseWriter, r *http.Request)
 		Zone:     zone,
 		Blocks:   contentBlocks,
 		States:   blockStates,
+		Preview:  true,
 	}
 
 	err = templates.ObjectiveView(data).Render(r.Context(), w)

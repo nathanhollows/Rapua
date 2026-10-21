@@ -55,6 +55,8 @@ type CheckInService interface {
 		objectiveID string,
 		blockContext blocks.BlockContext,
 	) error
+	// RunVars returns the variables the run has set, none in preview.
+	RunVars(ctx context.Context, team *models.Run) (map[string]bool, error)
 }
 
 type QuestService interface {

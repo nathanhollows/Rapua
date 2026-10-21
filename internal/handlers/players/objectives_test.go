@@ -50,6 +50,7 @@ func setupObjectivesHandlerServices(t *testing.T) (
 		blockRepo,
 		teamRepo,
 		repositories.NewRunEventRepository(dbc),
+		repositories.NewRunVariableRepository(dbc),
 		newTLogger(t),
 	)
 
@@ -59,6 +60,7 @@ func setupObjectivesHandlerServices(t *testing.T) (
 		repositories.NewSectionFinishRepository(dbc),
 		repositories.NewBlockRepository(dbc, blockStateRepo),
 		repositories.NewRunEventRepository(dbc),
+		repositories.NewRunVariableRepository(dbc),
 	)
 
 	return navigationService, runService, instanceRepo, dbc, cleanup

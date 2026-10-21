@@ -154,5 +154,6 @@ func runServiceFor(dbc *bun.DB) *services.RunService {
 		repositories.NewSectionFinishRepository(dbc),
 		blockRepo,
 		repositories.NewRunEventRepository(dbc),
+		repositories.NewRunVariableRepository(dbc),
 	)
 }

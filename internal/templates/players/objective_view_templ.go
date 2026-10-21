@@ -11,7 +11,6 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
-	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -32,6 +31,10 @@ type ObjectiveViewData struct {
 	Zone        game.BlockContext
 	Blocks      blocks.Blocks
 	States      map[string]blocks.PlayerState
+	// Hidden names the blocks still waiting on a variable the run has not set.
+	Hidden map[string]bool
+	// Preview shows every block, noting on the gated ones what they wait for.
+	Preview bool
 	// Next is read on the reveal only: the way on from proof is to do the task.
 	Next NextUp
 }
@@ -64,7 +67,7 @@ func ObjectiveView(data ObjectiveViewData) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 34, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 37, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -82,7 +85,7 @@ func ObjectiveView(data ObjectiveViewData) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 36, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 39, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -155,7 +158,7 @@ func revealFooter(next NextUp) templ.Component {
 			var templ_7745c5c3_Var5 templ.SafeURL
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/objective/" + next.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 54, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 57, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -168,7 +171,7 @@ func revealFooter(next NextUp) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(next.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 55, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 58, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -272,28 +275,7 @@ func objectiveZoneContents(data ObjectiveViewData) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		for _, block := range data.Blocks {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<div class=\"block-view\" id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue("preview-block-" + block.GetID())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 86, Col: 40}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templates.RenderPlayerView(data.Settings, block, data.States[block.GetID()]).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div>")
+			templ_7745c5c3_Err = PlayerBlockSlot(data.Settings, block, data.States[block.GetID()], data.Hidden[block.GetID()], data.Preview).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

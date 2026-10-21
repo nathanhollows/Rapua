@@ -3,7 +3,6 @@ package templates
 import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
-	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -24,6 +23,10 @@ type ObjectiveViewData struct {
 	Zone   game.BlockContext
 	Blocks blocks.Blocks
 	States map[string]blocks.PlayerState
+	// Hidden names the blocks still waiting on a variable the run has not set.
+	Hidden map[string]bool
+	// Preview shows every block, noting on the gated ones what they wait for.
+	Preview bool
 	// Next is read on the reveal only: the way on from proof is to do the task.
 	Next NextUp
 }
@@ -81,11 +84,6 @@ templ ObjectiveZoneUpdate(data ObjectiveViewData) {
 
 templ objectiveZoneContents(data ObjectiveViewData) {
 	for _, block := range data.Blocks {
-		<div
-			class="block-view"
-			id={ "preview-block-" + block.GetID() }
-		>
-			@templates.RenderPlayerView(data.Settings, block, data.States[block.GetID()])
-		</div>
+		@PlayerBlockSlot(data.Settings, block, data.States[block.GetID()], data.Hidden[block.GetID()], data.Preview)
 	}
 }

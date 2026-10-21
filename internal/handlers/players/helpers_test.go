@@ -125,6 +125,7 @@ func setupRunService(t *testing.T) (*services.RunService, *bun.DB, func()) {
 		repositories.NewSectionFinishRepository(dbc),
 		repositories.NewBlockRepository(dbc, blockStateRepo),
 		repositories.NewRunEventRepository(dbc),
+		repositories.NewRunVariableRepository(dbc),
 	)
 	return runService, dbc, cleanup
 }
