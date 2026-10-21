@@ -54,6 +54,14 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 
 	root, nodes := buildObjectiveTree(objectives, points, lintResult)
 
+	// Badges only: a tree without them is still the tree an author needs.
+	usage, err := h.variableService.UsageByOwner(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "Locations: loading block variables",
+			"error", err, "quest_id", user.CurrentQuestID)
+	}
+	attachBlockVars(nodes, usage)
+
 	c := templates.LockedEditor(
 		user.CurrentQuest,
 		templates.QuestBuilder(lintResult, root, nodes, user.CurrentQuest.Settings),
@@ -61,6 +69,14 @@ func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	err = templates.Layout(c, *user, "Quest", "Quest").Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Locations: rendering template", "error", err)
+	}
+}
+
+// attachBlockVars gives each row what its own blocks set and wait on.
+func attachBlockVars(nodes []*templates.ObjectiveTreeNode, usage map[string]services.VarUsage) {
+	for _, node := range nodes {
+		node.BlockVars = usage[node.Objective.ID]
+		attachBlockVars(node.Children, usage)
 	}
 }
 

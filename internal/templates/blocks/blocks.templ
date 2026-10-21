@@ -267,7 +267,7 @@ templ RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open b
 				checked
 			}
 		/>
-		<div class="collapse-title font-semibold w-full flex flex-row items-center gap-3">
+		<div class="collapse-title font-semibold w-full flex flex-row flex-wrap items-center gap-3">
 			@templ.Raw(block.GetIconSVG())
 			{ block.GetName() }
 			if settings.EnablePoints && block.RequiresValidation() {
@@ -287,6 +287,7 @@ templ RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open b
 				>{ fmt.Sprint(block.GetPoints()) } pts</span>
 			}
 			<div class="flex gap-3 z-10 ml-auto">
+				@BlockVarsButton(block)
 				<button
 					type="button"
 					class="block-delete btn btn-sm btn-circle shadow-none btn-ghost hover:btn-error tooltip tooltip-bottom flex"
@@ -326,6 +327,7 @@ templ RenderAdminBlock(settings models.QuestSettings, block blocks.Block, open b
 				</span>
 			</div>
 			<input type="hidden" name="block_id" value={ block.GetID() }/>
+			@BlockVarsEditSlot(block)
 		</div>
 		<div class="collapse-content">
 			@RenderAdminEdit(settings, block)

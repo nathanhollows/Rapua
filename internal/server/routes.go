@@ -393,6 +393,8 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Post("/{slug:[a-z0-9-]+}/settings", adminHandler.ObjectiveSettingsPost)
 			r.Post("/{slug:[a-z0-9-]+}/draft", adminHandler.ObjectiveDraftTogglePost)
 			r.Post("/{slug:[a-z0-9-]+}/pass-through", adminHandler.ObjectivePassThroughTogglePost)
+			r.Get("/{slug:[a-z0-9-]+}/depends", adminHandler.ObjectiveDependsEdit)
+			r.Post("/{slug:[a-z0-9-]+}/depends", adminHandler.ObjectiveDependsPost)
 			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveDelete)
 		})
 
@@ -402,12 +404,14 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 				return middlewares.QuestEditableMiddleware(logger, adminHandler.QuestRunningToast, next)
 			})
 			// Primary RESTful endpoints
-			r.Post("/", adminHandler.BlockCreate)         // POST /admin/blocks?owner=uuid&context=ctx&type=type
-			r.Get("/", adminHandler.BlockList)            // GET /admin/blocks?owner=uuid&context=ctx
-			r.Get("/{id}", adminHandler.BlockGet)         // GET /admin/blocks/{id}
-			r.Put("/{id}", adminHandler.BlockUpdate)      // PUT /admin/blocks/{id}
-			r.Delete("/{id}", adminHandler.BlockDelete)   // DELETE /admin/blocks/{id}
-			r.Post("/reorder", adminHandler.BlockReorder) // POST /admin/blocks/reorder
+			r.Post("/", adminHandler.BlockCreate)             // POST /admin/blocks?owner=uuid&context=ctx&type=type
+			r.Get("/", adminHandler.BlockList)                // GET /admin/blocks?owner=uuid&context=ctx
+			r.Get("/{id}", adminHandler.BlockGet)             // GET /admin/blocks/{id}
+			r.Put("/{id}", adminHandler.BlockUpdate)          // PUT /admin/blocks/{id}
+			r.Delete("/{id}", adminHandler.BlockDelete)       // DELETE /admin/blocks/{id}
+			r.Get("/{id}/vars", adminHandler.BlockVarsEdit)   // GET /admin/blocks/{id}/vars
+			r.Put("/{id}/vars", adminHandler.BlockVarsUpdate) // PUT /admin/blocks/{id}/vars
+			r.Post("/reorder", adminHandler.BlockReorder)     // POST /admin/blocks/reorder
 		})
 		r.Route("/runs", func(r chi.Router) {
 			r.Get("/", adminHandler.Runs)

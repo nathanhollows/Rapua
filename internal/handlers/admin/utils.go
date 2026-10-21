@@ -84,8 +84,17 @@ type BlockService interface {
 
 	// UpdateBlock updates the data for the given block
 	UpdateBlock(ctx context.Context, block blocks.Block, data map[string][]string) (blocks.Block, error)
+	// UpdateBlockVars replaces what a block sets and waits on; nil leaves a
+	// field alone.
+	UpdateBlockVars(ctx context.Context, block blocks.Block, sets *string, depends *[]string) (blocks.Block, error)
 	// ReorderBlocks changes the display/order of blocks at a location
 	ReorderBlocks(ctx context.Context, blockIDs []string) error
+}
+
+// VariableService answers what a quest's blocks set and wait on.
+type VariableService interface {
+	QuestVariables(ctx context.Context, questID string) ([]string, error)
+	UsageByOwner(ctx context.Context, questID string) (map[string]services.VarUsage, error)
 }
 
 type CreditService interface {
@@ -256,6 +265,7 @@ type Handler struct {
 	identityService         IdentityService
 	blockService            BlockService
 	lintService             LintService
+	variableService         VariableService
 	creditService           CreditService
 	creditPurchaseRepo      CreditPurchaseRepository
 	deleteService           DeleteService
@@ -285,6 +295,7 @@ func NewAdminHandler(
 	identityService IdentityService,
 	blockService BlockService,
 	lintService LintService,
+	variableService VariableService,
 	creditService CreditService,
 	creditPurchaseRepo CreditPurchaseRepository,
 	deleteService DeleteService,
@@ -313,6 +324,7 @@ func NewAdminHandler(
 		identityService:         identityService,
 		blockService:            blockService,
 		lintService:             lintService,
+		variableService:         variableService,
 		creditService:           creditService,
 		creditPurchaseRepo:      creditPurchaseRepo,
 		deleteService:           deleteService,

@@ -1,0 +1,185 @@
+package blocks
+
+import (
+	"slices"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+)
+
+type blockVarKind int
+
+const (
+	blockVarNone blockVarKind = iota
+	// blockVarSets is an interactive block, which sets a variable when solved.
+	blockVarSets
+	// blockVarDepends is a content block, which can wait on a variable.
+	blockVarDepends
+)
+
+// varKindOf says which variable control a block offers. An interactive block
+// that cannot set one offers none: a choice's options set their own, edited
+// beside each option, and some blocks complete where no variable is written.
+func varKindOf(block blocks.Block) blockVarKind {
+	switch {
+	case game.CanSetVars(block):
+		return blockVarSets
+	case block.RequiresValidation():
+		return blockVarNone
+	}
+	return blockVarDepends
+}
+
+func blockVarsButtonID(block blocks.Block) string { return "block-vars-btn-" + block.GetID() }
+
+func blockVarsEditID(block blocks.Block) string { return "block-vars-edit-" + block.GetID() }
+
+func blockVarsTip(block blocks.Block) string {
+	switch varKindOf(block) {
+	case blockVarSets:
+		if block.GetSets() == "" {
+			return "Set a variable when this is completed"
+		}
+		return "Completing this sets " + block.GetSets()
+	case blockVarDepends:
+		if len(block.GetDepends()) == 0 {
+			return "Hide this until a variable is set"
+		}
+		return "Hidden until " + strings.Join(block.GetDepends(), " and ") + " are set"
+	case blockVarNone:
+	}
+	return ""
+}
+
+// BlockVarsButton is the folded form of a block's variable: a key for what it
+// sets, a lock for what it waits on, with the names beside it. Clicking it
+// opens the editor beneath the block's title.
+templ BlockVarsButton(block blocks.Block) {
+	@blockVarsButton(block, false)
+}
+
+// BlockVarsButtonOOB is BlockVarsButton swapped back in after a save.
+templ BlockVarsButtonOOB(block blocks.Block) {
+	@blockVarsButton(block, true)
+}
+
+templ blockVarsButton(block blocks.Block, oob bool) {
+	if kind := varKindOf(block); kind != blockVarNone {
+		<button
+			type="button"
+			id={ blockVarsButtonID(block) }
+			if oob {
+				hx-swap-oob="true"
+			}
+			class="btn btn-sm btn-ghost gap-1 font-mono font-normal tooltip tooltip-bottom"
+			data-tip={ blockVarsTip(block) }
+			aria-label={ blockVarsTip(block) }
+			hx-get={ "/admin/blocks/" + block.GetID() + "/vars" }
+			hx-target={ "#" + blockVarsEditID(block) }
+			hx-swap="innerHTML"
+		>
+			if kind == blockVarSets {
+				if block.GetSets() == "" {
+					@icon("key-round", templ.Attributes{"class": "w-3 h-3 opacity-40"})
+				} else {
+					@icon("key-round", templ.Attributes{"class": "w-3 h-3 text-primary"})
+					<span class="text-xs">{ block.GetSets() }</span>
+				}
+			} else {
+				if len(block.GetDepends()) == 0 {
+					@icon("lock-open", templ.Attributes{"class": "w-3 h-3 opacity-40"})
+				} else {
+					@icon("lock", templ.Attributes{"class": "w-3 h-3 text-primary"})
+					<span class="text-xs">{ strings.Join(block.GetDepends(), ", ") }</span>
+				}
+			}
+		</button>
+	}
+}
+
+// BlockVarsEditSlot is where the editor opens: a full row under the block's
+// title, empty and invisible until the button fills it.
+templ BlockVarsEditSlot(block blocks.Block) {
+	if varKindOf(block) != blockVarNone {
+		<div id={ blockVarsEditID(block) } class="basis-full relative z-10 empty:hidden font-normal"></div>
+	}
+}
+
+// BlockVarsEditor edits a block's variable inline. known is every variable the
+// quest can set, offered as suggestions for a key and as the choices for a
+// lock. Saving folds it back into the button.
+templ BlockVarsEditor(block blocks.Block, known []string) {
+	<form
+		class="flex flex-wrap items-center gap-2 pt-2"
+		hx-put={ "/admin/blocks/" + block.GetID() + "/vars" }
+		hx-target={ "#" + blockVarsEditID(block) }
+		hx-swap="innerHTML"
+		_={ "on keydown[key is 'Escape'] set innerHTML of #" + blockVarsEditID(block) + " to ''" }
+	>
+		if varKindOf(block) == blockVarSets {
+			@icon("key-round", templ.Attributes{"class": "w-4 h-4 text-primary"})
+			<label class="text-sm" for={ "block-vars-input-" + block.GetID() }>Completing this sets</label>
+			<input
+				id={ "block-vars-input-" + block.GetID() }
+				type="text"
+				name="sets"
+				value={ block.GetSets() }
+				list={ "block-vars-list-" + block.GetID() }
+				pattern="[a-z_][a-z0-9_]*"
+				maxlength="64"
+				placeholder="variable_name"
+				autocomplete="off"
+				autofocus
+				class="input input-sm font-mono w-48 validator"
+			/>
+			<datalist id={ "block-vars-list-" + block.GetID() }>
+				for _, name := range known {
+					<option value={ name }></option>
+				}
+			</datalist>
+		} else {
+			@icon("lock", templ.Attributes{"class": "w-4 h-4 text-primary"})
+			<span class="text-sm">Show this only once these are set</span>
+			// Sent even with nothing ticked, so unticking the last one clears the
+			// gate rather than leaving the request with no opinion.
+			<input type="hidden" name="depends" value=""/>
+			if len(dependsChoices(block, known)) == 0 {
+				<span class="text-sm opacity-70">No block sets a variable yet. Give an interactive block a key first.</span>
+			}
+			for _, name := range dependsChoices(block, known) {
+				<input
+					type="checkbox"
+					name="depends"
+					value={ name }
+					aria-label={ name }
+					class="btn btn-xs font-mono"
+					if slices.Contains(block.GetDepends(), name) {
+						checked
+					}
+				/>
+			}
+		}
+		<span class="flex gap-1 ml-auto">
+			<button
+				type="button"
+				class="btn btn-sm btn-ghost"
+				_={ "on click set innerHTML of #" + blockVarsEditID(block) + " to ''" }
+			>Cancel</button>
+			<button type="submit" class="btn btn-sm btn-primary">Save</button>
+		</span>
+	</form>
+}
+
+// dependsChoices is what a lock can be set to: every variable the quest sets,
+// plus any this block already waits on that nothing sets any more, so the
+// author can see and untick it.
+func dependsChoices(block blocks.Block, known []string) []string {
+	out := slices.Clone(known)
+	for _, name := range block.GetDepends() {
+		if !slices.Contains(out, name) {
+			out = append(out, name)
+		}
+	}
+	return out
+}

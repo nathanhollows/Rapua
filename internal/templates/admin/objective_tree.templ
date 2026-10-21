@@ -37,6 +37,9 @@ type ObjectiveTreeNode struct {
 	// those and only those, so a picker offering the full count would offer
 	// numbers the save refuses.
 	PublishedChildren int
+	// BlockVars is what this objective's own blocks set and wait on. Its
+	// children's blocks are on their own rows.
+	BlockVars services.VarUsage
 }
 
 // publishedCount is how many of these rows are in play, which is what the
@@ -607,6 +610,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 						</a>
 						<div class="flex-grow"></div>
 						@objectivePointsBadge(node.Points, enablePoints)
+						@objectiveVarsBadges(node)
 						@objectiveLintBadge(node.Lint)
 						<!-- The settings sit together past the title, routing then the
 						band: the title is what you scan a tree for, and a control before
@@ -645,6 +649,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 				</a>
 				<div class="flex-grow"></div>
 				@objectivePointsBadge(node.Points, enablePoints)
+				@objectiveVarsBadges(node)
 				@objectiveLintBadge(node.Lint)
 				@objectiveAddChildButton(node)
 				@objectiveVisibilityToggle(node)

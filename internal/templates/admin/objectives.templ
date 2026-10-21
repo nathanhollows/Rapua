@@ -359,6 +359,7 @@ templ EditObjective(data EditObjectiveData) {
 		</div>
 		<div class="flex items-center gap-2">
 		@objectiveSaveState()
+		@ObjectiveDependsButton(data.Objective)
 		<div id="visibility-control" class="contents">
 			@objectiveVisibilityControl(data.Objective.Draft)
 		</div>
@@ -378,6 +379,7 @@ templ EditObjective(data EditObjectiveData) {
 		</details>
 		</div>
 	</div>
+	<div id="objective-depends-edit" class="px-6 pb-3 empty:hidden"></div>
 	<div id="objective-lint">
 		@objectiveLintPanel(data.Lint, data.Objective.ID)
 	</div>

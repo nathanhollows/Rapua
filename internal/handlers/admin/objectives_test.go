@@ -89,6 +89,7 @@ func newObjectiveTestHandler(t *testing.T, dbc *bun.DB) *Handler {
 			blockRepo,
 			blocks.Registry(),
 		),
+		variableService: services.NewVariableService(objectiveRepo, blockRepo),
 	}
 }
 

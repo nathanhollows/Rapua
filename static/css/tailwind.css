@@ -8493,6 +8493,9 @@
   .w-40 {
     width: calc(var(--spacing) * 40);
   }
+  .w-48 {
+    width: calc(var(--spacing) * 48);
+  }
   .w-52 {
     width: calc(var(--spacing) * 52);
   }
@@ -8639,6 +8642,9 @@
   }
   .grow {
     flex-grow: 1;
+  }
+  .basis-full {
+    flex-basis: 100%;
   }
   .border-collapse {
     border-collapse: collapse;
@@ -12263,6 +12269,9 @@
       --btn-fg: var(--color-info-content);
       --btn-soft-bg: initial;
     }
+  }
+  .empty\:hidden:empty {
+    display: none;
   }
   .focus-within\:opacity-100:focus-within {
     opacity: 100%;

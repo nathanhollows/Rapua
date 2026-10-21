@@ -1,0 +1,139 @@
+package templates
+
+import (
+	"slices"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// objectiveVarsBadges summarises a row's variables. The objective's own gate is
+// a labelled pill, because it decides whether the player can enter at all;
+// what its blocks set or wait on is a bare icon, since it only changes what
+// happens once they are there. Both name everything in a tooltip.
+templ objectiveVarsBadges(node *ObjectiveTreeNode) {
+	if len(node.Objective.Depends) > 0 {
+		<span class="badge badge-sm badge-ghost gap-1 shrink-0 font-mono tooltip tooltip-left" data-tip="Locked until these are set">
+			@icon("lock", templ.Attributes{"class": "w-3 h-3"})
+			{ strings.Join(node.Objective.Depends, ", ") }
+		</span>
+	}
+	if len(node.BlockVars.Gated) > 0 {
+		@varRefsTooltip("Hidden until set", node.BlockVars.Gated, ": ") {
+			@icon("lock", templ.Attributes{"class": "w-4 h-4 text-base-content/50"})
+		}
+	}
+	if len(node.BlockVars.Sets) > 0 {
+		@varRefsTooltip("Sets", node.BlockVars.Sets, " sets ") {
+			@icon("key-round", templ.Attributes{"class": "w-4 h-4 text-base-content/70"})
+		}
+	}
+}
+
+templ varRefsTooltip(heading string, refs []services.VarRef, joiner string) {
+	<span class="tooltip tooltip-left shrink-0" tabindex="0">
+		<span class="tooltip-content w-64 p-3 text-left whitespace-normal">
+			<span class="block font-semibold mb-1">{ heading }</span>
+			for _, ref := range refs {
+				<span class="block">
+					{ ref.BlockName }{ joiner }<span class="font-mono">{ strings.Join(ref.Vars, ", ") }</span>
+				</span>
+			}
+		</span>
+		{ children... }
+	</span>
+}
+
+// ObjectiveDependsButton is the folded form of an objective's gate, matching
+// the lock on a content block: the names it waits on, or a faint open lock
+// when it waits on nothing. The root has none: it is the quest and always open.
+templ ObjectiveDependsButton(objective models.Objective) {
+	@objectiveDependsButton(objective, false)
+}
+
+// ObjectiveDependsButtonOOB swaps the button back in after a save.
+templ ObjectiveDependsButtonOOB(objective models.Objective) {
+	@objectiveDependsButton(objective, true)
+}
+
+templ objectiveDependsButton(objective models.Objective, oob bool) {
+	if objective.ParentID != "" {
+		<button
+			type="button"
+			id="objective-depends-btn"
+			if oob {
+				hx-swap-oob="true"
+			}
+			class="btn btn-sm btn-ghost gap-1 font-mono font-normal tooltip tooltip-bottom"
+			data-tip={ objectiveDependsTip(objective) }
+			aria-label={ objectiveDependsTip(objective) }
+			hx-get={ "/admin/objective/" + objective.Slug + "/depends" }
+			hx-target="#objective-depends-edit"
+			hx-swap="innerHTML"
+		>
+			if len(objective.Depends) == 0 {
+				@icon("lock-open", templ.Attributes{"class": "w-4 h-4 opacity-40"})
+			} else {
+				@icon("lock", templ.Attributes{"class": "w-4 h-4 text-primary"})
+				<span class="text-xs">{ strings.Join(objective.Depends, ", ") }</span>
+			}
+		</button>
+	}
+}
+
+func objectiveDependsTip(objective models.Objective) string {
+	if len(objective.Depends) == 0 {
+		return "Lock this until a variable is set"
+	}
+	return "Locked until " + strings.Join(objective.Depends, " and ") + " are set"
+}
+
+// ObjectiveDependsEditor picks the variables an objective waits on from those
+// the quest sets. Saving folds it back into the button.
+templ ObjectiveDependsEditor(objective models.Objective, known []string) {
+	<form
+		class="flex flex-wrap items-center gap-2 rounded-box bg-base-200 border border-base-300 px-4 py-3"
+		hx-post={ "/admin/objective/" + objective.Slug + "/depends" }
+		hx-target="#objective-depends-edit"
+		hx-swap="innerHTML"
+		_="on keydown[key is 'Escape'] set innerHTML of #objective-depends-edit to ''"
+	>
+		@icon("lock", templ.Attributes{"class": "w-4 h-4 text-primary"})
+		<span class="text-sm">Locked until these are set</span>
+		// Sent even with nothing ticked, so unticking the last one opens the
+		// objective rather than leaving the request with no opinion.
+		<input type="hidden" name="depends" value=""/>
+		if len(objectiveDependsChoices(objective, known)) == 0 {
+			<span class="text-sm opacity-70">No block sets a variable yet. Give an interactive block a key first.</span>
+		}
+		for _, name := range objectiveDependsChoices(objective, known) {
+			<input
+				type="checkbox"
+				name="depends"
+				value={ name }
+				aria-label={ name }
+				class="btn btn-xs font-mono"
+				if slices.Contains(objective.Depends, name) {
+					checked
+				}
+			/>
+		}
+		<span class="flex gap-1 ml-auto">
+			<button type="button" class="btn btn-sm btn-ghost" _="on click set innerHTML of #objective-depends-edit to ''">Cancel</button>
+			<button type="submit" class="btn btn-sm btn-primary">Save</button>
+		</span>
+	</form>
+}
+
+// objectiveDependsChoices offers every variable the quest sets, plus any the
+// objective already waits on that nothing sets any more, so it can be unticked.
+func objectiveDependsChoices(objective models.Objective, known []string) []string {
+	out := slices.Clone(known)
+	for _, name := range objective.Depends {
+		if !slices.Contains(out, name) {
+			out = append(out, name)
+		}
+	}
+	return out
+}
