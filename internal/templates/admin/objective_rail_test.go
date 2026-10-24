@@ -132,16 +132,28 @@ func TestObjectiveTree_EveryChildListSharesTheSameSpacing(t *testing.T) {
 }
 
 // Top-level routing does not govern the system pages, so no rail joins them.
-func TestSystemPageLink_HangsItsPadlockInTheGutter(t *testing.T) {
+func TestSystemPageLink_HangsItsPinInTheGutter(t *testing.T) {
 	var out strings.Builder
 	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start").
 		Render(context.Background(), &out))
 
 	html := out.String()
 	assert.Contains(t, html, "objective-outside-mark",
-		"the padlock takes a marker's place in the gutter")
+		"the pin takes a marker's place in the gutter")
 	assert.NotContains(t, html, "objective-rail-item",
 		"but it is not on the rail: these pages are outside the quest on purpose")
+}
+
+// Boxed in white and outlined, a system page read as a text field. It is a
+// filled row, a page to open rather than a value to type.
+func TestSystemPageLink_IsARowNotAField(t *testing.T) {
+	var out strings.Builder
+	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start").
+		Render(context.Background(), &out))
+
+	link := classContaining(t, out.String(), "rounded-xl")
+	assert.NotContains(t, link, "border")
+	assert.NotContains(t, link, "bg-base-100")
 }
 
 // Without it the top level keeps the theme's primary whatever the root's routing.

@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 	"testing"
 
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -30,29 +31,36 @@ func TestObjectiveTree_PassThroughIsOnSectionsOnly(t *testing.T) {
 	assert.NotContains(t, renderRow(t, leaf), "objective-passthrough-toggle")
 }
 
-// Pass-through is uncommon, so an unmarked section keeps the ghost out of the
-// way until the header is hovered or focused. The fade sits on the icon: the
-// button carries the tooltip, and opacity on it would wash the tooltip out.
-func TestObjectiveTree_UnmarkedGhostRevealsOnHoverAndFocus(t *testing.T) {
-	html := renderRow(t, sectionNode(navigation.SectionDrawn, false))
-
-	assert.Contains(t, html, "group-hover/header:opacity-50")
-	assert.Contains(t, html, "group-focus-within/header:opacity-50")
-	assert.Contains(t, html, `aria-pressed="false"`)
-
-	button := regexp.MustCompile(`<button[^>]*objective-passthrough-toggle[^>]*>`).FindString(html)
-	assert.NotEmpty(t, button)
-	assert.NotContains(t, button, "opacity-", "the tooltip's element is never faded")
+// passThroughSwitch returns the switch's input tag, which says whether it is on.
+func passThroughSwitch(t *testing.T, html string) string {
+	t.Helper()
+	input := regexp.MustCompile(`<input[^>]*objective-passthrough-toggle[^>]*>`).FindString(html)
+	require.NotEmpty(t, input, "the section's menu carries the switch")
+	return input
 }
 
-// A marked section says so at rest, and drops the card a place gets.
+// Pass-through is uncommon, so an unmarked section shows no ghost at all. The
+// switch waits in its menu rather than behind a hover on every header.
+func TestObjectiveTree_UnmarkedSectionHasNoGhost(t *testing.T) {
+	html := renderRow(t, sectionNode(navigation.SectionDrawn, false))
+
+	assert.NotContains(t, html, "objective-passthrough-mark")
+	assert.NotContains(t, passThroughSwitch(t, html), "checked")
+}
+
+// A marked section says so at rest, leading the pill whose menu holds its
+// switch, and drops the card a place gets.
 func TestObjectiveTree_MarkedSectionIsAlwaysShownAndFlat(t *testing.T) {
 	html := renderRow(t, sectionNode(navigation.SectionPassThrough, true))
 
-	assert.Contains(t, html, `aria-pressed="true"`)
+	assert.Contains(t, html, "objective-passthrough-mark")
 	assert.Contains(t, html, "text-primary")
 	assert.Contains(t, html, "objective-passthrough")
-	assert.NotContains(t, html, "group-hover/header:opacity-50", "nothing to reveal: it is already shown")
+	assert.Contains(t, passThroughSwitch(t, html), "checked")
+	ghost := strings.Index(html, "objective-passthrough-mark")
+	assert.Less(t, strings.Index(html, "settings-rule-pill"), ghost, "the ghost is part of the pill")
+	assert.Less(t, ghost, strings.Index(html, "settings-routing-trigger"),
+		"the ghost qualifies the section before the routing says how it shows what is inside")
 }
 
 // A level the depth cap flattens looks the same to the player as a marked one,
@@ -60,9 +68,41 @@ func TestObjectiveTree_MarkedSectionIsAlwaysShownAndFlat(t *testing.T) {
 func TestObjectiveTree_ForcedSectionIsShownWithItsReason(t *testing.T) {
 	html := renderRow(t, sectionNode(navigation.SectionForced, false))
 
-	assert.Contains(t, html, "objective-passthrough")
-	assert.Contains(t, html, `aria-pressed="false"`)
+	assert.Contains(t, html, "objective-passthrough-mark")
 	assert.Contains(t, html, "nested more than 2 sections deep")
+	assert.NotContains(t, passThroughSwitch(t, html), "checked",
+		"flattened is not marked: the switch offers to make it deliberate")
+}
+
+// The quest cannot pass through, so its own menu has no switch.
+func TestObjectiveTree_QuestMenuHasNoPassThrough(t *testing.T) {
+	leaf := &ObjectiveTreeNode{Objective: models.Objective{ID: "leaf", Slug: "leaf", Title: "Leaf"}}
+	tree := renderTree(t, models.Objective{ID: "root", Slug: "root"}, []*ObjectiveTreeNode{leaf})
+	rootSettings := tree[strings.Index(tree, `id="quest-root-settings"`):strings.Index(tree, `id="objective-tree"`)]
+
+	assert.NotContains(t, rootSettings, "objective-passthrough-toggle")
+}
+
+// Adding inside a section is New objective's arrow, one control for the page,
+// and never part of a section's rule: adding has nothing to do with routing.
+func TestObjectiveTree_NewObjectiveAddsInsideAnySection(t *testing.T) {
+	inner := sectionNode(navigation.SectionDrawn, false)
+	outer := &ObjectiveTreeNode{
+		Objective: models.Objective{ID: "outer", Slug: "outer", Title: "Outer"},
+		Children:  []*ObjectiveTreeNode{inner},
+	}
+	tree := renderTree(t, models.Objective{ID: "root", Slug: "root"}, []*ObjectiveTreeNode{outer})
+	builderAt := strings.Index(tree, `id="quest-builder"`)
+	require.Positive(t, builderAt)
+	header := tree[:builderAt]
+
+	assert.Contains(t, header, "/admin/objective/new?parentId=outer")
+	assert.Contains(t, header, "/admin/objective/new?parentId=pool", "nested sections are offered too")
+	assert.NotContains(t, header, "parentId=leaf", "a leaf is nested by dragging onto it")
+	assert.Less(t, strings.Index(header, "parentId=outer"), strings.Index(header, "parentId=pool"),
+		"in tree order, so the list reads like the tree")
+	assert.NotContains(t, tree[builderAt:], "objective/new",
+		"no section's menu or row carries an add of its own")
 }
 
 // A parked section is out of play; its pass-through styling would say two

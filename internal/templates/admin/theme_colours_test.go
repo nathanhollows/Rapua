@@ -27,7 +27,7 @@ var colourPattern = regexp.MustCompile(`--color-([a-z0-9-]+):\s*oklch\(\s*([0-9.
 var brandTokens = []string{"primary", "secondary", "accent", "info", "success", "error", "warning"}
 
 // minLightnessGap is how far an accent has to sit from the surface it is drawn
-// on, in oklch lightness points. Below this a 1.5px rail or a tinted border
+// on, in oklch lightness points. Below this a 2px rail or a tinted border
 // stops being a colour and becomes a rumour.
 const minLightnessGap = 25.0
 

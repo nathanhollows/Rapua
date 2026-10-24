@@ -16,7 +16,7 @@ import (
 // commentary on something being built. It says nothing at all when there is
 // nothing to say: a panel that is always there is one nobody reads.
 templ QuestLint(lint services.QuestLint) {
-	<div id="quest-lint" class="px-5">
+	<div id="quest-lint" class="px-6">
 		if lint.Unreadable() {
 			<div role="alert" class="alert alert-outline alert-warning mb-3 items-start">
 				@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})

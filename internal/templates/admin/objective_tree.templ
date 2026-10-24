@@ -114,25 +114,31 @@ func visibilityTip(node *ObjectiveTreeNode) string {
 	}
 }
 
-// passThroughTip names what a click on the ghost will do, or why the level is
-// already flattened.
+// passThroughTip says why the ghost is there: the author marked the section,
+// or the depth cap flattened it.
 func passThroughTip(node *ObjectiveTreeNode) string {
-	switch node.Kind {
-	case navigation.SectionPassThrough:
-		return "Pass-through: players never see this section, but its rules still apply. Click to show it."
-	case navigation.SectionForced:
-		return fmt.Sprintf(
-			"Passes through because it is nested more than %d sections deep. Click to mark it on purpose.",
-			navigation.MaxDrawnDepth,
-		)
-	default:
-		return "Pass through: hide this section from players and keep its rules"
+	if node.Kind == navigation.SectionForced {
+		return fmt.Sprintf("Passes through: nested more than %d sections deep", navigation.MaxDrawnDepth)
 	}
+	return "Pass-through: players never see this section, but its rules still apply"
 }
 
-// passThroughShown reports whether the ghost is drawn at rest. A pass-through
-// is uncommon, so an unmarked section keeps the control out of the way until
-// the header is hovered or focused; a marked or flattened one always says so.
+// passThroughNote explains the switch in the menu. A flattened section is
+// already passed through, so marking it changes nothing a player sees; what it
+// changes is that the level no longer counts toward the depth cap.
+func passThroughNote(node *ObjectiveTreeNode) string {
+	if node.Kind == navigation.SectionForced && !node.Objective.PassThrough {
+		return fmt.Sprintf(
+			"Nested more than %d sections deep, so it passes through already. Mark it to make that deliberate.",
+			navigation.MaxDrawnDepth,
+		)
+	}
+	return "Players never see this section as a place: what is inside appears in the level above. Its rules still apply."
+}
+
+// passThroughShown reports whether the ghost is drawn. Only a section that
+// passes through has one, and the switch for it is in the section's menu, so
+// no header carries a control that waits for a hover to appear.
 func passThroughShown(node *ObjectiveTreeNode) bool {
 	return node.Kind.Hidden() && !node.Draft
 }
@@ -148,15 +154,6 @@ func maxNextValue(v int) string {
 // defaultMaxNext is non-zero because no limit makes randomised identical to
 // open exploration, leaving the author's choice with no visible effect.
 const defaultMaxNext = 3
-
-// settingsAlign anchors a picker's menu away from its trigger's side, so it
-// does not open back across the card's edge.
-type settingsAlign string
-
-const (
-	alignLeft  settingsAlign = "left-0"
-	alignRight settingsAlign = "right-0"
-)
 
 // routingIcon and routingLabel show the routing currently chosen, not a
 // generic settings icon.
@@ -194,6 +191,30 @@ func randomisedLabel(maxNext int) string {
 	return fmt.Sprintf("Random %d", maxNext)
 }
 
+// routingNote is each routing in the menu's own few words. The model's
+// descriptions are written for the spec docs, and ran four lines apiece here.
+func routingNote(rs models.RouteStrategy) string {
+	switch rs {
+	case models.RouteStrategyOrdered:
+		return "One at a time, in order."
+	case models.RouteStrategyFreeRoam:
+		return "Everything at once, in any order."
+	case models.RouteStrategyRandomised:
+		return "A few at a time, picked for each team."
+	default:
+		return rs.Description()
+	}
+}
+
+// finishButtonLabel is what players will read on a section's finish button,
+// so the pill's copy of it matches.
+func finishButtonLabel(o models.Objective) string {
+	if o.FinishLabel != "" {
+		return o.FinishLabel
+	}
+	return "Finish"
+}
+
 // routingOptionLabel names the window a click on randomised would apply.
 func routingOptionLabel(rs models.RouteStrategy, current models.Objective) string {
 	if rs != models.RouteStrategyRandomised {
@@ -205,25 +226,55 @@ func routingOptionLabel(rs models.RouteStrategy, current models.Objective) strin
 	return randomisedLabel(defaultMaxNext)
 }
 
+// bandRange resolves a band to the least and the most a team needs. Both blank
+// means every one, not "from none", which is what reading each bound alone
+// would give.
+func bandRange(min, max *int, childCount int) (lo, hi int) {
+	if min == nil && max == nil {
+		return childCount, childCount
+	}
+	lo, hi = 0, childCount
+	if min != nil {
+		lo = *min
+	}
+	if max != nil {
+		hi = *max
+	}
+	return lo, hi
+}
+
+// maxBandPips is the most children the band draws as pips. Past it a row of
+// pips stops being countable at a glance, and the band is told in words.
+const maxBandPips = 10
+
+// pipState is how the band paints the pip for its kth child: required up to
+// the minimum, left to the player between the minimum and the maximum, and past
+// the maximum closed when the section finishes.
+func pipState(k, lo, hi int) string {
+	switch {
+	case k <= lo:
+		return "required"
+	case k <= hi:
+		return "optional"
+	default:
+		return "closed"
+	}
+}
+
 // bandSummary is the completion band in player-facing words, not a raw
 // fraction.
 func bandSummary(min, max *int, childCount int) string {
 	if min == nil && max == nil {
 		return "Complete all"
 	}
-	lo := 0
-	if min != nil {
-		lo = *min
-	}
-	hi := childCount
-	if max != nil {
-		hi = *max
-	}
+	lo, hi := bandRange(min, max, childCount)
 	switch {
 	case lo >= hi && hi == childCount:
 		return "Complete all"
 	case lo >= hi:
-		return fmt.Sprintf("Complete %d", hi)
+		// "of" because this band closes the rest, which "Complete 1" beside
+		// "Complete 2+" did not say.
+		return fmt.Sprintf("Complete %d of %d", hi, childCount)
 	case lo == 0 && hi == childCount:
 		return "Complete any"
 	case lo == 0:
@@ -239,141 +290,222 @@ func bandSummary(min, max *int, childCount int) string {
 // /admin/objective/reposition and the tree is re-fetched, since a refused
 // move must be shown as it actually landed.
 //
-// root gets no card of its own, but still needs a routing picker for the
-// quest's top-level routing; the bar above the tree reuses the section
-// routing picker for that.
+// root gets no card of its own, but still needs the quest's top-level routing
+// and band; the row heading the tree reuses the section pickers for those.
 templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, settings models.QuestSettings) {
 	{{ rootPublished := publishedCount(nodes) }}
-	<!-- Grouped because the lock badge is appended here at runtime; loose, it
-	pushes the primary action to the middle of the row. -->
 	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 py-5" hx-boost="true">
 		<div id="quest-title-group" class="flex items-center gap-3">
 			<h1 class="text-2xl font-bold">Quest</h1>
 		</div>
-		<a href="/admin/objective/new" class="btn btn-primary" data-lock-hide>
-			@icon("plus", templ.Attributes{"class": "w-4 h-4"})
-			New objective
-		</a>
-	</div>
-	<!-- Outside #objective-tree so its state survives the swap. The top-level
-	list carries its own data-routing for the rails, since only it is swapped. -->
-	<div
-		id="quest-toolbar"
-		class="px-6 pb-4 flex flex-wrap items-center justify-between gap-3"
-		data-objective-slug={ root.Slug }
-		data-child-count={ fmt.Sprint(rootPublished) }
-		data-routing={ string(root.Routing) }
-	>
-		<div class="flex items-center gap-3">
-			@objectiveRoutingPicker(&ObjectiveTreeNode{Objective: root}, alignLeft)
-			@objectiveBandPicker(&ObjectiveTreeNode{Objective: root, PublishedChildren: rootPublished}, alignLeft)
-			<span class="w-px h-5 bg-base-content/15 mx-1" aria-hidden="true"></span>
-			<!-- Here because it controls whether this tree's badges render. -->
-			<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-top" data-tip="Teams earn points for checking into locations and completing activities">
-				<input
-					type="checkbox"
-					name="enablePoints"
-					class="toggle toggle-sm points-toggle"
-					checked?={ settings.EnablePoints }
-				/>
-				<span class="text-xs font-medium">Points</span>
-			</label>
-			<!-- Beside points because it reads off them: with points on the
-			board ranks by score, and with them off by how much of the quest
-			each team has done. -->
-			<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-top" data-tip="Players can see how their team compares to the others">
-				<input
-					type="checkbox"
-					name="showLeaderboard"
-					class="toggle toggle-sm leaderboard-toggle"
-					checked?={ settings.ShowLeaderboard }
-				/>
-				<span class="text-xs font-medium">Leaderboard</span>
-			</label>
+		<div class="flex flex-wrap items-center justify-end gap-3">
+			<!-- Beside the quest's title rather than over the tree: these change
+			how the whole game scores, not how any part of it is played. Boxed
+			and named apart from New objective, and as tall as it, so the two
+			read as one row. -->
+			<div id="quest-scoring" class="flex items-center gap-4 h-10 px-4 rounded-full border border-base-content/15 bg-base-100">
+				<span class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Scoring</span>
+				<!-- Here because it controls whether this tree's badges render. -->
+				<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-bottom" data-tip="Teams earn points for checking into locations and completing activities">
+					<input
+						type="checkbox"
+						name="enablePoints"
+						class="toggle toggle-sm toggle-primary points-toggle"
+						checked?={ settings.EnablePoints }
+					/>
+					<span class="text-xs font-medium">Points</span>
+				</label>
+				<!-- Beside points because it reads off them: with points on the
+				board ranks by score, and with them off by how much of the quest
+				each team has done. -->
+				<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-bottom" data-tip="Players can see how their team compares to the others">
+					<input
+						type="checkbox"
+						name="showLeaderboard"
+						class="toggle toggle-sm toggle-primary leaderboard-toggle"
+						checked?={ settings.ShowLeaderboard }
+					/>
+					<span class="text-xs font-medium">Leaderboard</span>
+				</label>
+			</div>
+			@objectiveNewButton(nodes)
 		</div>
-		<label class="input input-sm flex items-center gap-2 w-60">
-			@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
-			<input
-				id="search-objectives"
-				type="text"
-				class="grow"
-				placeholder="Search objectives"
-				autocomplete="off"
-				data-ignore-lock
-			/>
-			<button
-				id="clear-search-objectives"
-				type="button"
-				class="btn btn-xs btn-circle invisible -mr-2"
-				data-ignore-lock
-			>
-				@icon("x", templ.Attributes{"class": "w-4 h-4 opacity-80"})
-			</button>
-		</label>
 	</div>
 	<!-- Swapped as one after every edit: the panel and the rows it describes
 	are answers to the same question, and the page render already computes
-	both. The toolbar sits outside it so a search term survives the swap. -->
+	both. -->
 	<div id="quest-builder">
 		@QuestLint(lint)
-		@objectiveSystemPageLink("Start", "/admin/quest/start")
-		<div id="objective-tree" class="px-6" hx-boost="true">
-			if len(nodes) == 0 {
-				<div role="alert" class="alert">
-					@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
-					<span>This quest has no objectives yet.</span>
+		<!-- The quest's own plane, apart from the page header above it: the
+		controls for the page sit on the page, and the quest sits on this. It
+		is framed as a section is, outline and header band in the routing hue
+		of its top level, so its header reads as a frame like theirs; a
+		neutral one read as a gap. Its header is laid out as theirs is, name
+		first and rule last, so the quest's rule sits where every section's
+		does; the search, which filters the whole tree, is centred between.
+		No overflow clipping, so the rule's menu can open past its edge. -->
+		<section class="quest-plane mx-6 rounded-2xl bg-base-100 border border-primary/40" data-routing={ string(root.Routing) }>
+			<div
+				id="quest-root-settings"
+				class="flex flex-wrap items-center gap-3 px-6 py-3 md:grid md:grid-cols-[1fr_auto_1fr] rounded-t-2xl bg-primary/10 border-b border-primary/25"
+				data-objective-slug={ root.Slug }
+				data-child-count={ fmt.Sprint(rootPublished) }
+				data-routing={ string(root.Routing) }
+			>
+				<span class="text-sm text-base-content/70">Top level</span>
+				<!-- hx-preserve keeps this element across the swap, so a search
+				term, and the rows it filters, survive every edit. On a narrow
+				screen it takes a row of its own under the name and rule. -->
+				<label id="quest-search" hx-preserve="true" class="input input-sm flex items-center gap-2 order-last w-full md:order-none md:w-60">
+					@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
+					<input
+						id="search-objectives"
+						type="text"
+						class="grow"
+						placeholder="Search objectives"
+						autocomplete="off"
+						data-ignore-lock
+					/>
+					<button
+						id="clear-search-objectives"
+						type="button"
+						class="btn btn-xs btn-circle invisible -mr-2"
+						data-ignore-lock
+					>
+						@icon("x", templ.Attributes{"class": "w-4 h-4 opacity-80"})
+					</button>
+				</label>
+				<div class="ml-auto md:ml-0 md:justify-self-end">
+					@objectiveRulePicker(&ObjectiveTreeNode{Objective: root, PublishedChildren: rootPublished}, false)
 				</div>
-			} else {
-				<ul class="objective-children flex flex-col w-full" data-parent-id={ root.ID } data-routing={ string(root.Routing) }>
-					for _, node := range nodes {
-						@objectiveNode(node, settings.EnablePoints, 0)
+			</div>
+			<div class="py-2">
+				@objectiveSystemPageLink("Start", "/admin/quest/start")
+				<div id="objective-tree" class="px-6" hx-boost="true">
+					if len(nodes) == 0 {
+						<div role="alert" class="alert">
+							@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+							<span>This quest has no objectives yet.</span>
+						</div>
+					} else {
+						<ul class="objective-children flex flex-col w-full" data-parent-id={ root.ID } data-routing={ string(root.Routing) }>
+							for _, node := range nodes {
+								@objectiveNode(node, settings.EnablePoints, 0)
+							}
+						</ul>
 					}
-				</ul>
-			}
-		</div>
-		@objectiveSystemPageLink("Complete", "/admin/quest/complete")
+				</div>
+				@objectiveSystemPageLink("Complete", "/admin/quest/complete")
+			</div>
+		</section>
 	</div>
 	@objectiveSortableScript()
 }
 
-// objectiveSystemPageLink bookends the tree. The padlock shares the rail's
-// column but no rail joins it: top-level routing governs what is between these
-// pages, not the pages.
+// objectiveNewButton adds to the quest's top level, and its arrow adds inside a
+// chosen section instead. Adding is a job of its own, unrelated to how any
+// section routes or shows, so it has one control at the head of the page
+// rather than a button on every section.
+templ objectiveNewButton(nodes []*ObjectiveTreeNode) {
+	{{ sections := sectionChoices(nodes, 0) }}
+	<div class="flex items-stretch" data-lock-hide>
+		<a href="/admin/objective/new" class={ "btn btn-primary", templ.KV("rounded-r-none", len(sections) > 0) }>
+			@icon("plus", templ.Attributes{"class": "w-4 h-4"})
+			New objective
+		</a>
+		if len(sections) > 0 {
+			<details class="settings-picker relative">
+				<summary class="btn btn-primary btn-square rounded-l-none border-l border-l-primary-content/20" aria-label="Add inside a section">
+					@icon("chevron-down", templ.Attributes{"class": "w-4 h-4"})
+				</summary>
+				<div class="absolute right-0 top-full mt-1 z-30 bg-base-100 rounded-box shadow-lg w-72 max-h-96 overflow-y-auto">
+					<p class="settings-menu-heading">Add inside</p>
+					<ul class="menu px-2 pt-0 pb-2 w-full">
+						for _, section := range sections {
+							<li>
+								<a
+									href={ templ.URL(fmt.Sprintf("/admin/objective/new?parentId=%s", section.ID)) }
+									class={ sectionChoicePad(section.Depth) }
+								>
+									{ section.Title }
+								</a>
+							</li>
+						}
+					</ul>
+				</div>
+			</details>
+		}
+	</div>
+}
+
+// sectionChoice is a section New objective can add inside, with how deep it
+// sits so the list can be indented like the tree.
+type sectionChoice struct {
+	ID    string
+	Title string
+	Depth int
+}
+
+// sectionChoices lists every section in tree order. Leaves are left out:
+// adding inside one turns it into a section, which dragging onto it already
+// does. Bounded like the render, for the same reason.
+func sectionChoices(nodes []*ObjectiveTreeNode, depth int) []sectionChoice {
+	if depth > maxRenderDepth {
+		return nil
+	}
+	var out []sectionChoice
+	for _, node := range nodes {
+		if len(node.Children) == 0 {
+			continue
+		}
+		out = append(out, sectionChoice{ID: node.Objective.ID, Title: node.Objective.Title, Depth: depth})
+		out = append(out, sectionChoices(node.Children, depth+1)...)
+	}
+	return out
+}
+
+// sectionChoicePad indents a section by its depth. The classes are spelled out
+// in full so Tailwind finds them; past the third level the indent stops
+// growing, as the menu is too narrow for more.
+func sectionChoicePad(depth int) string {
+	pads := []string{"pl-3", "pl-7", "pl-11", "pl-15"}
+	return pads[min(depth, len(pads)-1)]
+}
+
+// objectiveSystemPageLink bookends the tree. The pin shares the rail's column
+// but no rail joins it: top-level routing governs what is between these pages,
+// not the pages. A pin rather than a padlock, because a padlock on this page
+// means an objective waiting on a variable.
 templ objectiveSystemPageLink(label, href string) {
 	<div class="px-6 py-3">
 		<div class="objective-outside relative pl-7">
 			<span class="objective-outside-mark tooltip tooltip-right" data-tip="System page: always shown, never routed">
-				@icon("lock", templ.Attributes{"class": "w-3.5 h-3.5"})
+				@icon("pin", templ.Attributes{"class": "w-3.5 h-3.5"})
 			</span>
-			<!-- Untinted: every hue here belongs to a routing strategy. -->
+			<!-- Untinted: every hue here belongs to a routing strategy. A filled
+			row with an arrow out, because it is a page to open: boxed in white
+			and outlined, it read as a text field waiting to be typed in. -->
 			<a
 				href={ templ.URL(href) }
-				class="flex items-center gap-3 rounded-xl bg-base-100 hover:bg-base-200 border border-base-content/35 px-4 py-2.5 transition-colors"
+				class="group/system flex items-center gap-2 rounded-xl bg-base-content/5 hover:bg-base-content/10 px-3 py-2 text-sm transition-colors"
 				hx-boost="true"
 			>
-				<span class="link link-hover font-medium text-sm">{ label }</span>
+				<span class="font-medium group-hover/system:underline">{ label }</span>
 				<div class="flex-grow"></div>
-				<span class="text-xs opacity-50">System page</span>
+				<span class="text-xs text-base-content/60">System page</span>
+				@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 shrink-0 text-base-content/50"})
 			</a>
 		</div>
 	</div>
 }
 
-// objectiveAddChildButton adds a child to this node specifically, unlike the
-// header's own button which always appends under root. Hidden until hover.
-templ objectiveAddChildButton(node *ObjectiveTreeNode) {
-	<a
-		href={ templ.URL(fmt.Sprintf("/admin/objective/new?parentId=%s", node.Objective.ID)) }
-		class="btn btn-xs btn-ghost btn-circle tooltip shrink-0 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-		data-tip="Add child objective"
-		data-lock-hide
-	>
-		@icon("plus", templ.Attributes{"class": "w-4 h-4 opacity-70"})
-	</a>
-}
-
 // objectiveVisibilityToggle posts straight to
 // /admin/objective/{slug}/draft; a single click, not a menu.
+//
+// Only a draft shows its eye at rest. Published is what nearly every row is,
+// and an eye on each said so on every line; a row under a drafted parent
+// already reads as parked, and the parent carries the control that matters. The
+// fade is on the icon so the button's tooltip stays whole.
 templ objectiveVisibilityToggle(node *ObjectiveTreeNode) {
 	<button
 		type="button"
@@ -386,169 +518,410 @@ templ objectiveVisibilityToggle(node *ObjectiveTreeNode) {
 		if node.Draft {
 			@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 text-warning"})
 		} else if node.OutOfPlay {
-			@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 opacity-40"})
+			@icon("eye-closed", templ.Attributes{"class": "w-4 h-4 text-base-content/40 " + rowRevealClass})
 		} else {
-			@icon("eye", templ.Attributes{"class": "w-4 h-4 opacity-60"})
+			@icon("eye", templ.Attributes{"class": "w-4 h-4 text-base-content/60 " + rowRevealClass})
 		}
 	</button>
 }
 
-// objectivePassThroughToggle posts straight to
-// /admin/objective/{slug}/pass-through. Only sections carry it: a leaf is never
-// a place, so there is nothing for the flag to hide.
-//
-// The fade is on the icon, never the button, because the button carries the
-// tooltip and opacity on it would wash the tooltip out. The button stays
-// focusable while the icon is faded, so a keyboard user reaches it and the
-// header's focus-within reveals it.
-templ objectivePassThroughToggle(node *ObjectiveTreeNode) {
-	<button
-		type="button"
-		class="btn btn-xs btn-ghost btn-circle tooltip objective-passthrough-toggle shrink-0"
-		data-tip={ passThroughTip(node) }
-		data-objective-slug={ node.Objective.Slug }
-		data-pass-through={ fmt.Sprint(node.Objective.PassThrough) }
-		aria-pressed={ fmt.Sprint(node.Objective.PassThrough) }
-		aria-label="Pass through: players do not see this section"
-	>
-		@icon("ghost", templ.Attributes{"class": passThroughIconClass(node)})
-	</button>
-}
+// rowRevealClass hides an icon until its own row or section header is hovered
+// or holds focus. Only one of the two groups is ever an ancestor: a leaf's row
+// box and a section's header never contain one another.
+const rowRevealClass = "opacity-0 group-hover/row:opacity-100 group-focus-within/row:opacity-100 " +
+	"group-hover/header:opacity-100 group-focus-within/header:opacity-100 transition-opacity"
 
-func passThroughIconClass(node *ObjectiveTreeNode) string {
-	switch {
-	case node.Objective.PassThrough:
-		return "w-4 h-4 text-primary"
-	case passThroughShown(node):
-		return "w-4 h-4 opacity-50"
-	default:
-		return "w-4 h-4 opacity-0 group-hover/header:opacity-50 group-focus-within/header:opacity-50 transition-opacity"
+// dragHandleClass keeps the grip faint until its row is hovered. Hidden, it
+// would leave nothing saying a row can be dragged; at full strength on every
+// row it is a column of noise.
+const dragHandleClass = "w-4 h-4 text-base-content/40 group-hover/row:text-base-content " +
+	"group-hover/header:text-base-content transition-colors cursor-move objective-drag-handle shrink-0"
+
+// objectivePassThroughMark is the ghost that leads a section's rule pill: it
+// qualifies how the section itself is shown before the routing says how it
+// shows what is inside. It sits in the pill because its switch is in the
+// pill's menu, as everything else the pill shows is. The tooltip is for the
+// mouse; a screen reader hears the same words as part of the pill.
+templ objectivePassThroughMark(node *ObjectiveTreeNode) {
+	if passThroughShown(node) {
+		<span class="objective-passthrough-mark">
+			<span class="tooltip tooltip-top inline-flex" data-tip={ passThroughTip(node) } aria-hidden="true">
+				@icon("ghost", templ.Attributes{"class": passThroughMarkClass(node)})
+			</span>
+			<span class="sr-only">{ passThroughTip(node) }.</span>
+		</span>
 	}
 }
 
-// objectiveRoutingPicker's trigger shows the routing currently chosen, not a
-// generic icon. Options are clickable rows, not a <select>; data-routing on
-// the trigger holds the current value for currentSettingsValues/syncSettings
-// to read. A <details> because the tree is replaced often and this keeps no
-// state outside the markup.
-templ objectiveRoutingPicker(node *ObjectiveTreeNode, align settingsAlign) {
-	<details class="settings-picker relative">
-		<!-- Outlined so it reads as a control at rest. Primary because the
-		surrounding routing remaps it to the strategy's hue. -->
-		<summary
-			class="settings-routing-trigger btn btn-sm btn-outline btn-primary gap-1 shrink-0"
-			data-routing={ string(node.Objective.Routing) }
-		>
-			@icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "settings-routing-icon w-3.5 h-3.5 opacity-70"})
-			<span class="text-xs settings-routing-label">{ routingLabel(node.Objective.Routing, node.Objective.MaxNext) }</span>
-			@icon("chevron-down", templ.Attributes{"class": "w-3 h-3 opacity-50"})
+// passThroughMarkClass gives the author's mark the routing hue and leaves the
+// depth cap's muted: one was chosen, the other only happened.
+func passThroughMarkClass(node *ObjectiveTreeNode) string {
+	if node.Objective.PassThrough {
+		return "w-4 h-4 text-primary"
+	}
+	return "w-4 h-4 text-base-content/50"
+}
+
+// objectivePassThroughSwitch posts straight to
+// /admin/objective/{slug}/pass-through. Only sections carry it: a leaf is never
+// a place, and the quest itself cannot pass through, so neither has one.
+templ objectivePassThroughSwitch(node *ObjectiveTreeNode) {
+	<label class="group/pass flex items-start gap-3 px-4 py-3 cursor-pointer">
+		<input
+			type="checkbox"
+			class="toggle toggle-sm toggle-primary objective-passthrough-toggle mt-0.5 shrink-0"
+			data-objective-slug={ node.Objective.Slug }
+			data-pass-through={ fmt.Sprint(node.Objective.PassThrough) }
+			checked?={ node.Objective.PassThrough }
+		/>
+		<span class="flex flex-col gap-0.5">
+			<!-- The ghost the pill shows, so the switch is recognisably what
+			puts it there. Lit with the switch, before the refresh arrives. -->
+			<span class="flex items-center gap-2 text-sm font-medium">
+				@icon("ghost", templ.Attributes{"class": "w-4 h-4 shrink-0 text-base-content/60 group-has-[:checked]/pass:text-primary"})
+				Pass through
+			</span>
+			<span class="text-xs text-base-content/60 text-pretty">{ passThroughNote(node) }</span>
+		</span>
+	</label>
+}
+
+// objectiveRulePicker is a section's rule as one control: how it offers what
+// is inside, then how much of it is enough. One pill and one menu, because the
+// two are read together ("any order, one of three"), and as two controls with
+// a chevron each they broke the header into crumbs. A <details> because the
+// tree is replaced often and this keeps no state outside the markup; options
+// are clickable rows, not a <select>, and data-routing on the trigger holds the
+// current value for currentSettingsValues and syncSettings to read.
+//
+// The band is drawn as pips up to maxBandPips: solid dots are required, rings
+// are the range a finish button covers, and faint rings close unplayed when
+// the section finishes. A click on a pip asks for exactly that many and a drag
+// across them sets a range. Anywhere else on the pill opens the menu, which
+// holds the exact numbers and the finish label and is the keyboard path, so
+// the pips are hidden from assistive technology. Past maxBandPips the band is
+// told in words.
+//
+// The pill wears the routing hue, which it leads with; the band stays neutral,
+// because it is a rule of its own and painted like the routing it read as part
+// of it.
+//
+// The band is hidden rather than omitted under guided routing, where "complete
+// any 3" has nothing to choose between: the script shows it the moment the
+// author leaves guided, before the refresh arrives.
+//
+// A section's menu also holds the pass-through switch, which was a hover-only
+// button on every header: it is about how players meet the section, so it
+// belongs with the rule, and a control that waits for a hover on every row is
+// one nobody finds until they already know it is there. When the section
+// passes through, the ghost leads the pill. The quest's own rule has neither,
+// because the quest cannot pass through.
+templ objectiveRulePicker(node *ObjectiveTreeNode, section bool) {
+	{{ guided := node.Objective.Routing == models.RouteStrategyOrdered }}
+	{{ lo, hi := bandRange(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren) }}
+	{{ summary := bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren) }}
+	{{ pips := node.PublishedChildren > 0 && node.PublishedChildren <= maxBandPips }}
+	<details class="settings-picker settings-rule relative shrink-0">
+		<summary class="settings-rule-pill">
+			if section {
+				@objectivePassThroughMark(node)
+			}
+			<span class="settings-routing-trigger" data-routing={ string(node.Objective.Routing) }>
+				@icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "settings-routing-icon w-3.5 h-3.5"})
+				<span class="settings-routing-label">{ routingLabel(node.Objective.Routing, node.Objective.MaxNext) }</span>
+			</span>
+			<span class={ "settings-band-picker", templ.KV("hidden", guided) }>
+				<!-- One tooltip over the whole band, so pips, words and button all
+				answer a hover with the sentence the menu ends on. -->
+				<span class="band-glance tooltip tooltip-top" data-tip={ summary }>
+					if pips {
+						<span class="band-pips" data-count={ fmt.Sprint(node.PublishedChildren) } aria-hidden="true">
+							for k := 1; k <= node.PublishedChildren; k++ {
+								<span class="band-pip" data-pip={ fmt.Sprint(k) } data-state={ pipState(k, lo, hi) }></span>
+							}
+						</span>
+					}
+					<span class={ "settings-band-summary", templ.KV("sr-only", pips) }>{ summary }</span>
+					<!-- A small copy of the button players get, label and all: with it
+					they choose when they are done, and without it the section
+					finishes by itself. An icon for that said nothing at a glance. -->
+					<span class={ "band-finish-chip", templ.KV("hidden", lo >= hi) } aria-hidden="true">{ finishButtonLabel(node.Objective) }</span>
+				</span>
+			</span>
 		</summary>
-		<div class={ "absolute top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-64 overflow-hidden",
-			string(align) }>
-			<ul class="menu p-2">
-				for _, rs := range models.GetRouteStrategies() {
-					<li>
-						<a class="settings-routing-option items-start" data-value={ string(rs) }>
-							@icon(routingIcon(rs), templ.Attributes{"class": "w-4 h-4 opacity-70 mt-0.5 shrink-0"})
-							<span class="flex flex-col">
-								<span class="text-sm font-medium settings-routing-option-label">{ routingOptionLabel(rs, node.Objective) }</span>
-								<span class="text-xs text-base-content/60 text-pretty">{ rs.Description() }</span>
-							</span>
-						</a>
-					</li>
-				}
-			</ul>
-			<div class={ "settings-maxnext flex items-center gap-2 px-3 py-2 border-t border-base-300", templ.KV("hidden", node.Objective.Routing != models.RouteStrategyRandomised) }>
-				<span class="text-xs whitespace-nowrap opacity-70">Show at once</span>
-				<input
-					type="number"
-					min="0"
-					class="input input-xs w-16 settings-maxnext-input no-spinner"
-					value={ maxNextValue(node.Objective.MaxNext) }
-					data-default={ fmt.Sprint(defaultMaxNext) }
-					placeholder="All"
-				/>
+		<!-- One wide panel, a column per question, rather than one long list:
+		how players meet what is inside, and how much of it is enough. Columns
+		stack on a narrow screen. Every rule ends its header, so the panel is
+		anchored on the right and opens back over the card, not past its edge. -->
+		<div class="absolute top-full right-0 mt-1 z-20 w-[42rem] max-w-[calc(100vw-2rem)] bg-base-100 rounded-box shadow-lg overflow-hidden">
+			<!-- The band gets the wider column: its answers are sentences, and
+			squeezed they wrapped into two lines each. -->
+			<div class="grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] divide-y md:divide-y-0 md:divide-x divide-base-300">
+				<div class="flex flex-col">
+					<p class="settings-menu-heading">Routing</p>
+					<ul class="menu gap-2 px-2 pt-0 pb-2 w-full">
+						for _, rs := range models.GetRouteStrategies() {
+							<li>
+								<!-- aria-current marks the live choice: the menu changes the
+								section the moment an option is picked, so it has to show
+								which one is in force. -->
+								<a
+									class="settings-routing-option items-start"
+									data-value={ string(rs) }
+									data-routing={ string(rs) }
+									data-focus={ "route-" + string(rs) }
+									if rs == node.Objective.Routing {
+										aria-current="true"
+									}
+								>
+									@icon(routingIcon(rs), templ.Attributes{"class": "w-4 h-4 opacity-70 mt-0.5 shrink-0"})
+									<span class="flex flex-col grow">
+										<span class="text-sm font-medium settings-routing-option-label">{ routingOptionLabel(rs, node.Objective) }</span>
+										<!-- Balanced: each note runs to two short lines, which then
+										split evenly instead of leaving one word on the second. -->
+										<span class="text-xs text-base-content/60 text-balance">{ routingNote(rs) }</span>
+									</span>
+								</a>
+							</li>
+						}
+					</ul>
+					<!-- Straight under the option it belongs to and in line with its
+					words; at the foot of the column it read as a setting of its own. -->
+					<div class={ "settings-maxnext flex items-center gap-2 pl-11 pr-4 pb-4", templ.KV("hidden", node.Objective.Routing != models.RouteStrategyRandomised) }>
+						<span class="text-sm whitespace-nowrap text-base-content/70">Show at once</span>
+						<input
+							type="number"
+							min="0"
+							class="input input-sm w-16 settings-maxnext-input no-spinner"
+							data-focus="maxnext"
+							value={ maxNextValue(node.Objective.MaxNext) }
+							data-default={ fmt.Sprint(defaultMaxNext) }
+							placeholder="All"
+						/>
+					</div>
+				</div>
+				@objectiveBandColumn(node, guided)
 			</div>
+			if section {
+				<!-- A footer, not a column: it is one switch, rarely used, and as a
+				column of its own it left a third of the menu empty. -->
+				<div class="border-t border-base-300">
+					@objectivePassThroughSwitch(node)
+				</div>
+			}
 		</div>
 	</details>
 }
 
-// objectiveBandPicker's trigger shows the resolved band, not a generic icon.
+// objectiveBandColumn asks the band as one sentence an author reads top to
+// bottom: players need to complete so many; once they have, either the section
+// finishes or they can keep going and finish it with a button, saying what the
+// button says and how many they can complete at most. Each count is one
+// stepper, every value from none to all on it, so no second control competes
+// with it to say which is picked. The two bounds the server stores, where
+// blank, zero and equal each mean something different, are hidden fields only
+// the script writes.
 //
-// Hidden rather than omitted under guided routing, where "complete any 3" has
-// nothing to choose between: the toolbar is never re-rendered, so the element
-// must already exist when the author switches strategy.
-templ objectiveBandPicker(node *ObjectiveTreeNode, align settingsAlign) {
-	<details
-		class={ "settings-picker settings-band-picker relative",
-			templ.KV("hidden", node.Objective.Routing == models.RouteStrategyOrdered) }
-	>
-		<summary class="btn btn-sm btn-outline btn-primary gap-1 shrink-0">
-			<span class="text-xs settings-band-summary">
-				{ bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren) }
-			</span>
-			@icon("chevron-down", templ.Attributes{"class": "w-3 h-3 opacity-50"})
-		</summary>
-		<div class={ "absolute top-full mt-1 z-20 bg-base-100 rounded-box shadow-lg w-60 p-3", string(align) }>
-			<p class="text-xs font-medium opacity-70 mb-2">Completion band</p>
-			<div class="flex items-center gap-2">
-				<input
-					type="number"
-					min="0"
-					class="input input-sm w-16 settings-min no-spinner"
-					value={ bandValueStr(node.Objective.ChildrenMin) }
-					placeholder="0"
-				/>
-				<span class="opacity-60">to</span>
-				<input
-					type="number"
-					min="0"
-					class="input input-sm w-16 settings-max no-spinner"
-					value={ bandValueStr(node.Objective.ChildrenMax) }
-					placeholder={ fmt.Sprint(node.PublishedChildren) }
-				/>
+// A guided path takes every step, so under guided the sentence stays, locked
+// at all: a column that collapsed to a note left the menu looking broken. Its
+// bounds are written blank, so the next save stores the band guided play has.
+//
+// The script redraws the column from those fields after every change
+// (syncBandMenu); this draws the same state so the menu is right before it
+// runs.
+templ objectiveBandColumn(node *ObjectiveTreeNode, guided bool) {
+	{{ n := node.PublishedChildren }}
+	{{ count, carry, capAt := bandChoice(node.Objective.ChildrenMin, node.Objective.ChildrenMax, n) }}
+	if guided {
+		{{ count, carry, capAt = n, false, 0 }}
+	}
+	<div class="flex flex-col">
+		<p class="settings-menu-heading">How much is enough</p>
+		<div class="settings-band-fields px-4 pb-4 flex flex-col gap-4">
+			<input type="hidden" class="settings-min" value={ guidedBandValue(node.Objective.ChildrenMin, guided) }/>
+			<input type="hidden" class="settings-max" value={ guidedBandValue(node.Objective.ChildrenMax, guided) }/>
+			<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+				<span class="text-sm">Players need to complete</span>
+				@bandStepper("need", bandCountWords(count, n), guided || count <= 0, guided || count >= n)
 			</div>
-			<p class="text-xs opacity-70 mt-2 settings-band-explainer"></p>
-			<div class={ "settings-finish-label mt-3 pt-3 border-t border-base-300",
-				templ.KV("hidden", !bandOffersFinish(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren)) }>
-				<p class="text-xs font-medium opacity-70 mb-1">Finish button label</p>
-				<input
-					type="text"
-					class="input input-sm w-full settings-finish-label-input"
-					value={ node.Objective.FinishLabel }
-					placeholder="Finish"
-				/>
+			<!-- Asked only when there is a choice: with every one required nothing
+			is left to close, and with none required only a button can finish it. -->
+			<fieldset class={ "band-then flex flex-col gap-2", templ.KV("hidden", count <= 0 || count >= n) }>
+				<legend class="band-then-lead text-sm mb-2">{ bandThenLead(count) }</legend>
+				<label class="flex items-start gap-2 text-sm cursor-pointer">
+					<input
+						type="radio"
+						class="radio radio-sm radio-primary mt-0.5 shrink-0"
+						name={ "band-then-" + node.Objective.Slug }
+						value="closes"
+						data-focus="closes"
+						checked?={ !carry }
+					/>
+					<span>the section finishes, and <span class="band-rest">{ bandRestWords(n - count) }</span></span>
+				</label>
+				<label class="flex items-start gap-2 text-sm cursor-pointer">
+					<input
+						type="radio"
+						class="radio radio-sm radio-primary mt-0.5 shrink-0"
+						name={ "band-then-" + node.Objective.Slug }
+						value="carry"
+						data-focus="carry"
+						checked?={ carry }
+					/>
+					<span>they can keep going, or finish with a button</span>
+				</label>
+			</fieldset>
+			<!-- Indented under the answer it continues; with none required there
+			is no answer above it, so it stands on its own line. -->
+			<div class={ "settings-finish-label band-carry flex flex-col gap-3", templ.KV("pl-7", count > 0), templ.KV("hidden", !carry || count >= n) }>
+				<p class={ "band-carry-lead text-sm", templ.KV("hidden", count > 0) }>They can finish the section with a button at any time.</p>
+				<label class="flex items-center gap-3">
+					<span class="text-sm whitespace-nowrap">The button says</span>
+					<input
+						type="text"
+						class="input input-sm grow min-w-0 settings-finish-label-input"
+						data-focus="finish"
+						value={ node.Objective.FinishLabel }
+						placeholder="Finish"
+					/>
+				</label>
+				<div class={ "band-cap-row flex flex-wrap items-center gap-x-3 gap-y-2", templ.KV("hidden", count >= n-1) }>
+					<span class="text-sm">They can complete up to</span>
+					@bandStepper("cap", bandCapWords(capAt, n), bandCapOf(capAt, n) <= count+1, capAt == 0)
+				</div>
 			</div>
+			<!-- Ruled off from the questions so it reads as their sum, not one
+			more option. -->
+			<p class="settings-band-explainer pt-3 border-t border-base-300 text-xs text-base-content/70 text-pretty"></p>
 		</div>
-	</details>
+	</div>
+}
+
+// bandStepper is a count between a step down and a step up. kind is "need"
+// for how many players need, or "cap" for how many they can complete at most;
+// the script tells the two apart by it.
+templ bandStepper(kind, value string, atLeast, atMost bool) {
+	<div class="join">
+		<button
+			type="button"
+			class="btn btn-sm join-item band-step"
+			data-kind={ kind }
+			data-step="-1"
+			data-focus={ kind + "-fewer" }
+			aria-label={ bandStepLabel(kind, -1) }
+			disabled?={ atLeast }
+		>
+			@icon("minus", templ.Attributes{"class": "w-3.5 h-3.5"})
+		</button>
+		<span class="join-item band-value" data-kind={ kind } aria-live="polite">{ value }</span>
+		<button
+			type="button"
+			class="btn btn-sm join-item band-step"
+			data-kind={ kind }
+			data-step="1"
+			data-focus={ kind + "-more" }
+			aria-label={ bandStepLabel(kind, 1) }
+			disabled?={ atMost }
+		>
+			@icon("plus", templ.Attributes{"class": "w-3.5 h-3.5"})
+		</button>
+	</div>
+}
+
+// bandChoice reads a band as the menu asks about it: how many players need to
+// complete, whether they can carry on past that and finish when they choose,
+// and where carrying on stops by itself (0 when it runs to the last).
+func bandChoice(minChildren, maxChildren *int, childCount int) (count int, carry bool, capAt int) {
+	lo, hi := bandRange(minChildren, maxChildren, childCount)
+	if lo >= hi {
+		if hi > childCount {
+			hi = childCount
+		}
+		return hi, false, 0
+	}
+	if hi < childCount {
+		capAt = hi
+	}
+	return lo, true, capAt
+}
+
+// bandCountWords is how many players need, in words: none and all are named
+// rather than left as 0 and a total to puzzle over. Lower case, because it is
+// read in the middle of a sentence.
+func bandCountWords(count, childCount int) string {
+	switch {
+	case count >= childCount && childCount == 1:
+		return "all"
+	case count >= childCount:
+		return fmt.Sprintf("all %d", childCount)
+	case count == 0:
+		return "none"
+	default:
+		return fmt.Sprintf("%d of %d", count, childCount)
+	}
+}
+
+// bandThenLead opens the second half of the sentence, naming the count so
+// the choice below it is plainly about what happens at that point.
+func bandThenLead(count int) string {
+	return fmt.Sprintf("Once they have completed %d,", count)
+}
+
+// bandRestWords says what happens to the children a finished section leaves
+// unplayed.
+func bandRestWords(rest int) string {
+	if rest == 1 {
+		return "the other one closes"
+	}
+	return fmt.Sprintf("the other %d close", rest)
+}
+
+// bandCapOf is the most players can complete: the cap, or every one when
+// there is none.
+func bandCapOf(capAt, childCount int) int {
+	if capAt > 0 {
+		return capAt
+	}
+	return childCount
+}
+
+// bandCapWords is the cap in words, where no cap is all of them.
+func bandCapWords(capAt, childCount int) string {
+	if capAt > 0 {
+		return fmt.Sprint(capAt)
+	}
+	return fmt.Sprintf("all %d", childCount)
+}
+
+// bandStepLabel names a stepper button for a screen reader, which hears the
+// button without the sentence beside it.
+func bandStepLabel(kind string, step int) string {
+	switch {
+	case kind == "cap" && step < 0:
+		return "Fewer they can complete"
+	case kind == "cap":
+		return "More they can complete"
+	case step < 0:
+		return "Fewer they need to complete"
+	default:
+		return "More they need to complete"
+	}
+}
+
+// guidedBandValue writes a bound into its hidden field, blank under guided
+// routing, where every step is required whatever was stored before.
+func guidedBandValue(bound *int, guided bool) string {
+	if guided {
+		return ""
+	}
+	return bandValueStr(bound)
 }
 
 // bandOffersFinish reports whether a finish button is shown, the only time its
 // label matters.
 func bandOffersFinish(min, max *int, childCount int) bool {
-	lo := 0
-	if min != nil {
-		lo = *min
-	}
-	hi := childCount
-	if max != nil {
-		hi = *max
-	}
+	lo, hi := bandRange(min, max, childCount)
 	return lo < hi
-}
-
-// objectiveCollapseToggle sits last, after the controls that change the quest,
-// because it only changes this author's view.
-templ objectiveCollapseToggle(node *ObjectiveTreeNode) {
-	<button
-		type="button"
-		class="btn btn-xs btn-ghost btn-circle shrink-0 objective-collapse"
-		data-collapse-for={ node.Objective.ID }
-		data-ignore-lock
-		aria-label="Collapse section"
-	>
-		@icon("chevron-down", templ.Attributes{"class": "w-4 h-4 opacity-60 transition-transform"})
-	</button>
 }
 
 // objectiveRailMark keeps the marker out of the row so a drag into another
@@ -559,6 +932,14 @@ templ objectiveRailMark(node *ObjectiveTreeNode) {
 			{ fmt.Sprint(node.Step) }
 		}
 	</span>
+}
+
+// objectiveDraftTag says in a word what the dashed row and the orange eye only
+// imply. A row under a drafted parent gets none: the parent carries it.
+templ objectiveDraftTag(node *ObjectiveTreeNode) {
+	if node.Draft {
+		<span class="badge badge-warning badge-xs shrink-0">Draft</span>
+	}
 }
 
 // objectivePointsBadge sums this objective's own blocks; never a rollup of
@@ -589,40 +970,47 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 		</li>
 	} else if len(node.Children) > 0 {
 		<li
-			class="list-none group objective-rail-item"
+			class="list-none objective-rail-item"
 			data-objective-id={ node.Objective.ID }
 			data-objective-slug={ node.Objective.Slug }
 			data-child-count={ fmt.Sprint(node.PublishedChildren) }
 			data-mark={ string(node.Mark) }
+			{ objectiveVarAttrs(node)... }
 		>
 			@objectiveRailMark(node)
+			<!-- The hue is on the outline, the header band, the rail and the
+			routing label, not the fill: three washes deep, nested cards read as
+			fills rather than as the sections they are. An outline in the hue
+			keeps each card's routing visible down its whole length without
+			that. -->
 			<div
-				class={ "objective-group card shadow rounded-2xl bg-primary/5 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("objective-parked", node.OutOfPlay), templ.KV("objective-passthrough", passThroughShown(node) && !node.OutOfPlay) }
+				class={ "objective-group card rounded-2xl bg-base-100 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("objective-parked", node.OutOfPlay), templ.KV("objective-passthrough", passThroughShown(node) && !node.OutOfPlay) }
 				data-routing={ string(node.Objective.Routing) }
 			>
 				<div class="card-body p-0 gap-0">
-					<div class="objective-group-header group/header flex items-center gap-3 px-4 py-2.5 rounded-t-2xl bg-primary/10 border-b border-primary/25">
+					<!-- Taller than a leaf's row, so a section reads as the head of
+					what follows rather than one more row in the list. -->
+					<div class="objective-group-header group/header flex items-center gap-2 px-3 py-2 rounded-t-2xl bg-primary/10 border-b border-primary/25">
 						<span class="tooltip tooltip-right" data-tip="Drag to move">
-							@icon("grip-vertical", templ.Attributes{"class": "w-4 h-4 text-base-content cursor-move objective-drag-handle shrink-0"})
+							@icon("grip-vertical", templ.Attributes{"class": dragHandleClass})
 						</span>
 						<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-bold">
 							{ node.Objective.Title }
 						</a>
-						<div class="flex-grow"></div>
+						@objectiveDraftTag(node)
+						<!-- Marks sit against the title they describe: at the far edge
+						they would be a screen's width from their name. -->
 						@objectivePointsBadge(node.Points, enablePoints)
 						@objectiveVarsBadges(node)
 						@objectiveLintBadge(node.Lint)
-						<!-- The settings sit together past the title, routing then the
-						band: the title is what you scan a tree for, and a control before
-						it pushes every name out of line with the one above. -->
-						@objectiveRoutingPicker(node, alignRight)
-						@objectiveBandPicker(node, alignRight)
-						@objectiveAddChildButton(node)
-						@objectivePassThroughToggle(node)
+						<div class="flex-grow"></div>
+						<!-- The rule sits past the title: the title is what you scan a
+						tree for, and a control before it pushes every name out of line
+						with the one above. -->
+						@objectiveRulePicker(node, true)
 						@objectiveVisibilityToggle(node)
-						@objectiveCollapseToggle(node)
 					</div>
-					<div class="p-4 pt-3 objective-group-body">
+					<div class="p-3 objective-group-body">
 						<ul class="objective-children flex flex-col w-full min-h-8" data-parent-id={ node.Objective.ID }>
 							for _, child := range node.Children {
 								@objectiveNode(child, enablePoints, depth+1)
@@ -634,24 +1022,25 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 		</li>
 	} else {
 		<li
-			class="list-none objective-searchable group objective-rail-item"
+			class="list-none objective-searchable objective-rail-item"
 			data-objective-id={ node.Objective.ID }
 			data-search-text={ node.Objective.Title }
 			data-mark={ string(node.Mark) }
+			{ objectiveVarAttrs(node)... }
 		>
 			@objectiveRailMark(node)
-			<div class={ "flex items-center gap-3 rounded-xl bg-base-100/60 hover:bg-base-200/60 border border-base-content/10 px-4 py-2.5 text-sm", templ.KV("objective-parked", node.OutOfPlay) }>
+			<div class={ "objective-row group/row flex items-center gap-2 rounded-xl bg-base-100/60 hover:bg-base-200/60 border border-base-content/10 px-3 py-1.5 text-sm", templ.KV("objective-parked", node.OutOfPlay) }>
 				<span class="tooltip tooltip-right" data-tip="Drag to move">
-					@icon("grip-vertical", templ.Attributes{"class": "w-4 h-4 text-base-content cursor-move objective-drag-handle shrink-0"})
+					@icon("grip-vertical", templ.Attributes{"class": dragHandleClass})
 				</span>
 				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-medium">
 					{ node.Objective.Title }
 				</a>
-				<div class="flex-grow"></div>
+				@objectiveDraftTag(node)
 				@objectivePointsBadge(node.Points, enablePoints)
 				@objectiveVarsBadges(node)
 				@objectiveLintBadge(node.Lint)
-				@objectiveAddChildButton(node)
+				<div class="flex-grow"></div>
 				@objectiveVisibilityToggle(node)
 			</div>
 			<!-- Plain flow, not absolute: lets Sortable grow this to show the
@@ -693,24 +1082,148 @@ templ objectiveSortableScript() {
 		if (minV === null && maxV === null) return 'Complete all';
 		var lo = minV === null ? 0 : minV;
 		var hi = maxV === null ? n : maxV;
-		if (lo >= hi) return hi === n ? 'Complete all' : ('Complete ' + hi);
+		if (lo >= hi) return hi === n ? 'Complete all' : ('Complete ' + hi + ' of ' + n);
 		if (lo === 0 && hi === n) return 'Complete any';
 		if (lo === 0) return 'Complete up to ' + hi;
 		if (hi === n) return 'Complete ' + lo + '+';
 		return 'Complete ' + lo + '–' + hi;
 	}
 
-	function bandExplainerText(n, minRaw, maxRaw) {
-		var minV = minRaw === '' ? null : parseInt(minRaw, 10);
-		var maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);
-		if (minV === null && maxV === null) {
-			return 'Requires all ' + n + ' children.';
+	// bandState mirrors bandChoice: the two bounds read as the menu's questions.
+	function bandState(n, minRaw, maxRaw) {
+		var range = bandRangeOf(n, minRaw, maxRaw);
+		if (range[0] >= range[1]) return { count: Math.min(range[1], n), carry: false, cap: null };
+		return { count: range[0], carry: true, cap: range[1] < n ? range[1] : null };
+	}
+
+	// bandFieldsOf writes the menu's answers back as the two bounds the server
+	// reads. Every one required is the blank band, so it keeps meaning all when
+	// another child is added; with none required, only the players can finish
+	// the section, so it carries on whatever was picked.
+	function bandFieldsOf(n, state) {
+		var count = Math.max(0, Math.min(n, state.count));
+		if (count >= n) return ['', ''];
+		if (!state.carry && count > 0) return [String(count), String(count)];
+		var cap = state.cap && state.cap > count && state.cap < n ? state.cap : null;
+		return [String(count), cap ? String(cap) : ''];
+	}
+
+	// bandCountWords, bandThenLead, bandRestWords and bandCapWords mirror
+	// their Go namesakes.
+	function bandCountWords(n, count) {
+		if (count >= n) return n === 1 ? 'all' : 'all ' + n;
+		if (count === 0) return 'none';
+		return count + ' of ' + n;
+	}
+
+	function bandThenLead(count) {
+		return 'Once they have completed ' + count + ',';
+	}
+
+	function bandCapWords(n, cap) {
+		return cap ? String(cap) : 'all ' + n;
+	}
+
+	function bandRestWords(rest) {
+		return rest === 1 ? 'the other one closes' : 'the other ' + rest + ' close';
+	}
+
+	// bandSentence is the whole band in one sentence, for the menu and for the
+	// pips' tooltip: what players have to do, and how the section ends.
+	function bandSentence(n, state, label) {
+		var finish = '“' + (label || 'Finish') + '”';
+		if (state.count >= n) {
+			return n === 1 ? 'Players complete it, and the section finishes.'
+				: 'Players complete all ' + n + ', and the section finishes with the last.';
 		}
-		var lo = minV === null ? 0 : minV;
-		var hi = maxV === null ? n : maxV;
-		return lo >= hi
-			? 'Completes automatically at ' + hi + ' of ' + n + '.'
-			: 'Finish button from ' + lo + '; auto at ' + hi + ' of ' + n + '.';
+		if (!state.carry) {
+			return 'Players complete ' + state.count + ' of ' + n + '. The section then finishes, and ' +
+				bandRestWords(n - state.count) + '.';
+		}
+		var end = state.cap ? 'It finishes on its own after ' + state.cap + '.'
+			: 'It finishes on its own once all ' + n + ' are done.';
+		if (state.count === 0) return 'Nothing is required: players see ' + finish + ' from the start. ' + end;
+		return 'Players complete at least ' + state.count + ', then see ' + finish + ' and can keep going. ' + end;
+	}
+
+	// finishLabelOf is the label the finish button will show, as typed so far.
+	function finishLabelOf(rule) {
+		var input = rule && rule.querySelector('.settings-finish-label-input');
+		return input ? input.value.trim() : '';
+	}
+
+	// syncBandMenu redraws the band's column from the hidden bounds and returns
+	// the state it drew. Under guided routing the count is locked at all, and
+	// the sum says why. Buttons stay disabled while the quest is locked,
+	// whatever the band would allow.
+	function syncBandMenu(rule, n) {
+		var min = rule.querySelector('.settings-min');
+		var max = rule.querySelector('.settings-max');
+		var fields = rule.querySelector('.settings-band-fields');
+		if (!min || !max || !fields) return null;
+		var trigger = rule.querySelector('.settings-routing-trigger');
+		var guided = trigger && trigger.dataset.routing === 'ordered';
+		var locked = document.body.dataset.questLocked === 'true';
+		var state = bandState(n, min.value, max.value);
+		var all = state.count >= n;
+		var capAt = state.cap || n;
+		var step = function(kind, dir) {
+			return fields.querySelector('.band-step[data-kind="' + kind + '"][data-step="' + dir + '"]');
+		};
+		fields.querySelector('.band-value[data-kind="need"]').textContent = bandCountWords(n, state.count);
+		step('need', -1).disabled = locked || guided || state.count <= 0;
+		step('need', 1).disabled = locked || guided || all;
+		fields.querySelector('.band-then').classList.toggle('hidden', all || state.count === 0);
+		fields.querySelector('.band-then-lead').textContent = bandThenLead(state.count);
+		fields.querySelector('.band-rest').textContent = bandRestWords(n - state.count);
+		fields.querySelector('.band-then input[value="closes"]').checked = !state.carry;
+		fields.querySelector('.band-then input[value="carry"]').checked = state.carry;
+		var carry = fields.querySelector('.band-carry');
+		carry.classList.toggle('hidden', all || !state.carry);
+		carry.classList.toggle('pl-7', state.count > 0);
+		fields.querySelector('.band-carry-lead').classList.toggle('hidden', state.count > 0);
+		fields.querySelector('.band-cap-row').classList.toggle('hidden', state.count >= n - 1);
+		fields.querySelector('.band-value[data-kind="cap"]').textContent = bandCapWords(n, state.cap);
+		step('cap', -1).disabled = locked || capAt <= state.count + 1;
+		step('cap', 1).disabled = locked || !state.cap;
+		fields.querySelector('.settings-band-explainer').textContent = guided
+			? 'A guided path takes every step, in order, and the section finishes with the last.'
+			: bandSentence(n, state, finishLabelOf(rule));
+		return state;
+	}
+
+	// editBand applies one answer to the band's questions, redraws at once, and
+	// saves once the edits stop.
+	function editBand(rule, change) {
+		var scope = settingsScope(rule);
+		var min = rule.querySelector('.settings-min');
+		var max = rule.querySelector('.settings-max');
+		if (!scope || !min || !max) return;
+		var n = parseInt(scope.dataset.childCount, 10) || 0;
+		var state = bandState(n, min.value, max.value);
+		change(state, n);
+		var next = bandFieldsOf(n, state);
+		if (next[0] === min.value && next[1] === max.value) {
+			syncSettings(scope);
+			return;
+		}
+		min.value = next[0];
+		max.value = next[1];
+		syncSettings(scope);
+		scheduleSettings(scope);
+	}
+
+	// scheduleSettings saves a burst of edits as one post: each click redraws at
+	// once, and the save waits until the clicking stops, so a run of presses on
+	// the stepper is not a run of refreshes racing each other.
+	function scheduleSettings(scope) {
+		var timers = window.__settingsTimers || (window.__settingsTimers = {});
+		var slug = scope.dataset.objectiveSlug;
+		clearTimeout(timers[slug]);
+		timers[slug] = setTimeout(function() {
+			delete timers[slug];
+			submitSettings(scope);
+		}, 400);
 	}
 
 	// settingsScope finds the nearest element carrying the objective's
@@ -720,43 +1233,70 @@ templ objectiveSortableScript() {
 		return el.closest('[data-objective-slug]');
 	}
 
+	// bandRangeOf mirrors bandRange: both blank is every one, not "from none".
+	function bandRangeOf(n, minRaw, maxRaw) {
+		if (minRaw === '' && maxRaw === '') return [n, n];
+		return [minRaw === '' ? 0 : parseInt(minRaw, 10), maxRaw === '' ? n : parseInt(maxRaw, 10)];
+	}
+
+	// paintPips mirrors pipState.
+	function paintPips(pips, lo, hi) {
+		pips.querySelectorAll('.band-pip').forEach(function(pip) {
+			var k = parseInt(pip.dataset.pip, 10);
+			pip.dataset.state = k <= lo ? 'required' : (k <= hi ? 'optional' : 'closed');
+		});
+	}
+
 	// syncSettings keeps the picker's summary and the randomised-window field
 	// honest after any edit, without a round trip.
 	function syncSettings(scope) {
 		var n = parseInt(scope.dataset.childCount, 10) || 0;
 		var min = scope.querySelector('.settings-min');
 		var max = scope.querySelector('.settings-max');
+		// The scope's own rule only: a section's scope also holds every rule
+		// nested inside it.
+		var rule = scope.querySelector('.settings-rule');
 		if (min && max) {
+			var band = bandRangeOf(n, min.value, max.value);
+			var state = (rule && syncBandMenu(rule, n)) || bandState(n, min.value, max.value);
 			var summary = scope.querySelector('.settings-band-summary');
-			var explainer = scope.querySelector('.settings-band-explainer');
 			if (summary) summary.textContent = bandSummaryText(n, min.value, max.value);
-			if (explainer) explainer.textContent = bandExplainerText(n, min.value, max.value);
-		}
-		var finishLabelField = scope.querySelector('.settings-finish-label');
-		if (finishLabelField && min && max) {
-			var n = parseInt(scope.dataset.childCount, 10) || 0;
-			var lo = min.value === '' ? 0 : parseInt(min.value, 10);
-			var hi = max.value === '' ? n : parseInt(max.value, 10);
-			// Only a band that lets a player finish early ever shows the button.
-			finishLabelField.classList.toggle('hidden', !(lo < hi));
+			var glance = scope.querySelector('.band-glance');
+			if (glance) glance.dataset.tip = bandSentence(n, state, finishLabelOf(rule));
+			var pips = scope.querySelector('.band-pips');
+			if (pips) paintPips(pips, band[0], band[1]);
+			var chip = scope.querySelector('.band-finish-chip');
+			if (chip) {
+				chip.classList.toggle('hidden', !(band[0] < band[1]));
+				chip.textContent = finishLabelOf(rule) || 'Finish';
+			}
 		}
 		var routingTrigger = scope.querySelector('.settings-routing-trigger');
 		if (!routingTrigger) return;
 		var routing = routingTrigger.dataset.routing;
+		if (rule) {
+			rule.querySelectorAll('.settings-routing-option').forEach(function(option) {
+				if (option.dataset.value === routing) option.setAttribute('aria-current', 'true');
+				else option.removeAttribute('aria-current');
+			});
+		}
 		var maxNextField = scope.querySelector('.settings-maxnext');
 		if (maxNextField) {
 			maxNextField.classList.toggle('hidden', routing !== 'randomised');
 		}
-		// Guided play fixes order and count, so there is no band to pick.
-		var bandPicker = scope.querySelector('.settings-band-picker');
-		if (bandPicker) {
-			bandPicker.classList.toggle('hidden', routing === 'ordered');
-			if (routing === 'ordered') bandPicker.open = false;
+		// Guided play fixes order and count, so the pill has no band to show.
+		if (rule) {
+			var bandPicker = rule.querySelector('.settings-band-picker');
+			if (bandPicker) bandPicker.classList.toggle('hidden', routing === 'ordered');
 		}
-		// The card (or the toolbar, for the quest) carries the hue, never the
+		// The card (or the quest's settings group) carries the hue, never the
 		// row: a row's rail answers to its parent's routing.
 		var hueTarget = scope.querySelector('.objective-group') || scope;
 		if (hueTarget.dataset.routing !== undefined) hueTarget.dataset.routing = routing;
+		// The quest's plane is framed in its top level's hue, but sits outside
+		// the header that scopes the quest's settings.
+		var plane = scope.id === 'quest-root-settings' && scope.closest('.quest-plane');
+		if (plane) plane.dataset.routing = routing;
 		repaintRoutingTrigger(scope, routing);
 	}
 
@@ -773,9 +1313,9 @@ templ objectiveSortableScript() {
 		label.textContent = n > 0 ? 'Random ' + n : 'Random order';
 	}
 
-	// repaintRoutingTrigger exists because the quest's picker is outside the
-	// swapped tree, so no render corrects it. Copying from the matching option
-	// avoids a second list of strategies in the script.
+	// repaintRoutingTrigger shows a pick at once rather than when the refresh
+	// lands. Copying from the matching option avoids a second list of
+	// strategies in the script.
 	function repaintRoutingTrigger(scope, routing) {
 		labelRandomisedOption(scope, routing);
 		var option = scope.querySelector('.settings-routing-option[data-value="' + routing + '"]');
@@ -827,14 +1367,35 @@ templ objectiveSortableScript() {
 		if (overrides) {
 			for (var key in overrides) values[key] = overrides[key];
 		}
+		rememberOpenRule(scope.querySelector('details.settings-rule'));
 		postObjectiveUpdate('/admin/objective/' + scope.dataset.objectiveSlug + '/settings', values);
 	}
 
-	// closeSettingsPicker closes the <details> a control sits in; <details>
-	// doesn't do this itself.
-	function closeSettingsPicker(el) {
-		var details = el.closest('details.settings-picker');
-		if (details) details.open = false;
+	// rememberOpenRule notes which menu was open, and which control in it had
+	// focus, so the refresh after a save can put both back. The menu is a live
+	// panel: closing it on every change made each edit a reopen.
+	function rememberOpenRule(details) {
+		if (!details || !details.open) return;
+		var scope = settingsScope(details);
+		var active = document.activeElement;
+		window.__reopenRule = {
+			slug: scope.dataset.objectiveSlug,
+			focus: active && details.contains(active) ? active.dataset.focus : null,
+		};
+	}
+
+	// reopenRule puts back the menu rememberOpenRule noted, once the refresh has
+	// replaced it, the quest's own included.
+	function reopenRule() {
+		var want = window.__reopenRule;
+		if (!want) return;
+		window.__reopenRule = null;
+		var scope = document.querySelector('[data-objective-slug="' + want.slug + '"]');
+		var details = scope && scope.querySelector('details.settings-rule');
+		if (!details) return;
+		details.open = true;
+		var target = want.focus && details.querySelector('[data-focus="' + want.focus + '"]');
+		if (target && !target.disabled) target.focus();
 	}
 
 	// normalizeSearchText strips diacritics so accented and unaccented
@@ -857,34 +1418,90 @@ templ objectiveSortableScript() {
 		if (clearBtn) clearBtn.classList.toggle('invisible', input.value.length === 0);
 	}
 
-	// Kept by id because the tree is replaced after every edit.
-	var collapsedGroups = window.__collapsedGroups || (window.__collapsedGroups = new Set());
-
-	function applyCollapse(button) {
-		var id = button.dataset.collapseFor;
-		var card = document.querySelector('[data-objective-id="' + id + '"]');
-		var body = card && card.querySelector('.objective-group-body');
-		if (!body) return;
-		var closed = collapsedGroups.has(id);
-		body.classList.toggle('hidden', closed);
-		button.querySelector('svg').style.transform = closed ? 'rotate(-90deg)' : '';
-		button.setAttribute('aria-label', closed ? 'Expand section' : 'Collapse section');
+	// highlightVarPartners marks the rows on the other end of a lock or key:
+	// what sets the variables a lock waits on, or what waits on those a key
+	// sets. The tooltip names them; this shows where they are in the tree.
+	function highlightVarPartners(badge) {
+		document.querySelectorAll('#objective-tree .objective-var-match').forEach(function(row) {
+			row.classList.remove('objective-var-match');
+		});
+		if (!badge) return;
+		var isLock = badge.dataset.varLock !== undefined;
+		var names = (isLock ? badge.dataset.varLock : badge.dataset.varKey).split(/\s+/).filter(Boolean);
+		var held = isLock ? 'varSets' : 'varWaits';
+		document.querySelectorAll('#objective-tree li[data-var-' + (isLock ? 'sets' : 'waits') + ']').forEach(function(row) {
+			var rowNames = row.dataset[held].split(/\s+/);
+			if (names.some(function(name) { return rowNames.indexOf(name) !== -1; })) {
+				row.classList.add('objective-var-match');
+			}
+		});
 	}
 
-	// reopenRoutingPicker restores the menu a randomised pick left open: the
-	// refresh replaces a section's <details>. The quest's picker survives the
-	// swap and is left alone.
-	function reopenRoutingPicker() {
-		var slug = window.__reopenRoutingFor;
-		if (!slug) return;
-		window.__reopenRoutingFor = null;
-		var scope = document.querySelector('[data-objective-slug="' + slug + '"]');
-		var trigger = scope && scope.querySelector('.settings-routing-trigger');
-		var details = trigger && trigger.closest('details.settings-picker');
-		if (!details) return;
-		details.open = true;
-		var input = details.querySelector('.settings-maxnext-input');
-		if (input) input.focus();
+	// pipsLocked asks the quest lock directly: the pips are spans, which its
+	// sweep over buttons and inputs never disables.
+	function pipsLocked() {
+		return document.body.dataset.questLocked === 'true';
+	}
+
+	// pipChange is what a press or a drag on the pips asks for. A press sets how
+	// many players need and keeps whether they can carry on; a drag sets a
+	// range, which is carrying on up to where it ended.
+	function pipChange(from, to) {
+		return function(state, n) {
+			var lo = Math.min(from, to);
+			var hi = Math.max(from, to);
+			state.count = lo;
+			if (lo === hi) {
+				if (state.cap && state.cap <= lo) state.cap = null;
+				return;
+			}
+			state.carry = true;
+			state.cap = hi < n ? hi : null;
+		};
+	}
+
+	// previewPips paints the band the pointer is offering, and says it in the
+	// tooltip, before anything is saved.
+	function previewPips(pips, from, to) {
+		var rule = pips.closest('.settings-rule');
+		var min = rule.querySelector('.settings-min');
+		var max = rule.querySelector('.settings-max');
+		var n = parseInt(pips.dataset.count, 10) || 0;
+		var state = bandState(n, min.value, max.value);
+		pipChange(from, to)(state, n);
+		var next = bandFieldsOf(n, state);
+		var range = bandRangeOf(n, next[0], next[1]);
+		pips.closest('.band-glance').dataset.tip = bandSentence(n, bandState(n, next[0], next[1]), finishLabelOf(rule));
+		paintPips(pips, range[0], range[1]);
+	}
+
+	// restorePips repaints the band as stored once a preview ends.
+	function restorePips(pips) {
+		var scope = settingsScope(pips);
+		if (scope) syncSettings(scope);
+	}
+
+	// commitPips saves the band a press or a drag chose, through the same path
+	// as the menu, so the menu, the pips and the post read one value.
+	function commitPips(pips, from, to) {
+		editBand(pips.closest('.settings-rule'), pipChange(from, to));
+	}
+
+	// pipUnder finds the pip under the pointer within one row. elementFromPoint,
+	// because a touch keeps sending its events to the pip it started on.
+	function pipUnder(evt, pips) {
+		var el = document.elementFromPoint(evt.clientX, evt.clientY);
+		var pip = el && el.closest('.band-pip');
+		return pip && pips.contains(pip) ? parseInt(pip.dataset.pip, 10) : null;
+	}
+
+	// trackVarBadge runs on every pointer move and focus change, so it only
+	// repaints when the badge under the pointer changes.
+	function trackVarBadge(evt) {
+		var badge = evt.target.closest ? evt.target.closest('[data-var-lock], [data-var-key]') : null;
+		if (badge === window.__varBadge) return;
+		window.__varBadge = badge;
+		highlightVarPartners(badge);
 	}
 
 	// The shuffle shows that a randomised window is a sample, not a fixed set.
@@ -964,11 +1581,11 @@ templ objectiveSortableScript() {
 				},
 			});
 		});
-		// The toolbar is outside #objective-tree, so it is named explicitly.
-		document.querySelectorAll('#objective-tree [data-objective-slug], #quest-toolbar')
+		// The quest's settings are outside #objective-tree, so they are named
+		// explicitly.
+		document.querySelectorAll('#objective-tree [data-objective-slug], #quest-root-settings')
 			.forEach(syncSettings);
-		document.querySelectorAll('#objective-tree .objective-collapse').forEach(applyCollapse);
-		reopenRoutingPicker();
+		reopenRule();
 		scheduleRailShuffle();
 		// Re-applied here since #objective-tree's rows are replaced on every
 		// refresh, but the search box outside it isn't.
@@ -979,6 +1596,62 @@ templ objectiveSortableScript() {
 	// every click.
 	if (!window.__objectiveTreeDelegationBound) {
 		window.__objectiveTreeDelegationBound = true;
+
+		document.body.addEventListener('mouseover', trackVarBadge);
+		document.body.addEventListener('focusin', trackVarBadge);
+		document.body.addEventListener('focusout', function(evt) {
+			if (evt.target === window.__varBadge && !evt.relatedTarget) trackVarBadge({ target: document.body });
+		});
+
+		// Pips: hovering one previews asking for exactly that many, a press and
+		// release on one asks for it, and a drag between two sets the range.
+		document.body.addEventListener('pointerover', function(evt) {
+			if (window.__pipDrag) return;
+			var pip = evt.target.closest && evt.target.closest('.band-pip');
+			if (!pip || pipsLocked()) return;
+			var k = parseInt(pip.dataset.pip, 10);
+			previewPips(pip.closest('.band-pips'), k, k);
+		});
+		document.body.addEventListener('pointerout', function(evt) {
+			if (window.__pipDrag) return;
+			var pips = evt.target.closest && evt.target.closest('.band-pips');
+			if (!pips || (evt.relatedTarget && pips.contains(evt.relatedTarget))) return;
+			restorePips(pips);
+		});
+		// The pips sit inside the menu's trigger; a click on them sets the band
+		// and must not open the menu as well.
+		document.body.addEventListener('click', function(evt) {
+			if (evt.target.closest && evt.target.closest('.band-pips')) evt.preventDefault();
+		});
+		document.body.addEventListener('pointerdown', function(evt) {
+			var pip = evt.target.closest && evt.target.closest('.band-pip');
+			if (!pip || pipsLocked()) return;
+			// Not a focus or a text selection: the press is the start of a drag.
+			evt.preventDefault();
+			var k = parseInt(pip.dataset.pip, 10);
+			window.__pipDrag = { pips: pip.closest('.band-pips'), from: k, to: k };
+			previewPips(window.__pipDrag.pips, k, k);
+		});
+		document.body.addEventListener('pointermove', function(evt) {
+			var drag = window.__pipDrag;
+			if (!drag) return;
+			var k = pipUnder(evt, drag.pips);
+			if (k === null || k === drag.to) return;
+			drag.to = k;
+			previewPips(drag.pips, Math.min(drag.from, k), Math.max(drag.from, k));
+		});
+		document.body.addEventListener('pointerup', function() {
+			var drag = window.__pipDrag;
+			if (!drag) return;
+			window.__pipDrag = null;
+			commitPips(drag.pips, Math.min(drag.from, drag.to), Math.max(drag.from, drag.to));
+		});
+		document.body.addEventListener('pointercancel', function() {
+			var drag = window.__pipDrag;
+			if (!drag) return;
+			window.__pipDrag = null;
+			restorePips(drag.pips);
+		});
 
 		document.body.addEventListener('quest-lock-change', function(evt) {
 			document.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {
@@ -1005,19 +1678,9 @@ templ objectiveSortableScript() {
 			}
 			return;
 		}
-		var collapse = evt.target.closest('.objective-collapse');
-		if (collapse) {
-			var groupID = collapse.dataset.collapseFor;
-			if (collapsedGroups.has(groupID)) {
-				collapsedGroups.delete(groupID);
-			} else {
-				collapsedGroups.add(groupID);
-			}
-			applyCollapse(collapse);
-			return;
-		}
 		var passThrough = evt.target.closest('.objective-passthrough-toggle');
 		if (passThrough) {
+			rememberOpenRule(passThrough.closest('details.settings-rule'));
 			postObjectiveUpdate('/admin/objective/' + passThrough.dataset.objectiveSlug + '/pass-through', {
 				pass_through: passThrough.dataset.passThrough !== 'true' ? 'true' : 'false',
 			});
@@ -1041,20 +1704,40 @@ templ objectiveSortableScript() {
 			var routingTrigger = routingScope.querySelector('.settings-routing-trigger');
 			if (routingTrigger) routingTrigger.dataset.routing = chosen;
 			var windowInput = routingScope.querySelector('.settings-maxnext-input');
-			if (chosen === 'randomised') {
-				// An empty window is open exploration, so the pick would do nothing.
-				if (windowInput && !(parseInt(windowInput.value, 10) > 0)) {
-					windowInput.value = windowInput.dataset.default;
-				}
-				// The window field is in this menu; closing would hide it.
-				window.__reopenRoutingFor = routingScope.dataset.objectiveSlug;
-			} else {
-				window.__reopenRoutingFor = null;
-				closeSettingsPicker(routingOption);
+			// An empty window is open exploration, so the pick would do nothing.
+			if (chosen === 'randomised' && windowInput && !(parseInt(windowInput.value, 10) > 0)) {
+				windowInput.value = windowInput.dataset.default;
+			}
+			// A guided path takes every step, so it stores the band that says
+			// so: a band left over from another routing would still end the
+			// section early.
+			if (chosen === 'ordered') {
+				routingScope.querySelector('.settings-min').value = '';
+				routingScope.querySelector('.settings-max').value = '';
 			}
 			syncSettings(routingScope);
+			// The window field is the next thing a randomised pick needs.
 			if (chosen === 'randomised' && windowInput) windowInput.focus();
 			submitSettings(routingScope, { routing: chosen });
+			return;
+		}
+		// A step on either count: how many players need, or how many they
+		// can complete at most, where the top step is every one.
+		var bandStep = evt.target.closest('.band-step');
+		if (bandStep && !bandStep.disabled) {
+			var dir = parseInt(bandStep.dataset.step, 10);
+			editBand(bandStep.closest('.settings-rule'), function(state, n) {
+				if (bandStep.dataset.kind === 'cap') {
+					var cap = Math.max(state.count + 1, Math.min(n, (state.cap || n) + dir));
+					state.cap = cap < n ? cap : null;
+					return;
+				}
+				var was = state.count;
+				state.count = Math.max(0, Math.min(n, was + dir));
+				// Down from every one, the section closes by default: that is
+				// what "1 of 3" has always meant here.
+				if (was >= n) state.carry = false;
+			});
 		}
 	});
 
@@ -1063,7 +1746,7 @@ templ objectiveSortableScript() {
 			applyObjectiveSearch();
 			return;
 		}
-		if (!evt.target.matches('.settings-min, .settings-max, .settings-maxnext-input')) return;
+		if (!evt.target.matches('.settings-maxnext-input, .settings-finish-label-input')) return;
 		var scope = settingsScope(evt.target);
 		if (scope) syncSettings(scope);
 	});
@@ -1073,14 +1756,23 @@ templ objectiveSortableScript() {
 			// Both are sent every time: an unchecked checkbox is absent from a
 			// form rather than false, and the server reads an absent key as
 			// "off", so sending one alone would switch the other off.
-			var toggles = document.querySelector('#quest-toolbar');
+			var toggles = document.querySelector('#quest-scoring');
 			postObjectiveUpdate('/admin/quest/settings', {
 				enablePoints: toggles.querySelector('.points-toggle').checked ? 'on' : '',
 				showLeaderboard: toggles.querySelector('.leaderboard-toggle').checked ? 'on' : '',
 			});
 			return;
 		}
-		if (!evt.target.matches('.settings-min, .settings-max, .settings-maxnext-input')) return;
+		var bandRule = evt.target.closest('.settings-band-fields') && evt.target.closest('.settings-rule');
+		if (bandRule && evt.target.matches('.band-then input')) {
+			editBand(bandRule, function(state) {
+				state.carry = evt.target.value === 'carry';
+			});
+			return;
+		}
+		// The finish label saves on its own change, or a renamed button would
+		// only be sent along with some other setting.
+		if (!evt.target.matches('.settings-maxnext-input, .settings-finish-label-input')) return;
 		var scope = settingsScope(evt.target);
 		if (!scope) return;
 		syncSettings(scope);

@@ -8,40 +8,48 @@
   default: true;
   prefersdark: false;
   color-scheme: "light";
-  --color-base-100: oklch(97.788% 0.004 56.375);
-  --color-base-200: oklch(93.982% 0.007 61.449);
-  --color-base-300: oklch(91.586% 0.006 53.44);
-  --color-base-content: oklch(21% 0.034 264.665);
-  /* Same hues as dracula, moved down the lightness ramp: an accent at L75 sits
-     22 points from this theme's L98 ground and disappears into it, which is
-     fine over dracula's L29 and nowhere near enough here. Chroma rises a
-     little as lightness falls, because oklch carries more of it down there. */
-  --color-primary: oklch(52% 0.15 122.31);
-  --color-primary-content: oklch(98% 0.015 122.31);
-  --color-secondary: oklch(52% 0.13 154.35);
-  --color-secondary-content: oklch(98% 0.015 154.35);
-  --color-accent: oklch(52% 0.2 314.595);
-  --color-accent-content: oklch(98% 0.015 314.595);
-  --color-neutral: oklch(27% 0.006 286.033);
+  /* Cupcake's ground, lifted a step so the accents can be lighter, under
+     dracula's hues, so both themes say the same thing in the same colours:
+     guided green, open cyan, random purple. Warning and error are plain
+     yellow and red rather than dracula's orange and pink, so neither needs
+     learning. The yellow is gold, because a brighter one vanishes on white.
+     Guided leans from dracula's lime toward green and open from cyan toward
+     azure, because a lime or a cyan dark enough to read on white is olive or
+     a dull teal. Each accent is as light as 3:1 on the ground allows, the
+     least an outline or an icon needs to be seen, and as saturated as sRGB
+     holds there. Error is held to 3.5:1, a step darker, and warning goes to
+     the lightest the theme test allows, so the two stay apart: at one
+     lightness they read as one alarm. As in dracula, each content is a dark
+     tint of its own hue, so a filled button is a bright colour under dark
+     text. */
+  --color-base-100: oklch(99.3% 0.003 56.375);
+  --color-base-200: oklch(96.5% 0.006 61.449);
+  --color-base-300: oklch(93.5% 0.006 53.44);
+  --color-base-content: oklch(23.574% 0.066 313.189);
+  --color-primary: oklch(64.8% 0.186 135);
+  --color-primary-content: oklch(22.8% 0.061 135);
+  --color-secondary: oklch(64.6% 0.159 154.35);
+  --color-secondary-content: oklch(22.6% 0.051 154.35);
+  --color-accent: oklch(69.2% 0.233 314.595);
+  --color-accent-content: oklch(27.2% 0.1 314.595);
+  --color-neutral: oklch(14% 0.005 285.823);
   --color-neutral-content: oklch(92% 0.004 286.32);
-  --color-info: oklch(55% 0.13 212.846);
-  --color-info-content: oklch(98% 0.012 212.846);
-  --color-success: oklch(52% 0.16 148.024);
-  --color-success-content: oklch(98% 0.015 148.024);
-  --color-error: oklch(53% 0.21 5.895);
-  --color-error-content: oklch(98% 0.015 5.895);
-  /* Warning keeps dark text on a lighter fill: an orange dark enough to carry
-     white stops reading as orange, and starts reading as brown. */
-  --color-warning: oklch(68% 0.16 61.425);
-  --color-warning-content: oklch(22% 0.05 61.425);
+  --color-info: oklch(65.5% 0.122 225);
+  --color-info-content: oklch(23.5% 0.04 225);
+  --color-success: oklch(64.4% 0.183 148.024);
+  --color-success-content: oklch(22.4% 0.059 148.024);
+  --color-warning: oklch(73.8% 0.148 90);
+  --color-warning-content: oklch(31.8% 0.059 90);
+  --color-error: oklch(65.2% 0.229 27);
+  --color-error-content: oklch(23.2% 0.086 27);
   --radius-selector: 1rem;
-  --radius-field: 1rem;
+  --radius-field: 2rem;
   --radius-box: 1rem;
   --size-selector: 0.25rem;
   --size-field: 0.25rem;
-  --border: 1px;
+  --border: 2px;
   --depth: 1;
-  --noise: 1;
+  --noise: 0;
 }
 
 @plugin "daisyui/theme" {
@@ -565,13 +573,20 @@ p.label {
    reached across by a negative offset that then has to be kept in step with
    it. Inside the row the line simply runs to the row's own edge and meets the
    next, and the step can change size without a second value to keep in sync. */
+/* The marker's box, which the rail runs through the centre of. The system
+   pages hang their pins in the same column, so they share it. */
+.objective-children,
+.objective-outside {
+  --mark-size: 1.25rem;
+}
+
 .objective-children {
-  --rail-x: 0.575rem;
+  --rail-x: calc(var(--mark-size) / 2);
   --row-step: 0.375rem;
   /* A section is a far heavier object than a leaf. Stacked a leaf's distance
      apart, four of them read as one undifferentiated column, and the card
      borders stop reading as the edges of anything. */
-  --group-step: 1rem;
+  --group-step: 0.75rem;
 }
 
 .objective-rail-item {
@@ -598,7 +613,7 @@ p.label {
   left: var(--rail-x);
   top: 0;
   bottom: 0;
-  width: 1.5px;
+  width: 2px;
   transform: translateX(-50%);
   background: color-mix(in oklch, var(--color-primary) 50%, transparent);
 }
@@ -614,30 +629,35 @@ p.label {
 .objective-mark {
   position: absolute;
   left: 0;
-  top: calc(var(--mark-y, 1.25rem) - 0.575rem);
+  top: calc(var(--mark-y, 1.25rem) - var(--mark-size) / 2);
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 1.15rem;
-  height: 1.15rem;
-  font-size: 0.6rem;
+  width: var(--mark-size);
+  height: var(--mark-size);
+  font-size: 0.65rem;
   font-weight: 700;
   color: var(--color-primary);
 }
 
-/* A section's marker lines up with its header bar, a leaf's with its one row. */
-.objective-rail-item:has(> .objective-group) { --mark-y: 1.4rem; }
+/* A leaf's marker lines up with its one row, a section's with its header bar,
+   which is taller: it holds the rule's pill where a row holds small buttons. */
+.objective-rail-item { --mark-y: 1.1875rem; }
+.objective-rail-item:has(> .objective-group) { --mark-y: 1.5625rem; }
 
 .objective-mark[data-mark="step"] {
   border-radius: 50%;
   background: var(--color-base-100);
-  border: 1.5px solid var(--color-primary);
+  border: 2px solid var(--color-primary);
 }
 
+/* Larger than the diamond's side, or it reads as the smaller mark: the diamond
+   is a square on its point and spans its diagonal, about 1.4 times its side.
+   This sits between the two at equal area and equal span. */
 .objective-mark[data-mark="dot"]::before {
   content: "";
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.6875rem;
+  height: 0.6875rem;
   border-radius: 50%;
   background: var(--color-primary);
 }
@@ -654,8 +674,8 @@ p.label {
 .objective-mark[data-mark="window"]::before,
 .objective-mark[data-mark="pool"]::before {
   content: "";
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 0.5625rem;
+  height: 0.5625rem;
   transform: rotate(45deg);
   background: var(--color-primary);
   transition: opacity 0.9s ease-in-out;
@@ -676,8 +696,8 @@ p.label {
 
 .objective-mark[data-mark="parked"]::before {
   content: "";
-  width: 0.4rem;
-  height: 1.5px;
+  width: 0.45rem;
+  height: 2px;
   background: color-mix(in oklch, var(--color-base-content) 30%, transparent);
 }
 
@@ -688,9 +708,9 @@ p.label {
    sequence. Randomised is dashed its whole length, because the order is not
    fixed and a ruled line would promise one.
 
-   Open is drawn as a gradient rather than a dotted border: at 1.5px the
-   browser's own dots are nearly square and nearly touching, which reads as a
-   faded solid line beside the dashes rather than as a different line. */
+   Open is drawn as a gradient rather than a dotted border: at a rail's width
+   the browser's own dots are nearly touching, which reads as a faded solid
+   line beside the dashes rather than as a different line. */
 .objective-rail-item[data-mark="dot"]::before {
   background: repeating-linear-gradient(
     to bottom,
@@ -704,7 +724,7 @@ p.label {
 .objective-rail-item[data-mark="window"]::before,
 .objective-rail-item[data-mark="pool"]::before {
   background: none;
-  border-left: 1.5px dashed color-mix(in oklch, var(--color-primary) 55%, transparent);
+  border-left: 2px dashed color-mix(in oklch, var(--color-primary) 55%, transparent);
 }
 
 /* A parked row draws a faint line rather than a dashed one: dashed already
@@ -724,6 +744,199 @@ p.label {
    could: the fill moves between the diamonds every few seconds, which says
    "this run happens to have drawn these" far more plainly than a row that is
    permanently a bit grey. */
+
+/* A card inside a card, or on the quest's plane, steps down the base ramp, so
+   it reads as an object on its parent rather than a hole in it. :where keeps
+   this below the parked and pass-through rules, which must still win on a
+   nested card. */
+:where(.quest-plane, .objective-group) .objective-group {
+  background-color: color-mix(in oklch, var(--color-base-content) 3%, var(--color-base-100));
+}
+
+/* A section's rule: its routing, then its band, as one pill. The same height
+   as the buttons it replaced, so it stands level with the title beside it, and
+   outlined in the routing hue so the two halves read as one object. */
+.settings-rule-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: 2rem;
+  padding-inline: 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid color-mix(in oklch, var(--color-primary) 40%, transparent);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: background-color 0.15s, border-color 0.15s;
+}
+.settings-rule-pill::-webkit-details-marker {
+  display: none;
+}
+.settings-rule-pill:hover,
+.settings-rule[open] > .settings-rule-pill {
+  background: color-mix(in oklch, var(--color-primary) 12%, transparent);
+  border-color: color-mix(in oklch, var(--color-primary) 65%, transparent);
+}
+.settings-rule-pill:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.settings-routing-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* The ghost leads the pill when the section passes through, divided from the
+   routing as the band is. The rule is drawn on this wrapper because the
+   tooltip inside it owns its own ::before and ::after. */
+.objective-passthrough-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.objective-passthrough-mark::after {
+  content: "";
+  width: 1px;
+  height: 1rem;
+  background: color-mix(in oklch, var(--color-primary) 40%, transparent);
+}
+
+/* Inside a section's card body, daisyUI grows every paragraph to fill the
+   card. In the rule's menu that stretched each column's heading and pushed
+   the column's contents to the bottom. */
+.settings-rule p {
+  flex-grow: 0;
+}
+
+/* The routing in force, tinted and outlined in its own hue: the menu changes
+   the section the moment an option is picked, so it has to show which one
+   holds. Each option carries its own data-routing, so the hue is its own. The
+   outline frames the whole option, where a tick was one more mark to find. An
+   inset shadow rather than a border, so picking does not shift the text. */
+.settings-routing-option[aria-current="true"] {
+  background: color-mix(in oklch, var(--color-primary) 14%, transparent);
+  box-shadow: inset 0 0 0 var(--border) color-mix(in oklch, var(--color-primary) 60%, transparent);
+}
+.settings-routing-option[aria-current="true"] .settings-routing-option-label {
+  color: var(--color-primary);
+}
+
+/* A stepper button at its end says so under the pointer. daisyUI takes
+   pointer events off a disabled button, so the cursor fell through to the
+   panel beneath and the button looked like one that ignored the click. A
+   disabled button still fires no click, so this only brings back the cursor. */
+.band-step:disabled {
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+/* A band count between its stepper buttons, read as a word or a fraction. */
+.band-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  height: 2rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-inline: 0;
+  background: var(--color-base-200);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Each column of the rule's menu is named by the question it answers. */
+.settings-menu-heading {
+  padding: 0.75rem 1rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+}
+
+/* The band half. A rule divides it from the routing; its own colour is
+   neutral, because the band is not part of the routing. */
+.settings-band-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: color-mix(in oklch, var(--color-base-content) 85%, transparent);
+}
+.settings-band-picker::before {
+  content: "";
+  width: 1px;
+  height: 1rem;
+  background: color-mix(in oklch, var(--color-primary) 40%, transparent);
+}
+.band-glance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+/* Restated because this file sits outside the utility layer: the hidden
+   utility alone loses to the display rules here. */
+.settings-band-picker.hidden,
+.band-finish-chip.hidden {
+  display: none;
+}
+
+/* The finish button in miniature: square-cornered like a button, not round
+   like the pill around it, and capped so a long label cannot stretch the
+   header. */
+.band-finish-chip {
+  display: inline-block;
+  max-width: 9rem;
+  height: 1.25rem;
+  padding-inline: 0.4375rem;
+  border: 1px solid color-mix(in oklch, var(--color-base-content) 30%, transparent);
+  border-radius: 0.3125rem;
+  background: color-mix(in oklch, var(--color-base-content) 8%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The pips. Each one is a hit area a little wider than its dot, so a pip is
+   easy to land on without the row looking spaced out. */
+.band-pips {
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+  /* A drag across the pips sets a range; on touch it must not scroll. */
+  touch-action: none;
+}
+.band-pip {
+  display: grid;
+  place-items: center;
+  width: 0.875rem;
+  height: 1.5rem;
+}
+.band-pip::before {
+  content: "";
+  box-sizing: border-box;
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+/* Told apart by fill first: a dot, then rings, bright where the player may
+   still play and faint where the section closes it. */
+.band-pip[data-state="required"]::before {
+  background: currentColor;
+}
+.band-pip[data-state="closed"]::before {
+  border-color: color-mix(in oklch, currentColor 35%, transparent);
+}
 
 /* A parked row is out of play: dashed, drained of its routing hue, but still
    legible, because finding it is how it gets put back.
@@ -768,21 +981,51 @@ p.label {
   font-style: italic;
   font-weight: 500;
 }
+/* With no box there is nothing to pad at either side or below: the rows inside
+   run from the section's own edge to the same right edge as their neighbours,
+   their rail straight under the header's start, and the gap after the last one
+   is the gap between any two sections. */
+.objective-passthrough > .card-body > .objective-group-body {
+  padding-inline: 0;
+  padding-bottom: 0;
+}
 
-/* The system pages hang their padlock where a marker would go, so the gutter
-   is one column down the whole page. No line joins them: they are outside the
+/* The rows on the other end of a hovered lock or key. An outline, not a tint:
+   every hue in the tree already belongs to a routing strategy, and a fill would
+   read as one. Only the header of a section is marked, because its own blocks
+   are what matched, not everything inside it. Drawn over the row's own border:
+   outside it, the outlines of neighbouring rows run together. */
+.objective-var-match > .objective-row,
+.objective-var-match > .objective-group > .card-body > .objective-group-header {
+  outline: 2px solid color-mix(in oklch, var(--color-base-content) 75%, transparent);
+  outline-offset: -1px;
+}
+
+/* The system pages hang their pin where a marker would go, so the gutter is
+   one column down the whole page. No line joins them: they are outside the
    quest on purpose, and the top-level routing governs what sits between. */
 .objective-outside-mark {
   position: absolute;
   left: 0;
-  top: 0.68rem;
+  /* Level with the middle of the row beside it. */
+  top: calc(1.125rem - var(--mark-size) / 2);
   z-index: 1;
   display: grid;
   place-items: center;
-  width: 1.15rem;
-  height: 1.15rem;
+  width: var(--mark-size);
+  height: var(--mark-size);
   color: color-mix(in oklch, var(--color-base-content) 75%, transparent);
 }
+/* Stripes on the runs list, counting only the rows on show: the filters hide
+   rows with .hidden and the search with an inline display, and counting the
+   hidden ones put two stripes side by side. In the components layer, so a
+   row's hover and selected fills, which are utilities, still win over it. */
+@layer components {
+  .team-item:nth-child(even of .team-item:not(.hidden, [style*="display: none"])) {
+    background-color: color-mix(in oklch, var(--color-base-content) 3%, transparent);
+  }
+}
+
 /* Location insert zones */
 .loc-insert-zone {
   @apply pointer-events-none;
