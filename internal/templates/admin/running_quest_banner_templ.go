@@ -60,7 +60,8 @@ func LockedEditor(quest models.Quest, contents templ.Component) templ.Component 
 	})
 }
 
-// questLock is the unlock control and its confirmation.
+// questLock is the unlock control and its confirmation, moved into the nav as
+// soon as it is parsed.
 func questLock(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -99,7 +100,7 @@ func questLock(quest models.Quest) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</button></span></span> <dialog id=\"confirm_unlock_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Edit a game that is running?</h3><p class=\"pt-4\">Players are in this game now. Changes reach them straight away and cannot be taken back: an objective you remove disappears from under whoever is standing at it.</p><p>The safe alternative is to duplicate the game and edit the copy.</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_unlock_modal.close()\">Leave it locked</button> <button type=\"button\" id=\"quest-unlock-confirm\" class=\"btn btn-warning\">Unlock editing</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</button></span></span><script>\n\t\t\t// Into the nav before the page below it is parsed: it is about the\n\t\t\t// quest, not the page. Moved by the script after the page, it was\n\t\t\t// painted at the top of the page on a full load, then jumped.\n\t\t\tdocument.getElementById('quest-unlock-slot')?.appendChild(document.getElementById('quest-unlock'));\n\t\t</script> <dialog id=\"confirm_unlock_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-warning\"><h3 class=\"text-lg font-bold\">Edit a game that is running?</h3><p class=\"pt-4\">Players are in this game now. Changes reach them straight away and cannot be taken back: an objective you remove disappears from under whoever is standing at it.</p><p>The safe alternative is to duplicate the game and edit the copy.</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_unlock_modal.close()\">Leave it locked</button> <button type=\"button\" id=\"quest-unlock-confirm\" class=\"btn btn-warning\">Unlock editing</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -108,8 +109,7 @@ func questLock(quest models.Quest) templ.Component {
 	})
 }
 
-// questLockScript moves the unlock button into the nav and disables the editing
-// controls until the unlock is confirmed.
+// questLockScript disables the editing controls until the unlock is confirmed.
 func questLockScript(quest models.Quest) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -138,7 +138,7 @@ func questLockScript(quest models.Quest) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/running_quest_banner.templ`, Line: 75, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/running_quest_banner.templ`, Line: 81, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -149,7 +149,7 @@ func questLockScript(quest models.Quest) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if quest.GetStatus() == models.Active {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script>\n\t\t(() => {\n\t\t\tconst main = document.querySelector('main');\n\t\t\tconst button = document.getElementById('quest-unlock');\n\t\t\tif (!main || !button) return;\n\n\t\t\t// Lives in the nav: it is about the quest, not the page.\n\t\t\tconst slot = document.getElementById('quest-unlock-slot');\n\t\t\tif (slot) slot.appendChild(button);\n\n\t\t\tconst questID = document.getElementById('quest-lock-meta')?.dataset.questId;\n\n\t\t\tconst locked = button.querySelector('[data-lock-state=\"locked\"]');\n\t\t\tconst unlocked = button.querySelector('[data-lock-state=\"unlocked\"]');\n\t\t\tconst show = (which) => {\n\t\t\t\tlocked?.classList.toggle('hidden', which !== 'locked');\n\t\t\t\tunlocked?.classList.toggle('hidden', which !== 'unlocked');\n\t\t\t};\n\t\t\tconst showUnlocked = () => show('unlocked');\n\n\t\t\twindow.questLock.set(true, questID);\n\t\t\t// An unlock restored from an earlier page must show as unlocked, or\n\t\t\t// the page looks locked while edits save.\n\t\t\tif (window.questLock.bypasses()) showUnlocked();\n\n\t\t\tdocument.getElementById('quest-unlock-confirm')?.addEventListener('click', () => {\n\t\t\t\twindow.questLock.release();\n\t\t\t\tconfirm_unlock_modal.close();\n\t\t\t\tshowUnlocked();\n\t\t\t});\n\n\t\t\t// No confirmation: relocking is the safe direction.\n\t\t\tdocument.getElementById('quest-relock')?.addEventListener('click', () => {\n\t\t\t\twindow.questLock.relock();\n\t\t\t\tshow('locked');\n\t\t\t});\n\t\t})();\n\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<script>\n\t\t(() => {\n\t\t\tconst main = document.querySelector('main');\n\t\t\tconst button = document.getElementById('quest-unlock');\n\t\t\tif (!main || !button) return;\n\n\t\t\tconst questID = document.getElementById('quest-lock-meta')?.dataset.questId;\n\n\t\t\tconst locked = button.querySelector('[data-lock-state=\"locked\"]');\n\t\t\tconst unlocked = button.querySelector('[data-lock-state=\"unlocked\"]');\n\t\t\tconst show = (which) => {\n\t\t\t\tlocked?.classList.toggle('hidden', which !== 'locked');\n\t\t\t\tunlocked?.classList.toggle('hidden', which !== 'unlocked');\n\t\t\t};\n\t\t\tconst showUnlocked = () => show('unlocked');\n\n\t\t\twindow.questLock.set(true, questID);\n\t\t\t// An unlock restored from an earlier page must show as unlocked, or\n\t\t\t// the page looks locked while edits save.\n\t\t\tif (window.questLock.bypasses()) showUnlocked();\n\n\t\t\tdocument.getElementById('quest-unlock-confirm')?.addEventListener('click', () => {\n\t\t\t\twindow.questLock.release();\n\t\t\t\tconfirm_unlock_modal.close();\n\t\t\t\tshowUnlocked();\n\t\t\t});\n\n\t\t\t// No confirmation: relocking is the safe direction.\n\t\t\tdocument.getElementById('quest-relock')?.addEventListener('click', () => {\n\t\t\t\twindow.questLock.relock();\n\t\t\t\tshow('locked');\n\t\t\t});\n\t\t})();\n\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -98,6 +98,20 @@ func TestQuestLock_ButtonGoesToTheNavSlot(t *testing.T) {
 	assert.NotContains(t, html, "quest-title-group", "the page header is the page's own")
 }
 
+// The button moves before the page is parsed. Moved after it, a full load
+// painted the button at the top of the page first, and it jumped into the bar.
+func TestQuestLock_ButtonMovesBeforeThePage(t *testing.T) {
+	var out strings.Builder
+	require.NoError(t, LockedEditor(running(), templ.Raw(`<div id="the-page"></div>`)).
+		Render(context.Background(), &out))
+	html := out.String()
+
+	move := strings.Index(html, "getElementById('quest-unlock-slot')")
+	require.Positive(t, move)
+	assert.Less(t, strings.Index(html, `id="quest-unlock"`), move)
+	assert.Less(t, move, strings.Index(html, `id="the-page"`))
+}
+
 // A stopped quest drops its remembered unlock, so a restart asks again.
 func TestQuestLock_StoppedQuestForgetsItsUnlock(t *testing.T) {
 	html := renderLocked(t, models.Quest{ID: "quest-1"})

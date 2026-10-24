@@ -17,7 +17,8 @@ templ LockedEditor(quest models.Quest, contents templ.Component) {
 	@questLockScript(quest)
 }
 
-// questLock is the unlock control and its confirmation.
+// questLock is the unlock control and its confirmation, moved into the nav as
+// soon as it is parsed.
 templ questLock(quest models.Quest) {
 	if quest.GetStatus() == models.Active {
 		<!-- Both states are rendered and the script toggles them. Restyling one
@@ -42,6 +43,12 @@ templ questLock(quest models.Quest) {
 				</button>
 			</span>
 		</span>
+		<script>
+			// Into the nav before the page below it is parsed: it is about the
+			// quest, not the page. Moved by the script after the page, it was
+			// painted at the top of the page on a full load, then jumped.
+			document.getElementById('quest-unlock-slot')?.appendChild(document.getElementById('quest-unlock'));
+		</script>
 		<dialog id="confirm_unlock_modal" class="modal modal-bottom sm:modal-middle">
 			<div class="modal-box prose outline-2 outline-offset-1 outline-warning">
 				<h3 class="text-lg font-bold">Edit a game that is running?</h3>
@@ -67,8 +74,7 @@ templ questLock(quest models.Quest) {
 	}
 }
 
-// questLockScript moves the unlock button into the nav and disables the editing
-// controls until the unlock is confirmed.
+// questLockScript disables the editing controls until the unlock is confirmed.
 templ questLockScript(quest models.Quest) {
 	<!-- Passed as data so a value that decides what may be edited is never
 	spliced into script source. -->
@@ -196,10 +202,6 @@ templ questLockScript(quest models.Quest) {
 			const main = document.querySelector('main');
 			const button = document.getElementById('quest-unlock');
 			if (!main || !button) return;
-
-			// Lives in the nav: it is about the quest, not the page.
-			const slot = document.getElementById('quest-unlock-slot');
-			if (slot) slot.appendChild(button);
 
 			const questID = document.getElementById('quest-lock-meta')?.dataset.questId;
 
