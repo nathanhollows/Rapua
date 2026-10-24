@@ -78,12 +78,13 @@ code on the [home page](/).
 Customise how the game plays.
 
 1. Open the [Quest](/admin/quest) tab.
-2. Set the routing on the quest itself, which decides how players move through
-   the objectives at the top level:
+2. Set the routing on the quest itself, in the **Top level** row above the
+   objectives. It decides how players move through the objectives at the top
+   level:
    - **Guided Path:** one at a time, in order.
    - **Open Exploration:** all of them, in any order.
    - **Randomised Route:** a few at a time, chosen per team.
-3. Turn **Points** on or off with the toggle beside the routing picker.
+3. Turn **Points** on or off in the **Scoring** box at the top of the page.
 4. Look at the [Game Settings](/docs/user/game-settings) page for the rest,
    including the leaderboard and what players see when they finish.
 

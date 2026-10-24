@@ -25,6 +25,8 @@ Use sections for anything with parts:
 ## Order and nesting
 
 Drag an objective onto another to put it inside. Drag it out to lift it back up.
+To start a new one inside a section, use the arrow beside **New objective** and
+pick the section.
 An objective's position among its siblings is the order players meet it in,
 where the section above is set to a guided path.
 
@@ -48,16 +50,30 @@ contents by its own rule.
 
 ## How much is enough
 
-Every section has a completion band: the least and the most of its contents a
-team needs.
+Every section has a completion band: how much of what is inside a team has to
+do. Open the pill in the section's header and the band reads as one sentence.
 
-- **Leave both blank** and every one is required.
-- **Set them equal** — say 1 and 1 — and the section finishes the moment that
-  many are done. One of three plants, and the other two close with it.
-- **Set a range** — say 2 and 5 — and reaching the lower number offers players a
-  finish button. The section is not done until they press it, so they can carry
-  on if they want to. Name the button with a finish label: *"That's enough for
-  now"* reads better than *"Finish"*.
+- **Players need to complete** how many: none, some, or all of them.
+- **Once they have completed** that many, either the section finishes and the
+  rest close with it, or they can keep going, or finish with a button. One of
+  three plants, and the other two close: that is the first. Two of five stalls in
+  a market, and stay as long as you like: that is the second.
+
+When players can keep going, they see the button once they have done enough. Say
+what it says: *"That's enough for now"* reads better than *"Finish"*. The section
+also finishes by itself once everything is done, or sooner if you lower **They
+can complete up to**.
+
+A guided path takes every step in order, so under guided routing the band is set
+to all of them and cannot be changed.
+
+The pill shows the band as a row of dots, one for each thing in the section.
+Solid dots are required, rings are what players may go on to do, and faint rings
+close unplayed when the section finishes. When players finish it with the
+button, a small copy of that button follows the dots, with your label on it.
+Hover the band to have it said in a sentence. Click a dot to ask for that many,
+or drag across the dots to let players keep going up to where you stop. A section
+holding more than ten things shows the band in words instead.
 
 The band counts what is in play. Drafting one of the contents lowers what the
 section can reach, and the editor refuses a draft that would put an explicit
@@ -77,9 +93,9 @@ The quest itself cannot be a draft: that would take the whole game out of play.
 
 ## Pass-through
 
-Click the ghost in a section's header to make it pass-through. Players never see
-the section as a place: its tasks are shown in the section above, as though they
-belonged there. It still does its job behind the scenes, so its routing, its
+Open the pill in a section's header and turn on **Pass through**. A ghost then
+leads the pill. Players never see the section as a place: its tasks are
+shown in the section above, as though they belonged there. It still does its job behind the scenes, so its routing, its
 completion rule and anything that depends on it work exactly as before.
 
 The use is choosing for the player without saying how. Say a zoo trip asks each
@@ -95,9 +111,10 @@ A few things to know:
   not. The ghost shows on those too, so you can see which levels players will not
   see. A section you mark does not count toward the two, so marking one lets a
   deeper level be shown.
-- A pass-through section must complete on its own: set the minimum and maximum to
-  the same number. Otherwise its finish button would appear inside a section the
-  player never entered, naming something they never saw.
+- A pass-through section must complete on its own: choose that it finishes when
+  players have done enough, not that they keep going. Otherwise its finish button
+  would appear inside a section the player never entered, naming something they
+  never saw.
 - If it asks for fewer tasks than it shows at once, finishing makes the rest
   disappear with no explanation. Random order with a window the same size as the
   number you ask for avoids that.
@@ -122,9 +139,12 @@ Content blocks can be locked too, and stay hidden until their variables are set.
 A text block beside a quiz can wait on the quiz's key, and appears the moment the
 answer goes in.
 
-The editor marks what is locked. On the quest page a lock with names means the
-objective itself is locked; a faint lock means one of its blocks is hidden, and a
-key means one of its blocks sets something. Hover either to see which.
+The editor marks what is locked, and every mark names its variables. On the
+quest page a lock means the objective itself is locked; a locked page means one
+of its blocks is hidden, and a key means one of its blocks sets something. Hover
+any of them to see which blocks, and the rows on the other end are outlined:
+everything that sets what a lock waits on, or everything waiting on what a key
+sets.
 
 A few things to know:
 
@@ -135,8 +155,8 @@ A few things to know:
 - A lock nothing can ever open is flagged: a variable no block sets, or one only
   set behind the very lock waiting on it.
 - A section that needs all of its contents cannot be finished if some of them are
-  locked on different options of one choice. Lower its minimum, or move the
-  branches into a section of their own.
+  locked on different options of one choice. Ask for fewer, or move the branches
+  into a section of their own.
 - A section that finishes on its own closes everything inside it. If one objective
   is locked on a key its neighbours hold, and the section finishes before enough
   of them are done, it stays locked. The editor warns when that is likely.
