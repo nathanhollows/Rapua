@@ -11,38 +11,223 @@ import (
 // objectiveVarsBadges summarises a row's variables. The objective's own gate is
 // a labelled pill, because it decides whether the player can enter at all;
 // what its blocks set or wait on is a bare icon, since it only changes what
-// happens once they are there. Both name everything in a tooltip.
+// happens once they are there.
+//
+// A hidden block is a locked page, not a padlock: a padlock told apart from the
+// objective's own only by being fainter read as a disabled one.
+//
+// Every mark names its variables at rest. Matching a key to its lock is done by
+// reading names, and a name kept behind a hover is one nobody compares. Each
+// also carries them as data, so hovering it can light up the rows on the other
+// end (see highlightVarPartners). The tooltip says in a sentence what the mark
+// means for a team, block by block, and what the outline shows: a bare
+// "Sets" or "Hidden until set" over a list of names left the author to work
+// out who sets what, and when.
 templ objectiveVarsBadges(node *ObjectiveTreeNode) {
 	if len(node.Objective.Depends) > 0 {
-		<span class="badge badge-sm badge-ghost gap-1 shrink-0 font-mono tooltip tooltip-left" data-tip="Locked until these are set">
+		@varTooltip(
+			"badge badge-sm badge-ghost gap-1 shrink-0 font-mono",
+			"Locked",
+			lockedPhrases(node.Objective.Depends),
+			varOutlineNote(false, len(node.Objective.Depends)),
+			templ.Attributes{"data-var-lock": strings.Join(node.Objective.Depends, " ")},
+		) {
 			@icon("lock", templ.Attributes{"class": "w-3 h-3"})
 			{ strings.Join(node.Objective.Depends, ", ") }
-		</span>
+		}
 	}
 	if len(node.BlockVars.Gated) > 0 {
-		@varRefsTooltip("Hidden until set", node.BlockVars.Gated, ": ") {
-			@icon("lock", templ.Attributes{"class": "w-4 h-4 text-base-content/50"})
+		@varTooltip(
+			"shrink-0 inline-flex items-center gap-1 text-base-content/70",
+			"Hidden content",
+			hiddenPhrases(node.BlockVars.Gated),
+			varOutlineNote(false, varRefCount(node.BlockVars.Gated)),
+			templ.Attributes{"data-var-lock": varRefNames(node.BlockVars.Gated)},
+		) {
+			@icon("file-lock", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"})
+			@varNames(node.BlockVars.Gated)
 		}
 	}
 	if len(node.BlockVars.Sets) > 0 {
-		@varRefsTooltip("Sets", node.BlockVars.Sets, " sets ") {
-			@icon("key-round", templ.Attributes{"class": "w-4 h-4 text-base-content/70"})
+		@varTooltip(
+			"shrink-0 inline-flex items-center gap-1 text-base-content/70",
+			setsHeading(node.BlockVars.Sets),
+			setsPhrases(node.BlockVars.Sets),
+			varOutlineNote(true, varRefCount(node.BlockVars.Sets)),
+			templ.Attributes{"data-var-key": varRefNames(node.BlockVars.Sets)},
+		) {
+			@icon("key-round", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"})
+			@varNames(node.BlockVars.Sets)
 		}
 	}
 }
 
-templ varRefsTooltip(heading string, refs []services.VarRef, joiner string) {
-	<span class="tooltip tooltip-left shrink-0" tabindex="0">
-		<span class="tooltip-content w-64 p-3 text-left whitespace-normal">
-			<span class="block font-semibold mb-1">{ heading }</span>
-			for _, ref := range refs {
-				<span class="block">
-					{ ref.BlockName }{ joiner }<span class="font-mono">{ strings.Join(ref.Vars, ", ") }</span>
+// varNames is the names a mark holds, in the monospace the lock badge uses,
+// because these are identifiers and will be typed wrong.
+templ varNames(refs []services.VarRef) {
+	<span class="font-mono text-xs">{ strings.ReplaceAll(varRefNames(refs), " ", ", ") }</span>
+}
+
+// varRefNames is every variable the refs name, once each, space-separated for
+// a data attribute. Variable names never hold a space.
+func varRefNames(refs []services.VarRef) string {
+	var names []string
+	for _, ref := range refs {
+		for _, name := range ref.Vars {
+			if !slices.Contains(names, name) {
+				names = append(names, name)
+			}
+		}
+	}
+	return strings.Join(names, " ")
+}
+
+// objectiveVarAttrs is what a row holds for highlightVarPartners to match: the
+// variables its blocks set, and those it or its blocks wait on. An empty side
+// is left off, so the script's attribute selector skips the row.
+func objectiveVarAttrs(node *ObjectiveTreeNode) templ.Attributes {
+	attrs := templ.Attributes{}
+	if sets := varRefNames(node.BlockVars.Sets); sets != "" {
+		attrs["data-var-sets"] = sets
+	}
+	waits := varRefNames(append([]services.VarRef{{Vars: node.Objective.Depends}}, node.BlockVars.Gated...))
+	if waits != "" {
+		attrs["data-var-waits"] = waits
+	}
+	return attrs
+}
+
+// varTooltip wraps a mark in its explanation: a heading for what the mark
+// is, a sentence per block, and a note on what hovering outlines. The
+// sentences are kept in pieces so variable names can be set in the monospace
+// they are typed in.
+templ varTooltip(class, heading string, lines []varPhrase, note string, attrs templ.Attributes) {
+	<span class={ "tooltip tooltip-right", class } tabindex="0" { attrs... }>
+		<span class="tooltip-content w-72 p-3 text-left font-sans whitespace-normal flex flex-col gap-1">
+			<span class="font-semibold">{ heading }</span>
+			for _, line := range lines {
+				<span>
+					for _, piece := range line {
+						if piece.name {
+							<span class="font-mono">{ piece.text }</span>
+						} else {
+							{ piece.text }
+						}
+					}
 				</span>
 			}
+			<span class="text-xs text-neutral-content/70">{ note }</span>
 		</span>
 		{ children... }
 	</span>
+}
+
+// varPhrase is one sentence of a mark's tooltip, in pieces: plain words, and
+// the variable names among them.
+type varPhrase []varPiece
+
+type varPiece struct {
+	text string
+	name bool
+}
+
+func varWords(text string) varPiece {
+	return varPiece{text: text}
+}
+
+// varNameList names variables the way a sentence lists things: "a", "a and
+// b", "a, b and c", with conj in place of "and" where only one of them counts.
+func varNameList(names []string, conj string) varPhrase {
+	var out varPhrase
+	for i, name := range names {
+		switch {
+		case i == 0:
+		case i == len(names)-1:
+			out = append(out, varWords(" "+conj+" "))
+		default:
+			out = append(out, varWords(", "))
+		}
+		out = append(out, varPiece{text: name, name: true})
+	}
+	return out
+}
+
+// varSetClause says the variables are set, saying "both" or "all" when there
+// are several, because every one of them has to be.
+func varSetClause(names []string) varPhrase {
+	out := varNameList(names, "and")
+	switch len(names) {
+	case 1:
+		return append(out, varWords(" is set"))
+	case 2:
+		return append(out, varWords(" are both set"))
+	default:
+		return append(out, varWords(" are all set"))
+	}
+}
+
+// lockedPhrases explains an objective's own lock.
+func lockedPhrases(names []string) []varPhrase {
+	line := append(varPhrase{varWords("Teams can't start this until ")}, varSetClause(names)...)
+	return []varPhrase{append(line, varWords("."))}
+}
+
+// hiddenPhrases explains, block by block, what on this objective's page stays
+// out of sight and until when.
+func hiddenPhrases(refs []services.VarRef) []varPhrase {
+	out := make([]varPhrase, 0, len(refs))
+	for _, ref := range refs {
+		line := append(varPhrase{varWords("The " + ref.BlockName + " block stays hidden until ")}, varSetClause(ref.Vars)...)
+		out = append(out, append(line, varWords(".")))
+	}
+	return out
+}
+
+// setsPhrases explains, block by block, what completing it sets. A block
+// declaring several variables is a choice, which sets only the one its
+// picked option names.
+func setsPhrases(refs []services.VarRef) []varPhrase {
+	out := make([]varPhrase, 0, len(refs))
+	for _, ref := range refs {
+		if len(ref.Vars) == 1 {
+			out = append(out, varPhrase{
+				varWords("Completing the " + ref.BlockName + " block sets "),
+				varPiece{text: ref.Vars[0], name: true},
+				varWords("."),
+			})
+			continue
+		}
+		line := append(varPhrase{varWords("The " + ref.BlockName + " block sets ")}, varNameList(ref.Vars, "or")...)
+		out = append(out, append(line, varWords(", whichever option the team picks.")))
+	}
+	return out
+}
+
+// setsHeading is singular for one block, a choice included: whichever option
+// is picked, it sets only one.
+func setsHeading(refs []services.VarRef) string {
+	if len(refs) == 1 || varRefCount(refs) == 1 {
+		return "Sets a variable"
+	}
+	return "Sets variables"
+}
+
+// varOutlineNote says what the hover outlines, which is otherwise a change
+// elsewhere on the page with nothing to say why.
+func varOutlineNote(sets bool, names int) string {
+	it := "it"
+	if names > 1 {
+		it = "them"
+	}
+	if sets {
+		return "Rows waiting on " + it + " are outlined."
+	}
+	return "Rows with a block that sets " + it + " are outlined."
+}
+
+// varRefCount is how many distinct variables the refs name.
+func varRefCount(refs []services.VarRef) int {
+	return len(strings.Fields(varRefNames(refs)))
 }
 
 // ObjectiveDependsButton is the folded form of an objective's gate, matching
