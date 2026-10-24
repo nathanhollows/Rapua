@@ -148,7 +148,7 @@ func TestObjectiveNew(t *testing.T) {
 	h := newObjectiveTestHandler(t, dbc)
 	user := objectiveTestQuest(t, dbc)
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/objective/new", nil)
+	req := httptest.NewRequest(http.MethodPost, "/admin/objective/new", nil)
 	req.Header.Set("Hx-Request", "true")
 	req = withObjectiveUser(req, user)
 
@@ -190,7 +190,7 @@ func TestObjectiveNew_PlacedUnderNamedParent(t *testing.T) {
 	existing, err := h.objectiveService.CreateObjective(ctx, user.CurrentQuestID, section.ID, "Existing")
 	require.NoError(t, err)
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/objective/new", nil)
+	req := httptest.NewRequest(http.MethodPost, "/admin/objective/new", nil)
 	req.URL.RawQuery = url.Values{"parentId": {section.ID}}.Encode()
 	req = withObjectiveUser(req, user)
 

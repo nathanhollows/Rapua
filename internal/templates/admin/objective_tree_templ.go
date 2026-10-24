@@ -556,7 +556,7 @@ func objectiveNewButton(nodes []*ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<a href=\"/admin/objective/new\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<button type=\"button\" hx-post=\"/admin/objective/new\" hx-swap=\"none\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -577,7 +577,7 @@ func objectiveNewButton(nodes []*ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "New objective</a> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "New objective</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -604,20 +604,20 @@ func objectiveNewButton(nodes []*ObjectiveTreeNode) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<a href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<button type=\"button\" hx-post=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var12 templ.SafeURL
-				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/objective/new?parentId=%s", section.ID)))
+				var templ_7745c5c3_Var12 string
+				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/admin/objective/new?parentId=%s", section.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 427, Col: 86}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 433, Col: 78}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" class=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" hx-swap=\"none\" class=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -637,13 +637,13 @@ func objectiveNewButton(nodes []*ObjectiveTreeNode) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(section.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 430, Col: 24}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 437, Col: 24}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</a></li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</button></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -735,7 +735,7 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 		var templ_7745c5c3_Var16 templ.SafeURL
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 489, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 496, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -748,7 +748,7 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 493, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 500, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -805,7 +805,7 @@ func objectiveVisibilityToggle(node *ObjectiveTreeNode) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(visibilityTip(node))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 513, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 520, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
@@ -818,7 +818,7 @@ func objectiveVisibilityToggle(node *ObjectiveTreeNode) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 514, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 521, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
@@ -831,7 +831,7 @@ func objectiveVisibilityToggle(node *ObjectiveTreeNode) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(!node.Draft))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 515, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 522, Col: 42}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 		if templ_7745c5c3_Err != nil {
@@ -921,7 +921,7 @@ func objectivePassThroughMark(node *ObjectiveTreeNode) templ.Component {
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(passThroughTip(node))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 548, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 555, Col: 80}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 			if templ_7745c5c3_Err != nil {
@@ -942,7 +942,7 @@ func objectivePassThroughMark(node *ObjectiveTreeNode) templ.Component {
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(passThroughTip(node))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 551, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 558, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -997,7 +997,7 @@ func objectivePassThroughSwitch(node *ObjectiveTreeNode) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 573, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 580, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 		if templ_7745c5c3_Err != nil {
@@ -1010,7 +1010,7 @@ func objectivePassThroughSwitch(node *ObjectiveTreeNode) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.PassThrough))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 574, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 581, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
@@ -1041,7 +1041,7 @@ func objectivePassThroughSwitch(node *ObjectiveTreeNode) templ.Component {
 		var templ_7745c5c3_Var28 string
 		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(passThroughNote(node))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 584, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 591, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 		if templ_7745c5c3_Err != nil {
@@ -1127,7 +1127,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Objective.Routing))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 629, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 636, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 		if templ_7745c5c3_Err != nil {
@@ -1148,7 +1148,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(routingLabel(node.Objective.Routing, node.Objective.MaxNext))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 631, Col: 103}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 638, Col: 103}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -1183,7 +1183,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 636, Col: 68}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 643, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 		if templ_7745c5c3_Err != nil {
@@ -1201,7 +1201,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.PublishedChildren))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 638, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 645, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 			if templ_7745c5c3_Err != nil {
@@ -1219,7 +1219,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(k))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 640, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 647, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 				if templ_7745c5c3_Err != nil {
@@ -1232,7 +1232,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.ResolveAttributeValue(pipState(k, lo, hi))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 640, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 647, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var37)
 				if templ_7745c5c3_Err != nil {
@@ -1273,7 +1273,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 644, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 651, Col: 81}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -1308,7 +1308,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(finishButtonLabel(node.Objective))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 648, Col: 124}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 655, Col: 124}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {
@@ -1326,7 +1326,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			var templ_7745c5c3_Var44 string
 			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(rs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 670, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 677, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var44)
 			if templ_7745c5c3_Err != nil {
@@ -1339,7 +1339,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			var templ_7745c5c3_Var45 string
 			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(rs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 671, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 678, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var45)
 			if templ_7745c5c3_Err != nil {
@@ -1352,7 +1352,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			var templ_7745c5c3_Var46 string
 			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.ResolveAttributeValue("route-" + string(rs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 672, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 679, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var46)
 			if templ_7745c5c3_Err != nil {
@@ -1383,7 +1383,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			var templ_7745c5c3_Var47 string
 			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(routingOptionLabel(rs, node.Objective))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 679, Col: 114}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 686, Col: 114}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 			if templ_7745c5c3_Err != nil {
@@ -1396,7 +1396,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(routingNote(rs))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 682, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 689, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -1436,7 +1436,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		var templ_7745c5c3_Var51 string
 		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue(maxNextValue(node.Objective.MaxNext))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 697, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 704, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
 		if templ_7745c5c3_Err != nil {
@@ -1449,7 +1449,7 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		var templ_7745c5c3_Var52 string
 		templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(defaultMaxNext))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 698, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 705, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var52)
 		if templ_7745c5c3_Err != nil {
@@ -1538,7 +1538,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		var templ_7745c5c3_Var54 string
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.ResolveAttributeValue(guidedBandValue(node.Objective.ChildrenMin, guided))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 741, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 748, Col: 104}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var54)
 		if templ_7745c5c3_Err != nil {
@@ -1551,7 +1551,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		var templ_7745c5c3_Var55 string
 		templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.ResolveAttributeValue(guidedBandValue(node.Objective.ChildrenMax, guided))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 742, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 749, Col: 104}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var55)
 		if templ_7745c5c3_Err != nil {
@@ -1594,7 +1594,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		var templ_7745c5c3_Var58 string
 		templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(bandThenLead(count))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 750, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 757, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 		if templ_7745c5c3_Err != nil {
@@ -1607,7 +1607,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		var templ_7745c5c3_Var59 string
 		templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.ResolveAttributeValue("band-then-" + node.Objective.Slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 755, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 762, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var59)
 		if templ_7745c5c3_Err != nil {
@@ -1630,7 +1630,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		var templ_7745c5c3_Var60 string
 		templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(bandRestWords(n - count))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 760, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 767, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 		if templ_7745c5c3_Err != nil {
@@ -1643,7 +1643,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		var templ_7745c5c3_Var61 string
 		templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.ResolveAttributeValue("band-then-" + node.Objective.Slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 766, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 773, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var61)
 		if templ_7745c5c3_Err != nil {
@@ -1710,7 +1710,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		var templ_7745c5c3_Var66 string
 		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.FinishLabel)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 784, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 791, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var66)
 		if templ_7745c5c3_Err != nil {
@@ -1785,7 +1785,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var70 string
 		templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 808, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 815, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var70)
 		if templ_7745c5c3_Err != nil {
@@ -1798,7 +1798,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var71 string
 		templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind + "-fewer")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 810, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 817, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var71)
 		if templ_7745c5c3_Err != nil {
@@ -1811,7 +1811,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var72 string
 		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandStepLabel(kind, -1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 811, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 818, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var72)
 		if templ_7745c5c3_Err != nil {
@@ -1842,7 +1842,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var73 string
 		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 816, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 823, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var73)
 		if templ_7745c5c3_Err != nil {
@@ -1855,7 +1855,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var74 string
 		templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 816, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 823, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
 		if templ_7745c5c3_Err != nil {
@@ -1868,7 +1868,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var75 string
 		templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 820, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 827, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var75)
 		if templ_7745c5c3_Err != nil {
@@ -1881,7 +1881,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var76 string
 		templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind + "-more")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 822, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 829, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var76)
 		if templ_7745c5c3_Err != nil {
@@ -1894,7 +1894,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		var templ_7745c5c3_Var77 string
 		templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandStepLabel(kind, 1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 823, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 830, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var77)
 		if templ_7745c5c3_Err != nil {
@@ -2052,7 +2052,7 @@ func objectiveRailMark(node *ObjectiveTreeNode) templ.Component {
 		var templ_7745c5c3_Var79 string
 		templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 930, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 937, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var79)
 		if templ_7745c5c3_Err != nil {
@@ -2066,7 +2066,7 @@ func objectiveRailMark(node *ObjectiveTreeNode) templ.Component {
 			var templ_7745c5c3_Var80 string
 			templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(node.Step))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 932, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 939, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
 			if templ_7745c5c3_Err != nil {
@@ -2145,7 +2145,7 @@ func objectivePointsBadge(points int, enablePoints bool) templ.Component {
 			var templ_7745c5c3_Var83 string
 			templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d pts", points))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 949, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 956, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var83))
 			if templ_7745c5c3_Err != nil {
@@ -2199,7 +2199,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var85 templ.SafeURL
 			templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 963, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 970, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var85))
 			if templ_7745c5c3_Err != nil {
@@ -2212,7 +2212,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var86 string
 			templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 964, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 971, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
 			if templ_7745c5c3_Err != nil {
@@ -2225,7 +2225,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var87 string
 			templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("nested %d levels deep, past what this view draws", depth))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 967, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 974, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var87))
 			if templ_7745c5c3_Err != nil {
@@ -2243,7 +2243,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var88 string
 			templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 974, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 981, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var88)
 			if templ_7745c5c3_Err != nil {
@@ -2256,7 +2256,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var89 string
 			templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 975, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 982, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var89)
 			if templ_7745c5c3_Err != nil {
@@ -2269,7 +2269,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var90 string
 			templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.PublishedChildren))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 976, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 983, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var90)
 			if templ_7745c5c3_Err != nil {
@@ -2282,7 +2282,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var91 string
 			templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 977, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 984, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var91)
 			if templ_7745c5c3_Err != nil {
@@ -2333,7 +2333,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var94 string
 			templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Objective.Routing))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 988, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 995, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var94)
 			if templ_7745c5c3_Err != nil {
@@ -2354,7 +2354,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var95 templ.SafeURL
 			templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 997, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1004, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var95))
 			if templ_7745c5c3_Err != nil {
@@ -2367,7 +2367,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var96 string
 			templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 998, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1005, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var96))
 			if templ_7745c5c3_Err != nil {
@@ -2416,7 +2416,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var97 string
 			templ_7745c5c3_Var97, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1014, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1021, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var97)
 			if templ_7745c5c3_Err != nil {
@@ -2444,7 +2444,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var98 string
 			templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1026, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1033, Col: 40}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var98)
 			if templ_7745c5c3_Err != nil {
@@ -2457,7 +2457,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var99 string
 			templ_7745c5c3_Var99, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1027, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1034, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var99)
 			if templ_7745c5c3_Err != nil {
@@ -2470,7 +2470,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var100 string
 			templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1028, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1035, Col: 32}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var100)
 			if templ_7745c5c3_Err != nil {
@@ -2525,7 +2525,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var103 templ.SafeURL
 			templ_7745c5c3_Var103, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1036, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1043, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var103))
 			if templ_7745c5c3_Err != nil {
@@ -2538,7 +2538,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var104 string
 			templ_7745c5c3_Var104, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1037, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1044, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var104))
 			if templ_7745c5c3_Err != nil {
@@ -2579,7 +2579,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			var templ_7745c5c3_Var105 string
 			templ_7745c5c3_Var105, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1049, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1056, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var105)
 			if templ_7745c5c3_Err != nil {

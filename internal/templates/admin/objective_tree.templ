@@ -409,10 +409,15 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 templ objectiveNewButton(nodes []*ObjectiveTreeNode) {
 	{{ sections := sectionChoices(nodes, 0) }}
 	<div class="flex items-stretch" data-lock-hide>
-		<a href="/admin/objective/new" class={ "btn btn-primary", templ.KV("rounded-r-none", len(sections) > 0) }>
+		<button
+			type="button"
+			hx-post="/admin/objective/new"
+			hx-swap="none"
+			class={ "btn btn-primary", templ.KV("rounded-r-none", len(sections) > 0) }
+		>
 			@icon("plus", templ.Attributes{"class": "w-4 h-4"})
 			New objective
-		</a>
+		</button>
 		if len(sections) > 0 {
 			<details class="settings-picker relative">
 				<summary class="btn btn-primary btn-square rounded-l-none border-l border-l-primary-content/20" aria-label="Add inside a section">
@@ -423,12 +428,14 @@ templ objectiveNewButton(nodes []*ObjectiveTreeNode) {
 					<ul class="menu px-2 pt-0 pb-2 w-full">
 						for _, section := range sections {
 							<li>
-								<a
-									href={ templ.URL(fmt.Sprintf("/admin/objective/new?parentId=%s", section.ID)) }
+								<button
+									type="button"
+									hx-post={ fmt.Sprintf("/admin/objective/new?parentId=%s", section.ID) }
+									hx-swap="none"
 									class={ sectionChoicePad(section.Depth) }
 								>
 									{ section.Title }
-								</a>
+								</button>
 							</li>
 						}
 					</ul>

@@ -386,7 +386,7 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Use(func(next http.Handler) http.Handler {
 				return middlewares.QuestEditableMiddleware(logger, adminHandler.QuestRunningToast, next)
 			})
-			r.Get("/new", adminHandler.ObjectiveNew)
+			r.Post("/new", adminHandler.ObjectiveNew)
 			r.Post("/reposition", adminHandler.ObjectiveReposition)
 			r.Get("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEdit)
 			r.Post("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveEditPost)

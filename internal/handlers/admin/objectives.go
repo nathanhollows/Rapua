@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/blocks"
-	"github.com/nathanhollows/Rapua/v8/internal/middlewares"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	pTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
@@ -19,13 +18,6 @@ import (
 // ObjectiveNew creates the objective with a default title and redirects to edit.
 func (h *Handler) ObjectiveNew(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
-
-	// This creates a row on a GET, so the route middleware's method check does
-	// not cover it and the lock script cannot disable a link.
-	if !middlewares.QuestEditable(&user.CurrentQuest, r) {
-		h.handleError(w, r, "ObjectiveNew: quest is running", middlewares.QuestRunningMessage)
-		return
-	}
 
 	// Where the objective goes is decided before it exists: creating it loose
 	// and moving it after would leave a moment with two roots.

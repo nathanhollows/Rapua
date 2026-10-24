@@ -271,7 +271,7 @@ func TestObjectiveTree_ScoringHeadsThePageAndSearchSharesTheTopLevelRow(t *testi
 	builderAt := strings.Index(html, `id="quest-builder"`)
 	require.Positive(t, scoringAt)
 	require.Positive(t, builderAt)
-	assert.Less(t, scoringAt, strings.Index(html, `href="/admin/objective/new"`), "scoring sits before New objective")
+	assert.Less(t, scoringAt, strings.Index(html, `hx-post="/admin/objective/new"`), "scoring sits before New objective")
 	assert.Less(t, scoringAt, builderAt)
 
 	rootAt := strings.Index(html, `id="quest-root-settings"`)
