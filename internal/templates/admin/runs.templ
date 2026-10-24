@@ -373,31 +373,39 @@ templ teamItem(team models.Run, classes string, summaries map[string]services.Ru
 			if status == "" && team.HasStarted {
 				{{ status = services.StatusStarted }}
 			}
-			if summary.Total > 0 {
-				<span class="hidden md:flex shrink-0">
+			// Each trailing part keeps its width whether or not it has anything to
+			// show, so they line up as columns down the list. Sized by their
+			// contents, the bars and badges wandered with every "1 year ago" and
+			// every run without a button.
+			<span class="hidden md:flex w-36 shrink-0">
+				if summary.Total > 0 {
 					@runProgressBar(summary.Done, summary.Total)
-				</span>
-			}
-			<span class="shrink-0">
+				}
+			</span>
+			<span class="w-24 shrink-0">
 				@TeamStatusBadge(status, true, "sm")
 			</span>
-			// Relative, not elapsed: a stale run otherwise reads "111d 21h".
-			if team.HasStarted && !team.StartedAt.IsZero() {
-				<span
-					class="text-xs whitespace-nowrap shrink-0 tooltip tooltip-left hidden sm:inline"
-					data-tip={ team.StartedAt.Local().Format("02 Jan 2006, 3:04 PM") }
-				>
-					<span class="opacity-50">{ timeago.Parse(team.StartedAt) }</span>
-				</span>
-			}
-			if team.HasStarted {
-				<a
-					href={ templ.URL(fmt.Sprintf("/admin/runs/%s", team.Code)) }
-					class="btn btn-xs shrink-0"
-				>
-					See activity
-				</a>
-			}
+			<span class="hidden sm:block w-28 shrink-0 text-right">
+				// Relative, not elapsed: a stale run otherwise reads "111d 21h".
+				if team.HasStarted && !team.StartedAt.IsZero() {
+					<span
+						class="text-xs whitespace-nowrap tooltip tooltip-left"
+						data-tip={ team.StartedAt.Local().Format("02 Jan 2006, 3:04 PM") }
+					>
+						<span class="opacity-50">{ timeago.Parse(team.StartedAt) }</span>
+					</span>
+				}
+			</span>
+			<span class="flex justify-end w-24 shrink-0">
+				if team.HasStarted {
+					<a
+						href={ templ.URL(fmt.Sprintf("/admin/runs/%s", team.Code)) }
+						class="btn btn-xs"
+					>
+						See activity
+					</a>
+				}
+			</span>
 		</div>
 	</li>
 }

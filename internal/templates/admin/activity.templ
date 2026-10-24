@@ -92,8 +92,11 @@ templ ActivityTracker(quest models.Quest, summaries map[string]services.RunSumma
 	</div>
 	<div class="relative flex flex-col px-5 gap-5 overflow-x-hidden">
 		<div class="w-full min-w-0 overflow-x-hidden">
-			<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
-				<div class="card-body p-6">
+			<!-- No padding below the table, and clipped to the card's corners:
+			the rows run edge to edge, so the last one ends the card rather
+			than leaving a strip of padding under it. -->
+			<div class="card overflow-hidden bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
+				<div class="card-body p-6 pb-0">
 					<div class="flex items-center justify-between mb-4">
 						<h2 class="card-title text-lg flex items-center gap-2">
 							if quest.Settings.EnablePoints {
@@ -242,7 +245,7 @@ templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, lead
 			>
 				for _, teamData := range leaderboardData {
 					<tr
-						class="team-activity-row hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer"
+						class="team-activity-row hover:bg-base-300 transition-colors overflow-hidden cursor-pointer"
 						hx-get={ templ.URL(fmt.Sprintf("/admin/runs/%s", teamData.Code)) }
 						hx-target="body"
 						hx-swap="outerHTML"
