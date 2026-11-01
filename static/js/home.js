@@ -271,7 +271,7 @@
     if (go.dataset.btn === 'checking' || go.dataset.btn === 'error') return;
     const code = input.value;
     setButton('checking');
-    let found = false, failed = false;
+    let found = false, failed = false, limited = false;
     try {
       const [res] = await Promise.all([
         fetch('/play/check', {
@@ -283,13 +283,14 @@
         new Promise(r => setTimeout(r, reduced ? 0 : 450)),
       ]);
       found = res.ok && (await res.json()).found;
-      failed = !res.ok && res.status !== 404;
+      limited = res.status === 429;
+      failed = !res.ok && res.status !== 404 && !limited;
     } catch {
       failed = true;
     }
     if (input.value !== code) return;
     if (!found) {
-      showError(failed ? 'Something went wrong. Try again.' : 'Check the game code with your facilitator.');
+      showError(limited ? 'Too many tries. Wait a minute, then try again.' : failed ? 'Something went wrong. Try again.' : 'Check the game code with your facilitator.');
       input.select();
       return;
     }

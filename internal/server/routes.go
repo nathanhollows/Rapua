@@ -7,6 +7,9 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
@@ -101,6 +104,26 @@ func setupRouter(
 	return router
 }
 
+const (
+	// maxCodeGuesses is how many run-code lookups a client gets per window
+	// before further ones are refused.
+	maxCodeGuesses  = 10
+	codeGuessWindow = time.Minute
+)
+
+// tooManyCodeGuesses answers /play/check in the JSON its caller expects and
+// everything else in plain text.
+func tooManyCodeGuesses(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Retry-After", strconv.Itoa(int(codeGuessWindow.Seconds())))
+	if strings.HasSuffix(r.URL.Path, "/check") {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusTooManyRequests)
+		_, _ = w.Write([]byte(`{"found":false,"limited":true}`))
+		return
+	}
+	http.Error(w, "Too many attempts. Please wait a minute and try again.", http.StatusTooManyRequests)
+}
+
 // Setup the player routes.
 func setupPlayerRoutes(
 	router chi.Router,
@@ -112,14 +135,18 @@ func setupPlayerRoutes(
 	// Home route
 	// Takes a GET request to show the home page
 	// Takes a POST request to submit the home page form
+	// Joining and checking both reveal whether a run code exists, so they draw
+	// on one budget per client.
+	codeGuesses := middlewares.RateLimitByClient(maxCodeGuesses, codeGuessWindow, tooManyCodeGuesses)
+
 	router.Route("/play", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.RunMiddleware(logger, playerHandler.GetRunService(), next)
 		})
 
 		r.Get("/", playerHandler.Play)
-		r.Post("/", playerHandler.PlayPost)
-		r.Post("/check", playerHandler.PlayCheck)
+		r.With(codeGuesses).Post("/", playerHandler.PlayPost)
+		r.With(codeGuesses).Post("/check", playerHandler.PlayCheck)
 		r.Get("/{code}", playerHandler.PlayWithCode)
 	})
 
