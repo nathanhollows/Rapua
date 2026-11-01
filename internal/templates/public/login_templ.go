@@ -29,7 +29,7 @@ func Login(allowGoogleLogin bool) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 sm:outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6\" hx-ext=\"response-targets\"><h1 class=\"text-3xl font-bold self-center\">Log in</h1><span class=\"self-center\">Don't have an account? <a href=\"/register\" class=\"link\" hx-boost=\"true\">Register</a></span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 bg-base-100 sm:outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6\" hx-ext=\"response-targets\"><h1 class=\"text-3xl font-bold self-center\">Admin login</h1><span class=\"self-center\">Don't have an account? <a href=\"/register\" class=\"link\" hx-boost=\"true\">Create one</a></span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

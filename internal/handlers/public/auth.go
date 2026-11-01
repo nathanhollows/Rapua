@@ -30,7 +30,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Login(h.identityService.AllowGoogleLogin())
-	err := templates.AuthLayout(c, "Login", false).Render(r.Context(), w)
+	err := templates.AuthLayout(c, "Admin login", false).Render(r.Context(), w)
 
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Error rendering login page", "err", err)
@@ -109,7 +109,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Register(h.identityService.AllowGoogleLogin())
-	err := templates.AuthLayout(c, "Register", false).Render(r.Context(), w)
+	err := templates.AuthLayout(c, "Create an account", false).Render(r.Context(), w)
 
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering register page", "err", err)
@@ -140,15 +140,16 @@ func (h *Handler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 			err = c.Render(r.Context(), w)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
-
-				return
 			}
+			return
 		}
 		c := templates.RegisterError("Something went wrong! Please try again.")
 		err = c.Render(r.Context(), w)
 		if err != nil {
 			h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
 		}
+		// No user was created, so there is no one to send a verification to.
+		return
 	}
 
 	// Send the email verification
@@ -167,8 +168,8 @@ func (h *Handler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 			err = c.Render(r.Context(), w)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
-				return
 			}
+			return
 		}
 	}
 

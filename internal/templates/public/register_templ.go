@@ -29,7 +29,7 @@ func Register(allowGoogleLogin bool) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-4 sm:outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6\" hx-ext=\"response-targets\"><h1 class=\"text-3xl font-bold self-center\">Create an account</h1><span class=\"self-center\">Already have an account? <a href=\"login\" hx-boost=\"true\" class=\"link\">Log in</a></span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-4 bg-base-100 sm:outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6\" hx-ext=\"response-targets\"><h1 class=\"text-3xl font-bold self-center\">Create an account</h1><span class=\"self-center\">Already have an account? <a href=\"/login\" hx-boost=\"true\" class=\"link\">Log in</a></span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -39,7 +39,7 @@ func Register(allowGoogleLogin bool) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"register-error\"></div><form hx-post=\"/register\" hx-trigger=\"submit\" hx-target-401=\"#register-error\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Email</legend> <input type=\"email\" name=\"email\" placeholder=\"name@email.com\" id=\"email\" class=\"input\" autocomplete=\"email\" required></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Password</legend> <input type=\"password\" name=\"password\" id=\"password\" class=\"input\" autocomplete=\"new-password\" required></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Confirm password</legend> <input type=\"password\" name=\"password-confirm\" id=\"password-confirm\" class=\"input\" autocomplete=\"new-password\" required></fieldset><label class=\"cursor-pointer label self-start gap-2 mt-3 mb-5\"><input type=\"checkbox\" class=\"checkbox\"> <span class=\"label-text\">I accept the <a href=\"/terms\" target=\"_blank\" rel=\"noopener\" class=\"link\">Terms and Conditions</a></span></label> <button class=\"btn btn-primary w-full\">Create</button></form></div></div></main>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"register-error\"></div><form hx-post=\"/register\" hx-trigger=\"submit\" hx-target-401=\"#register-error\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Email</legend> <input type=\"email\" name=\"email\" placeholder=\"name@email.com\" id=\"email\" class=\"input\" autocomplete=\"email\" required></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Password</legend> <input type=\"password\" name=\"password\" id=\"password\" class=\"input\" autocomplete=\"new-password\" required></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Confirm password</legend> <input type=\"password\" name=\"password-confirm\" id=\"password-confirm\" class=\"input\" autocomplete=\"new-password\" required></fieldset><label class=\"cursor-pointer label self-start gap-2 mt-3 mb-5\"><input type=\"checkbox\" class=\"checkbox\"> <span class=\"label-text\">I accept the <a href=\"/terms\" target=\"_blank\" rel=\"noopener\" class=\"link\">Terms and Conditions</a></span></label> <button class=\"btn btn-primary w-full\">Create account</button></form></div></div></main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -110,7 +110,7 @@ func RegisterSuccess() templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div role=\"status\" class=\"alert alert-success\"><div class=\"flex-1\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-check-big\"><path d=\"M21.801 10A10 10 0 1 1 17 3.335\"></path><path d=\"m9 11 3 3L22 4\"></path></svg></div><div class=\"flex-1\"><p>You have successfully registered. Please <a href=\"/login\" class=\"link\">login</a> to continue.</p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div role=\"status\" class=\"alert alert-success\"><div class=\"flex-1\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-circle-check-big\"><path d=\"M21.801 10A10 10 0 1 1 17 3.335\"></path><path d=\"m9 11 3 3L22 4\"></path></svg></div><div class=\"flex-1\"><p>Your account is ready. <a href=\"/login\" class=\"link\">Log in</a> to continue.</p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

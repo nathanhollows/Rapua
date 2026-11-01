@@ -22,9 +22,11 @@ type RunCreditService interface {
 	DeductCreditForRunStartWithTx(ctx context.Context, tx *bun.Tx, userID, teamID, questID string) error
 }
 
+// RunCodeLength is shared so the homepage draws one tile per letter.
+const RunCodeLength = 4
+
 const (
-	runCodeLength = 4
-	batchSize     = 100
+	batchSize = 100
 	// maxBatchRetries bounds how many times a batch is regenerated after a code
 	// collision, so an exhausted code space fails loudly instead of hanging.
 	maxBatchRetries = 10
@@ -89,7 +91,7 @@ func (s *RunService) generateRuns(questID string, size int) []models.Run {
 	teams := make([]models.Run, 0, size)
 	for range size {
 		for {
-			code := newCode(runCodeLength)
+			code := newCode(RunCodeLength)
 			if !s.containsCode(teams, code) {
 				teams = append(teams, models.Run{Code: code, QuestID: questID})
 				break

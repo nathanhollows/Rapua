@@ -42,7 +42,7 @@ func (h *Handler) Docs(w http.ResponseWriter, r *http.Request) {
 	}
 	c := templates.Docs(page, docsService.Pages)
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	err = templates.PublicLayout(c, page.Title+" - Docs", authed).Render(r.Context(), w)
+	err = templates.DocsLayout(c, page.Title+" - Docs", authed).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "Contact: rendering template", "error", err)
 	}

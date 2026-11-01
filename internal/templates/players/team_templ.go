@@ -68,7 +68,7 @@ func Team(data TeamParams) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</li><li class=\"list-row items-center\"><span class=\"opacity-60 text-sm\">Join code</span> <span class=\"list-col-grow\"></span> <span class=\"font-mono font-semibold tracking-[0.18em]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</li><li class=\"list-row items-center\"><span class=\"opacity-60 text-sm\">Game code</span> <span class=\"list-col-grow\"></span> <span class=\"font-mono font-semibold tracking-[0.18em]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

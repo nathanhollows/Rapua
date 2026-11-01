@@ -61,7 +61,7 @@ Rapua operates on a credit-based system. See the <a href="/pricing">Pricing page
 
 - One credit = one team starts playing.
 - All features are available to all users - no premium tiers or locked functionality.
-- Credits are deducted when the first player from a team enters their team code.
+- Credits are deducted when the first player from a team enters their game code.
 
 
 ### Payment Processing

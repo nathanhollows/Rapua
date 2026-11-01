@@ -3,25 +3,19 @@ package templates
 import (
 	"fmt"
 	"os"
-	"sync"
 
 	"github.com/a-h/templ"
 	"github.com/kaugesaar/lucide-go"
 )
 
-var cssVersion string
-var cssVersionOnce sync.Once
-
-// getCSSVersion returns the CSS version, ensuring it is only set once.
+// getCSSVersion is read per render so a rebuilt stylesheet busts the year-long
+// cache without a restart.
 func getCSSVersion() string {
-	cssVersionOnce.Do(func() {
-		if stat, err := os.Stat("static/css/tailwind.css"); err == nil {
-			cssVersion = fmt.Sprintf("?v=%d", stat.ModTime().Unix())
-		} else {
-			cssVersion = "&v=1"
-		}
-	})
-	return cssVersion
+	stat, err := os.Stat("static/css/tailwind.css")
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("?v=%d", stat.ModTime().Unix())
 }
 
 func icon(icon string, attrs templ.Attributes) templ.Component {

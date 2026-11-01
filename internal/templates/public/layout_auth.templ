@@ -1,34 +1,34 @@
 package templates
 
-import "fmt"
-
 templ AuthLayout(contents templ.Component, title string, authed bool) {
-	<!DOCTYPE html>
-	<html lang="en" class="h-full">
-		@publicHeader(title)
-		<body class="h-screen flex flex-col" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
-			if title != "Verify Email" {
-				@authNav(title, authed)
-			}
-			<div id="alerts" class="toast toast-center"></div>
-			<a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:btn focus:btn-primary">Skip to content</a>
+	@siteDocument(title, publicHeadExtras()) {
+		if title == "Facilitator Dashboard" {
+			@authNav(title, authed)
 			@contents
-		</body>
-	</html>
+		} else {
+			<div class="relative isolate flex-1 flex flex-col">
+				<svg class="site-topo site-topo-full" data-topo aria-hidden="true"></svg>
+				if title != "Verify Email" {
+					@authNav(title, authed)
+				}
+				@contents
+			</div>
+		}
+	}
 }
 
 templ authNav(title string, authed bool) {
-	<header class="bg-base-100" hx-boost="true">
+	<header hx-boost="true">
 		<nav class="navbar max-w-7xl font-bold m-auto" aria-label="Main">
 			<div class="navbar-start">
-				<a href="/" class="btn btn-ghost text-xl">← Back to Rapua</a>
+				<a href="/" class="btn btn-ghost text-xl" hx-boost="false">← Back to Rapua</a>
 			</div>
 			<div class="navbar-end">
 				if !authed {
-					if title == "Login" {
-						<a href="/register" class="btn btn-sm btn-neutral">Register</a>
+					if title == "Admin login" {
+						<a href="/register" class="btn btn-sm btn-neutral">Create an account</a>
 					} else {
-						<a href="/login" class="btn btn-sm btn-secondary">Login</a>
+						<a href="/login" class="btn btn-sm btn-secondary">Admin login</a>
 					}
 				} else {
 					<a href="/admin" class="btn btn-sm btn-primary group">

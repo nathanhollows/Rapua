@@ -83,7 +83,7 @@ func setupRouter(
 	// All other routes with CSRF protection
 	router.Group(func(r chi.Router) {
 		r.Use(CSRF)
-		setupPublicRoutes(r, publicHandler)
+		setupPublicRoutes(r, logger, publicHandler, playerHandler.GetRunService())
 		setupPlayerRoutes(r, logger, publicHandler, playerHandler, adminHandler)
 		setupAdminRoutes(r, logger, adminHandler)
 		setupFacilitatorRoutes(r, logger, adminHandler)
@@ -119,6 +119,7 @@ func setupPlayerRoutes(
 
 		r.Get("/", playerHandler.Play)
 		r.Post("/", playerHandler.PlayPost)
+		r.Post("/check", playerHandler.PlayCheck)
 		r.Get("/{code}", playerHandler.PlayWithCode)
 	})
 
@@ -265,7 +266,12 @@ func setupPlayerRoutes(
 	router.Post("/dismiss/{ID}", playerHandler.DismissNotificationPost)
 }
 
-func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
+func setupPublicRoutes(
+	router chi.Router,
+	logger *slog.Logger,
+	publicHandler *public.Handler,
+	runService players.RunService,
+) {
 	router.Use(func(next http.Handler) http.Handler {
 		return middlewares.AuthStatusMiddleware(publicHandler.GetIdentityService(), next)
 	})
@@ -288,8 +294,12 @@ func setupPublicRoutes(router chi.Router, publicHandler *public.Handler) {
 		}
 	})
 
-	router.Get("/", publicHandler.Index)
+	// Lets the homepage offer a returning player their game back.
+	router.With(func(next http.Handler) http.Handler {
+		return middlewares.RunMiddleware(logger, runService, next)
+	}).Get("/", publicHandler.Index)
 	router.Get("/pricing", publicHandler.Pricing)
+	router.Get("/creators", publicHandler.Creators)
 	router.Get("/about", publicHandler.About)
 	router.Get("/contact", publicHandler.Contact)
 	router.Post("/contact", publicHandler.ContactPost)

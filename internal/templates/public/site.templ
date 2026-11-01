@@ -1,0 +1,111 @@
+package templates
+
+import "fmt"
+
+type siteLink struct {
+	Href  string
+	Label string
+	// Phone links stay in the header on a narrow screen so it never wraps.
+	Phone bool
+}
+
+var siteLinks = []siteLink{
+	{Href: "/creators", Label: "For creators", Phone: true},
+	{Href: "/about", Label: "About"},
+	{Href: "/pricing", Label: "Pricing"},
+	{Href: "/docs", Label: "Docs"},
+}
+
+// The daisyUI colour pair keeps the icon legible on its own colour in every theme.
+func stickerStyle(color string, tilt int) templ.SafeCSS {
+	return templ.SafeCSS(fmt.Sprintf("--c: var(--color-%s); --cc: var(--color-%s-content); --r: %ddeg", color, color, tilt))
+}
+
+// Boosted links swap only the body's contents, so the head must be identical on
+// every page. Page scripts go at the end of the body, where htmx runs them after
+// a swap; extraHead is only for the older pages.
+//
+// History is reloaded, not restored from htmx's snapshot, which would run a
+// page script twice over its own DOM changes.
+//
+// attributesToSettle is empty because every main is id="main": htmx would give
+// the incoming main the outgoing one's class for a beat, so styles hanging off
+// it (.cr) would flash unstyled.
+templ siteDocument(title string, extraHead templ.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+			<meta name="htmx-config" content={ `{"historyCacheSize":0,"refreshOnHistoryMiss":true,"attributesToSettle":[]}` }/>
+			@themeScript()
+			<link rel="stylesheet" href={ "/static/css/tailwind.css" + getCSSVersion() }/>
+			<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
+			<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
+			<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
+			<title>{ title } | Rapua</title>
+			<script src="/static/js/htmx.min.js"></script>
+			<script src="/static/js/csrf.js"></script>
+			<script src="/static/js/site.js"></script>
+			if extraHead != nil {
+				@extraHead
+			}
+		</head>
+		<body class="site min-h-svh flex flex-col bg-base-100 text-base-content" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+			<div class="toast toast-center z-50" id="alerts" role="status" aria-live="polite"></div>
+			<a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-50 focus:btn focus:btn-primary">Skip to content</a>
+			{ children... }
+		</body>
+	</html>
+}
+
+// Sign-in says admin because players never sign in: they join with a code.
+templ siteHeader(authed bool, current string) {
+	<header class="relative z-[3] site-wrap flex items-center justify-between h-16">
+		<div class="flex items-center gap-1">
+			{ children... }
+			<a href="/" class="inline-flex items-center gap-2 text-lg font-extrabold" aria-label="Rapua home" hx-boost="true">
+				<svg class="w-[1.375rem] h-[1.375rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
+				Rapua
+			</a>
+		</div>
+		<nav class="flex items-center gap-1 text-sm font-bold" aria-label="Site" hx-boost="true">
+			for _, l := range siteLinks {
+				<a
+					href={ templ.SafeURL(l.Href) }
+					class={ "px-3 py-2 rounded-full hover:text-base-content", templ.KV("hidden sm:inline-block", !l.Phone), templ.KV("site-nav-on", l.Href == current), templ.KV("text-base-content/75", l.Href != current) }
+					if l.Href == current {
+						aria-current="page"
+					}
+				>{ l.Label }</a>
+			}
+			if authed {
+				<a href="/admin" class="px-3 py-2 rounded-full border-2 border-base-content/12" hx-boost="false">Admin</a>
+			} else {
+				<a href="/login" class="px-3 py-2 rounded-full border-2 border-base-content/12" hx-boost="false">Admin login</a>
+			}
+		</nav>
+	</header>
+}
+
+// The OpenStreetMap licence requires credit wherever its data is drawn.
+templ siteFooter(osm bool) {
+	<footer class="py-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] text-sm text-base-content/80">
+		<div class="site-wrap flex flex-wrap gap-x-5 gap-y-3 justify-between">
+			<nav class="flex flex-wrap gap-x-5 gap-y-2" aria-label="Footer" hx-boost="true">
+				<a href="/about" class="hover:underline">About</a>
+				<a href="/pricing" class="hover:underline">Pricing</a>
+				<a href="/docs" class="hover:underline">Docs</a>
+				<a href="/privacy" class="hover:underline">Privacy</a>
+				<a href="/terms" class="hover:underline">Terms</a>
+				<a href="/contact" class="hover:underline">Contact</a>
+			</nav>
+			<span>
+				Made in Aotearoa by <a href="https://nathanhollows.com/" class="underline">Nathan Hollows</a>.
+				if osm {
+					Map data © <a href="https://www.openstreetmap.org/copyright" class="underline">OpenStreetMap</a> contributors.
+				}
+			</span>
+		</div>
+	</footer>
+}

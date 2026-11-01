@@ -4,25 +4,25 @@ import (
 	"fmt"
 	"html/template"
 	"os"
-	"sync"
 	"time"
 
+	"github.com/a-h/templ"
+	lucide "github.com/kaugesaar/lucide-go"
 	"github.com/nathanhollows/Rapua/v8/internal/render"
 )
 
-var cssVersion string
-var cssVersionOnce sync.Once
+func icon(name string, attrs templ.Attributes) templ.Component {
+	return templ.Raw(lucide.Icon(name, attrs))
+}
 
-// getCSSVersion returns the CSS version, ensuring it is only set once.
+// getCSSVersion is read per render so a rebuilt stylesheet busts the year-long
+// cache without a restart.
 func getCSSVersion() string {
-	cssVersionOnce.Do(func() {
-		if stat, err := os.Stat("static/css/tailwind.css"); err == nil {
-			cssVersion = fmt.Sprintf("?v=%d", stat.ModTime().Unix())
-		} else {
-			cssVersion = "&v=1"
-		}
-	})
-	return cssVersion
+	stat, err := os.Stat("static/css/tailwind.css")
+	if err != nil {
+		return ""
+	}
+	return fmt.Sprintf("?v=%d", stat.ModTime().Unix())
 }
 
 func currYear() string {

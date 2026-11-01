@@ -8,7 +8,66 @@ package templates
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-func Index() templ.Component {
+import (
+	"context"
+	"fmt"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// Asserted to a string so a missing token prints empty, not "<nil>".
+func csrfToken(ctx context.Context) string {
+	t, _ := ctx.Value("gorilla.csrf.Token").(string)
+	return t
+}
+
+func codeWord(n int) string {
+	words := map[int]string{4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight"}
+	if w, ok := words[n]; ok {
+		return w
+	}
+	return fmt.Sprint(n)
+}
+
+// The break is display only and is never typed.
+func codeSplit(n int) int {
+	if n >= 6 {
+		return n / 2
+	}
+	return 0
+}
+
+func tileColumns(n int) string {
+	if s := codeSplit(n); s > 0 {
+		return fmt.Sprintf("grid-template-columns: repeat(%d, 1fr) .9rem repeat(%d, 1fr); max-width: %.2frem", s, n-s, float64(n)*4.25+.9)
+	}
+	return fmt.Sprintf("grid-template-columns: repeat(%d, 1fr); max-width: %.2frem", n, float64(n)*4.25)
+}
+
+func prettyCode(code string) string {
+	code = strings.ToUpper(code)
+	if s := codeSplit(len(code)); s > 0 {
+		return code[:s] + "-" + code[s:]
+	}
+	return code
+}
+
+func resumeHref(run *models.Run) string {
+	if run.HasStarted {
+		return "/objectives"
+	}
+	return "/start"
+}
+
+func homeState(run *models.Run) string {
+	if run != nil {
+		return "returning"
+	}
+	return "new"
+}
+
+func Home(run *models.Run, codeLength int, authed bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -29,7 +88,437 @@ func Index() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Hero Section with Gradient Background --><!-- Decorative Background Elements --><div class=\"absolute top-1/4 left-1/4 w-64 h-64 bg-accent/20 dark:bg-accent/10 rounded-full blur-3xl\"></div><div class=\"absolute bottom-1/3 right-1/3 w-96 h-96 bg-primary/10 rounded-full blur-3xl\"></div><main id=\"main\"><div class=\"flex justify-center gap-5 text-center relative z-10 mx-auto\"><div class=\"max-w-6xl text-center\"><form class=\"max-w-md m-auto space-y-6 relative z-10 mt-5 mb-24\" hx-post=\"/play\" hx-swap=\"none\"><div class=\"mx-auto rounded-full py-[0.3em] px-[1em] sm:p-2 sm:bg-primary flex flex-col sm:flex-row items-center justify-between w-min sm:shadow-xl\"><span class=\"text-lg font-bold text-primary-content px-6 text-nowrap rounded-t-full bg-primary sm:rounded-none sm:bg-transparent\">Join a game</span><div class=\"input flex items-center gap-2 rounded-full pr-2 border-2 border-primary sm:border-0\"><label class=\"sr-only\" for=\"run\">Team code</label><input id=\"run\" name=\"run\" type=\"text\" class=\"rounded-full font-mono uppercase tracking-wider w-36 input-lg pl-2\" placeholder=\"Team Code\" maxlength=\"9\"> <button type=\"submit\" class=\"btn btn-neutral btn-sm rounded-full gap-0 pr-2 -mr-1\">Play <svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-chevron-right w-5 h-5\"><path d=\"m9 18 6-6-6-6\"></path></svg></button></div></div></form><!-- Main Heading --><div class=\"my-32\"><h1 class=\"text-5xl md:text-6xl xl:text-7xl font-bold mb-8\"><span class=\"font-light\">Ditch the <span class=\"base-content bg-base-200 border border-base-300 px-4 py-2 rounded-2xl inline-block transform -rotate-1\">PowerPoint</span></span><br class=\"hidden md:block\">Launch a  <span class=\"bg-gradient-to-br from-primary/60 dark:from-primary/30 to-secondary/60 dark:to-secondary/30 backdrop-blur-md border border-primary dark:border-primary/50 px-4 py-2 rounded-2xl inline-block transform rotate-1 drop-shadow-xl\">Quest!</span></h1><!-- Subtitle --><p class=\"text-xl md:text-2xl max-w-2xl mx-auto font-medium\">Rapua makes location-based learning easy and engaging. Create interactive quests that bring learning to life!</p></div></div></div><!-- Main Content --><div class=\"max-w-7xl mx-auto px-8 py-16 space-y-24\"><!-- Welcome Section --><section class=\"mb-24\"><div class=\"grid lg:grid-cols-2 gap-12 items-center\"><div class=\"space-y-6\"><h2 class=\"text-3xl font-bold\">Easy to set up, simple to use.</h2><p class=\"text-lg text-base-content/80\">No app downloads, no headaches. Rapua is entirely web-based making setup easy for you and access simple for players.</p><div class=\"grid gap-4\"><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-success/20 rounded-full flex items-center justify-center flex-shrink-0 border border-success text-success\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-icon lucide-check w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span>Web-based and lightweight for hassle-free play</span></div><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-success/20 rounded-full flex items-center justify-center flex-shrink-0 border border-success text-success\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-icon lucide-check w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span>Designed for all ages and abilities</span></div><div class=\"flex items-center gap-3\"><div class=\"w-8 h-8 bg-success/20 rounded-full flex items-center justify-center flex-shrink-0 border border-success text-success\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-check-icon lucide-check w-4 h-4\"><path d=\"M20 6 9 17l-5-5\"></path></svg></div><span>Automatically generates rules and instructions</span></div></div></div><div class=\"relative\"><div class=\"card bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 shadow-2xl overflow-hidden\"><figure><img id=\"screenshot\" src=\"/static/images/s2.webp\" alt=\"Mobile screens\"></figure></div><!-- Decorative elements --><div class=\"absolute -top-4 -right-4 w-24 h-24 bg-accent/20 rounded-full blur-xl\"></div><div class=\"absolute -bottom-6 -left-6 w-32 h-32 bg-secondary/20 rounded-full blur-2xl\"></div></div></div></section><!-- Key Features Section --><section class=\"my-32\"><div class=\"text-center\"><h2 class=\"text-4xl md:text-5xl font-bold mb-6\">Why use <span class=\"text-accent\">Rapua</span>?</h2><p class=\"text-lg md:text-xl mb-16 max-w-3xl mx-auto text-base-content/80\">Everything you'd expect from a scavenger hunt platform, but <em>way</em> better.</p></div><div class=\"grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8\"><!-- Template System --><a href=\"/docs/user/templates\" class=\"card bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 hover:border-primary/40 transition-all hover:shadow-lg group hover:rotate-2\"><div class=\"card-body flex-row items-center p-8 gap-5\"><div class=\"w-16 h-16 aspect-square bg-primary/50 dark:bg-primary/20 rounded-2xl flex items-center justify-center group-hover:bg-primary/30 transition-colors\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-8 h-8 text-primary\"><path d=\"M12 17h1.5\"></path><path d=\"M12 22h1.5\"></path><path d=\"M12 2h1.5\"></path><path d=\"M17.5 22H19a1 1 0 0 0 1-1\"></path><path d=\"M17.5 2H19a1 1 0 0 1 1 1v1.5\"></path><path d=\"M20 14v3h-2.5\"></path><path d=\"M20 8.5V10\"></path><path d=\"M4 10V8.5\"></path><path d=\"M4 19.5V14\"></path><path d=\"M4 4.5A2.5 2.5 0 0 1 6.5 2H8\"></path><path d=\"M8 22H6.5a1 1 0 0 1 0-5H8\"></path></svg></div><div><h3 class=\"text-xl font-bold mb-3\">Template System</h3><p class=\"text-base-content/80\">Share your games or build from someone else's. Why reinvent the wheel?</p></div></div></a><!-- Build Quests --><a href=\"/docs/user/blocks/\" class=\"card hover:-translate-y-1 bg-gradient-to-br from-secondary/5 to-secondary/10 border border-secondary/20 hover:border-secondary/40 transition-all hover:shadow-lg group hover:-rotate-2\"><div class=\"card-body flex-row items-center p-8 gap-5\"><div class=\"w-16 h-16 aspect-square bg-secondary/20 rounded-2xl flex items-center justify-center group-hover:bg-secondary/30 transition-colors\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-8 h-8 text-secondary\"><path d=\"M12 3v17a1 1 0 0 1-1 1H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v6a1 1 0 0 1-1 1H3\"></path><path d=\"M16 19h6\"></path><path d=\"M19 22v-6\"></path></svg></div><div><h3 class=\"text-xl font-bold mb-3\">Easily Build Quests</h3><p class=\"text-base-content/80\">Add images, videos, audio, quizzes, and more with pre-built content blocks.</p></div></div></a><!-- Open Source --><a href=\"/docs/developer/contributing\" class=\"card bg-gradient-to-br from-accent/5 to-accent/10 border border-accent/20 hover:border-accent/40 transition-all hover:shadow-lg group hover:rotate-3 hover:-translate-y-1\"><div class=\"card-body flex-row items-center p-8 gap-5\"><div class=\"w-16 h-16 aspect-square bg-accent/20 rounded-2xl flex items-center justify-center group-hover:bg-accent/30 transition-colors\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-8 h-8 text-accent\"><path d=\"M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4\"></path><path d=\"M9 18c-4.51 2-5-2-7-2\"></path></svg></div><div><h3 class=\"text-xl font-bold mb-3\">Open Source</h3><p class=\"text-base-content/80\">100% open source. Host it yourself or use our hosted version.</p></div></div></a><!-- Facilitator View --><a href=\"/docs/user/facilitator-dashboard\" class=\"card hover:-translate-y-2 bg-gradient-to-br from-info/5 to-info/10 border border-info/20 hover:border-info/40 transition-all hover:shadow-lg group hover:rotate-1\"><div class=\"card-body flex-row items-center p-8 gap-5\"><div class=\"w-16 h-16 aspect-square bg-info/20 rounded-2xl flex items-center justify-center group-hover:bg-info/30 transition-colors\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-8 h-8 text-info\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg></div><div><h3 class=\"text-xl font-bold mb-3\">Facilitator View</h3><p class=\"text-base-content/80\">Manage games and share updates while running around. We make it easy.</p></div></div></a><!-- Affordable --><a href=\"/pricing\" class=\"card hover:-translate-y-2 bg-gradient-to-br from-success/5 to-success/10 border border-success/20 hover:border-success/40 transition-all hover:shadow-lg group hover:-rotate-1\"><div class=\"card-body flex-row items-center p-8 gap-5\"><div class=\"w-16 h-16 aspect-square bg-success/20 rounded-2xl flex items-center justify-center group-hover:bg-success/30 transition-colors\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-8 h-8 text-success\"><path d=\"M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z\"></path><path d=\"M12 7v10\"></path><path d=\"M15.4 10a4 4 0 1 0 0 4\"></path></svg></div><div><h3 class=\"text-xl font-bold mb-3\">Affordable</h3><p class=\"text-base-content/80\">Generous free credits (more for educators!) and simple pricing.</p></div></div></a><!-- No Apps --><a href=\"/docs/user/features\" class=\"card hover:-translate-y-1 bg-gradient-to-br from-warning/5 to-warning/10 border border-warning/20 hover:border-warning/40 transition-all hover:shadow-lg group hover:-rotate-3\"><div class=\"card-body flex-row items-center p-8 gap-5\"><div class=\"w-16 h-16 aspect-square bg-warning/20 rounded-2xl flex items-center justify-center group-hover:bg-warning/30 transition-colors\"><svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-8 h-8 text-warning-content dark:text-warning\"><circle cx=\"12\" cy=\"12\" r=\"10\"></circle><path d=\"M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20\"></path><path d=\"M2 12h20\"></path></svg></div><div><h3 class=\"text-xl font-bold mb-3\">No downloads!</h3><p class=\"text-base-content/80\">Browser-based means no apps, no downloads, no fuss.</p></div></div></a></div></section><!-- Get Started Section --><section class=\"text-center border border-primary/40 bg-gradient-to-br from-primary/40 to-primary/10 rounded-3xl p-16 relative overflow-hidden\"><!-- Decorative Background --><div class=\"absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl transform translate-x-32 -translate-y-32\"></div><div class=\"absolute bottom-0 left-0 w-96 h-96 bg-white/5 rounded-full blur-3xl transform -translate-x-48 translate-y-48\"></div><div class=\"relative z-10\"><h2 class=\"text-4xl md:text-5xl font-bold mb-8\">Your adventure starts here!</h2><!-- Mobile App Download Buttons --><div class=\"flex flex-col sm:flex-row gap-4 justify-center items-center\"><a href=\"/register\" class=\"btn btn-primary btn-wide btn-xl group\">Sign up <svg aria-hidden=\"true\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-arrow-right-icon lucide-arrow-right w-5 h-5 group-hover:translate-x-1 transition-transform ease-in-out\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg></a></div><!-- Trust Indicators --><div class=\"flex flex-wrap justify-center gap-8 mt-8\"><span class=\"text-sm\">Free to start</span> · <span class=\"text-sm\">No credit card required</span> · <span class=\"text-sm\">No gotchas</span></div></div></section></div></main>")
+		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<a href=\"#code\" class=\"sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:btn focus:btn-primary\">Skip to the game code</a>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = siteHeader(authed, "/").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " <main id=\"main\" class=\"home flex-1\" data-state=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(homeState(run))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 66, Col: 65}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = homeHero(run, codeLength).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = homeQuest().Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</main>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = siteFooter(true).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " <script src=\"/static/js/home.js\"></script>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = siteDocument("Play", nil).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func homeHero(run *models.Run, codeLength int) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var4 == nil {
+			templ_7745c5c3_Var4 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<section class=\"home-hero\" id=\"hero\"><svg class=\"home-map\" id=\"map\" viewBox=\"350 -100 1100 920\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><g><path class=\"home-water\" id=\"m-water\"></path> <path class=\"home-river\" id=\"m-river\"></path> <path class=\"home-coast\" id=\"m-coast\"></path> <path class=\"home-street\" id=\"m-street\"></path> <path class=\"home-major\" id=\"m-major\"></path></g> <g class=\"home-wash\"><ellipse cx=\"900\" cy=\"330\" rx=\"390\" ry=\"265\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"330\" ry=\"220\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"270\" ry=\"180\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"215\" ry=\"140\"></ellipse></g></svg> <svg class=\"home-trail\" id=\"trail\" aria-hidden=\"true\"></svg><div class=\"home-stickers\" id=\"stickers\"></div><div class=\"home-tip\" id=\"tip\" role=\"tooltip\"><strong></strong><span></span></div><div class=\"site-wrap\"><div class=\"relative z-[2] w-full max-w-[25rem] mx-auto\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if run != nil {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<article class=\"home-resume p-5 rounded-[1.25rem] bg-base-200\" aria-labelledby=\"resume-title\"><span class=\"home-kicker text-xs font-bold uppercase tracking-[.08em] text-primary\">You're mid-quest</span><h1 id=\"resume-title\" class=\"mt-1.5 text-2xl leading-tight font-extrabold tracking-[-0.02em]\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(run.Quest.Name)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 100, Col: 116}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</h1><p class=\"mt-1 text-[.9375rem] text-base-content/70\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if run.Name != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "Playing as ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var6 string
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(run.Name)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 103, Col: 29}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ", game code ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "Your game code is ")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<b class=\"font-mono tracking-[.08em] text-base-content\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(prettyCode(run.Code))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 107, Col: 85}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</b></p><p class=\"mt-2.5 text-sm text-base-content/70\">Your progress is saved on this phone.</p><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 templ.SafeURL
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(resumeHref(run)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 110, Col: 46}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"home-btn mt-[1.1rem]\">Carry on <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg></a> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if run.HasStarted {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<a href=\"/journal\" class=\"block mt-3 text-center text-[.9375rem] font-bold\">Read your journal</a>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</article><p class=\"home-or mt-9 flex items-center gap-[.8rem] text-sm font-bold text-base-content/75\">Joining a different quest?</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<h1 class=\"text-center font-black leading-none tracking-[-0.035em] text-balance text-[clamp(2.6rem,10vw,4rem)]\">Your quest starts <span class=\"text-primary\">here.</span></h1><p class=\"mt-[1.1rem] text-center text-[1.0625rem] font-medium text-base-content/72 text-balance\">Type the ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(codeWord(codeLength))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 121, Col: 134}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "-letter game code your facilitator gave you.</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<form class=\"home-form\" id=\"join\" action=\"/play\" method=\"post\" novalidate data-length=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(codeLength))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 123, Col: 114}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"><input type=\"hidden\" name=\"csrf\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var11 string
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrfToken(ctx))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 124, Col: 60}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><div class=\"home-tiles\" id=\"tiles\" style=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(templ.SafeCSS(tileColumns(codeLength)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 125, Col: 86}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for i := 0; i < codeLength; i++ {
+			if i > 0 && i == codeSplit(codeLength) {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"home-dash\" aria-hidden=\"true\"></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " <div class=\"home-tile\" aria-hidden=\"true\"><span></span></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<input class=\"home-input\" id=\"code\" name=\"run\" type=\"text\" maxlength=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(codeLength + 1))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 137, Col: 45}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" inputmode=\"text\" autocapitalize=\"characters\" autocomplete=\"off\" autocorrect=\"off\" spellcheck=\"false\" enterkeyhint=\"go\" aria-label=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 string
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Game code, %s letters", codeWord(codeLength)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 144, Col: 78}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" aria-describedby=\"err\"></div><p class=\"mt-3 min-h-[1.4rem] whitespace-nowrap text-center text-[.9375rem] font-semibold text-error\" id=\"err\" role=\"alert\"></p><button class=\"home-btn\" id=\"go\" type=\"submit\" aria-disabled=\"true\">Start playing</button><p class=\"sr-only\" id=\"code-status\" role=\"status\"></p></form></div></div></section>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func homeQuest() templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<section class=\"home-below\" id=\"below\"><svg class=\"home-trail\" id=\"trail2\" aria-hidden=\"true\"></svg><div class=\"site-wrap\"><div class=\"max-w-[34rem] mx-auto text-center\"><h2 class=\"site-h2\">Rapua puts quests in the real world.</h2><p class=\"mt-4 text-[.8125rem] font-extrabold uppercase tracking-[.08em] text-base-content/75\">Example quest</p></div><ol class=\"home-quest\" aria-label=\"An example quest\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = homeNode("a", "qr", "primary", -6, "Track down the grumpy statue", "Scan the code on his boot.", "He's been keeping a secret for 120 years.").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = homeNode("b", "quiz", "accent", 5, "What's he glaring at?", "Name it. Not the café.", "Half a map.").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = homeNode("c", "camera", "secondary", -4, "Find his missing hat", "Photograph it. Yes, really.", "The other half.").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = homeNode("d", "keypad", "secondary", 6, "Crack his time capsule", "Put the map together.", "Why he's so grumpy.").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</ol><div class=\"max-w-[52rem] mx-auto mt-20 pt-10 grid gap-8 sm:grid-cols-2 sm:gap-14 border-t-[3px] border-dotted border-base-content/12 text-center sm:text-left\"><div><h3 class=\"text-xl font-black\">Want to play?</h3><p class=\"mt-1.5 max-w-[30rem] mx-auto sm:mx-0 text-[.9375rem] leading-relaxed text-base-content/80\">All you need is a game code. Nothing to install, one phone per team. No code? Your facilitator has one.</p><a href=\"#hero\" class=\"home-endbtn\" style=\"--c: var(--color-primary); --cc: var(--color-primary-content)\">Enter your game code <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"></path><path d=\"M12 19V5\"></path></svg></a></div><div><h3 class=\"text-xl font-black\">Want to run a quest?</h3><p class=\"mt-1.5 max-w-[30rem] mx-auto sm:mx-0 text-[.9375rem] leading-relaxed text-base-content/80\">Build quests like this for your museum, class or campus. Open source, every feature included, and free credits every month.</p><a href=\"/creators\" class=\"home-endbtn\" style=\"--c: var(--color-accent); --cc: var(--color-accent-content)\">See how it works <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg></a></div></div></div></section>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func homeNode(id, ic, color string, tilt int, title, proof, uncover string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var16 == nil {
+			templ_7745c5c3_Var16 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<li class=\"home-node\" data-node=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var17 string
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(id)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 194, Col: 37}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\"><span class=\"home-mark\" data-ic=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(ic)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 195, Col: 38}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" style=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(stickerStyle(color, tilt))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 195, Col: 74}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"></span><h3 class=\"text-lg font-extrabold leading-tight text-balance\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var20 string
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 196, Col: 71}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</h3><p class=\"mt-1 text-[.9375rem] leading-snug text-base-content/80 text-balance\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var21 string
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(proof)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 197, Col: 88}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</p><p class=\"home-reveal mt-3 pt-3 text-[.9375rem] leading-snug text-base-content/80 text-balance\"><b class=\"block mb-0.5 text-[.6875rem] font-extrabold uppercase tracking-[.08em] text-primary\">Uncover</b>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var22 string
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(uncover)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 198, Col: 213}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</p></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

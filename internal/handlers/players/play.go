@@ -59,6 +59,24 @@ func landingPageFor(run *models.Run) string {
 	return "/start"
 }
 
+// PlayCheck validates a code without joining, so a mistyped code that matches
+// another team cannot move a returning player onto it.
+func (h *PlayerHandler) PlayCheck(w http.ResponseWriter, r *http.Request) {
+	_, err := h.runService.GetRunByCode(r.Context(), r.FormValue("run"))
+	w.Header().Set("Content-Type", "application/json")
+	switch {
+	case err == nil:
+		_, _ = w.Write([]byte(`{"found":true}`))
+	case errors.Is(err, sql.ErrNoRows):
+		w.WriteHeader(http.StatusNotFound)
+		_, _ = w.Write([]byte(`{"found":false}`))
+	default:
+		h.logger.ErrorContext(r.Context(), "PlayCheck: looking up run", "error", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		_, _ = w.Write([]byte(`{"found":false}`))
+	}
+}
+
 // PlayPost is the handler for the play form submission. Joining only
 // attaches the session; StartGame (pressing the start button on /start) is
 // what marks the run started, so a joining team always sees the start

@@ -34,7 +34,7 @@ func ResetPassword(token string) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6 text-center\" hx-ext=\"response-targets\"><h1 class=\"text-2xl font-bold\">Reset your password</h1><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 bg-base-100 outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6 text-center\" hx-ext=\"response-targets\"><h1 class=\"text-2xl font-bold\">Reset your password</h1><form hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -76,7 +76,7 @@ func ResetPasswordExpired() templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6 text-center\"><h1 class=\"text-2xl font-bold\">Link expired</h1><p>This password reset link has expired or is invalid.</p><a href=\"/forgot\" class=\"btn btn-primary w-full\">Request a new link</a></div></div></main>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 bg-base-100 outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6 text-center\"><h1 class=\"text-2xl font-bold\">Link expired</h1><p>This password reset link has expired or is invalid.</p><a href=\"/forgot\" class=\"btn btn-primary w-full\">Request a new link</a></div></div></main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -105,7 +105,7 @@ func ResetPasswordSuccess() templ.Component {
 			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6 text-center\"><h1 class=\"text-2xl font-bold\">Password reset</h1><p>Your password has been successfully reset.</p><a href=\"/login\" class=\"btn btn-primary w-full\">Log in</a></div></div></main>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<main id=\"main\" class=\"flex flex-col justify-center flex-1 px-3 lg:px-8\"><div class=\"mx-auto w-full max-w-sm\"><div class=\"flex flex-col gap-5 bg-base-100 outline dark:outline-base-200 rounded-box sm:shadow-2xl p-6 text-center\"><h1 class=\"text-2xl font-bold\">Password reset</h1><p>Your password has been successfully reset.</p><a href=\"/login\" class=\"btn btn-primary w-full\">Log in</a></div></div></main>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
