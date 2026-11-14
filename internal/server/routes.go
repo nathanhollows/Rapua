@@ -273,7 +273,12 @@ func setupPlayerRoutes(
 		r.NotFound(publicHandler.NotFound)
 	})
 
-	router.Route("/team", func(r chi.Router) {
+	// Runs that saved or have open the old /team address still land on the page.
+	router.Get("/team", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/you", http.StatusFound)
+	})
+
+	router.Route("/you", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
 			return middlewares.PreviewMiddleware(
 				logger,
@@ -284,7 +289,7 @@ func setupPlayerRoutes(
 					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
 			)
 		})
-		r.Get("/", playerHandler.Team)
+		r.Get("/", playerHandler.You)
 		r.Get("/name", playerHandler.TeamNameForm)
 		r.Post("/name", playerHandler.TeamNamePost)
 		r.NotFound(publicHandler.NotFound)

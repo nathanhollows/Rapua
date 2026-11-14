@@ -1,0 +1,211 @@
+package templates
+
+import (
+	"fmt"
+
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+type YouParams struct {
+	Run models.Run
+	// Leaderboard is empty when the quest does not show one.
+	Leaderboard []services.LeaderBoardTeamData
+}
+
+// standing finds this run's own entry so its position can be stated.
+func (data YouParams) standing() (services.LeaderBoardTeamData, bool) {
+	for _, entry := range data.Leaderboard {
+		if entry.Code == data.Run.Code {
+			return entry, true
+		}
+	}
+	return services.LeaderBoardTeamData{}, false
+}
+
+// You shows the run's identity and standing.
+//
+// Facts are flat: one drawn like a button invites a tap that goes nowhere.
+// The board ranks by points when enabled, otherwise by objectives done.
+templ You(data YouParams) {
+	<div class="flex flex-col gap-7">
+		<header id="team-name-slot" class="flex items-center gap-4">
+			@TeamNameControl(data.Run)
+		</header>
+		<div class="flex flex-col gap-2">
+			<span class="q-label">Game code</span>
+			<div class="flex gap-2" role="img" aria-label={ "Game code " + spaced(data.Run.Code) }>
+				for _, char := range data.Run.Code {
+					<b class="q-char">{ string(char) }</b>
+				}
+			</div>
+		</div>
+		{{ me, ranked := data.standing() }}
+		<!-- Points and the board are separate settings, so the score comes from the
+		run, not from a board entry that may not exist. -->
+		if data.Run.Quest.Settings.EnablePoints || ranked {
+			<div class="grid grid-cols-2 gap-4">
+				if data.Run.Quest.Settings.EnablePoints {
+					<div class="q-stat">
+						<span class="q-label">Points</span>
+						<b class="q-num">{ fmt.Sprint(data.Run.Points) }</b>
+					</div>
+				}
+				if ranked {
+					<div class="q-stat">
+						<span class="q-label">Position</span>
+						<b class="q-num">
+							{ ordinal(me.Rank) }
+							<span class="q-of">of { fmt.Sprint(len(data.Leaderboard)) }</span>
+						</b>
+					</div>
+				}
+				<!-- Needs a board for the count; hidden with points on, which already
+				rank the board. Uses the entry's total because the quest's objective
+				count includes the root and drafts. -->
+				if ranked && !data.Run.Quest.Settings.EnablePoints {
+					<div class="q-stat">
+						<span class="q-label">Objectives done</span>
+						<b class="q-num">
+							{ fmt.Sprint(me.Progress) }
+							if me.Total > 0 {
+								<span class="q-of">of { fmt.Sprint(me.Total) }</span>
+							}
+						</b>
+					</div>
+				}
+			</div>
+		}
+		@teamBoard(data)
+	</div>
+}
+
+// spaced makes a screen reader read the code letter by letter, not as a word.
+func spaced(code string) string {
+	out := make([]rune, 0, len(code)*2)
+	for i, char := range code {
+		if i > 0 {
+			out = append(out, ' ')
+		}
+		out = append(out, char)
+	}
+	return string(out)
+}
+
+// TeamNameControl is the team name with its rename pencil.
+templ TeamNameControl(team models.Run) {
+	<span class="grow min-w-0 flex flex-col">
+		<span class="q-label">Team</span>
+		<span class={ "text-2xl font-extrabold leading-tight tracking-tight text-pretty", templ.KV("q-soft", team.Name == "") }>
+			if team.Name != "" {
+				{ team.Name }
+			} else {
+				No name yet
+			}
+		</span>
+	</span>
+	<button
+		type="button"
+		class="q-pencil"
+		aria-label="Rename your team"
+		hx-get="/you/name"
+		hx-target="#team-name-slot"
+		hx-swap="innerHTML"
+	>
+		@icon("pencil", templ.Attributes{"class": "w-6 h-6"})
+	</button>
+}
+
+// TeamNameField replaces the head with the input focused.
+//
+// Its own endpoint: the start page's saves through a block a quest need not
+// contain.
+templ TeamNameField(team models.Run) {
+	<form
+		hx-post="/you/name"
+		hx-target="#team-name-slot"
+		hx-swap="innerHTML"
+		class="q-rename"
+	>
+		<label for="team-name" class="q-label">Name</label>
+		<input
+			id="team-name"
+			name="name"
+			type="text"
+			class="q-input"
+			value={ team.Name }
+			placeholder="The Quokkas"
+			maxlength="40"
+			autocomplete="off"
+			autofocus
+		/>
+		<button type="submit" class="q-fin">Save</button>
+	</form>
+}
+
+templ teamBoard(data YouParams) {
+	if len(data.Leaderboard) > 0 {
+		<section class="flex flex-col gap-3">
+			<div class="flex flex-wrap items-baseline gap-x-3">
+				<h2 class="q-head">Leaderboard</h2>
+				<span class="text-base q-soft">
+					if data.Run.Quest.Settings.EnablePoints {
+						by points
+					} else {
+						by objectives done
+					}
+				</span>
+			</div>
+			if len(data.Leaderboard) == 1 {
+				<!-- One team is not a ranking. -->
+				<p class="rounded-2xl border-2 border-dashed p-4 text-center text-base q-soft" style="border-color: var(--hair)">
+					You are the only team so far. Others appear here as they join.
+				</p>
+			} else {
+				<ol class="flex flex-col gap-2">
+					for _, entry := range data.Leaderboard {
+						{{ isMe := entry.Code == data.Run.Code }}
+						<li class={ "q-lb", templ.KV("q-lb-me q-sec", isMe) }>
+							<span class="q-rk">{ fmt.Sprint(entry.Rank) }</span>
+							<span class="grow min-w-0 truncate">
+								if entry.Name != "" {
+									{ entry.Name }
+								} else {
+									{ entry.Code }
+								}
+								if isMe {
+									<em class="q-you">you</em>
+								}
+							</span>
+							<span class="q-sc">
+								if data.Run.Quest.Settings.EnablePoints {
+									{ fmt.Sprint(entry.Points) }
+								} else {
+									{ fmt.Sprint(entry.Progress) }
+								}
+							</span>
+						</li>
+					}
+				</ol>
+			}
+		</section>
+	}
+}
+
+func ordinal(n int) string {
+	suffix := "th"
+	switch {
+	case n%100 >= 11 && n%100 <= 13:
+	case n%10 == 1:
+		suffix = "st"
+	case n%10 == 2:
+		suffix = "nd"
+	case n%10 == 3:
+		suffix = "rd"
+	}
+	return fmt.Sprint(n) + suffix
+}
+
+func YouChrome(team models.Run) AppChrome {
+	return AppChrome{Run: team, Active: "you"}
+}
