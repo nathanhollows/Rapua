@@ -15,7 +15,7 @@ templ Layout(contents templ.Component, title string, messages []models.Notificat
 		<head>
 			@appHead(title)
 		</head>
-		<body class="h-lvh" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+		<body class="player bg-base-200 h-lvh" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
 			<div class="toast toast-center z-50 w-full text-wrap" id="alerts"></div>
 			<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
@@ -69,30 +69,24 @@ templ appHead(title string) {
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
-		<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
-		<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
-		<script src="/static/js/htmx-1.8.5.min.js" defer></script>
+		<script src="/static/js/htmx.min.js" defer></script>
 		<script src="/static/js/csrf.js"></script>
-		<script src="/static/js/mapbox-satellite-view.js"></script>
+		<!-- Not deferred: a map block's inline script calls loadMapbox while the page parses. -->
+		<script src="/static/js/mapbox-lazy.js"></script>
 		<script src="/static/js/scan.js" defer></script>
+		<script src="/static/js/Sortable.min.js" defer></script>
 		<script src="/static/js/geofence.js" defer></script>
-		<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
+		<!-- Local: unpkg redirected every load and blocked the page meanwhile. -->
+		<script src="/static/js/hyperscript-0.9.13.min.js" defer></script>
 }
 
-// AppChrome is what the status bar and dock need.
+// AppChrome is what the dock needs. Headings belong to each page.
 type AppChrome struct {
 	Run models.Run
-	// Active names the dock tab to light: "quest", "journal", "team", or "" on
+	// Active names the dock tab to light: "quest", "journal", "you", or "" on
 	// a page that is on none of them. The dock shows regardless, since one that
 	// comes and goes is more disorienting than one that is always there.
 	Active string
-	// Back and BackHref name the parent above an objective's title. Empty on
-	// the three tabs, which are already the top.
-	Back     string
-	BackHref string
-	// Total of zero hides the progress bar: it has no denominator to show.
-	Done  int
-	Total int
 }
 
 // AppLayout wraps a run in progress. Pre-game pages keep Layout because a dock
@@ -103,10 +97,9 @@ templ AppLayout(contents templ.Component, chrome AppChrome, title string, messag
 		<head>
 			@appHead(title)
 		</head>
-		<body class="min-h-lvh bg-base-200" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+		<body class="player min-h-lvh bg-base-200" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
 			<div class="toast toast-center z-50 w-full text-wrap" id="alerts"></div>
-			@appTopBar(chrome)
 			<!-- pb-24 clears the fixed dock. -->
 			<main class="mx-auto w-full max-w-md px-4 pt-4 pb-24">
 				@Messages(messages)
@@ -126,14 +119,11 @@ templ AppLayout(contents templ.Component, chrome AppChrome, title string, messag
 // into the game. The dock is fixed to the viewport in its own component, which
 // is right in the app and wrong inside a phone frame, so it is made static
 // here.
-templ PreviewChrome(questName string) {
-	<div class="flex flex-col h-full">
-		<!-- The quest's name and nothing else. A progress bar here would have to
-		invent a position in a run that is not happening, and pt-8 keeps the name
-		clear of the frame's own corner, which was cropping it. -->
-		<div class="bg-base-100 border-b border-base-300 px-5 pt-8 pb-3 shrink-0">
-			<p class="font-bold text-sm truncate text-center">{ questName }</p>
-		</div>
+templ PreviewChrome() {
+	<!-- player: take the player's tokens whatever theme the editor is in. -->
+	<div class="player flex flex-col h-full bg-base-200 text-base-content">
+		<!-- Clears the frame's corner, which crops the top edge. -->
+		<div class="shrink-0 h-8" aria-hidden="true"></div>
 		<!-- No padding here: what is inside scrolls, and a hover outline drawn
 		past a block's edge has to have room within the scrolling box or it is
 		clipped and pushes a horizontal scrollbar out. -->
@@ -154,41 +144,10 @@ templ PreviewChrome(questName string) {
 			</span>
 			<span>
 				@icon("users", templ.Attributes{"class": "w-5 h-5"})
-				<span class="dock-label">Team</span>
+				<span class="dock-label">You</span>
 			</span>
 		</nav>
 	</div>
-}
-
-// appTopBar carries identity and progress. Only the breadcrumb is a link.
-templ appTopBar(chrome AppChrome) {
-	<header class="sticky top-0 z-20 bg-base-100 border-b border-base-300">
-		<div class="mx-auto w-full max-w-md px-4 py-3 flex flex-col gap-2">
-			if chrome.Back != "" {
-				<a href={ templ.URL(chrome.BackHref) } hx-boost="true" class="flex items-center gap-1.5 text-xs opacity-60 hover:opacity-100">
-					@icon("chevron-left", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"})
-					<span class="truncate">{ chrome.Back }</span>
-				</a>
-			}
-			<div class="flex items-baseline gap-3">
-				<span class="font-bold text-sm truncate">{ chrome.Run.Quest.Name }</span>
-				<span class="ml-auto shrink-0 text-xs opacity-60 tabular-nums">
-					if chrome.Total > 0 {
-						{ fmt.Sprintf("%d/%d", chrome.Done, chrome.Total) }
-					}
-					if chrome.Run.Quest.Settings.EnablePoints {
-						if chrome.Total > 0 {
-							&nbsp;&middot;&nbsp;
-						}
-						{ fmt.Sprintf("%d pts", chrome.Run.Points) }
-					}
-				</span>
-			</div>
-			if chrome.Total > 0 {
-				<progress class="progress progress-primary h-1" value={ fmt.Sprint(chrome.Done) } max={ fmt.Sprint(chrome.Total) }></progress>
-			}
-		</div>
-	</header>
 }
 
 // appDock is the only navigation, placed where a thumb reaches while walking.
@@ -204,28 +163,10 @@ templ appDock(active string) {
 			@icon("book-check", templ.Attributes{"class": "w-5 h-5"})
 			<span class="dock-label">Journal</span>
 		</a>
-		<a href="/team" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "team") }>
+		<a href="/you" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "you") }>
 			@icon("users", templ.Attributes{"class": "w-5 h-5"})
-			<span class="dock-label">Team</span>
+			<span class="dock-label">You</span>
 		</a>
 	</nav>
 }
 
-templ footer(team models.Run) {
-	<footer class="text-center text-sm text-gray-500 mt-8">
-		<div class="mt-4">
-			<p>
-				{ team.Quest.Name }
-			</p>
-			<p>
-				<a href="/start" class="link">Rules</a> · { team.Code }
-				if team.Name != "" {
-					· { team.Name }
-				}
-				if team.Quest.Settings.EnablePoints {
-					· { fmt.Sprint(team.Points) } pts
-				}
-			</p>
-		</div>
-	</footer>
-}

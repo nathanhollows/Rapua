@@ -116,11 +116,21 @@
 		});
 	}
 
+	function initMap(el) {
+		// Claimed now so scanMaps does not start a second build while Mapbox loads.
+		el.classList.remove("geofence-player-map-uninit");
+		const ready = window.loadMapbox ? window.loadMapbox() : Promise.resolve();
+		ready.then(function () {
+			if (document.body.contains(el)) buildMap(el);
+		}).catch(function (err) {
+			console.error("geofence: Mapbox did not load", err);
+		});
+	}
+
 	// Built, not auto-started: GeolocateControl is wired up here but only
 	// triggered from start(), on the same tap that begins the check, so no
 	// permission prompt fires before the player has asked for one.
-	function initMap(el) {
-		el.classList.remove("geofence-player-map-uninit");
+	function buildMap(el) {
 
 		const blockID = el.id.slice("geofence-player-map-".length);
 		const previous = maps.get(blockID);

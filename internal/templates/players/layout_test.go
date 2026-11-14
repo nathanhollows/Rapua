@@ -23,12 +23,12 @@ func TestAppLayout_AlwaysCarriesTheDock(t *testing.T) {
 	body := templ.Raw("")
 	run := models.Run{Quest: models.Quest{Name: "Trace"}}
 
-	for _, active := range []string{"quest", "journal", "team", ""} {
+	for _, active := range []string{"quest", "journal", "you", ""} {
 		html := render(t, AppLayout(body, AppChrome{Run: run, Active: active}, "T", nil))
 		assert.Contains(t, html, `class="dock`, "active %q still gets a dock", active)
 		assert.Contains(t, html, `href="/objectives"`)
 		assert.Contains(t, html, `href="/journal"`)
-		assert.Contains(t, html, `href="/team"`)
+		assert.Contains(t, html, `href="/you"`)
 	}
 }
 
