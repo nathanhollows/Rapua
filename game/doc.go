@@ -19,6 +19,8 @@ type GameDoc struct {
 type SettingsDoc struct {
 	EnablePoints    bool `json:"enable_points"`
 	ShowLeaderboard bool `json:"show_leaderboard"`
+	// ProgressFeedback is "fraction", "count" or "none". Omitted reads as "fraction".
+	ProgressFeedback string `json:"progress_feedback,omitempty"`
 }
 
 // ObjectiveDoc is the single recursive node of a quest. A leaf is an objective

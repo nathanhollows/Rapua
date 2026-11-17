@@ -84,6 +84,7 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 		QuestID:         inst.ID,
 		EnablePoints:    true,
 		ShowLeaderboard: true,
+		ProgressFeedback:    game.ProgressFeedbackCount,
 	}))
 
 	doc, _, err := svc.ExportInstance(ctx, inst.ID)
@@ -94,6 +95,7 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 	assert.Equal(t, "My Game", doc.Name)
 	assert.True(t, doc.Settings.EnablePoints)
 	assert.True(t, doc.Settings.ShowLeaderboard)
+	assert.Equal(t, "count", doc.Settings.ProgressFeedback)
 	assert.Equal(t, game.RouteStrategyOrdered, doc.Structure.Routing)
 	assert.Empty(t, doc.Structure.Children)
 	assert.Nil(t, doc.Structure.ChildrenMin, "an unset band exports as omitted")

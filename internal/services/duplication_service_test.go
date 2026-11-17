@@ -8,6 +8,7 @@ import (
 
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
@@ -74,6 +75,7 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 			QuestID:         sourceInstance.ID,
 			EnablePoints:    true,
 			ShowLeaderboard: true,
+			ProgressFeedback:    game.ProgressFeedbackCount,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
@@ -113,6 +115,7 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, settings.EnablePoints, duplicatedSettings.EnablePoints)
 		assert.Equal(t, settings.ShowLeaderboard, duplicatedSettings.ShowLeaderboard)
+		assert.Equal(t, settings.ProgressFeedback, duplicatedSettings.ProgressFeedback)
 
 		duplicatedObjectives, err := objectiveRepo.FindByQuestID(ctx, duplicated.ID)
 		require.NoError(t, err)

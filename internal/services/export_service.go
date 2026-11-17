@@ -112,6 +112,7 @@ func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*ga
 		Settings: game.SettingsDoc{
 			EnablePoints:    settings.EnablePoints,
 			ShowLeaderboard: settings.ShowLeaderboard,
+			ProgressFeedback:    string(settings.ProgressFeedback.Normalised()),
 		},
 		Start:     startDoc,
 		Finish:    finishDoc,

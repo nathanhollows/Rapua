@@ -220,6 +220,13 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Fields: []game.FieldSpec{
 					{Name: "enable_points", Type: "bool", Description: "Enable the points system."},
 					{Name: "show_leaderboard", Type: "bool", Description: "Show the leaderboard to players."},
+					{
+						Name: "progress_feedback",
+						Type: "string",
+						Description: "What the player is told about their progress: \"fraction\" (objectives done " +
+							"out of those done plus the fewest still needed), \"count\" (objectives done, no target) " +
+							"or \"none\". Omitted means \"fraction\".",
+					},
 				},
 			},
 			{

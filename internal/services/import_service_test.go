@@ -300,6 +300,7 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	doc := minimalValidDoc("New Name")
 	doc.Settings.EnablePoints = true
 	doc.Settings.ShowLeaderboard = true
+	doc.Settings.ProgressFeedback = "none"
 
 	result, err := svc.ImportUpdate(ctx, userID, inst.ID, doc)
 	require.NoError(t, err)
@@ -313,6 +314,7 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	require.NoError(t, err)
 	assert.True(t, settings.EnablePoints)
 	assert.True(t, settings.ShowLeaderboard)
+	assert.Equal(t, game.ProgressFeedbackNone, settings.ProgressFeedback)
 }
 
 func TestImportService_ImportUpdate_RejectsForeignObjectiveID(t *testing.T) {

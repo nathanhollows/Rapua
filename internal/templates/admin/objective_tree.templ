@@ -328,6 +328,37 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 					<span class="text-xs font-medium">Leaderboard</span>
 				</label>
 			</div>
+			<!-- Its own box, not a third toggle in Scoring: it is not about score
+			and has three answers. -->
+			<div id="quest-progress-feedback" class="flex items-center gap-3 h-10 px-4 rounded-full border border-base-content/15 bg-base-100">
+				<div class="flex items-center gap-1">
+					<!-- A card rather than a tooltip: three options need a line each. -->
+					<div class="dropdown dropdown-hover">
+						<div tabindex="0" role="button" aria-label="About progress" class="btn btn-circle btn-ghost btn-xs text-info">
+							@icon("info", templ.Attributes{"class": "w-4 h-4"})
+						</div>
+						<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow">
+							<div tabindex="0" class="card-body">
+								<h2 class="card-title text-sm">Progress</h2>
+								<p>How players see their progress while they play.</p>
+								<p><span class="font-semibold">Out of total:</span> shows something like "3 of 5", so they know how much is left.</p>
+								<p><span class="font-semibold">Count only:</span> shows how many they have done, without saying how many there are.</p>
+								<p><span class="font-semibold">None:</span> shows nothing.</p>
+							</div>
+						</div>
+					</div>
+					<label for="progress-feedback" class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Progress</label>
+				</div>
+				<select
+					id="progress-feedback"
+					name="progressFeedback"
+					class="select select-ghost select-xs font-medium progress-feedback-select"
+				>
+					<option value="fraction" selected?={ settings.ProgressFeedback.Normalised() == game.ProgressFeedbackFraction }>Out of total</option>
+					<option value="count" selected?={ settings.ProgressFeedback.Normalised() == game.ProgressFeedbackCount }>Count only</option>
+					<option value="none" selected?={ settings.ProgressFeedback.Normalised() == game.ProgressFeedbackNone }>None</option>
+				</select>
+			</div>
 			@objectiveNewButton(nodes)
 		</div>
 	</div>
@@ -544,11 +575,12 @@ const rowRevealClass = "opacity-0 group-hover/row:opacity-100 group-focus-within
 const dragHandleClass = "w-4 h-4 text-base-content/40 group-hover/row:text-base-content " +
 	"group-hover/header:text-base-content transition-colors cursor-move objective-drag-handle shrink-0"
 
-// objectivePassThroughMark is the ghost that leads a section's rule pill: it
-// qualifies how the section itself is shown before the routing says how it
-// shows what is inside. It sits in the pill because its switch is in the
-// pill's menu, as everything else the pill shows is. The tooltip is for the
-// mouse; a screen reader hears the same words as part of the pill.
+	// objectivePassThroughMark is the ghost that leads a section's rule pill: it
+	// qualifies how the section itself is shown before the routing says how it
+	// shows what is inside. It sits in the pill because its switch is in the
+	// pill's menu, as everything else the pill shows is. The tooltip is for the
+	// mouse; a screen reader hears the same words as part of the pill.
+
 templ objectivePassThroughMark(node *ObjectiveTreeNode) {
 	if passThroughShown(node) {
 		<span class="objective-passthrough-mark">
@@ -1759,7 +1791,7 @@ templ objectiveSortableScript() {
 	});
 
 	document.body.addEventListener('change', function(evt) {
-		if (evt.target.matches('.points-toggle, .leaderboard-toggle')) {
+		if (evt.target.matches('.points-toggle, .leaderboard-toggle, .progress-feedback-select')) {
 			// Both are sent every time: an unchecked checkbox is absent from a
 			// form rather than false, and the server reads an absent key as
 			// "off", so sending one alone would switch the other off.
@@ -1767,6 +1799,7 @@ templ objectiveSortableScript() {
 			postObjectiveUpdate('/admin/quest/settings', {
 				enablePoints: toggles.querySelector('.points-toggle').checked ? 'on' : '',
 				showLeaderboard: toggles.querySelector('.leaderboard-toggle').checked ? 'on' : '',
+				progressFeedback: document.querySelector('.progress-feedback-select').value,
 			});
 			return;
 		}

@@ -34,7 +34,7 @@ var (
 		"settings": true, "start": true, "finish": true, "structure": true,
 	}
 	knownSettingsDocFields = map[string]bool{
-		"enable_points": true, "show_leaderboard": true,
+		"enable_points": true, "show_leaderboard": true, "progress_feedback": true,
 	}
 	knownObjectiveDocFields = map[string]bool{
 		"id": true, "slug": true, "title": true, "description": true, "draft": true, "pass_through": true,

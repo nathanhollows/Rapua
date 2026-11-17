@@ -287,6 +287,7 @@ func (s *LintService) LintQuest(ctx context.Context, questID string) (QuestLint,
 		Settings: game.SettingsDoc{
 			EnablePoints:    settings.EnablePoints,
 			ShowLeaderboard: settings.ShowLeaderboard,
+			ProgressFeedback:    string(settings.ProgressFeedback.Normalised()),
 		},
 		Start:     start,
 		Finish:    finish,

@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -86,7 +87,7 @@ func (s *QuestService) CreateQuest(
 		return nil, fmt.Errorf("creating root objective: %w", err)
 	}
 
-	settings := &models.QuestSettings{QuestID: instance.ID}
+	settings := &models.QuestSettings{QuestID: instance.ID, ProgressFeedback: game.ProgressFeedbackFraction}
 	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, settings); err != nil {
 		return nil, fmt.Errorf("creating instance settings: %w", err)
 	}

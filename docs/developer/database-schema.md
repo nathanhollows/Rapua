@@ -63,6 +63,7 @@ Settings that control how a quest works. (Was `InstanceSettings`.)
 | quest_id | string | Primary key, references quests.id |
 | enable_points | bool | Whether points are enabled for this game |
 | show_leaderboard | bool | Whether to show the leaderboard to players |
+| progress_feedback | varchar(16) | What the player is told about progress: `fraction`, `count` or `none` |
 
 Routing and completion are not settings on a quest: they are properties of each
 objective, over its own children. See [Objective](#objective) below.

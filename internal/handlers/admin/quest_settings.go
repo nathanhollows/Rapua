@@ -2,6 +2,8 @@ package admin
 
 import (
 	"net/http"
+
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 // QuestSettingsPost handles the quest page's own settings controls, which are
@@ -19,6 +21,17 @@ func (h *Handler) QuestSettingsPost(w http.ResponseWriter, r *http.Request) {
 	// that reason: one alone would switch the other off.
 	user.CurrentQuest.Settings.EnablePoints = r.Form.Get("enablePoints") == "on"
 	user.CurrentQuest.Settings.ShowLeaderboard = r.Form.Get("showLeaderboard") == "on"
+
+	// Unlike the toggles, absent means unchanged: a select always submits, so a
+	// request without one was not about this setting.
+	if raw := r.Form.Get("progressFeedback"); raw != "" {
+		metric, err := game.ParseProgressFeedback(raw)
+		if err != nil {
+			h.handleError(w, r, "Unknown header setting", "Unknown header setting", "error", err)
+			return
+		}
+		user.CurrentQuest.Settings.ProgressFeedback = metric
+	}
 
 	err := h.instanceSettingsService.SaveSettings(r.Context(), &user.CurrentQuest.Settings)
 	if err != nil {

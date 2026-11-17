@@ -94,6 +94,11 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "name": "show_leaderboard",
             "type": "bool",
             "description": "Show the leaderboard to players."
+          },
+          {
+            "name": "progress_feedback",
+            "type": "string",
+            "description": "What the player is told about their progress: \"fraction\" (objectives done out of those done plus the fewest still needed), \"count\" (objectives done, no target) or \"none\". Omitted means \"fraction\"."
           }
         ]
       },

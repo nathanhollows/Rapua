@@ -234,6 +234,7 @@ func (s *ImportService) importCreate(
 		QuestID:         newInstance.ID,
 		EnablePoints:    doc.Settings.EnablePoints,
 		ShowLeaderboard: doc.Settings.ShowLeaderboard,
+		ProgressFeedback:    game.ProgressFeedback(doc.Settings.ProgressFeedback).Normalised(),
 	}
 	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, settings); err != nil {
 		return nil, fmt.Errorf("create settings: %w", err)
@@ -380,6 +381,7 @@ func (s *ImportService) importUpdate(
 	}
 	settings.EnablePoints = doc.Settings.EnablePoints
 	settings.ShowLeaderboard = doc.Settings.ShowLeaderboard
+	settings.ProgressFeedback = game.ProgressFeedback(doc.Settings.ProgressFeedback).Normalised()
 	if err := s.instanceSettingsRepo.UpdateTx(ctx, tx, settings); err != nil {
 		return nil, fmt.Errorf("update settings: %w", err)
 	}

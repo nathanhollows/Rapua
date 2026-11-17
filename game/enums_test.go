@@ -96,3 +96,18 @@ func TestCompletionType_Description(t *testing.T) {
 		}
 	}
 }
+
+func TestProgressFeedback_NormalisedReadsAnythingUnknownAsFraction(t *testing.T) {
+	assert.Equal(t, game.ProgressFeedbackFraction, game.ProgressFeedback("").Normalised(), "a row from before the column")
+	assert.Equal(t, game.ProgressFeedbackFraction, game.ProgressFeedback("timer").Normalised(), "a value this build does not know")
+	assert.Equal(t, game.ProgressFeedbackCount, game.ProgressFeedback("count").Normalised())
+	assert.Equal(t, game.ProgressFeedbackNone, game.ProgressFeedback("none").Normalised())
+}
+
+func TestParseProgressFeedback_RejectsWhatIsNotOneOfThree(t *testing.T) {
+	_, err := game.ParseProgressFeedback("sparkle")
+	assert.Error(t, err)
+	got, err := game.ParseProgressFeedback("none")
+	assert.NoError(t, err)
+	assert.Equal(t, game.ProgressFeedbackNone, got)
+}
