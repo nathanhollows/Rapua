@@ -65,6 +65,7 @@ type QuestService interface {
 }
 
 type NavigationService interface {
+	GetQuestObjectives(ctx context.Context, questID string) ([]models.Objective, error)
 	GetPlayerObjectiveView(ctx context.Context, team *models.Run) (*services.PlayerObjectiveView, error)
 	// GetJournal builds the run's diary from its event stream.
 	GetJournal(ctx context.Context, team *models.Run) (services.JournalView, error)

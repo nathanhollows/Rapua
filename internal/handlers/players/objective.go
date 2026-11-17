@@ -147,12 +147,12 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 // A failure only costs the tint, so it returns the default instead of failing
 // the page.
 func (h *PlayerHandler) sectionHue(r *http.Request, team *models.Run, objective *models.Objective) int {
-	view, err := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
+	objectives, err := h.navigationService.GetQuestObjectives(r.Context(), team.QuestID)
 	if err != nil {
 		h.logger.WarnContext(r.Context(), "loading section hue", "error", err.Error(), "team", team.Code)
 		return 0
 	}
-	return templates.HueOfObjective(view.Objectives, *objective)
+	return templates.HueOfObjective(objectives, *objective)
 }
 
 // renderObjective wraps the page in the run's chrome.

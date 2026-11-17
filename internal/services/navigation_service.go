@@ -90,6 +90,15 @@ func NewNavigationService(
 	}
 }
 
+// GetQuestObjectives skips the run state GetPlayerObjectiveView loads.
+func (s *NavigationService) GetQuestObjectives(ctx context.Context, questID string) ([]models.Objective, error) {
+	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("loading objective tree: %w", err)
+	}
+	return objectives, nil
+}
+
 // GetPlayerObjectiveView computes the frontier for a run.
 func (s *NavigationService) GetPlayerObjectiveView(
 	ctx context.Context,
