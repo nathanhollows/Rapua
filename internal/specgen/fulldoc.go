@@ -216,10 +216,22 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				Name:        "settings",
 				Type:        "object",
 				Required:    true,
-				Description: "Game-wide settings.",
+				Description: "Game-wide settings. Each changes what players experience, so two games are only " +
+					"comparable when these match as well as their structure.",
 				Fields: []game.FieldSpec{
-					{Name: "enable_points", Type: "bool", Description: "Enable the points system."},
-					{Name: "show_leaderboard", Type: "bool", Description: "Show the leaderboard to players."},
+					{
+						Name: "enable_points",
+						Type: "bool",
+						Description: "Whether points count and are shown to players. Off, every block's `points` is " +
+							"ignored and no score is shown. Omitted means false.",
+					},
+					{
+						Name: "show_leaderboard",
+						Type: "bool",
+						Description: "Whether players see how their team compares to the others. The board ranks " +
+							"by points when `enable_points` is true, otherwise by share of objectives done, and a tie " +
+							"goes to the team seen earlier. Off, players see no ranking. Omitted means false.",
+					},
 					{
 						Name: "progress_feedback",
 						Type: "string",

@@ -10,6 +10,10 @@ order: 21
 >
 > Machine-readable: `GET /api/v8/spec`
 
+## What this is for
+
+A game document is a lossless projection of a quest: export reads it from the database and import writes it back. It is meant to state everything that changes what a player does, sees or is told, so that two documents can be compared, re-run or authored by an external tool. That includes `settings`, which change how a game plays without touching its content: the same `structure` under different settings is a different game.
+
 ## Authoring constraints
 
 These rules are enforced by the linter (`POST /api/v8/lint`). Errors block import; warnings should be fixed.
@@ -82,18 +86,18 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
       {
         "name": "settings",
         "type": "object",
-        "description": "Game-wide settings.",
+        "description": "Game-wide settings. Each changes what players experience, so two games are only comparable when these match as well as their structure.",
         "required": true,
         "fields": [
           {
             "name": "enable_points",
             "type": "bool",
-            "description": "Enable the points system."
+            "description": "Whether points count and are shown to players. Off, every block's `points` is ignored and no score is shown. Omitted means false."
           },
           {
             "name": "show_leaderboard",
             "type": "bool",
-            "description": "Show the leaderboard to players."
+            "description": "Whether players see how their team compares to the others. The board ranks by points when `enable_points` is true, otherwise by share of objectives done, and a tie goes to the team seen earlier. Off, players see no ranking. Omitted means false."
           },
           {
             "name": "progress_feedback",
