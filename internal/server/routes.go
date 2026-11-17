@@ -277,6 +277,12 @@ func setupPlayerRoutes(
 	router.Get("/team", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/you", http.StatusFound)
 	})
+	// 307 keeps the method, so a rename posted from an old page still arrives as POST.
+	renameMoved := func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/you/name", http.StatusTemporaryRedirect)
+	}
+	router.Get("/team/name", renameMoved)
+	router.Post("/team/name", renameMoved)
 
 	router.Route("/you", func(r chi.Router) {
 		r.Use(func(next http.Handler) http.Handler {
