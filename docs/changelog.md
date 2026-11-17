@@ -9,82 +9,77 @@ tag: updated
 
 ## 8.0.0
 
-v8.0.0 replaces Locations with Objectives. A Location was a place a player checked into; an Objective is a thing to accomplish, built from a proof stage (what the player has to do) and an optional reveal stage (what they see once they have). Nesting is no longer a separate kind of object either: any objective becomes a section the moment something sits inside it, and stops being one when the last thing is taken out. This single recursive type replaces locations, groups, and the old game-structure blob, and it's what makes drafts, the objective tree editor, cross-objective gating (`depends`), and the lock against editing a running game all possible.
+v8.0.0 replaces Locations with Objectives, which changes how much of the system works. An Objective is a thing to do. It may need proof, and can then reveal bonus content. Objectives can be parents of other objectives, so one recursive type replaces locations, groups, and the old game-structure blob.
+
+- **Nesting:** any objective becomes a section once something sits inside it.
+- **Pass-through:** a pass-through section hides itself and lets its children show in the section above. `A[B[C][D[E,F]]]` with D as pass-through plays as `A[B[C],E,F]`, with D's routing deciding which of E and F appear.
+- **Completion bands:** a section needs at least x and at most y of what's inside it.
+- **Event stream:** every player event is recorded.
+- **Run page:** shows the event log and a timeline.
+- **Public UI:** redesigned.
+- **Game spec:** updated for all of the above.
 
 ### Upgrading
 
-Give every location a marker before you upgrade. Locations become objectives automatically, but a location with no marker assigned stops the upgrade with an error instead of converting, and the migration that follows it drops the locations table.
-
-Check-in history is not carried across. The table is dropped, rolling the migration back restores an empty one, and the "must check out before finishing" setting goes with it. Take a backup first if that history matters to you.
-
-A game document exported from v7 will not import into v8. The format changed shape rather than just version: groups and locations became one recursive objective type. Export a fresh copy once you're on v8 rather than keeping a v7 export as your backup.
+- Give every location a marker first. A location without one stops the upgrade.
+- Check-in history is dropped, along with the "must check out before finishing" setting. Back up first if you need it.
+- Game documents exported from v7 won't import. Export a fresh copy on v8.
 
 ### Added
 
-- Objectives can be kept as drafts. A draft is hidden from players along with everything beneath it, keeps its place in the quest, and comes back exactly where it was when you publish it again. New objectives start as drafts, so you can build a section before anyone can see it.
-- A game has to be stopped before it can be edited. Editing one mid-game reaches players immediately and cannot be undone, so stop it first, or duplicate it and work on the copy. Reading, including expanding content blocks, is never blocked.
-- Keys and locks. An interactive block can set a variable when a team completes it (`sets`), and a choice sets the variable of each option picked. Objectives and content blocks can wait on variables (`depends`): a locked objective stays locked, and a locked content block stays hidden, until every variable it waits on is set. Once set a variable stays set, and there is no negation. The quest page marks which objectives are locked and which hold blocks that set or wait on something, and each block has a key or lock in its header to edit.
-- A quest tree page shows the whole nested structure of objectives and sections at once: drag and drop to reorder, edit an objective's routing, completion band, and finish label from a popover on its row, and publish or park (draft) it with one click. A live lint panel checks the quest exactly as it's stored, not only at import, and flags structural problems (a missing or duplicated root, an orphaned parent, a parent cycle) directly on the affected row.
-- New blocks: Map (a read-only Mapbox map centred on a point you place), Free Text (an open-ended field for reflections and free-form answers), Choice (players pick one or more labelled options, each tied to a variable other objectives can depend on), and Scan (players scan a QR code or barcode, or type it by hand, to complete it; Rapua can generate the printable QR image for you).
-- Any short code can be rendered as a scannable QR image for printing or embedding, not just ones tied to a Scan block.
-- You can join a run by opening a link with the run code in it instead of typing the code into the join form.
-- A run's admin detail page shows a chronological timeline of when it started and each check-in along the way. The quests list shows a status colour legend and clearer dates, and the activity dashboard reports Running, Not started, Median progress, and Finished, replacing figures a pile of untouched runs used to skew.
-- Adding a new objective is one click: it's created immediately and you're taken straight to its edit page. If you add it next to a sibling that has exactly one navigation block, the new objective copies that block type automatically.
-- Many new checks when validating a game document, both at import and live against what's stored: invalid or missing routing, nesting too deep, a lock nothing can open (a variable no block sets, or one only set behind the lock waiting on it), a completion band that can never be met, an unreachable finish label, a variable set but never used, and a section needing children locked on different options of the same choice.
-- The public game specification API is available at `/api/v8/spec` and `/api/v8/lint` without a CSRF token, so external tools and scripts, including AI authoring tools, can call them directly.
+- Draft objectives: hidden from players, with everything beneath them, until published. New objectives start as drafts.
+- A running game can't be edited. Stop it first, or duplicate it and work on the copy.
+- Keys and locks: interactive blocks can set a variable, and objectives and content blocks can wait on variables. Locked content stays hidden until its variables are set, then appears on the page that unlocks it.
+- Quest tree: see, drag, publish and park the whole quest at once. Each section has a rule pill for its routing and completion band. A live lint panel flags problems on the row they belong to.
+- Players see at most two sections deep; anything deeper passes through.
+- New blocks: Map, Free Text, Choice, Scan, and Location check (stand inside an area you draw).
+- Any short code can be rendered as a QR image.
+- Join a run by opening a link with the run code in it.
+- The event stream also records what a failed attempt carried. The player's journal is built from it.
+- Players can finish a section from the quest screen, which shows their progress.
+- The quest screen leads with each objective's task and groups by section. Objectives can carry a description, and games that haven't started say when they will.
+- The You tab replaces Team, and shows the leaderboard and team name form.
+- A quest chooses what players see as progress: out of the total, a count only, or nothing.
+- Redesigned public site and player home, which offers a returning player their game back.
+- Run code lookups are limited to 10 a minute per client.
+- Adding an objective is one click. Next to a sibling with one navigation block, it copies that block.
+- More lint checks on import and live: missing routing, unreachable bands or finish labels, locks nothing can open, and sections the screen will flatten.
+- `/api/v8/spec` and `/api/v8/lint` are public and need no CSRF token.
 
 ### Changed
 
-- **Breaking:** Location, Marker, and Check-in are gone. Objective is now the only way to build and play a quest. On upgrade, every location with a marker (QR code) assigned is converted automatically into an equivalent objective; a location with no marker blocks the upgrade until you give it one. Check-in history is not carried over, and the "must check out before finishing" setting has no Objective equivalent. Anything pointing at an old QR check-in link or a printed location poster stops working; posters and QR archives can no longer be generated from the admin either.
-- **Breaking:** The old per-group navigation display (Map, Labelled Map, List, Custom Clues, Tasks) is gone. Every objective now uses one unified set of navigation and content blocks instead of a mode that determined which blocks were shown.
-- **Breaking:** There's no separate Group object to create. What a group did (routing, navigation, and a completion requirement for what's nested under it) is now just what any objective does once it has children. The old "all children" / "minimum required" completion setting is replaced by a completion band (a least/most range): equal bounds finish a section automatically, a range adds an optional finish button a player presses once the minimum is met.
-- **Breaking:** Ending a section before its band's maximum is met is done by the player pressing "finish this section" once the minimum is reached, not by a facilitator skipping the team past it. A run with a section already marked skipped reopens as unfinished after upgrading, since a skip only ever meant "let this team move on," not "this met its band."
-- **Breaking:** Bonus points for early check-ins are removed entirely: the admin toggle, the setting, and its place in exported/imported game documents are all gone. Restoring a backup that had it configured simply drops the setting.
-- **Breaking:** The `show_team_count` setting is removed entirely (model field, database column, and the game-document field). A document exported from an older version that still includes it gets an "unknown field" notice on import.
-- **Breaking:** Task blocks are converted automatically to a one-item checklist block on upgrade, keeping the task's text as the checklist item. Blocks left over from the old Task List navigation display, which held no content of their own, are deleted.
-- **Breaking:** "Team" is now "Run" and "Instance"/"Game" is now "Quest" across admin routes and navigation (`/admin/instances/*` is now `/admin/quests/*` and `/admin/teams/*` is now `/admin/runs/*`, including switch/name/edit/export/delete/duplicate and the activity overview). Bookmarked or linked admin URLs using the old paths no longer resolve. The Team Name block, and the group of people playing together on one device, are still called a "team": that is a distinct, ongoing concept from the admin-facing Run record of a playthrough.
-- **Breaking:** The public game specification API moved from `/api/v7/*` to `/api/v8/*` to match the document format it serves; a document must now declare `"rapua": "v8"`.
-- Routing is mandatory on every objective; the picker no longer offers a blank option, and a new objective defaults to "ordered" (a new quest's root now defaults to "ordered" rather than free roam). An objective that was left unset previously played silently as free roam; on upgrade, every objective with no routing set (or the retired "Secret" routing) is switched to "ordered", which changes its behaviour from showing every child at once to one at a time.
-- A completion band only counts published (not drafted) children when checking whether it's achievable, matching how it's evaluated during play. Parking an objective is only refused if it would leave its parent's minimum unreachable; a parent's maximum no longer blocks parking a sibling.
-- Exporting a quest preserves the completion band exactly as authored, and a section keeps its own slug across a rename instead of it being re-derived from the title every time.
-- Points live on blocks, not on the objective; an objective's total is the sum of its blocks' points, shown on the tree and the objective's edit page.
-- The Experience settings page is gone; its one control, the points toggle, now sits on the quest page next to the root routing picker.
-- A run is marked started, and any run credit deducted, only when a player actually presses Start, not the moment they open or join with a run code.
-- The run, activity, and facilitator dashboards report progress in terms of objectives completed rather than "next locations."
-- Pincode entry is now a single OTP-style field (still shown as boxed digits) instead of separate boxes that stretched to fit, fixing misaligned inputs on Chrome-based browsers.
-- Importing a game document applies everything in it, drafts included. A backup taken before you drafted something will publish it again on restore, the same way it restores the old titles and content.
-- The Random Clue block is now Random Text: same behaviour (each team sees one of the texts, chosen deterministically), renamed because the clue-and-QR vocabulary it came from is gone. Existing blocks are renamed on upgrade.
+- **Breaking:** Location, Marker, and Check-in are gone. Locations with a marker convert to objectives on upgrade. Old QR check-in links and printed posters stop working.
+- **Breaking:** Navigation display modes (Map, Labelled Map, List, Custom Clues, Tasks) are gone. Every objective uses the same navigation and content blocks.
+- **Breaking:** There are no separate groups. A group's routing and completion rule is now what any objective does once it has children. "All" / "minimum required" becomes a completion band: equal bounds finish automatically, a range adds an optional finish button.
+- **Breaking:** Ending a section early is done by the player pressing finish, not by a facilitator skipping the team. Runs with a skipped section reopen as unfinished.
+- **Breaking:** Bonus points for early check-ins and the `show_team_count` setting are removed.
+- **Breaking:** Task blocks become one-item checklists on upgrade. Leftover Task List blocks are deleted.
+- **Breaking:** "Team" is now "Run" and "Instance"/"Game" is now "Quest" in admin routes (`/admin/quests/*`, `/admin/runs/*`). Old URLs no longer resolve.
+- **Breaking:** The spec API moved from `/api/v7/*` to `/api/v8/*`, and documents must declare `"rapua": "v8"`.
+- Routing is required on every objective and defaults to "ordered". Unset or "Secret" routing becomes "ordered" on upgrade.
+- Points live on blocks. An objective's total is the sum of its blocks.
+- The points toggle moved to the quest page; the Experience settings page is gone.
+- A run is marked started, and its credit spent, when a player presses Start, not when they join.
+- Run, activity, and facilitator dashboards report progress in objectives.
+- Pincode is a single OTP-style field.
+- Importing applies everything in the document, drafts included.
+- Random Clue is now Random Text. Existing blocks are renamed on upgrade.
 
 ### Fixed
 
-- Objectives placed directly under a quest's root, with no enclosing section, are no longer stranded from navigation.
-- Duplicating a quest no longer risks copying an objective's placement into the copy and tangling the new quest's structure with the source quest's.
-- A run could previously be credited points for a submission that the reachability check then rejected. Points are now only awarded once an objective is confirmed reachable.
-- The objectives list, an objective's own reachability check, and a run's progress counts could disagree about what was done; all three now come from one shared calculation, and proof completion (not reveal) is the single answer used everywhere a "done" objective is checked.
-- A double-submitted delete of an already-deleted objective could reparent unrelated objectives in other quests. Deletes are now scoped to the quest and safe to repeat.
-- A quest's root section can no longer be parked (hidden), which would have taken the whole quest out of play with nothing on screen to explain why.
-- Reordering or removing an objective from the middle of a section could collide with another objective already holding that slot; this is now enforced by the database, and any existing collision is renumbered on upgrade without changing play order.
-- Importing, exporting, or creating a quest could leave a tree in a broken state on partial failure: importing a document that names an objective belonging to a different quest is rejected, exporting a quest with more than one root is refused rather than silently dropping the rest, and creating a quest is now one transaction.
-- Any code that walks up an objective's chain of parents (used to validate a depends entry against an objective's own descendants) is now guarded against a cycle in the stored data, instead of running forever.
-- A Stripe checkout completion no longer holds a database write lock open while waiting on the network call to fetch the receipt URL.
-- A batch of objective tree editor bugs: an unreachable completion band or a depends entry naming an objective's own descendant is now refused instead of silently stored broken; an objective whose parent has gone missing is shown at the top level so it can be dragged back into place; the search box survives a refresh from a drag or a settings change; a blank routing value could previously be overwritten by saving any unrelated field.
-- The running-game edit lock could lose its own state after an htmx refresh rebuilt the tree's drag handles, and its "Editing a running game" label could silently fail to update after being confirmed; both are fixed.
-- The block-ownership check didn't recognise objective-owned blocks, so editing, deleting, or fetching one incorrectly failed even though creating one worked.
-- Joining a run by run code was broken by the team-to-run rename (the form and handler disagreed on a field name); fixed along with an unrelated query bug in the run-owner lookup.
-- Previewing a block no longer fails validation against a run code that doesn't exist in the database.
-- Completing a navigation block no longer fails just because there's no check-in record yet for the location it belongs to.
-- Deleting an objective now actually removes it from the quest's structure, instead of leaving a dangling reference behind.
-- A database migration meant to repair foreign-key orphans left some behind because it swept parents before children; a follow-up migration finds and repairs any row still affected on upgrade.
-- Root objectives could end up competing for position numbers across different quests after an earlier data migration stored their parent as an empty string instead of null; normalised on upgrade with no visible effect during play.
+- Stripe checkout no longer holds a write lock while fetching the receipt.
+- A failed upload no longer leaves its file behind.
+- The activity page's "last seen" showed when a run was created, not when the team last played.
+- The Stripe webhook and game import no longer read unbounded request bodies.
 
 ### Removed
 
-- Resetting a run. It existed to let a run code be reused, and it cost more than it gave: a reset wiped progress while leaving the record of the play, so the run read differently depending on who was looking. Delete a run and add a fresh one instead; codes are cheap, and the record stays honest.
-- The Broker block, an interactive block that let players spend points to reveal a clue without knowing what they were buying. It was unused.
-- Per-block visibility conditions: a block can no longer carry its own condition, and the admin condition-builder sidebar for wiring one up is gone. Only objective-level `depends` remains.
+- Resetting a run. It wiped progress but kept the record, so the run read differently depending on who looked. Delete the run and add a new one instead.
+- The Broker block.
+- Per-block `when` conditions and the condition-builder sidebar. Use `depends`.
 - The "Unlocked" badge on the objective reveal view.
-- The dedicated "manage groups" structure editor, replaced by the objective tree (see Added).
-- The option to create a new objective by duplicating the coordinates of an existing marker from another quest you own.
+- The "manage groups" editor, replaced by the quest tree.
+- Creating an objective by duplicating a marker's coordinates from another quest.
 
 ## 7.0.0
 
