@@ -51,7 +51,7 @@ func main() {
 
 	// WithMarkAppliedOnSuccess: default bun behaviour marks a migration applied
 	// before running Up, so a failed Up still gets skipped on retry. Some of
-	// our migrations (20260829000000, notably) rely on failing loudly and
+	// our migrations (20260827000000, notably) rely on failing loudly and
 	// being retried after the operator fixes the underlying data.
 	migrator := migrate.NewMigrator(dbc, migrations.Migrations, migrate.WithMarkAppliedOnSuccess(true))
 

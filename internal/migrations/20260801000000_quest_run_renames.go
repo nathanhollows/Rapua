@@ -7,32 +7,27 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Renames the "instance" domain to "quest" and the "team" domain to "run",
-// across both table names and the foreign-key columns that reference them.
 func init() {
 	Migrations.MustRegister(
 		func(ctx context.Context, db *bun.DB) error {
-			// Disable foreign keys during migration to avoid constraint issues
 			if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
 				return fmt.Errorf("disable foreign keys: %w", err)
 			}
 
-			// Table renames
 			tableRenames := [][2]string{
 				{"instances", "quests"},
 				{"instance_settings", "quest_settings"},
 				{"teams", "runs"},
-				{"team_var_states", "run_var_states"},
 				{"team_start_logs", "run_start_logs"},
 				{"team_block_states", "run_block_states"},
 			}
 			for _, pair := range tableRenames {
 				old, newName := pair[0], pair[1]
 				if !tableExists(ctx, db, old) {
-					continue // table doesn't exist, nothing to rename
+					continue
 				}
 				if tableExists(ctx, db, newName) {
-					continue // new table already exists, skip
+					continue
 				}
 				sql := fmt.Sprintf("ALTER TABLE %q RENAME TO %q", old, newName)
 				if _, err := db.ExecContext(ctx, sql); err != nil {
@@ -40,16 +35,14 @@ func init() {
 				}
 			}
 
-			// Column renames. Skip tables that don't exist (some tables are
-			// only created in later migrations or production environments).
+			// Not every database has every table.
 			columnMigrations := []struct {
 				table string
-				cols  [][2]string // {old, new}
+				cols  [][2]string
 			}{
 				{"runs", [][2]string{{"instance_id", "quest_id"}}},
 				{"locations", [][2]string{{"instance_id", "quest_id"}}},
 				{"check_ins", [][2]string{{"instance_id", "quest_id"}, {"team_code", "run_code"}}},
-				{"run_var_states", [][2]string{{"instance_id", "quest_id"}, {"team_code", "run_code"}}},
 				{"run_start_logs", [][2]string{{"instance_id", "quest_id"}, {"team_id", "run_id"}}},
 				{"run_block_states", [][2]string{{"team_code", "run_code"}}},
 				{"notifications", [][2]string{{"team_code", "run_code"}}},
@@ -64,7 +57,7 @@ func init() {
 				}
 				for _, col := range cm.cols {
 					if !columnExists(ctx, db, cm.table, col[0]) {
-						continue // column already renamed or doesn't exist
+						continue
 					}
 					sql := fmt.Sprintf("ALTER TABLE %q RENAME COLUMN %q TO %q", cm.table, col[0], col[1])
 					if _, err := db.ExecContext(ctx, sql); err != nil {
@@ -73,7 +66,6 @@ func init() {
 				}
 			}
 
-			// Add quest_id to run_block_states (new column not in original schema).
 			if tableExists(ctx, db, "run_block_states") && !columnExists(ctx, db, "run_block_states", "quest_id") {
 				if _, err := db.ExecContext(ctx,
 					`ALTER TABLE run_block_states ADD COLUMN quest_id VARCHAR(36) NOT NULL DEFAULT ''`,
@@ -96,12 +88,10 @@ func init() {
 			return nil
 		},
 		func(ctx context.Context, db *bun.DB) error {
-			// Down migration: reverse column renames
 			if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys = OFF"); err != nil {
 				return fmt.Errorf("disable foreign keys: %w", err)
 			}
 
-			// Drop the column the up path added, before the table is renamed back.
 			if tableExists(ctx, db, "run_block_states") && columnExists(ctx, db, "run_block_states", "quest_id") {
 				if _, err := db.ExecContext(ctx, `ALTER TABLE run_block_states DROP COLUMN quest_id`); err != nil {
 					return fmt.Errorf("drop quest_id from run_block_states: %w", err)
@@ -110,12 +100,11 @@ func init() {
 
 			reverseColumnMigrations := []struct {
 				table string
-				cols  [][2]string // {new, old} — reversed
+				cols  [][2]string
 			}{
 				{"runs", [][2]string{{"quest_id", "instance_id"}}},
 				{"locations", [][2]string{{"quest_id", "instance_id"}}},
 				{"check_ins", [][2]string{{"quest_id", "instance_id"}, {"run_code", "team_code"}}},
-				{"run_var_states", [][2]string{{"quest_id", "instance_id"}, {"run_code", "team_code"}}},
 				{"run_start_logs", [][2]string{{"quest_id", "instance_id"}, {"run_id", "team_id"}}},
 				{"run_block_states", [][2]string{{"run_code", "team_code"}}},
 				{"notifications", [][2]string{{"run_code", "team_code"}}},
@@ -123,8 +112,7 @@ func init() {
 				{"quest_settings", [][2]string{{"quest_id", "instance_id"}}},
 				{"facilitator_tokens", [][2]string{{"quest_id", "instance_id"}}},
 			}
-			// Guards mirror the up path: the up migration is not transactional, so a
-			// partial run must still be reversible.
+			// Guarded: up is not transactional, so a partial run must still reverse.
 			for _, cm := range reverseColumnMigrations {
 				if !tableExists(ctx, db, cm.table) {
 					continue
@@ -140,12 +128,10 @@ func init() {
 				}
 			}
 
-			// Reverse table renames
 			reverseTableRenames := [][2]string{
 				{"quests", "instances"},
 				{"quest_settings", "instance_settings"},
 				{"runs", "teams"},
-				{"run_var_states", "team_var_states"},
 				{"run_start_logs", "team_start_logs"},
 				{"run_block_states", "team_block_states"},
 			}
@@ -168,7 +154,6 @@ func init() {
 	)
 }
 
-// tableExists checks whether a table exists in the SQLite database.
 func tableExists(ctx context.Context, db *bun.DB, name string) bool {
 	var count int
 	if err := db.QueryRowContext(ctx,
@@ -179,7 +164,6 @@ func tableExists(ctx context.Context, db *bun.DB, name string) bool {
 	return count > 0
 }
 
-// columnExists checks whether a column exists in the given table.
 func columnExists(ctx context.Context, db *bun.DB, table, column string) bool {
 	var count int
 	if err := db.QueryRowContext(ctx,
@@ -190,7 +174,6 @@ func columnExists(ctx context.Context, db *bun.DB, table, column string) bool {
 	return count > 0
 }
 
-// indexExists checks whether an index exists in the SQLite database.
 func indexExists(ctx context.Context, db *bun.DB, name string) bool {
 	var count int
 	if err := db.QueryRowContext(ctx,

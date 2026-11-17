@@ -7,7 +7,6 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
@@ -16,14 +15,8 @@ import (
 	"github.com/uptrace/bun/migrate"
 )
 
-func m20260827_setupDB(t *testing.T) *bun.DB {
-	t.Helper()
-	return m20260827_setupDBThrough(t, "")
-}
-
-// m20260827_setupDBThrough migrates up to and including the named migration and
-// no further. A test that seeds a column a later migration drops has to stop
-// before that migration runs.
+// m20260827_setupDBThrough stops early, for seeding what a later migration
+// drops.
 func m20260827_setupDBThrough(t *testing.T, through string) *bun.DB {
 	t.Helper()
 	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
@@ -60,210 +53,466 @@ func (w m20260827_testWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// m20260827_seedMarker and m20260827_seedLocation are point-in-time stand-ins
-// for the rows that models.Marker and models.Location used to express: the
-// drop migration removes both types (and eventually both tables), so the seed
-// fixture speaks the restored table schema directly.
-type m20260827_seedMarker struct {
-	bun.BaseModel `bun:"table:markers"`
-	Code          string `bun:"code,pk"`
-	Name          string `bun:"name"`
-}
-
-type m20260827_seedLocation struct {
-	bun.BaseModel `bun:"table:locations"`
-	ID            string `bun:"id,pk"`
-	QuestID       string `bun:"quest_id"`
-	Name          string `bun:"name"`
-	Slug          string `bun:"slug"`
-	MarkerID      string `bun:"marker_id"`
-	Points        int    `bun:"points"`
-}
-
-// m20260827_seedQuest inserts a user, quest, marker, location (with an
-// interactive content block, a non-interactive content block, and a
-// navigation block), and returns the quest and location IDs. The
-// game_structure column is written as raw JSON mirroring what
-// models.GameStructure used to marshal, because that model no longer carries
-// location_ids.
-func m20260827_seedQuest(t *testing.T, dbc *bun.DB) (questID string, locationID string) {
+func m20260827_setupDB(t *testing.T) *bun.DB {
 	t.Helper()
+	return m20260827_setupDBThrough(t, "")
+}
+
+func m20260827_setupPreConversion(t *testing.T) *bun.DB {
+	t.Helper()
+	return m20260827_setupDBThrough(t, "20260822000000")
+}
+
+func m20260827_exec(t *testing.T, dbc *bun.DB, query string, args ...any) {
+	t.Helper()
+	_, err := dbc.ExecContext(context.Background(), query, args...)
+	require.NoError(t, err)
+}
+
+// m20260827_seedQuest leaves the blob NULL: a test writes one once it has the
+// location ids.
+func m20260827_seedQuest(t *testing.T, dbc *bun.DB, name string) string {
+	t.Helper()
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(context.Background())
+	require.NoError(t, err)
+
+	questID := gofakeit.UUID()
+	m20260827_exec(t, dbc,
+		`INSERT INTO "quests" ("id", "name", "user_id") VALUES (?, ?, ?)`, questID, name, user.ID)
+	return questID
+}
+
+func m20260827_seedLocation(t *testing.T, dbc *bun.DB, questID, name, slug string, points int) (string, string) {
+	t.Helper()
+	code := gofakeit.LetterN(6)
+	m20260827_exec(t, dbc, `INSERT INTO "markers" ("code", "name") VALUES (?, ?)`, code, name)
+	id := gofakeit.UUID()
+	m20260827_exec(t, dbc,
+		`INSERT INTO "locations" ("id", "quest_id", "name", "slug", "marker_id", "points") VALUES (?, ?, ?, ?, ?, ?)`,
+		id, questID, name, slug, code, points)
+	return id, code
+}
+
+func m20260827_seedBlock(t *testing.T, dbc *bun.DB, ownerID, blockType, blockContext string) string {
+	t.Helper()
+	id := gofakeit.UUID()
+	m20260827_exec(t, dbc,
+		`INSERT INTO "blocks" ("id", "owner_id", "type", "context", "data", "ordering", "points")`+
+			` VALUES (?, ?, ?, ?, '{}', 0, 0)`,
+		id, ownerID, blockType, blockContext)
+	return id
+}
+
+func m20260827_seedRun(t *testing.T, dbc *bun.DB, questID string) string {
+	t.Helper()
+	code := gofakeit.LetterN(4)
+	m20260827_exec(t, dbc,
+		`INSERT INTO "runs" ("id", "code", "quest_id", "has_started", "points") VALUES (?, ?, ?, TRUE, 0)`,
+		gofakeit.UUID(), code, questID)
+	return code
+}
+
+func m20260827_seedCheckIn(t *testing.T, dbc *bun.DB, runCode, questID, locationID string, completed bool) {
+	t.Helper()
+	m20260827_exec(t, dbc,
+		`INSERT INTO "check_ins" ("run_code", "quest_id", "location_id", "time_in", "blocks_completed")`+
+			` VALUES (?, ?, ?, '2026-03-01 10:00:00', ?)`,
+		runCode, questID, locationID, completed)
+}
+
+type m20260827_row struct {
+	ID          string
+	ParentID    string
+	Position    int
+	Slug        string
+	Title       string
+	Routing     string
+	ChildrenMin *int
+	ChildrenMax *int
+}
+
+func m20260827_rows(t *testing.T, dbc *bun.DB, questID string) []m20260827_row {
+	t.Helper()
+	rows, err := dbc.QueryContext(context.Background(),
+		`SELECT "id", COALESCE("parent_id", ''), "position", "slug", "title", COALESCE("routing", ''),`+
+			` "children_min", "children_max" FROM "objectives" WHERE "quest_id" = ? ORDER BY "parent_id", "position"`,
+		questID)
+	require.NoError(t, err)
+	defer func() { _ = rows.Close() }()
+
+	var out []m20260827_row
+	for rows.Next() {
+		var r m20260827_row
+		require.NoError(t, rows.Scan(&r.ID, &r.ParentID, &r.Position, &r.Slug, &r.Title, &r.Routing,
+			&r.ChildrenMin, &r.ChildrenMax))
+		out = append(out, r)
+	}
+	require.NoError(t, rows.Err())
+	return out
+}
+
+func m20260827_childrenOf(rows []m20260827_row, parentID string) []m20260827_row {
+	var out []m20260827_row
+	for _, r := range rows {
+		if r.ParentID == parentID {
+			out = append(out, r)
+		}
+	}
+	return out
+}
+
+func m20260827_root(t *testing.T, rows []m20260827_row) m20260827_row {
+	t.Helper()
+	roots := m20260827_childrenOf(rows, "")
+	require.Len(t, roots, 1, "a quest has exactly one objective with no parent")
+	return roots[0]
+}
+
+func m20260827_titles(rows []m20260827_row) []string {
+	out := make([]string, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, r.Title)
+	}
+	return out
+}
+
+func m20260827_count(t *testing.T, dbc *bun.DB, query string, args ...any) int {
+	t.Helper()
+	var n int
+	require.NoError(t, dbc.QueryRowContext(context.Background(), query, args...).Scan(&n))
+	return n
+}
+
+func TestLocationsToObjectives_BuildsTheTreeFromTheBlob(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
 	ctx := context.Background()
 
-	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
-	_, err := dbc.NewInsert().Model(user).Exec(ctx)
-	require.NoError(t, err)
+	questID := m20260827_seedQuest(t, dbc, "Harbour Walk")
+	loose, _ := m20260827_seedLocation(t, dbc, questID, "Ferry Terminal", "ferry-terminal", 5)
+	first, _ := m20260827_seedLocation(t, dbc, questID, "Lighthouse", "lighthouse", 10)
+	second, _ := m20260827_seedLocation(t, dbc, questID, "Boat Shed", "boat-shed", 10)
+	nested, _ := m20260827_seedLocation(t, dbc, questID, "Crane", "crane", 10)
 
-	quest := &models.Quest{
-		ID:     gofakeit.UUID(),
-		Name:   "Migrate Me",
-		UserID: user.ID,
+	blob := map[string]any{
+		"is_root": true, "routing": "free_roam", "completion_type": "all",
+		"location_ids": []string{loose},
+		"sub_groups": []any{map[string]any{
+			"name": "The Wharf", "routing": "randomised", "max_next": 1,
+			"completion_type": "minimum", "minimum_required": 1, "auto_advance": true,
+			"location_ids": []string{first, second},
+			"sub_groups": []any{map[string]any{
+				"name": "Cargo Yard", "routing": "ordered", "completion_type": "all",
+				"location_ids": []string{nested},
+			}},
+		}},
 	}
-	_, err = dbc.NewInsert().Model(quest).Exec(ctx)
+	raw, err := json.Marshal(blob)
 	require.NoError(t, err)
+	m20260827_exec(t, dbc, `UPDATE "quests" SET "game_structure" = ? WHERE "id" = ?`, string(raw), questID)
 
-	markerCode := gofakeit.LetterN(5)
-	marker := &m20260827_seedMarker{Code: markerCode, Name: "Old Sign"}
-	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
-	require.NoError(t, err)
+	require.NoError(t, m20260827_up(ctx, dbc))
 
-	loc := &m20260827_seedLocation{
-		ID:       gofakeit.UUID(),
-		QuestID:  quest.ID,
-		Name:     "Old Location",
-		Slug:     "old-location",
-		MarkerID: markerCode,
-		Points:   15,
-	}
-	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
-	require.NoError(t, err)
+	rows := m20260827_rows(t, dbc, questID)
+	root := m20260827_root(t, rows)
+	assert.Equal(t, "Harbour Walk", root.Title, "the root is named after the quest")
+	assert.Equal(t, 0, root.Position)
+	assert.Equal(t, "ordered", root.Routing, "a group of groups walked them one at a time")
 
-	tree := map[string]any{
-		"id":              gofakeit.UUID(),
-		"name":            "",
-		"color":           "",
-		"routing":         game.RouteStrategyFreeRoam,
-		"completion_type": game.CompletionAll,
-		"auto_advance":    false,
-		"is_root":         true,
-		"location_ids":    []string{loc.ID},
-		"sub_groups":      []any{},
-	}
-	treeJSON, err := json.Marshal(tree)
-	require.NoError(t, err)
-	_, err = dbc.NewRaw("UPDATE quests SET game_structure = ? WHERE id = ?", string(treeJSON), quest.ID).Exec(ctx)
-	require.NoError(t, err)
+	top := m20260827_childrenOf(rows, root.ID)
+	require.Equal(t, []string{"Ferry Terminal", "The Wharf"}, m20260827_titles(top),
+		"locations come before subgroups")
+	assert.Equal(t, []int{0, 1}, []int{top[0].Position, top[1].Position})
+	assert.Equal(t, "ferry-terminal", top[0].Slug, "a location keeps its slug")
 
-	interactiveBlock := &models.Block{
-		ID:      gofakeit.UUID(),
-		OwnerID: loc.ID,
-		Type:    "quiz",
-		Context: game.BlockContext("location_content"),
-		Data:    json.RawMessage(`{"prompt":"What is 2+2?"}`),
-	}
-	_, err = dbc.NewInsert().Model(interactiveBlock).Exec(ctx)
-	require.NoError(t, err)
+	wharf := top[1]
+	assert.Equal(t, "the-wharf", wharf.Slug)
+	assert.Equal(t, "ordered", wharf.Routing, "it holds a subgroup, so it too walked them in order")
+	require.NotNil(t, wharf.ChildrenMin)
+	require.NotNil(t, wharf.ChildrenMax)
+	assert.Equal(t, 1, *wharf.ChildrenMin)
+	assert.Equal(t, 1, *wharf.ChildrenMax, "auto-advancing at the minimum is a closed band")
 
-	contentBlock := &models.Block{
-		ID:      gofakeit.UUID(),
-		OwnerID: loc.ID,
-		Type:    "text",
-		Context: game.BlockContext("location_content"),
-		Data:    json.RawMessage(`{"content":"Welcome!"}`),
-	}
-	_, err = dbc.NewInsert().Model(contentBlock).Exec(ctx)
-	require.NoError(t, err)
+	inWharf := m20260827_childrenOf(rows, wharf.ID)
+	require.Equal(t, []string{"Lighthouse", "Boat Shed", "Cargo Yard"}, m20260827_titles(inWharf))
 
-	navBlock := &models.Block{
-		ID:      gofakeit.UUID(),
-		OwnerID: loc.ID,
-		Type:    "clue",
-		Context: game.BlockContext("navigation"),
-		Data:    json.RawMessage(`{"clue":"Look near the fountain"}`),
-	}
-	_, err = dbc.NewInsert().Model(navBlock).Exec(ctx)
-	require.NoError(t, err)
-
-	return quest.ID, loc.ID
+	yard := inWharf[2]
+	assert.Equal(t, "ordered", yard.Routing, "a group of locations keeps its own routing")
+	assert.Nil(t, yard.ChildrenMin, "completion all leaves the band open")
+	assert.Equal(t, []string{"Crane"}, m20260827_titles(m20260827_childrenOf(rows, yard.ID)))
 }
 
-func TestAddObjectiveIDsToTree_AppendsAtEachNode(t *testing.T) {
-	input := `{
-		"location_ids": ["loc1", "loc2"],
-		"sub_groups": [
-			{
-				"location_ids": ["loc3"],
-				"sub_groups": []
-			}
-		]
-	}`
-	var tree map[string]any
-	require.NoError(t, json.Unmarshal([]byte(input), &tree))
+func TestLocationsToObjectives_MovesBlocksAndSeedsTheScan(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
 
-	objIDByLocID := map[string]string{
-		"loc1": "obj1",
-		"loc2": "obj2",
-		"loc3": "obj3",
+	questID := m20260827_seedQuest(t, dbc, "Blocks")
+	locID, code := m20260827_seedLocation(t, dbc, questID, "Fountain", "fountain", 15)
+	quiz := m20260827_seedBlock(t, dbc, locID, "quiz", "location_content")
+	text := m20260827_seedBlock(t, dbc, locID, "markdown", "location_content")
+	hint := m20260827_seedBlock(t, dbc, locID, "markdown", "navigation")
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	rows := m20260827_rows(t, dbc, questID)
+	objective := m20260827_childrenOf(rows, m20260827_root(t, rows).ID)[0]
+
+	contextOf := func(id string) string {
+		var c string
+		require.NoError(t, dbc.QueryRowContext(ctx,
+			`SELECT "context" FROM "blocks" WHERE "id" = ? AND "owner_id" = ?`, id, objective.ID).Scan(&c))
+		return c
+	}
+	assert.Equal(t, "objective_proof", contextOf(quiz), "content that took input was the requirement")
+	assert.Equal(t, "objective_reveal", contextOf(text), "the rest is shown once it is found")
+	assert.Equal(t, "objective_proof", contextOf(hint), "a hint helps find it")
+
+	var data string
+	var points int
+	var ordering int
+	require.NoError(t, dbc.QueryRowContext(ctx,
+		`SELECT "data", "points", "ordering" FROM "blocks" WHERE "owner_id" = ? AND "type" = 'scan'`,
+		objective.ID).Scan(&data, &points, &ordering))
+	assert.Contains(t, data, code, "the marker code is what the scan accepts")
+	assert.Equal(t, 15, points, "the location's points move onto the scan")
+	assert.Equal(t, -1, ordering)
+}
+
+func TestLocationsToObjectives_CarriesCheckInsOver(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	questID := m20260827_seedQuest(t, dbc, "Underway")
+	locID, _ := m20260827_seedLocation(t, dbc, questID, "Museum", "museum", 20)
+	finished := m20260827_seedRun(t, dbc, questID)
+	midway := m20260827_seedRun(t, dbc, questID)
+	untouched := m20260827_seedRun(t, dbc, questID)
+	m20260827_seedCheckIn(t, dbc, finished, questID, locID, true)
+	m20260827_seedCheckIn(t, dbc, midway, questID, locID, false)
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	scanState := func(runCode string) (bool, int, int) {
+		var complete bool
+		var awarded, n int
+		n = m20260827_count(t, dbc,
+			`SELECT count(*) FROM "run_block_states" s JOIN "blocks" b ON b."id" = s."block_id"`+
+				` WHERE b."type" = 'scan' AND s."run_code" = ?`, runCode)
+		if n == 0 {
+			return false, 0, 0
+		}
+		require.NoError(t, dbc.QueryRowContext(ctx,
+			`SELECT s."is_complete", s."points_awarded" FROM "run_block_states" s`+
+				` JOIN "blocks" b ON b."id" = s."block_id" WHERE b."type" = 'scan' AND s."run_code" = ?`,
+			runCode).Scan(&complete, &awarded))
+		return complete, awarded, n
 	}
 
-	changed := m20260827_addObjectiveIDsToTree(tree, objIDByLocID)
-	assert.True(t, changed)
+	complete, awarded, n := scanState(finished)
+	assert.Equal(t, 1, n)
+	assert.True(t, complete, "a check-in is the find the scan asks for")
+	assert.Equal(t, 20, awarded, "already paid into the run, so a rescan pays nothing")
 
-	rootObjIDs := tree["objective_ids"].([]any)
-	assert.Equal(t, []any{"obj1", "obj2"}, rootObjIDs, "order preserved, matching location_ids order")
+	complete, _, n = scanState(midway)
+	assert.Equal(t, 1, n)
+	assert.True(t, complete)
 
-	subs := tree["sub_groups"].([]any)
-	sub := subs[0].(map[string]any)
-	assert.Equal(t, []any{"obj3"}, sub["objective_ids"])
+	_, _, n = scanState(untouched)
+	assert.Zero(t, n, "a team that never checked in has found nothing")
+
+	completions := func(runCode string) []string {
+		rows, err := dbc.QueryContext(ctx,
+			`SELECT "context" FROM "objective_context_completions" WHERE "run_code" = ? ORDER BY "context"`, runCode)
+		require.NoError(t, err)
+		defer func() { _ = rows.Close() }()
+		var out []string
+		for rows.Next() {
+			var c string
+			require.NoError(t, rows.Scan(&c))
+			out = append(out, c)
+		}
+		require.NoError(t, rows.Err())
+		return out
+	}
+	assert.Equal(t, []string{"objective_proof", "objective_reveal"}, completions(finished),
+		"completed blocks finished the location")
+	assert.Empty(t, completions(midway), "its content blocks still decide the proof")
 }
 
-func TestAddObjectiveIDsToTree_UnmappedLocationIDsSkipped(t *testing.T) {
-	input := `{"location_ids": ["loc1", "loc2"], "sub_groups": []}`
-	var tree map[string]any
-	require.NoError(t, json.Unmarshal([]byte(input), &tree))
-
-	// Only loc1 has a mapping (loc2 might have been skipped due to a missing marker).
-	changed := m20260827_addObjectiveIDsToTree(tree, map[string]string{"loc1": "obj1"})
-	assert.True(t, changed)
-	assert.Equal(t, []any{"obj1"}, tree["objective_ids"])
+func TestLocationsToObjectives_RoutingFor(t *testing.T) {
+	for _, tc := range []struct {
+		name  string
+		group m20260827_group
+		want  string
+	}{
+		{"empty was the engine default", m20260827_group{}, "free_roam"},
+		{"secret could be scanned in any order", m20260827_group{Routing: "secret"}, "free_roam"},
+		{"unknown values play as the default did", m20260827_group{Routing: "custom"}, "free_roam"},
+		{"ordered is kept", m20260827_group{Routing: "ordered"}, "ordered"},
+		{"randomised is kept", m20260827_group{Routing: "randomised"}, "randomised"},
+		{"a group of groups is ordered", m20260827_group{
+			Routing: "free_roam", SubGroups: []m20260827_group{{}},
+		}, "ordered"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, m20260827_routingFor(tc.group))
+		})
+	}
 }
 
-func TestAddObjectiveIDsToTree_NoMatches_NoChange(t *testing.T) {
-	input := `{"location_ids": ["loc1"], "sub_groups": []}`
-	var tree map[string]any
-	require.NoError(t, json.Unmarshal([]byte(input), &tree))
+func TestLocationsToObjectives_EveryQuestGetsARoot(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
 
-	changed := m20260827_addObjectiveIDsToTree(tree, map[string]string{"other-loc": "obj1"})
-	assert.False(t, changed)
-	_, has := tree["objective_ids"]
-	assert.False(t, has, "no objective_ids key added when nothing matched")
+	empty := m20260827_seedQuest(t, dbc, "No Blob")
+	unreadable := m20260827_seedQuest(t, dbc, "Bad Blob")
+	m20260827_exec(t, dbc, `UPDATE "quests" SET "game_structure" = '{not json' WHERE "id" = ?`, unreadable)
+	m20260827_seedLocation(t, dbc, unreadable, "Gate", "gate", 0)
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	rows := m20260827_rows(t, dbc, empty)
+	assert.Empty(t, m20260827_childrenOf(rows, m20260827_root(t, rows).ID))
+
+	rows = m20260827_rows(t, dbc, unreadable)
+	children := m20260827_childrenOf(rows, m20260827_root(t, rows).ID)
+	require.Len(t, children, 1, "a location the blob cannot place goes under the root")
+	assert.Equal(t, "gate", children[0].Slug)
 }
 
-func TestRemoveObjectiveIDsFromTree(t *testing.T) {
-	input := `{
-		"location_ids": ["loc1"],
-		"objective_ids": ["obj1"],
-		"sub_groups": [
-			{"location_ids": [], "objective_ids": ["obj2"], "sub_groups": []}
-		]
-	}`
-	var tree map[string]any
-	require.NoError(t, json.Unmarshal([]byte(input), &tree))
+func TestLocationsToObjectives_AdoptsUnmentionedAndSkipsStale(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
 
-	changed := m20260827_removeObjectiveIDsFromTree(tree, map[string]bool{"obj1": true, "obj2": true})
-	assert.True(t, changed)
+	questID := m20260827_seedQuest(t, dbc, "Gaps")
+	listed, _ := m20260827_seedLocation(t, dbc, questID, "Listed", "listed", 0)
+	m20260827_seedLocation(t, dbc, questID, "Forgotten", "forgotten", 0)
+	raw, err := json.Marshal(map[string]any{
+		"is_root":      true,
+		"location_ids": []string{gofakeit.UUID(), listed, listed},
+	})
+	require.NoError(t, err)
+	m20260827_exec(t, dbc, `UPDATE "quests" SET "game_structure" = ? WHERE "id" = ?`, string(raw), questID)
 
-	rootIDs, _ := tree["objective_ids"].([]any)
-	assert.Empty(t, rootIDs)
-	sub := tree["sub_groups"].([]any)[0].(map[string]any)
-	subIDs, _ := sub["objective_ids"].([]any)
-	assert.Empty(t, subIDs)
-	// location_ids untouched
-	assert.Equal(t, []any{"loc1"}, tree["location_ids"])
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	rows := m20260827_rows(t, dbc, questID)
+	children := m20260827_childrenOf(rows, m20260827_root(t, rows).ID)
+	require.Equal(t, []string{"Listed", "Forgotten"}, m20260827_titles(children),
+		"a stale id and a repeat place nothing, and the unmentioned location goes last")
+	assert.Equal(t, []int{0, 1}, []int{children[0].Position, children[1].Position}, "positions stay dense")
 }
 
-func TestRemoveObjectiveIDsFromTree_LeavesUnmatchedIDsInPlace(t *testing.T) {
-	// obj2 was not created by this migration (e.g. real objective authoring);
-	// removing obj1 must not touch it.
-	input := `{"location_ids": [], "objective_ids": ["obj1", "obj2"], "sub_groups": []}`
-	var tree map[string]any
-	require.NoError(t, json.Unmarshal([]byte(input), &tree))
+func TestLocationsToObjectives_SectionsGiveWayOnSlugs(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
 
-	changed := m20260827_removeObjectiveIDsFromTree(tree, map[string]bool{"obj1": true})
-	assert.True(t, changed)
-	assert.Equal(t, []any{"obj2"}, tree["objective_ids"], "unmatched objective ID left in place")
+	questID := m20260827_seedQuest(t, dbc, "Slugs")
+	clash, _ := m20260827_seedLocation(t, dbc, questID, "Garden", "garden", 0)
+	blank, _ := m20260827_seedLocation(t, dbc, questID, "Rose Bed", "", 0)
+	raw, err := json.Marshal(map[string]any{
+		"is_root": true,
+		"sub_groups": []any{
+			map[string]any{"name": "Garden", "location_ids": []string{clash}},
+			map[string]any{"name": "Garden", "location_ids": []string{blank}},
+		},
+	})
+	require.NoError(t, err)
+	m20260827_exec(t, dbc, `UPDATE "quests" SET "game_structure" = ? WHERE "id" = ?`, string(raw), questID)
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	rows := m20260827_rows(t, dbc, questID)
+	sections := m20260827_childrenOf(rows, m20260827_root(t, rows).ID)
+	require.Len(t, sections, 2)
+	assert.Equal(t, "garden-2", sections[0].Slug, "the location already holds garden")
+	assert.Equal(t, "garden-3", sections[1].Slug)
+	assert.Equal(t, "garden", m20260827_childrenOf(rows, sections[0].ID)[0].Slug)
+	assert.Equal(t, "rose-bed", m20260827_childrenOf(rows, sections[1].ID)[0].Slug,
+		"a location with no slug gets one, or it has no address")
 }
 
-func TestAddThenRemoveObjectiveIDs_RoundTrip(t *testing.T) {
-	input := `{"location_ids": ["loc1"], "sub_groups": []}`
-	var tree map[string]any
-	require.NoError(t, json.Unmarshal([]byte(input), &tree))
+func TestLocationsToObjectives_MissingMarkerFailsThatQuestOnly(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
 
-	assert.True(t, m20260827_addObjectiveIDsToTree(tree, map[string]string{"loc1": "obj1"}))
-	assert.Equal(t, []any{"obj1"}, tree["objective_ids"])
+	healthy := m20260827_seedQuest(t, dbc, "Healthy")
+	m20260827_seedLocation(t, dbc, healthy, "Fine", "fine", 0)
 
-	assert.True(t, m20260827_removeObjectiveIDsFromTree(tree, map[string]bool{"obj1": true}))
-	ids, _ := tree["objective_ids"].([]any)
-	assert.Empty(t, ids)
-	assert.Equal(t, []any{"loc1"}, tree["location_ids"], "location_ids was never touched")
+	broken := m20260827_seedQuest(t, dbc, "Broken")
+	locID, code := m20260827_seedLocation(t, dbc, broken, "Lost", "lost", 0)
+	conn, err := dbc.Conn(ctx)
+	require.NoError(t, err)
+	_, err = conn.ExecContext(ctx, "PRAGMA foreign_keys=OFF")
+	require.NoError(t, err)
+	_, err = conn.ExecContext(ctx, `DELETE FROM "markers" WHERE "code" = ?`, code)
+	require.NoError(t, err)
+	_, err = conn.ExecContext(ctx, "PRAGMA foreign_keys=ON")
+	require.NoError(t, err)
+	require.NoError(t, conn.Close())
+
+	err = m20260827_up(ctx, dbc)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), locID)
+
+	assert.NotEmpty(t, m20260827_rows(t, dbc, healthy), "the other quest was committed")
+	assert.Empty(t, m20260827_rows(t, dbc, broken), "the failed quest was rolled back whole")
+
+	err = m20260829010000_up(ctx, dbc)
+	require.Error(t, err, "dropping locations now would destroy the unconverted one")
+	assert.True(t, tableExists(ctx, dbc, "locations"))
+}
+
+func TestLocationsToObjectives_RerunIsANoOp(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	questID := m20260827_seedQuest(t, dbc, "Twice")
+	locID, _ := m20260827_seedLocation(t, dbc, questID, "Once", "once", 0)
+	m20260827_seedCheckIn(t, dbc, m20260827_seedRun(t, dbc, questID), questID, locID, true)
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+	before := m20260827_rows(t, dbc, questID)
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	assert.Equal(t, before, m20260827_rows(t, dbc, questID))
+	assert.Equal(t, 1, m20260827_count(t, dbc, `SELECT count(*) FROM "blocks" WHERE "type" = 'scan'`))
+}
+
+func TestDropLocationMigration_DropsTablesOnceConverted(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	questID := m20260827_seedQuest(t, dbc, "Drop")
+	m20260827_seedLocation(t, dbc, questID, "Gone", "gone", 0)
+	require.NoError(t, m20260827_up(ctx, dbc))
+	before := m20260827_rows(t, dbc, questID)
+
+	require.NoError(t, m20260829010000_up(ctx, dbc))
+
+	assert.False(t, tableExists(ctx, dbc, "locations"))
+	assert.False(t, tableExists(ctx, dbc, "markers"))
+	assert.False(t, tableExists(ctx, dbc, "check_ins"))
+	assert.False(t, columnExists(ctx, dbc, "runs", "must_scan_out"))
+	assert.False(t, columnExists(ctx, dbc, "uploads", "location_id"))
+	assert.False(t, columnExists(ctx, dbc, "quest_settings", "must_check_out"))
+	assert.Equal(t, before, m20260827_rows(t, dbc, questID), "the converted content survives the drop")
+
+	require.NoError(t, m20260829010000_up(ctx, dbc), "rerunning once the tables are gone is safe")
+}
+
+func TestDropLocationMigration_DownRestoresSchema(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+	require.NoError(t, m20260829010000_up(ctx, dbc))
+	require.NoError(t, m20260829010000_down(ctx, dbc))
+
+	assert.True(t, tableExists(ctx, dbc, "locations"))
+	assert.True(t, tableExists(ctx, dbc, "markers"))
+	assert.True(t, tableExists(ctx, dbc, "check_ins"))
+	assert.True(t, columnExists(ctx, dbc, "runs", "must_scan_out"))
+	assert.True(t, columnExists(ctx, dbc, "uploads", "location_id"))
+	assert.True(t, columnExists(ctx, dbc, "quest_settings", "must_check_out"))
 }

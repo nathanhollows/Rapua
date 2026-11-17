@@ -3,102 +3,94 @@ package migrations
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/uptrace/bun"
 )
 
-// m20260822000000_Objective mirrors models.Objective; slug uniqueness is
-// per-quest and only enforced on non-empty slugs, matching locations_instance_slug.
-type m20260822000000_Objective struct {
-	bun.BaseModel `bun:"table:objectives"`
-
-	ID         string    `bun:"id,pk,notnull,type:varchar(36)"`
-	CreatedAt  time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
-	UpdatedAt  time.Time `bun:"updated_at,nullzero,notnull,default:current_timestamp"`
-	QuestID    string    `bun:"quest_id,notnull,type:varchar(36)"`
-	Slug       string    `bun:"slug,type:varchar(255)"`
-	Title      string    `bun:"title,type:varchar(255)"`
-	WhenClause string    `bun:"when_clause,type:text"`
-	Order      int       `bun:"order,type:int"`
-	ProofSets  string    `bun:"proof_sets,type:text"`
-	RevealSets string    `bun:"reveal_sets,type:text"`
-}
-
-// m20260822000000_ObjectiveContextCompletion mirrors models.ObjectiveContextCompletion:
-// an append-only completion log, never updated or deleted. The primary key is the
-// idempotency guard for firing a context's sets exactly once (see models package doc).
-type m20260822000000_ObjectiveContextCompletion struct {
-	bun.BaseModel `bun:"table:objective_context_completions"`
-
-	RunCode     string    `bun:"run_code,pk,notnull,type:varchar(36)"`
-	ObjectiveID string    `bun:"objective_id,pk,notnull,type:varchar(36)"`
-	Context     string    `bun:"context,pk,notnull,type:varchar(32)"`
-	CompletedAt time.Time `bun:"completed_at,nullzero,notnull,default:current_timestamp"`
-}
-
 func init() {
-	Migrations.MustRegister(
-		func(ctx context.Context, db *bun.DB) error {
-			_, err := db.NewCreateTable().
-				Model(&m20260822000000_Objective{}).
-				IfNotExists().
-				Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("create objectives table: %w", err)
-			}
+	Migrations.MustRegister(m20260822000000_up, m20260822000000_down)
+}
 
-			_, err = db.NewCreateIndex().
-				Model((*m20260822000000_Objective)(nil)).
-				Index("idx_objectives_quest_id").
-				Column("quest_id").
-				Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("create index idx_objectives_quest_id: %w", err)
-			}
+// m20260822000000_statements create the final shape directly: production never
+// held any of it.
+//
+// parent_id has no self-reference: the repository reparents and deletes in
+// steps a cascade would interrupt.
+//
+// (parent_id, position) is unique because a tie breaks by id and silently
+// reorders an ordered quest. NULL roots are distinct, so roots never collide.
+//
+// run_variables.block_id has no FK: deleting a block must not close a gate it
+// opened.
+var m20260822000000_statements = []struct{ name, sql string }{
+	{"objectives", `CREATE TABLE IF NOT EXISTS "objectives" (
+		"id" VARCHAR(36) NOT NULL PRIMARY KEY,
+		"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
+		"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
+		"quest_id" VARCHAR(36) NOT NULL REFERENCES "quests"("id") ON DELETE CASCADE,
+		"slug" VARCHAR(255),
+		"title" VARCHAR(255),
+		"description" TEXT NOT NULL DEFAULT '',
+		"parent_id" VARCHAR(36),
+		"position" INT NOT NULL DEFAULT 0,
+		"routing" VARCHAR(32),
+		"children_min" INT,
+		"children_max" INT,
+		"max_next" INT NOT NULL DEFAULT 0,
+		"finish_label" VARCHAR(255),
+		"draft" BOOLEAN NOT NULL DEFAULT FALSE,
+		"pass_through" BOOLEAN NOT NULL DEFAULT FALSE,
+		"depends" TEXT
+	)`},
+	{"idx_objectives_quest_id", `CREATE INDEX IF NOT EXISTS "idx_objectives_quest_id" ON "objectives" ("quest_id")`},
+	{"objectives_quest_slug", `CREATE UNIQUE INDEX IF NOT EXISTS "objectives_quest_slug"` +
+		` ON "objectives" ("quest_id", "slug") WHERE "slug" != ''`},
+	{"idx_objectives_parent_id", `CREATE INDEX IF NOT EXISTS "idx_objectives_parent_id" ON "objectives" ("parent_id")`},
+	{"idx_objectives_parent_position", `CREATE UNIQUE INDEX IF NOT EXISTS "idx_objectives_parent_position"` +
+		` ON "objectives" ("parent_id", "position")`},
+	{"objective_context_completions", `CREATE TABLE IF NOT EXISTS "objective_context_completions" (
+		"run_code" VARCHAR(36) NOT NULL REFERENCES "runs"("code") ON DELETE CASCADE,
+		"objective_id" VARCHAR(36) NOT NULL REFERENCES "objectives"("id") ON DELETE CASCADE,
+		"context" VARCHAR(32) NOT NULL,
+		"completed_at" DATETIME NOT NULL DEFAULT current_timestamp,
+		PRIMARY KEY ("run_code", "objective_id", "context")
+	)`},
+	{"idx_objective_context_completions_run_code", `CREATE INDEX IF NOT EXISTS` +
+		` "idx_objective_context_completions_run_code" ON "objective_context_completions" ("run_code")`},
+	// run_code leads the primary key, so it needs no index.
+	{"section_finishes", `CREATE TABLE IF NOT EXISTS "section_finishes" (
+		"run_code" VARCHAR(36) NOT NULL REFERENCES "runs"("code") ON DELETE CASCADE,
+		"objective_id" VARCHAR(36) NOT NULL REFERENCES "objectives"("id") ON DELETE CASCADE,
+		"finished_at" DATETIME NOT NULL DEFAULT current_timestamp,
+		PRIMARY KEY ("run_code", "objective_id")
+	)`},
+	{"run_variables", `CREATE TABLE IF NOT EXISTS "run_variables" (
+		"run_code" VARCHAR(36) NOT NULL REFERENCES "runs"("code") ON DELETE CASCADE,
+		"name" VARCHAR(64) NOT NULL,
+		"block_id" VARCHAR(36),
+		"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
+		PRIMARY KEY ("run_code", "name")
+	)`},
+}
 
-			// Partial unique index: only enforce uniqueness on non-empty slugs, same
-			// as locations_instance_slug, so fixtures inserting slugless rows don't collide.
-			_, err = db.ExecContext(
-				ctx,
-				`CREATE UNIQUE INDEX objectives_quest_slug ON objectives (quest_id, slug) WHERE slug != ''`,
-			)
-			if err != nil {
-				return fmt.Errorf("create index objectives_quest_slug: %w", err)
-			}
+// m20260822000000_up is guarded throughout, so a rerun after a partial failure
+// works.
+func m20260822000000_up(ctx context.Context, db *bun.DB) error {
+	for _, stmt := range m20260822000000_statements {
+		if _, err := db.ExecContext(ctx, stmt.sql); err != nil {
+			return fmt.Errorf("creating %s: %w", stmt.name, err)
+		}
+	}
+	return nil
+}
 
-			_, err = db.NewCreateTable().
-				Model(&m20260822000000_ObjectiveContextCompletion{}).
-				IfNotExists().
-				Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("create objective_context_completions table: %w", err)
-			}
-
-			_, err = db.NewCreateIndex().
-				Model((*m20260822000000_ObjectiveContextCompletion)(nil)).
-				Index("idx_objective_context_completions_run_code").
-				Column("run_code").
-				Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("create index idx_objective_context_completions_run_code: %w", err)
-			}
-
-			return nil
-		},
-		func(ctx context.Context, db *bun.DB) error {
-			_, err := db.NewDropTable().
-				Model(&m20260822000000_ObjectiveContextCompletion{}).
-				IfExists().
-				Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("drop objective_context_completions table: %w", err)
-			}
-			_, err = db.NewDropTable().Model(&m20260822000000_Objective{}).IfExists().Exec(ctx)
-			if err != nil {
-				return fmt.Errorf("drop objectives table: %w", err)
-			}
-			return nil
-		},
-	)
+func m20260822000000_down(ctx context.Context, db *bun.DB) error {
+	for _, table := range []string{
+		"run_variables", "section_finishes", "objective_context_completions", "objectives",
+	} {
+		if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE IF EXISTS %q`, table)); err != nil {
+			return fmt.Errorf("dropping %s: %w", table, err)
+		}
+	}
+	return nil
 }

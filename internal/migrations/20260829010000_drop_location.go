@@ -11,15 +11,26 @@ func init() {
 	Migrations.MustRegister(m20260829010000_up, m20260829010000_down)
 }
 
-// m20260829010000_up drops Location and Marker entirely. Safe only because
-// 20260829000000_finish_locations_to_objectives.go guarantees, before this can
-// run, that every Location is represented by an Objective (it fails loudly
-// otherwise): including each Location's Marker code, already copied as a
-// literal string into that Objective's synthetic scan block, so Marker's
-// deletion here needs no special handling of its own.
+// m20260829010000_up refuses while a quest is unconverted: 20260827000000
+// converts a quest whole or not at all, and dropping past a failure destroys
+// its content.
 func m20260829010000_up(ctx context.Context, db *bun.DB) error {
 	if !tableExists(ctx, db, "locations") {
 		return nil
+	}
+
+	var unconverted int
+	if err := db.QueryRowContext(ctx,
+		`SELECT count(*) FROM "locations" WHERE NOT EXISTS`+
+			` (SELECT 1 FROM "objectives" WHERE "objectives"."quest_id" = "locations"."quest_id")`,
+	).Scan(&unconverted); err != nil {
+		return fmt.Errorf("checking for unconverted locations: %w", err)
+	}
+	if unconverted > 0 {
+		return fmt.Errorf(
+			"%d location(s) belong to quests 20260827000000 has not converted; fix them and rerun",
+			unconverted,
+		)
 	}
 
 	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
@@ -30,42 +41,30 @@ func m20260829010000_up(ctx context.Context, db *bun.DB) error {
 		db.ExecContext(ctx, "PRAGMA foreign_keys=ON")
 	}()
 
-	// check_ins: the whole check-in mechanic is gone, not just its Location
-	// reference (Objectives are proved/revealed via blocks, not scan-in): drop
-	// outright. History was explicitly confirmed out of scope to preserve.
 	if _, err := db.ExecContext(ctx, `DROP TABLE IF EXISTS "check_ins"`); err != nil {
 		return fmt.Errorf("dropping check_ins: %w", err)
 	}
 
-	// uploads: drop the location_id FK/column. No Objective equivalent exists,
-	// and building one would be new feature work out of scope here. ALTER TABLE
-	// DROP COLUMN is used instead of recreateTable's rename dance: SQLite
-	// rewrites REFERENCES "runs" clauses in other tables when "runs" is
-	// renamed, leaving run_block_states, notifications, run_var_states,
-	// objective_context_completions, and uploads pointing at a dead "runs_old"
-	// table. The column cannot be dropped while indexed.
+	// DROP COLUMN, not recreateTable: SQLite rewrites other tables' references
+	// on a rename, leaving them pointing at a dead *_old table. The index must
+	// go first.
 	if _, err := db.ExecContext(ctx, `DROP INDEX IF EXISTS "idx_uploads_location_id"`); err != nil {
 		return fmt.Errorf("dropping uploads location_id index: %w", err)
 	}
-	// columnExists guard: DROP COLUMN errors on a column that's already gone,
-	// which a retry after an earlier partial failure would otherwise hit.
+	// A retry after a partial failure finds these already gone.
 	if columnExists(ctx, db, "uploads", "location_id") {
 		if _, err := db.ExecContext(ctx, `ALTER TABLE "uploads" DROP COLUMN "location_id"`); err != nil {
 			return fmt.Errorf("dropping uploads.location_id: %w", err)
 		}
 	}
 
-	// runs: drop must_scan_out. The check-out mechanic (BlockingLocation,
-	// QuestSettings.MustCheckOut) is Location-only with no Objective
-	// equivalent, deliberately not ported.
+	// Check-out was deliberately not ported to objectives.
 	if columnExists(ctx, db, "runs", "must_scan_out") {
 		if _, err := db.ExecContext(ctx, `ALTER TABLE "runs" DROP COLUMN "must_scan_out"`); err != nil {
 			return fmt.Errorf("dropping runs.must_scan_out: %w", err)
 		}
 	}
 
-	// quest_settings: drop must_check_out, the other half of the same
-	// check-out mechanic.
 	if columnExists(ctx, db, "quest_settings", "must_check_out") {
 		if _, err := db.ExecContext(ctx, `ALTER TABLE "quest_settings" DROP COLUMN "must_check_out"`); err != nil {
 			return fmt.Errorf("dropping quest_settings.must_check_out: %w", err)
@@ -93,11 +92,7 @@ func m20260829010000_up(ctx context.Context, db *bun.DB) error {
 	return nil
 }
 
-// m20260829010000_down restores schema only, not data: the dropped rows are
-// gone. By the time this migration ran, every Location's content already
-// existed as an Objective (m20260829000000 guarantees it), so a rollback of
-// this migration is a schema-compatibility escape hatch, not a way to recover
-// lost content.
+// m20260829010000_down restores schema only: the rows are gone.
 func m20260829010000_down(ctx context.Context, db *bun.DB) error {
 	if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
 		return fmt.Errorf("disabling foreign keys: %w", err)
@@ -107,7 +102,7 @@ func m20260829010000_down(ctx context.Context, db *bun.DB) error {
 		db.ExecContext(ctx, "PRAGMA foreign_keys=ON")
 	}()
 
-	// markers before locations: locations.marker_id references markers(code).
+	// locations.marker_id references markers.
 	if _, err := db.ExecContext(ctx, `CREATE TABLE IF NOT EXISTS "markers" (
 		"created_at" TIMESTAMP NOT NULL DEFAULT current_timestamp,
 		"updated_at" TIMESTAMP NOT NULL DEFAULT current_timestamp,
@@ -159,9 +154,7 @@ func m20260829010000_down(ctx context.Context, db *bun.DB) error {
 		return fmt.Errorf("recreating locations marker_id index: %w", err)
 	}
 
-	// ADD COLUMN restores the schema (including the FK constraint on
-	// uploads.location_id, which SQLite permits when the default is NULL);
-	// the data in those columns is gone for good.
+	// SQLite allows a REFERENCES on ADD COLUMN when the default is NULL.
 	if !columnExists(ctx, db, "runs", "must_scan_out") {
 		if _, err := db.ExecContext(ctx, `ALTER TABLE "runs" ADD COLUMN "must_scan_out" VARCHAR`); err != nil {
 			return fmt.Errorf("restoring runs.must_scan_out: %w", err)
