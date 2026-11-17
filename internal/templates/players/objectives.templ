@@ -3,8 +3,10 @@ package templates
 import (
 	"fmt"
 
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
 type ObjectivesParams struct {
@@ -15,6 +17,9 @@ type ObjectivesParams struct {
 // Objectives is the quest screen: what the run can work on now, grouped under
 // the section each row came out of. The frontier is flat, so without grouping
 // three parts of one task read as three unrelated tasks.
+//
+// Three levels and no more: group heading, section, tasks. Locked and finished
+// sections are not drawn: neither can be acted on.
 templ Objectives(data ObjectivesParams) {
 	{{ view := BuildQuestView(data.View) }}
 	if len(view.Places) == 0 {
@@ -23,36 +28,45 @@ templ Objectives(data ObjectivesParams) {
 			<span>Nothing to do right now. Check back once your team finishes something.</span>
 		</div>
 	} else {
-		<div class="flex flex-col gap-6">
-			for _, place := range view.Places {
-				@questPlace(place)
+		<div class="flex flex-col gap-9">
+			for _, group := range view.Groups() {
+				@questGroup(group)
 			}
 		</div>
 	}
 }
 
+// hueClass names the palette class that sets a section's --h. A class, not an
+// inline style: every hue is contrast-checked once, and a style attribute would
+// carry a value templ cannot be told is safe.
+func hueClass(hue int) string {
+	return fmt.Sprintf("q-h%d", hue)
+}
+
+// questGroup is places under one outermost section, and the heading over them.
+templ questGroup(group QuestGroup) {
+	<div class="flex flex-col gap-6">
+		if group.Title != "" {
+			<h2 class="q-group">{ group.Title }</h2>
+		}
+		for _, place := range group.Places {
+			@questPlace(place, group.Title != "")
+		}
+	</div>
+}
+
 // questPlace is one section the run is standing in, and what it is offering.
 //
-// A heading rather than a card. A container is not something a player can do,
-// and giving it a border makes it look like the thing they can tap: the screen
-// then has two kinds of object and only one is real. The weight runs the other
-// way instead, so the deeper a thing is the heavier it reads, and the only
-// cards on the screen are the tasks.
-templ questPlace(place QuestPlace) {
-	if !place.IsSection {
-		<div class="flex flex-col gap-2">
-			for _, row := range place.Rows {
-				@questRow(row)
-			}
-			@questPlaceFooter(place)
-		</div>
-	} else {
-		<section class="flex flex-col gap-2">
+// A heading, not a card: a bordered container looks tappable, and the only
+// raised things on the page should be the tasks. Colour is carried by the tasks
+// and a dot, never by a box.
+templ questPlace(place QuestPlace, grouped bool) {
+	<section class={ "q-sec flex flex-col gap-4", templ.KV(hueClass(place.Hue), place.IsSection) }>
+		if place.IsSection {
 			if len(place.Path) > 0 {
-				<!-- Where you came from, in the smallest type on the screen.
-				This is what replaces the nesting: an ancestor is history, and
-				history costs no indent. -->
-				<p class="flex flex-wrap items-center gap-1.5 text-xs opacity-45 px-0.5">
+				<!-- Anything deeper than the group, in the smallest type on the
+				screen: an ancestor is history, and history costs no indent. -->
+				<p class="flex flex-wrap items-center gap-1.5 text-sm q-soft">
 					for i, ancestor := range place.Path {
 						if i > 0 {
 							@icon("chevron-right", templ.Attributes{"class": "w-3 h-3 shrink-0"})
@@ -61,120 +75,215 @@ templ questPlace(place QuestPlace) {
 					}
 				</p>
 			}
-			<div class="flex flex-wrap items-baseline gap-2 px-0.5">
-				<h2 class="font-bold text-base leading-snug text-pretty">{ place.Title }</h2>
-				if place.Rule != "" {
-					<span class="text-xs opacity-50">{ place.Rule }</span>
+			<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+				<h3 class={ "q-head", templ.KV("q-head-sub", grouped) }>{ place.Title }</h3>
+				if place.Pill != "" {
+					<span class="q-pill">{ place.Pill }</span>
 				}
 			</div>
-			<!-- One rail, at any depth: the path carries how deep this is, so
-			the layout never has to spend width on it. The footer rides the same
-			rail, because it is the section's own account, not a task. -->
-			<div class="flex flex-col gap-2 border-l-2 border-base-300 ml-1 pl-3">
-				for _, row := range place.Rows {
-					@questRow(row)
-				}
-				@questPlaceFooter(place)
-			</div>
-		</section>
-	}
-}
-
-// questPlaceFooter is the section's own account: what is still owed, and the
-// finish press once the band's minimum is met.
-//
-// The heading above already names the section, so nothing here repeats the
-// name. The press says what pressing does, because "That's enough for now" on
-// its own promises neither the closing nor the skipping, and the whole point
-// of a ranged band is that the rest can be left.
-templ questPlaceFooter(place QuestPlace) {
-	if place.CanFinish {
-		<div class="flex flex-col gap-2.5 rounded-box border border-success/40 bg-success/5 p-3">
-			<div class="flex items-start gap-3">
-				@icon("flag", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 text-success"})
-				<span class="grow min-w-0 flex flex-col gap-0.5">
-					<span class="text-sm font-medium text-pretty">You have done enough to finish.</span>
-					<span class="text-xs opacity-70 text-pretty">
-						if place.IsSection {
-							Finishing now closes the section and skips what is left.
-						} else {
-							Finishing now ends the run: anything unfinished is left behind.
-						}
-					</span>
-				</span>
-			</div>
-			<!-- Full width under the copy: the author's own words for the press can
-			be long, and a label squeezed beside a paragraph is a squeeze for the
-			thumb too. -->
-			<button
-				type="button"
-				hx-post={ "/objective/" + place.FinishSlug + "/finish" }
-				hx-swap="none"
-				class="btn btn-sm btn-success w-full"
-			>
-				{ place.FinishLabel }
-			</button>
-		</div>
-	} else if place.IsSection && place.Total > 1 {
-		<p class="text-xs opacity-50 px-0.5">{ fmt.Sprintf("%d of %d found", place.Found, place.Total) }</p>
-	}
-}
-
-// PreviewSection is a place with something else inside it, for the objective
-// editor showing one row in the container it belongs to. The same heading, rule
-// and rail as the game, so the context an author is shown is the context a
-// player meets.
-templ PreviewSection(title, rule string) {
-	<section class="flex flex-col gap-2">
-		<div class="flex flex-wrap items-baseline gap-2 px-0.5">
-			<h2 class="font-bold text-base leading-snug text-pretty">{ title }</h2>
-			if rule != "" {
-				<span class="text-xs opacity-50">{ rule }</span>
+		}
+		<div class="flex flex-col gap-4">
+			for i, row := range place.Rows {
+				@questRow(row, place.Ordered && i == 0)
 			}
 		</div>
-		<div class="flex flex-col gap-2 border-l-2 border-base-300 ml-1 pl-3">
+		@questPlaceFooter(place)
+	</section>
+}
+
+// questPlaceFooter is the section's way out once its band is met with room to
+// spare.
+//
+// The remaining tasks stay and the press follows under an "or". It asks first
+// because it closes the section and skips the rest.
+templ questPlaceFooter(place QuestPlace) {
+	if place.CanFinish {
+		{{ dialogID := "finish-" + place.FinishSlug }}
+		<div class="q-or" aria-hidden="true">or</div>
+		<button
+			type="button"
+			class="q-fin"
+			_={ "on click call #" + dialogID + ".showModal()" }
+		>
+			{ place.FinishLabel }
+		</button>
+		<dialog id={ dialogID } class="modal modal-bottom sm:modal-middle">
+			<div class="modal-box">
+				<h3 class="text-xl font-bold text-pretty">
+					if place.IsSection {
+						Finish { place.Title }?
+					} else {
+						Finish the quest?
+					}
+				</h3>
+				<p class="py-3 text-pretty">
+					if place.IsSection {
+						This closes the section and skips what is left.
+					} else {
+						This ends the run: anything unfinished is left behind.
+					}
+				</p>
+				<div class="modal-action">
+					<form method="dialog">
+						<button class="btn btn-ghost">Keep going</button>
+					</form>
+					<!-- Boosted, so the quest list is swapped in: an Hx-Redirect would
+					reload the whole document. -->
+					<form method="post" action={ templ.URL("/objective/" + place.FinishSlug + "/finish") } hx-boost="true">
+						<button type="submit" class="btn btn-success">
+							{ place.FinishLabel }
+						</button>
+					</form>
+				</div>
+			</div>
+			<form method="dialog" class="modal-backdrop">
+				<button aria-label="Close">close</button>
+			</form>
+		</dialog>
+	}
+}
+
+// PreviewSection is a place with something inside it, for the editor showing one
+// row in its container. It uses the game's heading and pill so authors see what
+// players meet.
+templ PreviewSection(title, rule string) {
+	<section class="q-sec flex flex-col gap-4">
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+			<h3 class="q-head">{ title }</h3>
+			if rule != "" {
+				<span class="q-pill">{ rule }</span>
+			}
+		</div>
+		<div class="flex flex-col gap-4">
 			{ children... }
 		</div>
 	</section>
 }
 
-// questRow is one objective on offer.
-templ questRow(row QuestRow) {
+// questRow is one objective on offer. hero draws it as the single next step of a
+// guided section, where nothing competes for the biggest thing on screen.
+templ questRow(row QuestRow, hero bool) {
 	<a
 		href={ templ.URL("/objective/" + row.Slug) }
 		hx-boost="true"
-		class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 p-3 hover:bg-base-200 transition-colors"
+		class={ "q-tile", templ.KV("q-hero", hero) }
 	>
-		<!-- Derived from the proof's first block, so the row shows what it will
-		ask for rather than an author-chosen marker. -->
-		if row.IconSVG != "" {
-			<span class="shrink-0 mt-0.5 text-primary [&>svg]:w-5 [&>svg]:h-5">
-				@templ.Raw(row.IconSVG)
+		<span class="q-top">
+			<!-- From the proof's first block, so the row shows what it will ask for. -->
+			<span class="q-ico">
+				if row.IconSVG != "" {
+					@templ.Raw(row.IconSVG)
+				} else if row.IsDoor {
+					@icon("book-open", templ.Attributes{})
+				} else {
+					@icon("circle-dot", templ.Attributes{})
+				}
 			</span>
-		} else if row.IsDoor {
-			@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 opacity-50"})
-		} else {
-			@icon("circle-dot", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 text-primary"})
-		}
-		<span class="grow min-w-0 flex flex-col gap-0.5">
-			<span class="text-sm font-medium text-pretty">{ row.Title }</span>
-			if row.Description != "" {
-				<span class="text-xs opacity-60 text-pretty">{ row.Description }</span>
+			if hero {
+				<span class="q-over">Next up</span>
 			}
 		</span>
-		@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 shrink-0 mt-0.5 opacity-30"})
+		<span class="grow min-w-0 flex flex-col gap-1">
+			<span class="q-title">{ row.Title }</span>
+			if row.Description != "" {
+				<span class="q-desc q-soft">{ row.Description }</span>
+			}
+		</span>
+		if hero {
+			<span class="q-go">
+				Open
+				@icon("chevron-right", templ.Attributes{"class": "w-6 h-6 ml-auto"})
+			</span>
+		} else {
+			@icon("chevron-right", templ.Attributes{"class": "w-5 h-5 shrink-0 opacity-60"})
+		}
 	</a>
 }
 
-// QuestChrome carries the run's progress. The bar divides completions by what
-// the run still owes, not by the authored tree: bands cut branches and seeded
-// windows change what a team meets, so an authored total would cap the bar
-// short of its own end on some runs and overshoot on others.
-func QuestChrome(run models.Run, view *services.PlayerObjectiveView) AppChrome {
-	return AppChrome{
-		Run:    run,
-		Active: "quest",
-		Done:   view.Progress.Done,
-		Total:  view.Progress.Total(),
+func QuestChrome(run models.Run) AppChrome {
+	return AppChrome{Run: run, Active: "quest"}
+}
+
+// headerMetric is the header's progress display, decided in Go so a test can
+// reach the choice.
+type headerMetric struct {
+	// Show is false when the header says nothing: the author chose that, or
+	// there is no total to count against.
+	Show  bool
+	Done  int
+	Total int
+	// HasTotal is false for count, which has no target.
+	HasTotal bool
+	Label    string
+}
+
+// metricFor reads the quest's choice off the run's own account.
+//
+// Fraction divides by what the run still owes, not the authored tree: bands and
+// seeded windows make an authored total end short or overshoot. Count has no
+// total to be wrong about.
+func metricFor(settings models.QuestSettings, progress navigation.Progress) headerMetric {
+	switch settings.ProgressFeedback.Normalised() {
+	case game.ProgressFeedbackNone:
+		return headerMetric{}
+	case game.ProgressFeedbackCount:
+		return headerMetric{Show: true, Done: progress.Done, Label: "found"}
+	default:
+		if progress.Total() == 0 {
+			return headerMetric{}
+		}
+		return headerMetric{Show: true, Done: progress.Done, Total: progress.Total(), HasTotal: true, Label: "done"}
 	}
+}
+
+// QuestPage is the quest as a run sees it: the header, then what it can do.
+//
+// The header is not part of Objectives because the editor previews that in its
+// own frame, where a count and team name would be invented.
+templ QuestPage(data ObjectivesParams) {
+	<div class="flex flex-col gap-5">
+		@questHeader(data)
+		@Objectives(data)
+	</div>
+}
+
+// questHeader says whose run this is and, if the author wants it, how far along.
+// It scrolls away: a sticky bar costs room on the screen read most.
+//
+// Rank is not here: a comparison would put standing ahead of place. It lives on
+// the You tab.
+templ questHeader(data ObjectivesParams) {
+	{{ metric := metricFor(data.Run.Quest.Settings, data.View.Progress) }}
+	<header class="flex items-start gap-4">
+		<div class="min-w-0 grow flex flex-col gap-1">
+			<h1 class="font-bold text-lg leading-snug text-pretty">{ data.Run.Quest.Name }</h1>
+			<p class="text-sm opacity-70 truncate">
+				if data.Run.Name != "" {
+					{ data.Run.Name }
+				} else {
+					No name yet
+				}
+			</p>
+			if data.Run.Quest.Settings.EnablePoints {
+				<span class="badge badge-ghost font-semibold tabular-nums self-start">{ fmt.Sprint(data.Run.Points) } pts</span>
+			}
+		</div>
+		if metric.Show {
+			<div
+				class="shrink-0 text-right leading-none"
+				role="img"
+				if metric.HasTotal {
+					aria-label={ fmt.Sprintf("%d of %d done", metric.Done, metric.Total) }
+				} else {
+					aria-label={ fmt.Sprintf("%d found", metric.Done) }
+				}
+			>
+				<span class="text-5xl font-extrabold tabular-nums tracking-tight">{ fmt.Sprint(metric.Done) }</span>
+				if metric.HasTotal {
+					<span class="text-2xl font-bold opacity-50 tabular-nums">/{ fmt.Sprint(metric.Total) }</span>
+				}
+				<span class="block mt-1 text-sm font-semibold opacity-60">{ metric.Label }</span>
+			</div>
+		}
+	</header>
 }

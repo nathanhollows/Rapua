@@ -19,8 +19,6 @@ type EditObjectiveData struct {
 	// ChildCount: routing/band/max_next mean nothing without children, but a
 	// leaf can gain them later, so they're shown regardless.
 	ChildCount int
-	// QuestName labels the preview's chrome, which shows the player's view.
-	QuestName string
 	// ParentTitle and ParentRule describe the containing section, drawn around
 	// the preview row. Empty when the parent is the root.
 	ParentTitle string
@@ -138,7 +136,7 @@ templ objectivePreview(data EditObjectiveData) {
 			</div>
 			<div class="mockup-phone bg-black shadow-2xl">
 				<div class="mockup-phone-display overflow-hidden bg-base-200 w-96">
-					@pTemplates.PreviewChrome(data.QuestName) {
+					@pTemplates.PreviewChrome() {
 						<!-- Stacked rather than swapped, so one can fade out while
 						the next fades in. display:none cannot be transitioned, so
 						the panes are always rendered and always in place. -->
@@ -189,28 +187,30 @@ templ objectivePreview(data EditObjectiveData) {
 // objectiveCardRow is the row itself, drawn the same whether or not it sits
 // inside a container.
 templ objectiveCardRow(data EditObjectiveData) {
-	<div id="objective-card" class="flex items-start gap-3 rounded-box border border-base-300 bg-base-100 px-4 py-3">
+	<!-- The player's own tile classes, not a copy: a preview that differs from
+	the game previews something else. -->
+	<div id="objective-card" class="q-tile">
+		<span class="q-ico">
 			if proofIcon := data.FirstProofIcon(); proofIcon != "" {
-				<span class="shrink-0 mt-0.5 text-primary [&>svg]:w-5 [&>svg]:h-5">
-					@templ.Raw(proofIcon)
-				</span>
+				@templ.Raw(proofIcon)
 			} else {
-				@icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 opacity-40"})
+				@icon("book-open", templ.Attributes{})
 			}
-			<span class="grow min-w-0 flex flex-col gap-0.5">
-				<span id="objective-card-title" class="text-sm font-medium text-pretty">
-					{ data.Objective.Title }
-				</span>
-				<span
-					id="objective-card-description"
-					class={ "text-xs opacity-60 text-pretty", templ.KV("hidden", data.Objective.Description == "") }
-				>
-					{ data.Objective.Description }
-				</span>
+		</span>
+		<span class="grow min-w-0 flex flex-col gap-1">
+			<span id="objective-card-title" class="q-title">
+				{ data.Objective.Title }
 			</span>
-			if data.Settings.EnablePoints && data.TotalPoints() != 0 {
-				<span class="badge badge-ghost badge-sm shrink-0">{ fmt.Sprintf("%d pts", data.TotalPoints()) }</span>
-			}
+			<span
+				id="objective-card-description"
+				class={ "q-desc q-soft", templ.KV("hidden", data.Objective.Description == "") }
+			>
+				{ data.Objective.Description }
+			</span>
+		</span>
+		if data.Settings.EnablePoints && data.TotalPoints() != 0 {
+			<span class="badge badge-ghost badge-sm shrink-0">{ fmt.Sprintf("%d pts", data.TotalPoints()) }</span>
+		}
 	</div>
 }
 

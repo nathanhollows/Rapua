@@ -10,6 +10,9 @@ import (
 
 // FinishSection records a player choosing to end a section.
 //
+// Every exit is a plain 303, never h.redirect: the press is a boosted form, and
+// an Hx-Redirect would reload the whole document.
+//
 // For a section whose band is a range, this is not a dismissal: reaching the
 // band's minimum only offers the button, and this press is what completes the
 // section. Completing one can complete an ancestor whose own band is now met,
@@ -18,7 +21,7 @@ import (
 func (h *PlayerHandler) FinishSection(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
-		h.redirect(w, r, "/play")
+		http.Redirect(w, r, "/play", http.StatusSeeOther)
 		return
 	}
 
@@ -27,7 +30,7 @@ func (h *PlayerHandler) FinishSection(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		h.logger.WarnContext(r.Context(), "FinishSection: objective not found",
 			"team", team.Code, "objective", slug)
-		h.redirect(w, r, "/objectives")
+		http.Redirect(w, r, "/objectives", http.StatusSeeOther)
 		return
 	}
 
@@ -37,7 +40,7 @@ func (h *PlayerHandler) FinishSection(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, services.ErrSectionNotFinishable) {
 			h.logger.WarnContext(r.Context(), "FinishSection: not finishable",
 				"team", team.Code, "objective", slug)
-			h.redirect(w, r, "/objectives")
+			http.Redirect(w, r, "/objectives", http.StatusSeeOther)
 			return
 		}
 		h.handleError(w, r, "FinishSection: recording finish",
@@ -45,5 +48,5 @@ func (h *PlayerHandler) FinishSection(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.redirect(w, r, "/objectives")
+	http.Redirect(w, r, "/objectives", http.StatusSeeOther)
 }

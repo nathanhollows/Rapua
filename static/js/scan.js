@@ -38,6 +38,7 @@
 		return {
 			form: document.getElementById("scan-form-" + blockID),
 			open: document.querySelector('[data-scan-open="' + blockID + '"]'),
+			controls: document.getElementById("scan-controls-" + blockID),
 			viewport: document.getElementById("scan-viewport-" + blockID),
 			video: document.getElementById("scan-video-" + blockID),
 			status: document.getElementById("scan-status-" + blockID),
@@ -48,9 +49,9 @@
 	function say(el, message, tone) {
 		if (!el) return;
 		el.textContent = message || "";
-		el.className = "text-sm text-center " + (!message
+		el.className = "text-base text-center " + (!message
 			? "hidden"
-			: tone === "error" ? "text-error" : "opacity-70");
+			: tone === "error" ? "text-error" : "q-soft");
 	}
 
 	async function start(blockID) {
@@ -68,7 +69,8 @@
 		sessions.set(blockID, session);
 
 		el.viewport.classList.remove("hidden");
-		if (el.open) el.open.classList.add("hidden");
+		// Only the video and Stop show while the camera runs.
+		if (el.controls) el.controls.classList.add("hidden");
 		say(el.status, "Starting camera…");
 
 		// The permission prompt is the slow part, so the wasm downloads alongside it.
@@ -170,7 +172,7 @@
 		const el = session.el;
 		if (el.video) el.video.srcObject = null;
 		if (el.viewport) el.viewport.classList.add("hidden");
-		if (el.open) el.open.classList.remove("hidden");
+		if (el.controls) el.controls.classList.remove("hidden");
 	}
 
 	document.addEventListener("click", function (event) {

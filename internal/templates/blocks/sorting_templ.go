@@ -298,7 +298,20 @@ func sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, dat
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" class=\"list sort-container\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" class=\"list sort-container\" data-complete=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(data.IsComplete()))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 190, Col: 50}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -306,57 +319,57 @@ func sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, dat
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.ScoringScheme == blocks.RetryUntilCorrect {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if playerData, err := getPlayerData(data.GetPlayerData()); err == nil && playerData.Attempts > 0 && !playerData.IsCorrect {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<p class=\"p-4 pb-0 text-primary font-bold text-center\">Not quite! Try again (Attempts: ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<p class=\"p-4 pb-0 text-primary font-bold text-center\">Not quite! Try again (Attempts: ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(playerData.Attempts))
+				var templ_7745c5c3_Var9 string
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(playerData.Attempts))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 196, Col: 126}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 197, Col: 126}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, ")</p>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, ")</p>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
 		if !data.IsComplete() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"flex justify-center mt-4\"><button class=\"btn btn-primary btn-wide\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"flex justify-center mt-4\"><button class=\"btn btn-primary btn-wide\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if block.ScoringScheme == blocks.RetryUntilCorrect {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "Check ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "Check ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "Submit ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "Submit ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal-icon lucide-send-horizontal w-5 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<svg xmlns=\"http://www.w3.org/2000/svg\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-send-horizontal-icon lucide-send-horizontal w-5 h-5\"><path d=\"M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z\"></path><path d=\"M6 12h16\"></path></svg></button></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</form></div></div><script>\n\t\t// Initialize sortable functionality on the sort container\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tconst sortContainer = document.getElementById('{ fmt.Sprintf(\"sorting-items-%s\", block.ID) }');\n\t\t\tconst form = document.getElementById('{ fmt.Sprintf(\"sorting-form-%s\", block.ID) }');\n\t\t\t\n\t\t\tif (sortContainer && form && !{ fmt.Sprint(data.IsComplete()) }) {\n\t\t\t\t// Initialize Sortable for drag and drop\n\t\t\t\tnew Sortable(sortContainer, {\n\t\t\t\t\tanimation: 150,\n\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\tdragClass: 'sortable-drag',\n\t\t\t\t\tonEnd: function() {\n\t\t\t\t\t\t// When sorting ends, update the hidden inputs to reflect new order\n\t\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t\t\n\t\t\t\t// Set up the up/down buttons to move items\n\t\t\t\tsortContainer.querySelectorAll('.join-vertical button').forEach(btn => {\n\t\t\t\t\tbtn.addEventListener('click', function(e) {\n\t\t\t\t\t\te.preventDefault();\n\t\t\t\t\t\tconst item = e.target.closest('.sorting-item');\n\t\t\t\t\t\tconst isUp = e.target.closest('button').getAttribute('data-tip') === 'Move up';\n\t\t\t\t\t\t\n\t\t\t\t\t\tif (isUp) {\n\t\t\t\t\t\t\tconst prev = item.previousElementSibling;\n\t\t\t\t\t\t\tif (prev) {\n\t\t\t\t\t\t\t\tsortContainer.insertBefore(item, prev);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tconst next = item.nextElementSibling;\n\t\t\t\t\t\t\tif (next) {\n\t\t\t\t\t\t\t\tsortContainer.insertBefore(next, item);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\t\n\t\t\t\t\t\t// Update the form data after moving\n\t\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t\t\n\t\t\t\t// Add a submit handler to make sure the form has the current order\n\t\t\t\tform.addEventListener('submit', function(e) {\n\t\t\t\t\tupdateSortingOrder(sortContainer, form);\n\t\t\t\t});\n\t\t\t}\n\t\t});\n\t\t\n\t\t// Function to update the sorting-item-order hidden inputs\n\t\tfunction updateSortingOrder(container, form) {\n\t\t\t\n\t\t\t// Get current order of items\n\t\t\tconst items = container.querySelectorAll('.sorting-item');\n\t\t\t\n\t\t\t// First remove all existing order inputs to avoid duplicates\n\t\t\tform.querySelectorAll('input[name=\"sorting-item-order\"]').forEach(input => {\n\t\t\t\tinput.remove();\n\t\t\t});\n\t\t\t\n\t\t\t// Add fresh inputs in the current order\n\t\t\titems.forEach((item, index) => {\n\t\t\t\tconst itemId = item.getAttribute('data-id');\n\t\t\t\t\n\t\t\t\t// Always create a new input\n\t\t\t\tconst input = document.createElement('input');\n\t\t\t\tinput.type = 'hidden';\n\t\t\t\tinput.name = 'sorting-item-order';\n\t\t\t\tinput.value = itemId;\n\t\t\t\tform.appendChild(input);\n\t\t\t});\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</form></div></div><script>\n\t\t// Adds drag-to-reorder to every sorting block that has not had it yet.\n\t\t//\n\t\t// Only the dragging: each item carries its own hidden order input and the\n\t\t// arrow buttons move items themselves, so rewriting those inputs here would\n\t\t// lose them.\n\t\t//\n\t\t// Blocks are found by markup, not names written into this script: a script\n\t\t// element is raw text, so a Go expression in it would print as written. It\n\t\t// reruns after an htmx swap because a re-rendered block arrives without a\n\t\t// page load.\n\t\t(function() {\n\t\t\tfunction setUpSorting() {\n\t\t\t\tif (typeof Sortable === 'undefined') {\n\t\t\t\t\twindow.addEventListener('load', setUpSorting, { once: true });\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tdocument.querySelectorAll('.sort-container:not([data-ready])').forEach(function(container) {\n\t\t\t\t\tcontainer.setAttribute('data-ready', 'true');\n\t\t\t\t\tif (container.getAttribute('data-complete') === 'true') return;\n\t\t\t\t\tnew Sortable(container, {\n\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\tghostClass: 'sortable-ghost',\n\t\t\t\t\t\tchosenClass: 'sortable-chosen',\n\t\t\t\t\t\tdragClass: 'sortable-drag'\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t}\n\t\t\tif (document.readyState === 'loading') {\n\t\t\t\tdocument.addEventListener('DOMContentLoaded', setUpSorting);\n\t\t\t} else {\n\t\t\t\tsetUpSorting();\n\t\t\t}\n\t\t\tif (!window.__sortingSwapBound) {\n\t\t\t\twindow.__sortingSwapBound = true;\n\t\t\t\tdocument.addEventListener('htmx:afterSettle', setUpSorting);\n\t\t\t}\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -380,51 +393,51 @@ func sortItem(item blocks.SortingItem) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var9 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var9 == nil {
-			templ_7745c5c3_Var9 = templ.NopComponent
+		templ_7745c5c3_Var10 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var10 == nil {
+			templ_7745c5c3_Var10 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<li id=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("sort-item-%s", item.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 292, Col: 43}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" class=\"list-row items-center py-3 pr-3 pl-5\" data-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<li id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("sort-item-%s", item.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 294, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 258, Col: 43}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" data-correct-position=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"list-row items-center py-3 pr-3 pl-5\" data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(item.Position))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 295, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 260, Col: 19}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><div class=\"list-col-grow prose\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" data-correct-position=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(item.Position))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 261, Col: 51}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\"><div class=\"list-col-grow prose\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -432,20 +445,20 @@ func sortItem(item blocks.SortingItem) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div><input type=\"hidden\" name=\"sorting-item-order\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><input type=\"hidden\" name=\"sorting-item-order\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
+		var templ_7745c5c3_Var14 string
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 300, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 266, Col: 64}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\"> <span class=\"join join-vertical\"><button type=\"button\" class=\"btn btn-xs btn-ghost join-item tooltip tooltip-left\" data-tip=\"Move up\" _=\"on click\n\t\t\t\t\t\tset :item to closest parent <li/>\n\t\t\t\t\t\tset :prev to :item.previousElementSibling\n\t\t\t\t\t\tif :prev then\n\t\t\t\t\t\t\tput :item before :prev\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"18 15 12 9 6 15\"></polyline></svg></button> <button type=\"button\" class=\"btn btn-xs btn-ghost join-item tooltip tooltip-left\" data-tip=\"Move down\" _=\"on click\n\t\t\t\t\tset :item to closest parent <li/>\n\t\t\t\t\tset :next to :item.nextElementSibling\n\t\t\t\t\tif :next then\n\t\t\t\t\t\tput :item after :next\n\t\t\t\t\tend\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg></button></span></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"> <span class=\"join join-vertical\"><button type=\"button\" class=\"btn btn-xs btn-ghost join-item tooltip tooltip-left\" data-tip=\"Move up\" _=\"on click\n\t\t\t\t\t\tset :item to closest parent <li/>\n\t\t\t\t\t\tset :prev to :item.previousElementSibling\n\t\t\t\t\t\tif :prev then\n\t\t\t\t\t\t\tput :item before :prev\n\t\t\t\t\t\tend\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"18 15 12 9 6 15\"></polyline></svg></button> <button type=\"button\" class=\"btn btn-xs btn-ghost join-item tooltip tooltip-left\" data-tip=\"Move down\" _=\"on click\n\t\t\t\t\tset :item to closest parent <li/>\n\t\t\t\t\tset :next to :item.nextElementSibling\n\t\t\t\t\tif :next then\n\t\t\t\t\t\tput :item after :next\n\t\t\t\t\tend\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><polyline points=\"6 9 12 15 18 9\"></polyline></svg></button></span></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -470,65 +483,65 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var14 == nil {
-			templ_7745c5c3_Var14 = templ.NopComponent
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if isCorrect {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<li id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("sort-item-%s", item.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 338, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" class=\"list-row items-center py-3 pr-3 pl-5\" data-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<li id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("sort-item-%s", item.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 340, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 304, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" data-correct-position=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" class=\"list-row items-center py-3 pr-3 pl-5\" data-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(item.Position))
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 341, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 306, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\"><span class=\"badge badge-lg badge-success rounded-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" data-correct-position=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(item.Position))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 344, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 307, Col: 52}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span><div class=\"list-col-grow prose\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"><span class=\"badge badge-lg badge-success rounded-full\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 310, Col: 31}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span><div class=\"list-col-grow prose\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -536,64 +549,64 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</div></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<li id=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var19 string
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("sort-item-%s", item.ID))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 352, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" class=\"list-row items-center py-3 pr-3 pl-5\" data-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<li id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var20 string
-			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("sort-item-%s", item.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 354, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 318, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" data-correct-position=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" class=\"list-row items-center py-3 pr-3 pl-5\" data-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var21 string
-			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(item.Position))
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 355, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 320, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\"><span class=\"badge badge-lg badge-error rounded-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" data-correct-position=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var22 string
-			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(item.Position))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 358, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 321, Col: 52}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</span><div class=\"list-col-grow prose\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\"><span class=\"badge badge-lg badge-error rounded-full\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var23 string
+			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(item.Position))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 324, Col: 31}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</span><div class=\"list-col-grow prose\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -601,7 +614,7 @@ func sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrec
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</div></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</div></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -635,51 +648,51 @@ func sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) temp
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var23 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var23 == nil {
-			templ_7745c5c3_Var23 = templ.NopComponent
+		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var24 == nil {
+			templ_7745c5c3_Var24 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<form id=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 378, Col: 39}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\" hx-put=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<form id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
-		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/", block.ID))
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 379, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 344, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" hx-trigger=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" hx-put=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("keyup from:#form-%s delay:500ms, click from:#form-%s delay:100ms, change from:#form-%s delay:100ms, save delay:500ms", block.ID, block.ID, block.ID))
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 380, Col: 176}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 345, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" hx-swap=\"none\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" hx-trigger=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var27 string
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("keyup from:#form-%s delay:500ms, click from:#form-%s delay:100ms, change from:#form-%s delay:100ms, save delay:500ms", block.ID, block.ID, block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 346, Col: 176}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\" hx-swap=\"none\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -689,37 +702,37 @@ func sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) temp
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Scoring Scheme</legend> <select class=\"select w-full\" name=\"scoring\"><option value=\"all_or_nothing\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Scoring Scheme</legend> <select class=\"select w-full\" name=\"scoring\"><option value=\"all_or_nothing\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.ScoringScheme == "all_or_nothing" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, ">All or Nothing</option> <option value=\"correct_item_correct_place\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, ">All or Nothing</option> <option value=\"correct_item_correct_place\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.ScoringScheme == "correct_item_correct_place" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, ">Correct Item, Correct Place</option> <option value=\"retry_until_correct\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, ">Correct Item, Correct Place</option> <option value=\"retry_until_correct\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.ScoringScheme == "retry_until_correct" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, ">Retry Until Correct</option></select> <span class=\"label inline-block\"><ul class=\"list-disc list-inside text-xs\"><li><strong>All or Nothing</strong>: One attempt only, full points or none</li><li><strong>Correct Item, Correct Place</strong>: Points for each correctly placed item</li><li><strong>Retry Until Correct</strong>: Multiple attempts allowed until correct</li></ul></span></fieldset>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, ">Retry Until Correct</option></select> <span class=\"label inline-block\"><ul class=\"list-disc list-inside text-xs\"><li><strong>All or Nothing</strong>: One attempt only, full points or none</li><li><strong>Correct Item, Correct Place</strong>: Points for each correctly placed item</li><li><strong>Retry Until Correct</strong>: Multiple attempts allowed until correct</li></ul></span></fieldset>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -727,7 +740,7 @@ func sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend w-full\"><div class=\"flex items-center gap-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend w-full\"><div class=\"flex items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -735,7 +748,7 @@ func sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "Items to be sorted</div><button class=\"btn btn-outline btn-xs\" type=\"button\" _=\"\n\t\t\t\t\t\ton click\n\t\t\t\t\t\t\tset :group to closest <form />\n\t\t\t\t\t\t\tput #sorting-item-template's innerHTML after last .sorting-item in :group.querySelector('.sorting-items')\n\t\t\t\t\t\t\">Add Item</button></legend><div class=\"sorting-items join join-vertical\" _=\"on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate\n\t\t\t\tif my children's length > 2\n\t\t\t\t\tremove .invisible from me.querySelectorAll('.btn-circle')\n\t\t\t\telse\n\t\t\t\t\tadd .invisible to me.querySelectorAll('.btn-circle')\n\t\t\t\tend\n\t\t\t\t\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "Items to be sorted</div><button class=\"btn btn-outline btn-xs\" type=\"button\" _=\"\n\t\t\t\t\t\ton click\n\t\t\t\t\t\t\tset :group to closest <form />\n\t\t\t\t\t\t\tput #sorting-item-template's innerHTML after last .sorting-item in :group.querySelector('.sorting-items')\n\t\t\t\t\t\t\">Add Item</button></legend><div class=\"sorting-items join join-vertical\" _=\"on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate\n\t\t\t\tif my children's length > 2\n\t\t\t\t\tremove .invisible from me.querySelectorAll('.btn-circle')\n\t\t\t\telse\n\t\t\t\t\tadd .invisible to me.querySelectorAll('.btn-circle')\n\t\t\t\tend\n\t\t\t\t\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -751,7 +764,7 @@ func sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) temp
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div><span class=\"label inline-block\">These must be in the correct order.</span></fieldset><template id=\"sorting-item-template\"><label class=\"sorting-item input flex flex-row items-top gap-2 h-auto join-item w-full\"><textarea name=\"sorting-items\" class=\"w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent\" style=\"field-sizing: content;\" rows=\"1\" placeholder=\"Sorting item description...\" autoComplete=\"off\" _=\"on keyup send save to (closest <form/>)\"></textarea> <input type=\"hidden\" name=\"sorting-item-ids\" value=\"\"><div class=\"flex gap-1 mt-2\"><span class=\"join join-vertical\"><button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move up\" _=\"on click\n\t\t\t\t\t\t\t\tset item to closest parent <label/>\n\t\t\t\t\t\t\t\tset prev to item.previousElementSibling\n\t\t\t\t\t\t\t\tif prev then\n\t\t\t\t\t\t\t\t\tput item before prev\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\t\t\tsend triggerUpdate to (closest <form/>).querySelector('.sorting-items')\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-up w-3 h-3\"><path d=\"M8 6L12 2L16 6\"></path><path d=\"M12 2V22\"></path></svg></button> <button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move down\" _=\"on click\n\t\t\t\t\t\t\t\tset item to closest parent <label/>\n\t\t\t\t\t\t\t\tset next to item.nextElementSibling\n\t\t\t\t\t\t\t\tif next then\n\t\t\t\t\t\t\t\t\tput item after next\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\t\t\tsend triggerUpdate to (closest <form/>).querySelector('.sorting-items')\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-down w-3 h-3\"><path d=\"M8 18L12 22L16 18\"></path><path d=\"M12 2V22\"></path></svg></button></span> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\tset :group to closest <form />\n\t\t\t\t\tremove closest parent <label />\n\t\t\t\t\tsend save to :group\n\t\t\t\t\tsend triggerUpdate to :group.querySelector('.sorting-items')\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div></label></template></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</div><span class=\"label inline-block\">These must be in the correct order.</span></fieldset><template id=\"sorting-item-template\"><label class=\"sorting-item input flex flex-row items-top gap-2 h-auto join-item w-full\"><textarea name=\"sorting-items\" class=\"w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-20 bg-transparent\" style=\"field-sizing: content;\" rows=\"1\" placeholder=\"Sorting item description...\" autoComplete=\"off\" _=\"on keyup send save to (closest <form/>)\"></textarea> <input type=\"hidden\" name=\"sorting-item-ids\" value=\"\"><div class=\"flex gap-1 mt-2\"><span class=\"join join-vertical\"><button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move up\" _=\"on click\n\t\t\t\t\t\t\t\tset item to closest parent <label/>\n\t\t\t\t\t\t\t\tset prev to item.previousElementSibling\n\t\t\t\t\t\t\t\tif prev then\n\t\t\t\t\t\t\t\t\tput item before prev\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\t\t\tsend triggerUpdate to (closest <form/>).querySelector('.sorting-items')\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-up w-3 h-3\"><path d=\"M8 6L12 2L16 6\"></path><path d=\"M12 2V22\"></path></svg></button> <button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move down\" _=\"on click\n\t\t\t\t\t\t\t\tset item to closest parent <label/>\n\t\t\t\t\t\t\t\tset next to item.nextElementSibling\n\t\t\t\t\t\t\t\tif next then\n\t\t\t\t\t\t\t\t\tput item after next\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\t\t\tsend triggerUpdate to (closest <form/>).querySelector('.sorting-items')\n\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-down w-3 h-3\"><path d=\"M8 18L12 22L16 18\"></path><path d=\"M12 2V22\"></path></svg></button></span> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\t\tset :group to closest <form />\n\t\t\t\t\tremove closest parent <label />\n\t\t\t\t\tsend save to :group\n\t\t\t\t\tsend triggerUpdate to :group.querySelector('.sorting-items')\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div></label></template></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -775,86 +788,86 @@ func sortingItem(item blocks.SortingItem) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var27 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var27 == nil {
-			templ_7745c5c3_Var27 = templ.NopComponent
+		templ_7745c5c3_Var28 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var28 == nil {
+			templ_7745c5c3_Var28 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<label class=\"sorting-item input flex flex-row items-top gap-2 h-auto join-item w-full\" data-item-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<label class=\"sorting-item input flex flex-row items-top gap-2 h-auto join-item w-full\" data-item-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var28 string
-		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 513, Col: 111}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 479, Col: 111}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var29 = []any{fmt.Sprintf("w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 bg-transparent item-%s", item.ID)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var29...)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<textarea name=\"sorting-items\" class=\"")
+		var templ_7745c5c3_Var30 = []any{fmt.Sprintf("w-full markdown-textarea textarea hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 pr-8 bg-transparent item-%s", item.ID)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var30...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var30 string
-		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var29).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\" _=\"on keyup send save to (closest <form/>)\" style=\"field-sizing: content;\" rows=\"1\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<textarea name=\"sorting-items\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var31 string
-		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.Description)
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var30).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 520, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\" placeholder=\"Sorting item description...\" autoComplete=\"off\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\" _=\"on keyup send save to (closest <form/>)\" style=\"field-sizing: content;\" rows=\"1\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var32 string
-		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 524, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 486, Col: 27}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</textarea> <input type=\"hidden\" name=\"sorting-item-ids\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" placeholder=\"Sorting item description...\" autoComplete=\"off\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var33 string
-		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(item.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 529, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 490, Col: 21}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\"><div class=\"flex gap-1 mt-2\"><span class=\"join join-vertical\"><button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move up\" _=\"on click\n\t\t\t\t\t\tset :item to closest parent <label/>\n\t\t\t\t\t\tset :prev to :item.previousElementSibling\n\t\t\t\t\t\tif :prev then\n\t\t\t\t\t\t\tput :item before :prev\n\t\t\t\t\t\tend\n\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-up w-3 h-3\"><path d=\"M8 6L12 2L16 6\"></path><path d=\"M12 2V22\"></path></svg></button> <button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move down\" _=\"on click\n\t\t\t\t\t\tset :item to closest parent <label/>\n\t\t\t\t\t\tset :next to :item.nextElementSibling\n\t\t\t\t\t\tif :next then\n\t\t\t\t\t\t\tput :item after :next\n\t\t\t\t\t\tend\n\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-down w-3 h-3\"><path d=\"M8 18L12 22L16 18\"></path><path d=\"M12 2V22\"></path></svg></button></span> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest <form />\n\t\t\t\tremove closest parent <label />\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector('.sorting-items')\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div></label>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</textarea> <input type=\"hidden\" name=\"sorting-item-ids\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var34 string
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/sorting.templ`, Line: 495, Col: 18}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\"><div class=\"flex gap-1 mt-2\"><span class=\"join join-vertical\"><button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move up\" _=\"on click\n\t\t\t\t\t\tset :item to closest parent <label/>\n\t\t\t\t\t\tset :prev to :item.previousElementSibling\n\t\t\t\t\t\tif :prev then\n\t\t\t\t\t\t\tput :item before :prev\n\t\t\t\t\t\tend\n\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-up w-3 h-3\"><path d=\"M8 6L12 2L16 6\"></path><path d=\"M12 2V22\"></path></svg></button> <button type=\"button\" class=\"btn btn-xs join-item tooltip\" data-tip=\"Move down\" _=\"on click\n\t\t\t\t\t\tset :item to closest parent <label/>\n\t\t\t\t\t\tset :next to :item.nextElementSibling\n\t\t\t\t\t\tif :next then\n\t\t\t\t\t\t\tput :item after :next\n\t\t\t\t\t\tend\n\t\t\t\t\t\tsend save to closest <form/>\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-down w-3 h-3\"><path d=\"M8 18L12 22L16 18\"></path><path d=\"M12 2V22\"></path></svg></button></span> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest <form />\n\t\t\t\tremove closest parent <label />\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector('.sorting-items')\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div></label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -1,9 +1,11 @@
 package templates
 
 import (
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/nathanhollows/Rapua/v8/navigation"
@@ -284,17 +286,79 @@ func TestQuestView_SurvivesAParentCycle(t *testing.T) {
 	}
 }
 
-// The bar carries the run's own account: completions against what that run
-// still owes, which is what the view computed and not the authored tree.
-func TestQuestChrome_CarriesTheRunsProgress(t *testing.T) {
-	view := &services.PlayerObjectiveView{
-		Progress: navigation.Progress{Done: 11, Remaining: 4},
-	}
+// The header counts against what the run still owes, not the authored tree.
+func TestMetricFor_ProgressIsDoneAgainstWhatIsStillOwed(t *testing.T) {
+	progress := navigation.Progress{Done: 11, Remaining: 4}
 
-	chrome := QuestChrome(models.Run{}, view)
-	assert.Equal(t, 11, chrome.Done)
-	assert.Equal(t, 15, chrome.Total, "done plus what the run still owes")
-	assert.Equal(t, "quest", chrome.Active)
+	got := metricFor(models.QuestSettings{}, progress)
+
+	assert.True(t, got.Show)
+	assert.True(t, got.HasTotal)
+	assert.Equal(t, 11, got.Done)
+	assert.Equal(t, 15, got.Total, "done plus what the run still owes")
+	assert.Equal(t, "done", got.Label)
+}
+
+// Count has no target, so it cannot disagree with a total.
+func TestMetricFor_FoundHasNoTotal(t *testing.T) {
+	got := metricFor(models.QuestSettings{ProgressFeedback: game.ProgressFeedbackCount}, navigation.Progress{Done: 3, Remaining: 6})
+
+	assert.True(t, got.Show)
+	assert.False(t, got.HasTotal)
+	assert.Equal(t, 3, got.Done)
+	assert.Equal(t, "found", got.Label)
+}
+
+func TestMetricFor_NoneAndAnEmptyTotalSayNothing(t *testing.T) {
+	assert.False(t, metricFor(models.QuestSettings{ProgressFeedback: game.ProgressFeedbackNone}, navigation.Progress{Done: 3, Remaining: 6}).Show)
+	assert.False(t, metricFor(models.QuestSettings{}, navigation.Progress{}).Show, "no denominator to show")
+}
+
+func headerRun(metric game.ProgressFeedback, points bool) models.Run {
+	return models.Run{
+		Name:   "The Quokkas",
+		Points: 40,
+		Quest:  models.Quest{Name: "The Perfumer's Garden", Settings: models.QuestSettings{EnablePoints: points, ProgressFeedback: metric}},
+	}
+}
+
+func TestQuestHeader_ShowsTheMetricTheAuthorChose(t *testing.T) {
+	view := &services.PlayerObjectiveView{Progress: navigation.Progress{Done: 3, Remaining: 6}}
+
+	html := render(t, questHeader(ObjectivesParams{Run: headerRun(game.ProgressFeedbackFraction, false), View: view}))
+	assert.Contains(t, html, "The Perfumer&#39;s Garden")
+	assert.Contains(t, html, "The Quokkas")
+	assert.Contains(t, html, `aria-label="3 of 9 done"`)
+	assert.NotContains(t, html, "<progress", "the bar is gone from every page")
+
+	html = render(t, questHeader(ObjectivesParams{Run: headerRun(game.ProgressFeedbackCount, false), View: view}))
+	assert.Contains(t, html, `aria-label="3 found"`)
+	assert.NotContains(t, html, "/9")
+
+	html = render(t, questHeader(ObjectivesParams{Run: headerRun(game.ProgressFeedbackNone, false), View: view}))
+	assert.NotContains(t, html, "aria-label=")
+}
+
+// Points are the run's own score. Rank is a comparison and is not on this page.
+func TestQuestHeader_ShowsPointsOnlyWhenOnAndNeverRank(t *testing.T) {
+	view := &services.PlayerObjectiveView{Progress: navigation.Progress{Done: 1, Remaining: 1}}
+
+	// The metric off, so the only " of " that could appear is a rank.
+	on := render(t, questHeader(ObjectivesParams{Run: headerRun(game.ProgressFeedbackNone, true), View: view}))
+	assert.Contains(t, on, "40 pts")
+	assert.NotContains(t, on, " of ", "no position among other teams")
+
+	off := render(t, questHeader(ObjectivesParams{Run: headerRun("", false), View: view}))
+	assert.NotContains(t, off, "pts")
+}
+
+// A run with no name is told so, not shown a blank.
+func TestQuestHeader_NamesAnUnnamedTeam(t *testing.T) {
+	run := headerRun("", false)
+	run.Name = ""
+
+	html := render(t, questHeader(ObjectivesParams{Run: run, View: &services.PlayerObjectiveView{}}))
+	assert.Contains(t, html, "No name yet")
 }
 
 // A row carries the description under its title, which is what the second
@@ -327,4 +391,161 @@ func TestQuestView_AFlaggedSectionPassesThrough(t *testing.T) {
 	assert.Empty(t, view.Places[0].Path)
 	require.Len(t, view.Places[0].Rows, 1)
 	assert.Equal(t, "Find the owl", view.Places[0].Rows[0].Title)
+}
+
+// A section's colour is its place in the authored tree, so unlocking another
+// never recolours it.
+func TestSectionHues_AreFixedByPositionNotByWhatIsUnlocked(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("a", "root", "A"), obj("a1", "a", "A1"),
+		obj("b", "root", "B"), obj("b1", "b", "B1"),
+		obj("c", "root", "C"), obj("c1", "c", "C1"),
+	)
+
+	hues := sectionHues(rows)
+
+	assert.Equal(t, HueFor(0), hues["a"])
+	assert.Equal(t, HueFor(1), hues["b"])
+	assert.Equal(t, HueFor(2), hues["c"])
+	assert.NotContains(t, hues, "a1", "a task is not a section")
+	assert.NotContains(t, hues, "root")
+
+	// Only C offered: it keeps the colour it has when everything is.
+	view := BuildQuestView(viewOf([]models.Objective{rows[6]}, rows))
+	require.Len(t, view.Places, 1)
+	assert.Equal(t, HueFor(2), view.Places[0].Hue)
+}
+
+// A pass-through section is not drawn: no colour, no number.
+func TestSectionHues_PassThroughSectionsTakeNoNumber(t *testing.T) {
+	pass := obj("p", "root", "P")
+	pass.PassThrough = true
+	rows := tree(
+		obj("root", "", "Quest"),
+		pass, obj("p1", "p", "P1"),
+		obj("b", "root", "B"), obj("b1", "b", "B1"),
+	)
+
+	hues := sectionHues(rows)
+
+	assert.NotContains(t, hues, "p")
+	assert.Equal(t, HueFor(0), hues["b"])
+}
+
+// Groups join neighbours under the outermost section and drop it from the path;
+// deeper ancestors stay as the crumb.
+func TestQuestView_GroupsPlacesUnderTheirOutermostSection(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("scent", "root", "Make your scent"),
+		obj("top", "scent", "Top note"), obj("t1", "top", "Bergamot"),
+		obj("base", "scent", "Base note"), obj("b1", "base", "Oakmoss"),
+		obj("still", "root", "The still room"), obj("s1", "still", "Steam"),
+	)
+
+	view := BuildQuestView(viewOf([]models.Objective{rows[3], rows[5], rows[7]}, rows))
+	groups := view.Groups()
+
+	require.Len(t, groups, 2)
+	assert.Equal(t, "Make your scent", groups[0].Title)
+	require.Len(t, groups[0].Places, 2)
+	assert.Equal(t, "Top note", groups[0].Places[0].Title)
+	assert.Empty(t, groups[0].Places[0].Path, "the group is the heading, so it is not also the crumb")
+	assert.Empty(t, groups[1].Title, "a section directly under the quest has no group above it")
+}
+
+func TestQuestPill_SaysTheCountWhereTheBandAsksForSeveral(t *testing.T) {
+	two := 3
+	section := models.Objective{ChildrenMin: &two}
+	band := game.FillBand(section.ChildrenMin, section.ChildrenMax, 5)
+
+	assert.Equal(t, "1 of 3 done", questPill(section, band, 5, 1))
+	assert.Equal(t, "3 of 3 done", questPill(section, band, 5, 4), "never past the band's own minimum")
+}
+
+// Free roam is never said: any order is the only order on offer.
+func TestQuestPill_NeverSaysInAnyOrder(t *testing.T) {
+	section := models.Objective{Routing: models.RouteStrategyFreeRoam}
+	band := game.FillBand(nil, nil, 3)
+
+	assert.Equal(t, "0 of 3 done", questPill(section, band, 3, 0), "all three is a count to watch")
+	assert.NotContains(t, questPill(models.Objective{Routing: models.RouteStrategyFreeRoam}, game.FillBand(nil, nil, 1), 1, 0), "any order")
+}
+
+func TestQuestPill_OrderedIsNextUp(t *testing.T) {
+	section := models.Objective{Routing: models.RouteStrategyOrdered}
+
+	assert.Equal(t, "Next up", questPill(section, game.FillBand(nil, nil, 3), 3, 0))
+}
+
+// A ceiling below the child count is a pick: "Complete all three" would say keep
+// going after the section had shut.
+func TestBandWords_ACeilingBelowTheChildCountIsAPick(t *testing.T) {
+	one := 1
+	band := game.FillBand(&one, &one, 3)
+
+	assert.Equal(t, "Pick one", bandWords(band, 3))
+	assert.Equal(t, "Complete all three", bandWords(game.FillBand(nil, nil, 3), 3))
+}
+
+func finishablePlace() QuestPlace {
+	return QuestPlace{
+		IsSection: true, Title: "The still room", CanFinish: true,
+		FinishLabel: "That's enough for now", FinishSlug: "still",
+		Rows: []QuestRow{{Slug: "steam", Title: "Steam distillation"}},
+	}
+}
+
+// Tasks still on offer come first, then an "or", then the press, which asks
+// before it acts.
+func TestQuestPlace_MetBandOffersTheRestThenOrThenAConfirmedPress(t *testing.T) {
+	html := render(t, questPlace(finishablePlace(), false))
+
+	task := strings.Index(html, "Steam distillation")
+	or := strings.Index(html, `class="q-or"`)
+	press := strings.Index(html, `class="q-fin"`)
+	require.True(t, task >= 0 && or > task && press > or, "task, then or, then the press")
+
+	assert.Contains(t, html, `<dialog id="finish-still"`)
+	assert.Contains(t, html, "Finish The still room?")
+	assert.Contains(t, html, "This closes the section and skips what is left.")
+	form := strings.Index(html, `action="/objective/still/finish"`)
+	assert.Greater(t, form, strings.Index(html, "<dialog"), "the post is in the dialog, so the press alone sends nothing")
+	assert.Contains(t, html, `hx-boost="true"`, "boosted, so the list that follows is swapped in and not reloaded")
+	assert.NotContains(t, html, "hx-post", "an hx-post would answer a redirect with a full page load")
+	assert.NotContains(t, html, "You have done enough to finish")
+}
+
+func TestQuestPlace_NoPressUntilTheBandIsMet(t *testing.T) {
+	place := finishablePlace()
+	place.CanFinish = false
+
+	html := render(t, questPlace(place, false))
+
+	assert.NotContains(t, html, "q-fin")
+	assert.NotContains(t, html, "<dialog")
+}
+
+// The pill carries the count, so no separate "found" footer is drawn.
+func TestQuestPlace_WearsItsPillAndTheSectionsHue(t *testing.T) {
+	place := finishablePlace()
+	place.CanFinish = false
+	place.Pill = "1 of 3 done"
+	place.Hue = HueFor(2)
+
+	html := render(t, questPlace(place, true))
+
+	assert.Contains(t, html, `class="q-pill">1 of 3 done`)
+	assert.Contains(t, html, hueClass(HueFor(2)))
+	assert.Contains(t, html, "q-head-sub", "under a group the heading steps down and takes a dot")
+	assert.NotContains(t, html, "found")
+}
+
+func TestQuestRow_OnlyAGuidedFirstRowIsTheHero(t *testing.T) {
+	row := QuestRow{Slug: "bench", Title: "The blending bench", IsDoor: true}
+
+	assert.Contains(t, render(t, questRow(row, true)), "q-hero")
+	assert.Contains(t, render(t, questRow(row, true)), "Next up")
+	assert.NotContains(t, render(t, questRow(row, false)), "q-hero")
 }

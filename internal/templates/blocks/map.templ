@@ -51,57 +51,63 @@ templ mapPlayer(_ models.QuestSettings, block blocks.MapBlock) {
 				});
 			}
 
-			var keyEl = document.getElementById('mapbox_key');
-			if (!keyEl) return;
-			mapboxgl.accessToken = keyEl.dataset.key;
+			// Mapbox loads on first use. Where nothing provides loadMapbox (editor
+			// pages carry it in their head) it is already there.
+			(window.loadMapbox ? window.loadMapbox() : Promise.resolve()).then(function() {
+				var keyEl = document.getElementById('mapbox_key');
+				if (!keyEl) return;
+				mapboxgl.accessToken = keyEl.dataset.key;
 
-			var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-			var style = isDark
-				? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'
-				: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';
+				var isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+				var style = isDark
+					? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'
+					: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';
 
-			document.querySelectorAll('.player-map-uninit').forEach(function(el) {
-				el.classList.remove('player-map-uninit');
-				destroyMapInstance(el.id);
+				document.querySelectorAll('.player-map-uninit').forEach(function(el) {
+					el.classList.remove('player-map-uninit');
+					destroyMapInstance(el.id);
 
-				var lat = parseFloat(el.dataset.lat) || 0;
-				var lng = parseFloat(el.dataset.lng) || 0;
-				var zoom = parseFloat(el.dataset.zoom) || 14;
-				var hideMarker = el.dataset.hideMarker === 'true';
+					var lat = parseFloat(el.dataset.lat) || 0;
+					var lng = parseFloat(el.dataset.lng) || 0;
+					var zoom = parseFloat(el.dataset.zoom) || 14;
+					var hideMarker = el.dataset.hideMarker === 'true';
 
-				// Two rAFs settle layout after an HTMX swap. The 150ms setTimeout
-				// gives the browser time to release WebGL GPU resources from any maps
-				// destroyed in htmx:beforeSwap (healthy initial maps need more cleanup
-				// time than already-broken maps from a prior failed reload).
-				requestAnimationFrame(function() {
+					// Two rAFs settle layout after an HTMX swap. The 150ms setTimeout
+					// gives the browser time to release WebGL GPU resources from any maps
+					// destroyed in htmx:beforeSwap (healthy initial maps need more cleanup
+					// time than already-broken maps from a prior failed reload).
 					requestAnimationFrame(function() {
-						setTimeout(function() {
-							if (!document.body.contains(el)) return;
-							var map = new mapboxgl.Map({
-								container: el,
-								style: style,
-								center: [lng, lat],
-								zoom: zoom,
-								interactive: false,
-							});
-							window.__mapInstances[el.id] = map;
+						requestAnimationFrame(function() {
+							setTimeout(function() {
+								if (!document.body.contains(el)) return;
+								var map = new mapboxgl.Map({
+									container: el,
+									style: style,
+									center: [lng, lat],
+									zoom: zoom,
+									interactive: false,
+								});
+								window.__mapInstances[el.id] = map;
 
-							var marker = null;
-							if (!hideMarker) {
-								marker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);
-							}
+								var marker = null;
+								if (!hideMarker) {
+									marker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);
+								}
 
-							map.on('load', function() {
-								if (window.__mapInstances[el.id] !== map) return;
-								map.resize();
-								setTimeout(function() {
-									if (window.__mapInstances[el.id] === map) map.resize();
-								}, 150);
-								MapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, marker ? [marker] : []);
-							});
-						}, 150);
+								map.on('load', function() {
+									if (window.__mapInstances[el.id] !== map) return;
+									map.resize();
+									setTimeout(function() {
+										if (window.__mapInstances[el.id] === map) map.resize();
+									}, 150);
+									MapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, marker ? [marker] : []);
+								});
+							}, 150);
+						});
 					});
 				});
+			}).catch(function(err) {
+				console.error('map block: Mapbox did not load', err);
 			});
 		})();
 		</script>

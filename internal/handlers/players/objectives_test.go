@@ -147,7 +147,8 @@ func TestPlayerHandler_Objectives_RendersNextObjectives(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "Find the key")
 }
 
-func TestPlayerHandler_Objectives_RedirectsToCompleteWhenAllVisited(t *testing.T) {
+// A finished run is shown the finish page where it asked, not redirected to it.
+func TestPlayerHandler_Objectives_DrawsTheFinishPageInPlaceWhenAllVisited(t *testing.T) {
 	navigationService, runService, instanceRepo, dbc, cleanup := setupObjectivesHandlerServices(t)
 	defer cleanup()
 	ctx := context.Background()
@@ -158,9 +159,12 @@ func TestPlayerHandler_Objectives_RedirectsToCompleteWhenAllVisited(t *testing.T
 	_, err := completionRepo.Insert(ctx, team.Code, objective.ID, game.ContextObjectiveProof)
 	require.NoError(t, err)
 
+	blockStateRepo := repositories.NewBlockStateRepository(dbc)
+	blockService := services.NewBlockService(repositories.NewBlockRepository(dbc, blockStateRepo), blockStateRepo)
 	handler := players.NewTestPlayerHandler(
 		players.WithNavigationService(navigationService),
 		players.WithRunService(runService),
+		players.WithBlockService(blockService),
 	)
 
 	req := requestWithRun("/objectives", team)
@@ -168,7 +172,11 @@ func TestPlayerHandler_Objectives_RedirectsToCompleteWhenAllVisited(t *testing.T
 	w := httptest.NewRecorder()
 	handler.Objectives(w, req)
 
-	assert.Equal(t, "/complete", w.Header().Get("Hx-Redirect"))
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Empty(t, w.Header().Get("Hx-Redirect"), "no full page load")
+	assert.Empty(t, w.Header().Get("Location"))
+	assert.Equal(t, "/complete", w.Header().Get("Hx-Replace-Url"), "the address still says where they are")
+	assert.Contains(t, w.Body.String(), `href="/journal"`, "it is the finish page")
 }
 
 // The diary reads the event stream, so a find renders only when the stream

@@ -12,20 +12,6 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// containerTitle names the section an objective sits in, for the breadcrumb. A
-// failed lookup only costs the crumb its words, so it does not fail the page.
-func (h *PlayerHandler) containerTitle(r *http.Request, parentID string) string {
-	if parentID == "" {
-		return ""
-	}
-	parent, err := h.checkInService.GetObjectiveByID(r.Context(), parentID)
-	if err != nil {
-		h.logger.WarnContext(r.Context(), "loading breadcrumb parent", "error", err.Error(), "objective", parentID)
-		return ""
-	}
-	return parent.Title
-}
-
 // ObjectiveView shows the page for a specific objective: proof content while
 // unproven, reveal content once proof completes.
 func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
@@ -149,31 +135,24 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 		Blocks:      contentBlocks,
 		States:      blockStates,
 		Hidden:      h.hiddenBlocks(r.Context(), team, contentBlocks),
+		Slug:        objective.Slug,
 	}
-	// Only the reveal reads Next, so proof pages skip the frontier lookup.
-	if zone == blocks.ContextObjectiveReveal {
-		data.Next = h.nextUp(r, team, objective.ID)
+	// Only the proof wears the section colour, so only it looks the tree up.
+	if zone == blocks.ContextObjectiveProof {
+		data.Hue = h.sectionHue(r, team, objective)
 	}
 	h.renderObjective(w, r, team, objective, data)
 }
 
-// nextUp recomputes the frontier rather than reusing one from earlier, because
-// clearing this objective can have opened something. A failure only costs the
-// reveal its forward offer: the way back to the list is always on the page.
-func (h *PlayerHandler) nextUp(
-	r *http.Request, team *models.Run, currentID string,
-) templates.NextUp {
+// sectionHue finds the colour of the section an objective is in. A failure only
+// costs the tint, so it returns the default instead of failing the page.
+func (h *PlayerHandler) sectionHue(r *http.Request, team *models.Run, objective *models.Objective) int {
 	view, err := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
 	if err != nil {
-		h.logger.WarnContext(r.Context(), "loading next objective", "error", err.Error(), "team", team.Code)
-		return templates.NextUp{}
+		h.logger.WarnContext(r.Context(), "loading section hue", "error", err.Error(), "team", team.Code)
+		return 0
 	}
-	for _, candidate := range view.Frontier.Available {
-		if candidate.ID != currentID {
-			return templates.NextUp{Title: candidate.Title, Slug: candidate.Slug}
-		}
-	}
-	return templates.NextUp{}
+	return templates.HueOfObjective(view.Objectives, *objective)
 }
 
 // renderObjective wraps the page in the run's chrome.
@@ -185,7 +164,7 @@ func (h *PlayerHandler) renderObjective(
 	data templates.ObjectiveViewData,
 ) {
 	page := templates.ObjectiveView(data)
-	chrome := templates.ObjectiveChrome(*team, h.containerTitle(r, objective.ParentID))
+	chrome := templates.ObjectiveChrome(*team)
 	if err := templates.AppLayout(
 		page, chrome, objective.Title, team.Messages,
 	).Render(r.Context(), w); err != nil {

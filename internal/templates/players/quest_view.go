@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"fmt"
 	"strconv"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
@@ -62,6 +63,82 @@ type QuestPlace struct {
 	Found   int
 	Total   int
 	Minimum int
+
+	// Pill is the short text beside the heading: the count towards the band, or
+	// the rule.
+	Pill string
+	// Ordered marks a section that offers one thing at a time, drawn as the
+	// single next step.
+	Ordered bool
+	// Hue is the section's palette colour by its place in the tree, fixed for the
+	// run.
+	Hue int
+}
+
+// QuestGroup is places sharing an outermost section, under one heading. Anything
+// deeper stays in a place's Path as a crumb, so the screen reads group, section,
+// task and no further.
+type QuestGroup struct {
+	// Title is empty for places with no section above them.
+	Title  string
+	Places []QuestPlace
+}
+
+// Groups gathers consecutive places sharing an outermost section. Only
+// neighbours merge: pulling two apart would rearrange the author's order.
+func (q QuestView) Groups() []QuestGroup {
+	var groups []QuestGroup
+	for _, place := range q.Places {
+		title := ""
+		if len(place.Path) > 0 {
+			title = place.Path[0]
+			place.Path = place.Path[1:]
+		}
+		if n := len(groups); n > 0 && groups[n-1].Title == title && title != "" {
+			groups[n-1].Places = append(groups[n-1].Places, place)
+			continue
+		}
+		groups = append(groups, QuestGroup{Title: title, Places: []QuestPlace{place}})
+	}
+	return groups
+}
+
+// HueOfObjective is the hue of the section a task sits in, so opening a task
+// keeps its list colour. Zero when no drawn section contains it.
+func HueOfObjective(objectives []models.Objective, objective models.Objective) int {
+	byID := make(map[string]models.Objective, len(objectives))
+	for _, o := range objectives {
+		byID[o.ID] = o
+	}
+	place, _ := navigation.PlaceFor(byID, objective)
+	if place.ID == "" {
+		return 0
+	}
+	return sectionHues(objectives)[place.ID]
+}
+
+// sectionHues gives each section a player sees as a place its palette hue,
+// numbered in tree order.
+//
+// Counted over the whole authored tree so opening one section never recolours
+// another. Pass-through sections are not drawn and take no number.
+func sectionHues(objectives []models.Objective) map[string]int {
+	hasChildren := make(map[string]bool, len(objectives))
+	for _, objective := range objectives {
+		if objective.ParentID != "" {
+			hasChildren[objective.ParentID] = true
+		}
+	}
+	hues := make(map[string]int, len(objectives))
+	next := 0
+	for _, objective := range objectives {
+		if objective.ParentID == "" || !hasChildren[objective.ID] || objective.PassThrough {
+			continue
+		}
+		hues[objective.ID] = HueFor(next)
+		next++
+	}
+	return hues
 }
 
 // QuestRow is one objective on offer.
@@ -124,24 +201,33 @@ func pluralise(n int, suffix string) string {
 	return numberWord(n) + " " + suffix
 }
 
-// questRule words a section's band for a player, then its routing.
+// bandWords words a section's band for a player.
 //
-// The band is the part a player has to be told: a range means the section can
-// close before everything in it is found, so the rule says what the least is.
-// The band counts the children in play; the routing counts what is on offer.
-func questRule(objective models.Objective, childCount, offered int) string {
-	band := game.FillBand(objective.ChildrenMin, objective.ChildrenMax, childCount)
-	var bandText string
+// A band whose ceiling is below the child count is a pick: "Complete all three"
+// would tell the player to keep going after the section had shut.
+func bandWords(band game.Band, childCount int) string {
 	switch {
+	case band.AutoCompletes() && band.Max < childCount:
+		return "Pick " + numberWord(band.Min)
 	case band.AutoCompletes():
 		if childCount > 1 {
-			bandText = "Complete all " + numberWord(childCount)
+			return "Complete all " + numberWord(childCount)
 		}
+		return ""
 	case band.Min <= 0:
-		bandText = "Finish whenever you are ready"
+		return "Finish whenever you are ready"
 	default:
-		bandText = "Complete at least " + numberWord(band.Min)
+		return "Complete at least " + numberWord(band.Min)
 	}
+}
+
+// questRule words a section's band for a player, then its routing.
+//
+// A range means the section can close before everything is found, so the rule
+// says the least. The band counts children in play; routing counts what is on
+// offer.
+func questRule(objective models.Objective, childCount, offered int) string {
+	bandText := bandWords(game.FillBand(objective.ChildrenMin, objective.ChildrenMax, childCount), childCount)
 
 	routing := RoutingRule(objective, offered)
 	switch {
@@ -152,6 +238,25 @@ func questRule(objective models.Objective, childCount, offered int) string {
 	default:
 		return bandText + " · " + routing
 	}
+}
+
+// questPill is the short text a section wears beside its heading.
+//
+// Where the band asks for several it is the count towards it ("1 of 3 done"),
+// which beats a rule read once. Free roam is never said: only what can be done
+// is on offer, so any order is the only order.
+func questPill(objective models.Objective, band game.Band, childCount, found int) string {
+	if objective.Routing == models.RouteStrategyOrdered {
+		return "Next up"
+	}
+	if band.Min > 1 {
+		return fmt.Sprintf("%d of %d done", min(found, band.Min), band.Min)
+	}
+	text := bandWords(band, childCount)
+	if objective.Routing == models.RouteStrategyRandomised && text == "" {
+		return "Picked for your team"
+	}
+	return text
 }
 
 // finishLabel names the button on a finishable section. An author may name it;
@@ -180,6 +285,7 @@ func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 	}
 
 	b := builder{byID: byID, view: view}
+	hues := sectionHues(view.Objectives)
 	var built QuestView
 	// Places keep the frontier's tree order: sorting would rearrange a quest
 	// the author laid out by hand.
@@ -239,6 +345,10 @@ func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 		built.Places[i].Total = total
 		built.Places[i].Minimum = game.FillBand(objective.ChildrenMin, objective.ChildrenMax, total).Min
 		built.Places[i].Rule = questRule(objective, total, len(built.Places[i].Rows))
+		band := game.FillBand(objective.ChildrenMin, objective.ChildrenMax, total)
+		built.Places[i].Pill = questPill(objective, band, total, found)
+		built.Places[i].Ordered = objective.Routing == models.RouteStrategyOrdered
+		built.Places[i].Hue = hues[objective.ID]
 	}
 	return built
 }

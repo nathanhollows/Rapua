@@ -50,6 +50,10 @@ templ scanCard(settings models.QuestSettings, block blocks.ScanBlock, data block
 
 // The camera posts "scanned" and the box posts "code" so the server can tell a
 // scan from a code someone was told.
+//
+// At rest there is the scan button and a quieter type-it button: most players
+// scan, so an open code box is a choice they are not making. While the camera
+// runs only the video and Stop remain.
 templ scanForm(block blocks.ScanBlock, attempted bool) {
 	<form
 		id={ fmt.Sprintf("scan-form-%s", block.ID) }
@@ -62,40 +66,51 @@ templ scanForm(block blocks.ScanBlock, attempted bool) {
 			class={ "flex flex-col gap-3",
 				templ.KV("animate-[wobble_1s_ease-in-out]", attempted) }
 		>
-			<button
-				type="button"
-				class="btn btn-primary"
-				data-scan-open={ block.ID }
-			>
-				@icon("scan-qr-code", templ.Attributes{"class": "w-5 h-5"})
-				Scan a code
-			</button>
-			<div id={ fmt.Sprintf("scan-viewport-%s", block.ID) } class="hidden">
-				<div class="relative rounded-box overflow-hidden bg-base-300">
-					<video id={ fmt.Sprintf("scan-video-%s", block.ID) } class="w-full" muted autoplay playsinline></video>
-					<button
-						type="button"
-						class="btn btn-sm btn-neutral absolute top-2 right-2"
-						data-scan-close={ block.ID }
-					>
+			<div id={ fmt.Sprintf("scan-controls-%s", block.ID) } class="flex flex-col gap-3 not-prose">
+				<button
+					type="button"
+					class="q-act"
+					data-scan-open={ block.ID }
+				>
+					@icon("scan-qr-code", templ.Attributes{"class": "w-7 h-7"})
+					Scan a code
+				</button>
+				<!-- Open already after a miss: a second tap to get back to the box
+				would tax a wrong answer. -->
+				<button
+					type="button"
+					id={ fmt.Sprintf("scan-type-open-%s", block.ID) }
+					class={ "q-alt", templ.KV("hidden", attempted) }
+					_={ fmt.Sprintf("on click add .hidden to me then remove .hidden from #scan-type-%s then call #code-%s.focus()", block.ID, block.ID) }
+				>
+					Or type it
+				</button>
+				<div id={ fmt.Sprintf("scan-type-%s", block.ID) } class={ templ.KV("hidden", !attempted) }>
+					<div class="flex gap-2">
+						<input
+							id={ fmt.Sprintf("code-%s", block.ID) }
+							name="code"
+							type="text"
+							placeholder="Code"
+							class="q-input grow min-w-0"
+							autocomplete="off"
+							required
+						/>
+						<button type="submit" class="q-act q-act-fit">Check</button>
+					</div>
+				</div>
+			</div>
+			<div id={ fmt.Sprintf("scan-viewport-%s", block.ID) } class="hidden not-prose">
+				<div class="flex flex-col gap-3">
+					<div class="relative rounded-2xl overflow-hidden bg-base-300">
+						<video id={ fmt.Sprintf("scan-video-%s", block.ID) } class="w-full" muted autoplay playsinline></video>
+					</div>
+					<button type="button" class="q-alt" data-scan-close={ block.ID }>
 						Stop
 					</button>
 				</div>
 			</div>
-			<p id={ fmt.Sprintf("scan-status-%s", block.ID) } class="text-sm text-center opacity-70 hidden"></p>
-			<div class="divider text-xs">or type it</div>
-			<div class="join w-full">
-				<input
-					id={ fmt.Sprintf("code-%s", block.ID) }
-					name="code"
-					type="text"
-					placeholder="Code"
-					class="input input-primary join-item w-full max-w-xs"
-					autocomplete="off"
-					required
-				/>
-				<button type="submit" class="btn btn-primary btn-outline join-item rounded-r-full">Check</button>
-			</div>
+			<p id={ fmt.Sprintf("scan-status-%s", block.ID) } class="text-base text-center q-soft hidden"></p>
 		</div>
 	</form>
 }

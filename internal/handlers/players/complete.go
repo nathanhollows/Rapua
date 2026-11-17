@@ -6,6 +6,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
@@ -36,6 +37,15 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	h.renderComplete(w, r, team)
+}
+
+// renderComplete draws the finish page for a run already known to be finished.
+//
+// Split from Complete so the objectives list can draw it in place: a redirect
+// from a boosted request becomes an Hx-Redirect, which htmx answers with a full
+// page load that recomputes the view and refetches every script.
+func (h *PlayerHandler) renderComplete(w http.ResponseWriter, r *http.Request, team *models.Run) {
 	// Get blocks for the complete page
 	var pageBlocks []blocks.Block
 	var blockStates map[string]blocks.PlayerState
@@ -44,6 +54,7 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value(contextkeys.PreviewKey) != nil {
 		teamCode = ""
 	}
+	var err error
 	pageBlocks, blockStates, err = h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 		r.Context(),
 		team.QuestID,
@@ -64,7 +75,7 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
 		template = templates.AppLayout(
-			template, templates.AppChrome{Run: *team}, "Complete", team.Messages,
+			template, templates.AppChrome{Run: *team, Active: "quest"}, "Complete", team.Messages,
 		)
 	}
 

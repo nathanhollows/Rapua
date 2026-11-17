@@ -209,6 +209,10 @@ func scanCard(settings models.QuestSettings, block blocks.ScanBlock, data blocks
 
 // The camera posts "scanned" and the box posts "code" so the server can tell a
 // scan from a code someone was told.
+//
+// At rest there is the scan button and a quieter type-it button: most players
+// scan, so an open code box is a choice they are not making. While the camera
+// runs only the video and Stop remain.
 func scanForm(block blocks.ScanBlock, attempted bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -237,7 +241,7 @@ func scanForm(block blocks.ScanBlock, attempted bool) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 55, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 59, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 		if templ_7745c5c3_Err != nil {
@@ -250,7 +254,7 @@ func scanForm(block blocks.ScanBlock, attempted bool) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 59, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 63, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 		if templ_7745c5c3_Err != nil {
@@ -279,93 +283,189 @@ func scanForm(block blocks.ScanBlock, attempted bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"><button type=\"button\" class=\"btn btn-primary\" data-scan-open=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.ID)
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-controls-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 68, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 69, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = icon("scan-qr-code", templ.Attributes{"class": "w-5 h-5"}).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "Scan a code</button><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" class=\"flex flex-col gap-3 not-prose\"><button type=\"button\" class=\"q-act\" data-scan-open=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-viewport-%s", block.ID))
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 73, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 73, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" class=\"hidden\"><div class=\"relative rounded-box overflow-hidden bg-base-300\"><video id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-video-%s", block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 75, Col: 55}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
+		templ_7745c5c3_Err = icon("scan-qr-code", templ.Attributes{"class": "w-7 h-7"}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"w-full\" muted autoplay playsinline></video><button type=\"button\" class=\"btn btn-sm btn-neutral absolute top-2 right-2\" data-scan-close=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "Scan a code</button><!-- Open already after a miss: a second tap to get back to the box\n\t\t\t\twould tax a wrong answer. -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var14 = []any{"q-alt", templ.KV("hidden", attempted)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var14...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<button type=\"button\" id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.ID)
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-type-open-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 79, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 82, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\">Stop</button></div></div><p id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-status-%s", block.ID))
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var14).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 85, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"text-sm text-center opacity-70 hidden\"></p><div class=\"divider text-xs\">or type it</div><div class=\"join w-full\"><input id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" _=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("code-%s", block.ID))
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("on click add .hidden to me then remove .hidden from #scan-type-%s then call #code-%s.focus()", block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 89, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 84, Col: 136}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" name=\"code\" type=\"text\" placeholder=\"Code\" class=\"input input-primary join-item w-full max-w-xs\" autocomplete=\"off\" required> <button type=\"submit\" class=\"btn btn-primary btn-outline join-item rounded-r-full\">Check</button></div></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\">Or type it</button>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 = []any{templ.KV("hidden", !attempted)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var18...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-type-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 88, Col: 51}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var20 string
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var18).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"><div class=\"flex gap-2\"><input id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var21 string
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("code-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 91, Col: 44}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" name=\"code\" type=\"text\" placeholder=\"Code\" class=\"q-input grow min-w-0\" autocomplete=\"off\" required> <button type=\"submit\" class=\"q-act q-act-fit\">Check</button></div></div></div><div id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var22 string
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-viewport-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 103, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" class=\"hidden not-prose\"><div class=\"flex flex-col gap-3\"><div class=\"relative rounded-2xl overflow-hidden bg-base-300\"><video id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-video-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 106, Col: 56}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" class=\"w-full\" muted autoplay playsinline></video></div><button type=\"button\" class=\"q-alt\" data-scan-close=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var24 string
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.ID)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 108, Col: 67}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\">Stop</button></div></div><p id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-status-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 113, Col: 50}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" class=\"text-base text-center q-soft hidden\"></p></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -396,51 +496,51 @@ func scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) templ.Comp
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<form id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<form id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
+		var templ_7745c5c3_Var27 string
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 112, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 127, Col: 39}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" hx-put=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/", block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 113, Col: 49}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" hx-put=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" hx-trigger=\"")
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 128, Col: 49}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 114, Col: 115}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" hx-trigger=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" hx-swap=\"none\">")
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 129, Col: 115}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" hx-swap=\"none\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -454,20 +554,20 @@ func scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<fieldset class=\"fieldset\"><div class=\"w-full\"><div class=\"grid grid-cols-[1fr_7rem_3.5rem] bg-base-200/60 border-b border-base-300 font-semibold text-base-content\"><span class=\"px-4 py-2\">Code</span> <span class=\"px-4 py-2\">QR</span> <span class=\"px-4 py-2\"></span></div><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<fieldset class=\"fieldset\"><div class=\"w-full\"><div class=\"grid grid-cols-[1fr_7rem_3.5rem] bg-base-200/60 border-b border-base-300 font-semibold text-base-content\"><span class=\"px-4 py-2\">Code</span> <span class=\"px-4 py-2\">QR</span> <span class=\"px-4 py-2\"></span></div><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-codes-%s", block.ID))
+		var templ_7745c5c3_Var30 string
+		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-codes-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 129, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 144, Col: 48}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" class=\"divide-y divide-base-300 [&>div:first-child>input:first-of-type]:rounded-tl-lg [&>div:last-child>input:first-of-type]:rounded-bl-lg\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\" class=\"divide-y divide-base-300 [&>div:first-child>input:first-of-type]:rounded-tl-lg [&>div:last-child>input:first-of-type]:rounded-bl-lg\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -484,20 +584,20 @@ func scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) templ.Comp
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</div></div><p class=\"fieldset-label\">Any one of these passes. Tick QR for codes Rapua should turn into printable images; leave it off for codes already in the world, like an ISBN or a product barcode.</p><div class=\"flex justify-end gap-2\"><button class=\"btn btn-outline btn-xs\" type=\"button\" data-target=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</div></div><p class=\"fieldset-label\">Any one of these passes. Tick QR for codes Rapua should turn into printable images; leave it off for codes already in the world, like an ISBN or a product barcode.</p><div class=\"flex justify-end gap-2\"><button class=\"btn btn-outline btn-xs\" type=\"button\" data-target=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-codes-%s", block.ID))
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-codes-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 145, Col: 109}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 160, Col: 109}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" onclick=\"mintScanCode(event)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" onclick=\"mintScanCode(event)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -505,20 +605,20 @@ func scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "Mint a QR</button> <button class=\"btn btn-outline btn-xs\" type=\"button\" data-target=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "Mint a QR</button> <button class=\"btn btn-outline btn-xs\" type=\"button\" data-target=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-codes-%s", block.ID))
+		var templ_7745c5c3_Var32 string
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("scan-codes-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 149, Col: 109}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 164, Col: 109}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" onclick=\"addScanCode(event)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\" onclick=\"addScanCode(event)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -526,37 +626,37 @@ func scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "Add a code</button></div></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Matching</legend> <select name=\"match\" class=\"select w-full\"><option value=\"exact\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "Add a code</button></div></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Matching</legend> <select name=\"match\" class=\"select w-full\"><option value=\"exact\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.Match == blocks.MatchExact || block.Match == "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, ">Exact</option> <option value=\"ci\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, ">Exact</option> <option value=\"ci\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.Match == blocks.MatchCaseInsensitive {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, ">Ignore case</option> <option value=\"contains\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, ">Ignore case</option> <option value=\"contains\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.Match == blocks.MatchContains {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, ">Contains the code</option></select><p class=\"fieldset-label\">Contains suits a QR that encodes a URL with the code inside it.</p></fieldset></form><script>\n\t\t// The checkbox carries its row index because an unticked box posts nothing,\n\t\t// so every add or remove has to renumber the rows that shifted.\n\t\tfunction renumberScanCodes(container) {\n\t\t\tcontainer.querySelectorAll('.scan-code-item').forEach(function (row, i) {\n\t\t\t\tconst box = row.querySelector('input[name=\"generate\"]');\n\t\t\t\tif (box) box.value = i;\n\t\t\t});\n\t\t}\n\t\t// The QR is only meaningful once the row has a value and is marked for one,\n\t\t// and the author can change either without the block re-rendering.\n\t\tfunction syncScanQRLink(row) {\n\t\t\tconst link = row.querySelector('[data-qr-link]');\n\t\t\tif (!link) return;\n\t\t\tconst code = row.querySelector('input[name=\"code\"]').value.trim();\n\t\t\tconst wanted = row.querySelector('input[name=\"generate\"]').checked && code !== '';\n\t\t\tlink.classList.toggle('hidden', !wanted);\n\t\t\tif (wanted) link.href = '/admin/qr/' + encodeURIComponent(code) + '.png';\n\t\t}\n\t\tif (!window.__scanQRBound) {\n\t\t\twindow.__scanQRBound = true;\n\t\t\t['input', 'change'].forEach(function (name) {\n\t\t\t\tdocument.addEventListener(name, function (event) {\n\t\t\t\t\tconst row = event.target.closest && event.target.closest('.scan-code-item');\n\t\t\t\t\tif (row) syncScanQRLink(row);\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\t\tfunction mintScanCodeValue() {\n\t\t\tconst alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';\n\t\t\tlet out = '';\n\t\t\tfor (let i = 0; i < 8; i++) {\n\t\t\t\tif (i === 4) out += '-';\n\t\t\t\tout += alphabet[Math.floor(Math.random() * alphabet.length)];\n\t\t\t}\n\t\t\treturn out;\n\t\t}\n\t\tfunction appendScanCode(event, value, generate) {\n\t\t\tevent.preventDefault();\n\t\t\tconst btn = event.target.closest('button');\n\t\t\tconst container = document.getElementById(btn.dataset.target);\n\t\t\tconst item = document.createElement('div');\n\t\t\titem.classList.add('scan-code-item', 'grid', 'grid-cols-[1fr_7rem_3.5rem]', 'hover:bg-base-200/30', 'transition-colors');\n\t\t\titem.innerHTML =\n\t\t\t\t'<input type=\"text\" name=\"code\" placeholder=\"ABCDE\" class=\"input input-sm rounded-none h-10 w-full font-mono\" autocomplete=\"off\" />' +\n\t\t\t\t'<div class=\"flex items-center justify-center gap-1 h-10 bg-base-100\">' +\n\t\t\t\t\t'<label class=\"flex items-center cursor-pointer\">' +\n\t\t\t\t\t\t'<input type=\"checkbox\" name=\"generate\" value=\"0\" class=\"checkbox checkbox-sm\" />' +\n\t\t\t\t\t'</label>' +\n\t\t\t\t\t'<a data-qr-link target=\"_blank\" rel=\"noopener\" class=\"btn btn-ghost btn-xs hidden\" aria-label=\"Open the printable QR code\">' +\n\t\t\t\t\t\t'<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M17 12v4a1 1 0 0 1-1 1h-4\"/><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/><path d=\"M17 8V7\"/><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/><path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/><path d=\"M7 17h.01\"/><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/><rect x=\"7\" y=\"7\" width=\"5\" height=\"5\" rx=\"1\"/></svg>' +\n\t\t\t\t\t'</a>' +\n\t\t\t\t'</div>' +\n\t\t\t\t'<div class=\"flex items-center justify-center h-10 bg-base-100\">' +\n\t\t\t\t\t'<button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error\" aria-label=\"Delete\" onclick=\"removeScanCode(event)\">' +\n\t\t\t\t\t\t'<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-3 h-3\"><path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/></svg>' +\n\t\t\t\t\t'</button>' +\n\t\t\t\t'</div>';\n\t\t\tcontainer.appendChild(item);\n\t\t\titem.querySelector('input[name=\"code\"]').value = value;\n\t\t\titem.querySelector('input[name=\"generate\"]').checked = generate;\n\t\t\trenumberScanCodes(container);\n\t\t\tsyncScanQRLink(item);\n\t\t\tif (value) {\n\t\t\t\tbtn.closest('form').dispatchEvent(new Event('change'));\n\t\t\t} else {\n\t\t\t\titem.querySelector('input[name=\"code\"]').focus();\n\t\t\t}\n\t\t}\n\t\tfunction addScanCode(event) {\n\t\t\tappendScanCode(event, '', false);\n\t\t}\n\t\tfunction mintScanCode(event) {\n\t\t\tappendScanCode(event, mintScanCodeValue(), true);\n\t\t}\n\t\tfunction removeScanCode(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst form = event.target.closest('form');\n\t\t\tconst container = event.target.closest('.scan-code-item').parentNode;\n\t\t\tevent.target.closest('.scan-code-item').remove();\n\t\t\trenumberScanCodes(container);\n\t\t\tform.dispatchEvent(new Event('change'));\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, ">Contains the code</option></select><p class=\"fieldset-label\">Contains suits a QR that encodes a URL with the code inside it.</p></fieldset></form><script>\n\t\t// The checkbox carries its row index because an unticked box posts nothing,\n\t\t// so every add or remove has to renumber the rows that shifted.\n\t\tfunction renumberScanCodes(container) {\n\t\t\tcontainer.querySelectorAll('.scan-code-item').forEach(function (row, i) {\n\t\t\t\tconst box = row.querySelector('input[name=\"generate\"]');\n\t\t\t\tif (box) box.value = i;\n\t\t\t});\n\t\t}\n\t\t// The QR is only meaningful once the row has a value and is marked for one,\n\t\t// and the author can change either without the block re-rendering.\n\t\tfunction syncScanQRLink(row) {\n\t\t\tconst link = row.querySelector('[data-qr-link]');\n\t\t\tif (!link) return;\n\t\t\tconst code = row.querySelector('input[name=\"code\"]').value.trim();\n\t\t\tconst wanted = row.querySelector('input[name=\"generate\"]').checked && code !== '';\n\t\t\tlink.classList.toggle('hidden', !wanted);\n\t\t\tif (wanted) link.href = '/admin/qr/' + encodeURIComponent(code) + '.png';\n\t\t}\n\t\tif (!window.__scanQRBound) {\n\t\t\twindow.__scanQRBound = true;\n\t\t\t['input', 'change'].forEach(function (name) {\n\t\t\t\tdocument.addEventListener(name, function (event) {\n\t\t\t\t\tconst row = event.target.closest && event.target.closest('.scan-code-item');\n\t\t\t\t\tif (row) syncScanQRLink(row);\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\t\tfunction mintScanCodeValue() {\n\t\t\tconst alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';\n\t\t\tlet out = '';\n\t\t\tfor (let i = 0; i < 8; i++) {\n\t\t\t\tif (i === 4) out += '-';\n\t\t\t\tout += alphabet[Math.floor(Math.random() * alphabet.length)];\n\t\t\t}\n\t\t\treturn out;\n\t\t}\n\t\tfunction appendScanCode(event, value, generate) {\n\t\t\tevent.preventDefault();\n\t\t\tconst btn = event.target.closest('button');\n\t\t\tconst container = document.getElementById(btn.dataset.target);\n\t\t\tconst item = document.createElement('div');\n\t\t\titem.classList.add('scan-code-item', 'grid', 'grid-cols-[1fr_7rem_3.5rem]', 'hover:bg-base-200/30', 'transition-colors');\n\t\t\titem.innerHTML =\n\t\t\t\t'<input type=\"text\" name=\"code\" placeholder=\"ABCDE\" class=\"input input-sm rounded-none h-10 w-full font-mono\" autocomplete=\"off\" />' +\n\t\t\t\t'<div class=\"flex items-center justify-center gap-1 h-10 bg-base-100\">' +\n\t\t\t\t\t'<label class=\"flex items-center cursor-pointer\">' +\n\t\t\t\t\t\t'<input type=\"checkbox\" name=\"generate\" value=\"0\" class=\"checkbox checkbox-sm\" />' +\n\t\t\t\t\t'</label>' +\n\t\t\t\t\t'<a data-qr-link target=\"_blank\" rel=\"noopener\" class=\"btn btn-ghost btn-xs hidden\" aria-label=\"Open the printable QR code\">' +\n\t\t\t\t\t\t'<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-4 h-4\"><path d=\"M17 12v4a1 1 0 0 1-1 1h-4\"/><path d=\"M17 3h2a2 2 0 0 1 2 2v2\"/><path d=\"M17 8V7\"/><path d=\"M21 17v2a2 2 0 0 1-2 2h-2\"/><path d=\"M3 7V5a2 2 0 0 1 2-2h2\"/><path d=\"M7 17h.01\"/><path d=\"M7 21H5a2 2 0 0 1-2-2v-2\"/><rect x=\"7\" y=\"7\" width=\"5\" height=\"5\" rx=\"1\"/></svg>' +\n\t\t\t\t\t'</a>' +\n\t\t\t\t'</div>' +\n\t\t\t\t'<div class=\"flex items-center justify-center h-10 bg-base-100\">' +\n\t\t\t\t\t'<button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error\" aria-label=\"Delete\" onclick=\"removeScanCode(event)\">' +\n\t\t\t\t\t\t'<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-3 h-3\"><path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/></svg>' +\n\t\t\t\t\t'</button>' +\n\t\t\t\t'</div>';\n\t\t\tcontainer.appendChild(item);\n\t\t\titem.querySelector('input[name=\"code\"]').value = value;\n\t\t\titem.querySelector('input[name=\"generate\"]').checked = generate;\n\t\t\trenumberScanCodes(container);\n\t\t\tsyncScanQRLink(item);\n\t\t\tif (value) {\n\t\t\t\tbtn.closest('form').dispatchEvent(new Event('change'));\n\t\t\t} else {\n\t\t\t\titem.querySelector('input[name=\"code\"]').focus();\n\t\t\t}\n\t\t}\n\t\tfunction addScanCode(event) {\n\t\t\tappendScanCode(event, '', false);\n\t\t}\n\t\tfunction mintScanCode(event) {\n\t\t\tappendScanCode(event, mintScanCodeValue(), true);\n\t\t}\n\t\tfunction removeScanCode(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst form = event.target.closest('form');\n\t\t\tconst container = event.target.closest('.scan-code-item').parentNode;\n\t\t\tevent.target.closest('.scan-code-item').remove();\n\t\t\trenumberScanCodes(container);\n\t\t\tform.dispatchEvent(new Event('change'));\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -581,84 +681,84 @@ func scanCodeRow(index int, code blocks.ScanCode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var25 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var25 == nil {
-			templ_7745c5c3_Var25 = templ.NopComponent
+		templ_7745c5c3_Var33 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var33 == nil {
+			templ_7745c5c3_Var33 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<div class=\"scan-code-item grid grid-cols-[1fr_7rem_3.5rem] hover:bg-base-200/30 transition-colors\"><input type=\"text\" name=\"code\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"scan-code-item grid grid-cols-[1fr_7rem_3.5rem] hover:bg-base-200/30 transition-colors\"><input type=\"text\" name=\"code\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(code.Value)
+		var templ_7745c5c3_Var34 string
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(code.Value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 259, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 274, Col: 21}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\" placeholder=\"ABCDE\" class=\"input input-sm rounded-none h-10 w-full font-mono\" autocomplete=\"off\"><div class=\"flex items-center justify-center gap-1 h-10 bg-base-100\"><label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" name=\"generate\" value=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(index))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 269, Col: 30}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\" placeholder=\"ABCDE\" class=\"input input-sm rounded-none h-10 w-full font-mono\" autocomplete=\"off\"><div class=\"flex items-center justify-center gap-1 h-10 bg-base-100\"><label class=\"flex items-center cursor-pointer\"><input type=\"checkbox\" name=\"generate\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" class=\"checkbox checkbox-sm\"")
+		var templ_7745c5c3_Var35 string
+		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(index))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 284, Col: 30}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\" class=\"checkbox checkbox-sm\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if code.Generate {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "></label> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "></label> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var28 = []any{"btn btn-ghost btn-xs",
+		var templ_7745c5c3_Var36 = []any{"btn btn-ghost btn-xs",
 			templ.KV("hidden", !code.Generate || strings.TrimSpace(code.Value) == "")}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var28...)
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var36...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<a data-qr-link href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<a data-qr-link href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var29 templ.SafeURL
-		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinURLErrs(scanQRHref(code.Value))
+		var templ_7745c5c3_Var37 templ.SafeURL
+		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs(scanQRHref(code.Value))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 276, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 291, Col: 33}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\" target=\"_blank\" rel=\"noopener\" class=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var30 string
-		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var28).String())
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" target=\"_blank\" rel=\"noopener\" class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var38 string
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var36).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var38)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\" aria-label=\"Open the printable QR code\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\" aria-label=\"Open the printable QR code\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -666,7 +766,7 @@ func scanCodeRow(index int, code blocks.ScanCode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</a></div><div class=\"flex items-center justify-center h-10 bg-base-100\"><button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error\" aria-label=\"Delete\" onclick=\"removeScanCode(event)\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</a></div><div class=\"flex items-center justify-center h-10 bg-base-100\"><button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error\" aria-label=\"Delete\" onclick=\"removeScanCode(event)\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -674,7 +774,7 @@ func scanCodeRow(index int, code blocks.ScanCode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</button></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</button></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

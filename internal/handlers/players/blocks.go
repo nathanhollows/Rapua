@@ -236,12 +236,12 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// renderObjectiveZoneSwapIfProofJustCompleted appends an out-of-band swap of
-// an objective's reveal zone to the response, when the block that just
-// completed was the last unvalidated block in that objective's proof
-// context. Reveal is a content-only zone as often as not (nothing for a
-// player to POST), so its completion is triggered here rather than by a
-// player action of its own. It reports whether it swapped the zone.
+// renderObjectiveZoneSwapIfProofJustCompleted completes an objective's reveal
+// when the block that just completed was the last unvalidated one in its proof.
+// A player gets a toast that fetches the reveal after a beat; an editor's
+// preview gets the reveal swapped in at once. The reveal is often content-only,
+// with nothing to POST, so its completion is triggered here. It reports whether
+// it swapped the zone.
 func (h *PlayerHandler) renderObjectiveZoneSwapIfProofJustCompleted(
 	w http.ResponseWriter, r *http.Request, team *models.Run, block blocks.Block,
 ) bool {
@@ -277,23 +277,30 @@ func (h *PlayerHandler) renderObjectiveZoneSwapIfProofJustCompleted(
 		return false
 	}
 
-	revealBlocks, revealStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
-		r.Context(), block.GetOwnerID(), team.Code, team.QuestID, blocks.ContextObjectiveReveal,
-	)
-	if err != nil {
-		h.logger.ErrorContext(r.Context(), "validateBlock: loading reveal blocks", "error", err.Error())
-		return false
+	// A preview has nobody to surprise, so it takes the reveal at once.
+	if isPreview(r.Context()) {
+		revealBlocks, revealStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
+			r.Context(), block.GetOwnerID(), team.Code, team.QuestID, blocks.ContextObjectiveReveal,
+		)
+		if err != nil {
+			h.logger.ErrorContext(r.Context(), "validateBlock: loading reveal blocks", "error", err.Error())
+			return false
+		}
+		data := playerTemplates.ObjectiveViewData{
+			Settings: team.Quest.Settings,
+			Zone:     blocks.ContextObjectiveReveal,
+			Blocks:   revealBlocks,
+			States:   revealStates,
+			Hidden:   h.hiddenBlocks(r.Context(), team, revealBlocks),
+		}
+		if err := playerTemplates.ObjectiveZoneUpdate(data).Render(r.Context(), w); err != nil {
+			h.logger.ErrorContext(r.Context(), "validateBlock: rendering reveal zone", "error", err.Error())
+		}
+		return true
 	}
-
-	data := playerTemplates.ObjectiveViewData{
-		Settings: team.Quest.Settings,
-		Zone:     blocks.ContextObjectiveReveal,
-		Blocks:   revealBlocks,
-		States:   revealStates,
-		Hidden:   h.hiddenBlocks(r.Context(), team, revealBlocks),
-	}
-	if err := playerTemplates.ObjectiveZoneUpdate(data).Render(r.Context(), w); err != nil {
-		h.logger.ErrorContext(r.Context(), "validateBlock: rendering reveal zone", "error", err.Error())
+	// Already complete above, so leaving before the toast fires loses nothing.
+	if err := playerTemplates.RevealToast(objective.Slug).Render(r.Context(), w); err != nil {
+		h.logger.ErrorContext(r.Context(), "validateBlock: rendering reveal toast", "error", err.Error())
 	}
 	return true
 }

@@ -48,7 +48,7 @@ func (h *PlayerHandler) Journal(w http.ResponseWriter, r *http.Request) {
 	}
 
 	err = templates.AppLayout(
-		templates.Journal(data), templates.JournalChrome(*team, view), "Journal", team.Messages,
+		templates.Journal(data), templates.JournalChrome(*team), "Journal", team.Messages,
 	).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering journal", "error", err.Error())

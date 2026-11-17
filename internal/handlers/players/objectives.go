@@ -36,8 +36,14 @@ func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 
 	// Only the root completing means the run is finished. An empty list can
 	// also mean everything left is waiting on something.
+	//
+	// Drawn in place, not redirected to (see renderComplete). The address is
+	// still corrected so a reload lands on the finish page.
 	if view.Complete {
-		h.redirect(w, r, "/complete")
+		if r.Header.Get("Hx-Request") == "true" {
+			w.Header().Set("Hx-Replace-Url", "/complete")
+		}
+		h.renderComplete(w, r, team)
 		return
 	}
 
@@ -54,9 +60,9 @@ func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 		View: view,
 	}
 
-	template := templates.Objectives(data)
+	template := templates.QuestPage(data)
 	template = templates.AppLayout(
-		template, templates.QuestChrome(*team, view), "Quest", team.Messages,
+		template, templates.QuestChrome(*team), "Quest", team.Messages,
 	)
 	err = template.Render(r.Context(), w)
 	if err != nil {

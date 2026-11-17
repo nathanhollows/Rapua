@@ -26,8 +26,6 @@ type EditObjectiveData struct {
 	// ChildCount: routing/band/max_next mean nothing without children, but a
 	// leaf can gain them later, so they're shown regardless.
 	ChildCount int
-	// QuestName labels the preview's chrome, which shows the player's view.
-	QuestName string
 	// ParentTitle and ParentRule describe the containing section, drawn around
 	// the preview row. Empty when the parent is the root.
 	ParentTitle string
@@ -209,7 +207,7 @@ func objectivePreview(data EditObjectiveData) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/objective/", data.Objective.Slug, "?zone=proof"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 161, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 159, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -222,7 +220,7 @@ func objectivePreview(data EditObjectiveData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 163, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 161, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 			if templ_7745c5c3_Err != nil {
@@ -235,7 +233,7 @@ func objectivePreview(data EditObjectiveData) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/objective/", data.Objective.Slug, "?zone=reveal"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 170, Col: 78}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 168, Col: 78}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 			if templ_7745c5c3_Err != nil {
@@ -248,7 +246,7 @@ func objectivePreview(data EditObjectiveData) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 172, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 170, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 			if templ_7745c5c3_Err != nil {
@@ -260,7 +258,7 @@ func objectivePreview(data EditObjectiveData) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = pTemplates.PreviewChrome(data.QuestName).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = pTemplates.PreviewChrome().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -317,52 +315,44 @@ func objectiveCardRow(data EditObjectiveData) templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div id=\"objective-card\" class=\"flex items-start gap-3 rounded-box border border-base-300 bg-base-100 px-4 py-3\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- The player's own tile classes, not a copy: a preview that differs from\n\tthe game previews something else. --><div id=\"objective-card\" class=\"q-tile\"><span class=\"q-ico\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if proofIcon := data.FirstProofIcon(); proofIcon != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span class=\"shrink-0 mt-0.5 text-primary [&>svg]:w-5 [&>svg]:h-5\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
 			templ_7745c5c3_Err = templ.Raw(proofIcon).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
 		} else {
-			templ_7745c5c3_Err = icon("book-open", templ.Attributes{"class": "w-5 h-5 shrink-0 mt-0.5 opacity-40"}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = icon("book-open", templ.Attributes{}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"grow min-w-0 flex flex-col gap-0.5\"><span id=\"objective-card-title\" class=\"text-sm font-medium text-pretty\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</span> <span class=\"grow min-w-0 flex flex-col gap-1\"><span id=\"objective-card-title\" class=\"q-title\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(data.Objective.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 202, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 202, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 = []any{"text-xs opacity-60 text-pretty", templ.KV("hidden", data.Objective.Description == "")}
+		var templ_7745c5c3_Var10 = []any{"q-desc q-soft", templ.KV("hidden", data.Objective.Description == "")}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var10...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span id=\"objective-card-description\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span id=\"objective-card-description\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -375,43 +365,43 @@ func objectiveCardRow(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(data.Objective.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 208, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 208, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span></span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.Settings.EnablePoints && data.TotalPoints() != 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<span class=\"badge badge-ghost badge-sm shrink-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<span class=\"badge badge-ghost badge-sm shrink-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d pts", data.TotalPoints()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 212, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 212, Col: 96}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -444,7 +434,7 @@ func objectiveDescription(data EditObjectiveData) templ.Component {
 			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<fieldset class=\"fieldset w-full\"><legend class=\"fieldset-legend\">Description</legend> <textarea id=\"description\" name=\"description\" form=\"edit-objective\" rows=\"2\" maxlength=\"280\" class=\"textarea w-full\" placeholder=\"Second bed on the left, past the glasshouse. The label is on a metal stake.\" _=\"on input\n\t\t\t\tset #objective-card-description's textContent to my value\n\t\t\t\tthen if my value is '' then\n\t\t\t\t\tadd .hidden to #objective-card-description\n\t\t\t\telse\n\t\t\t\t\tremove .hidden from #objective-card-description\n\t\t\t\tend\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<fieldset class=\"fieldset w-full\"><legend class=\"fieldset-legend\">Description</legend> <textarea id=\"description\" name=\"description\" form=\"edit-objective\" rows=\"2\" maxlength=\"280\" class=\"textarea w-full\" placeholder=\"Second bed on the left, past the glasshouse. The label is on a metal stake.\" _=\"on input\n\t\t\t\tset #objective-card-description's textContent to my value\n\t\t\t\tthen if my value is '' then\n\t\t\t\t\tadd .hidden to #objective-card-description\n\t\t\t\telse\n\t\t\t\t\tremove .hidden from #objective-card-description\n\t\t\t\tend\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -457,7 +447,7 @@ func objectiveDescription(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</textarea><p class=\"label text-xs\">Shown under the task when they open it, and on the quest list.</p></fieldset>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</textarea><p class=\"label text-xs\">Shown under the task when they open it, and on the quest list.</p></fieldset>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -490,7 +480,7 @@ func objectiveLinkRow(data EditObjectiveData) templ.Component {
 			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"flex flex-col gap-1\"><div class=\"flex items-center gap-2 text-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div class=\"flex flex-col gap-1\"><div class=\"flex items-center gap-2 text-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -498,7 +488,7 @@ func objectiveLinkRow(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<code class=\"font-mono text-xs opacity-70\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<code class=\"font-mono text-xs opacity-70\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -511,7 +501,7 @@ func objectiveLinkRow(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</code></div><p class=\"label text-xs\">Players can see this. Keep it vague if the task name would give the answer away.</p></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</code></div><p class=\"label text-xs\">Players can see this. Keep it vague if the task name would give the answer away.</p></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -543,7 +533,7 @@ func objectivePreviewScript() templ.Component {
 			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<script>\n\t(() => {\n\t\tconst sections = [...document.querySelectorAll('[data-zone]')];\n\t\tconst panes = [...document.querySelectorAll('[data-preview]')];\n\t\tconst pills = [...document.querySelectorAll('[data-pill]')];\n\t\tif (!sections.length || !panes.length) return;\n\n\t\tlet current = null;\n\t\tconst show = (zone) => {\n\t\t\tif (zone === current) return;\n\t\t\tcurrent = zone;\n\t\t\tpanes.forEach((p) => {\n\t\t\t\tconst off = p.dataset.preview !== zone;\n\t\t\t\tp.classList.toggle('opacity-0', off);\n\t\t\t\tp.classList.toggle('pointer-events-none', off);\n\t\t\t});\n\t\t\tpills.forEach((p) => p.classList.toggle('tab-active', p.dataset.pill === zone));\n\t\t};\n\n\t\tpills.forEach((pill) => {\n\t\t\tpill.addEventListener('click', () => {\n\t\t\t\tconst target = document.getElementById('zone-' + pill.dataset.pill);\n\t\t\t\tif (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });\n\t\t\t});\n\t\t});\n\n\t\tconst seen = new Set();\n\t\tconst observer = new IntersectionObserver((entries) => {\n\t\t\tentries.forEach((entry) => {\n\t\t\t\tentry.isIntersecting ? seen.add(entry.target) : seen.delete(entry.target);\n\t\t\t});\n\t\t\t// Document order keeps the handover the same in both directions.\n\t\t\tconst top = sections.find((section) => seen.has(section));\n\t\t\tif (top) show(top.dataset.zone);\n\t\t}, { rootMargin: '-10% 0px -60% 0px' });\n\n\t\tsections.forEach((section) => observer.observe(section));\n\t\tshow('card');\n\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<script>\n\t(() => {\n\t\tconst sections = [...document.querySelectorAll('[data-zone]')];\n\t\tconst panes = [...document.querySelectorAll('[data-preview]')];\n\t\tconst pills = [...document.querySelectorAll('[data-pill]')];\n\t\tif (!sections.length || !panes.length) return;\n\n\t\tlet current = null;\n\t\tconst show = (zone) => {\n\t\t\tif (zone === current) return;\n\t\t\tcurrent = zone;\n\t\t\tpanes.forEach((p) => {\n\t\t\t\tconst off = p.dataset.preview !== zone;\n\t\t\t\tp.classList.toggle('opacity-0', off);\n\t\t\t\tp.classList.toggle('pointer-events-none', off);\n\t\t\t});\n\t\t\tpills.forEach((p) => p.classList.toggle('tab-active', p.dataset.pill === zone));\n\t\t};\n\n\t\tpills.forEach((pill) => {\n\t\t\tpill.addEventListener('click', () => {\n\t\t\t\tconst target = document.getElementById('zone-' + pill.dataset.pill);\n\t\t\t\tif (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });\n\t\t\t});\n\t\t});\n\n\t\tconst seen = new Set();\n\t\tconst observer = new IntersectionObserver((entries) => {\n\t\t\tentries.forEach((entry) => {\n\t\t\t\tentry.isIntersecting ? seen.add(entry.target) : seen.delete(entry.target);\n\t\t\t});\n\t\t\t// Document order keeps the handover the same in both directions.\n\t\t\tconst top = sections.find((section) => seen.has(section));\n\t\t\tif (top) show(top.dataset.zone);\n\t\t}, { rootMargin: '-10% 0px -60% 0px' });\n\n\t\tsections.forEach((section) => observer.observe(section));\n\t\tshow('card');\n\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -573,7 +563,7 @@ func objectiveSaveState() templ.Component {
 			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span id=\"save-state\" class=\"text-xs opacity-0 transition-opacity flex items-center gap-1.5\" _=\"on htmx:beforeRequest from #edit-objective\n\t\t\tset my textContent to 'Saving'\n\t\t\tthen remove .opacity-0 from me\n\t\ton htmx:afterRequest from #edit-objective\n\t\t\tset my textContent to 'Saved'\n\t\t\tthen wait 2s\n\t\t\tthen add .opacity-0 to me\"></span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span id=\"save-state\" class=\"text-xs opacity-0 transition-opacity flex items-center gap-1.5\" _=\"on htmx:beforeRequest from #edit-objective\n\t\t\tset my textContent to 'Saving'\n\t\t\tthen remove .opacity-0 from me\n\t\ton htmx:afterRequest from #edit-objective\n\t\t\tset my textContent to 'Saved'\n\t\t\tthen wait 2s\n\t\t\tthen add .opacity-0 to me\"></span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -603,7 +593,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 		}
 		ctx = templ.ClearChildren(ctx)
 		z := zoneWordsFor(zone)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<section id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<section id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -616,7 +606,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" data-zone=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" data-zone=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -629,7 +619,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" class=\"min-w-0 scroll-mt-4\"><!-- Not sticky: a pinned bar cut off the hover outline of blocks\n\t\tscrolling under it. --><h2 class=\"pb-3 flex items-baseline gap-3\"><span class=\"font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" class=\"min-w-0 scroll-mt-4\"><!-- Not sticky: a pinned bar cut off the hover outline of blocks\n\t\tscrolling under it. --><h2 class=\"pb-3 flex items-baseline gap-3\"><span class=\"font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -642,7 +632,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span> <span class=\"text-xs opacity-60\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span> <span class=\"text-xs opacity-60\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -655,7 +645,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</span></h2><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span></h2><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -668,7 +658,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" class=\"blocks flex flex-col gap-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" class=\"blocks flex flex-col gap-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -678,7 +668,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -686,7 +676,7 @@ func objectiveZone(data EditObjectiveData, zone blocks.BlockContext) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -716,7 +706,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<!-- Typing waits a second because every save re-lints the whole quest.\n\tDiscrete changes fire sooner. --><form id=\"edit-objective\" hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<!-- Typing waits a second because every save re-lints the whole quest.\n\tDiscrete changes fire sooner. --><form id=\"edit-objective\" hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -729,12 +719,12 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\" hx-trigger=\"keyup from:[form=edit-objective] delay:1s, change from:[form=edit-objective] delay:500ms\" hx-swap=\"none\"></form><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 pt-5 pb-3\"><div id=\"quest-title-group\" class=\"flex items-center gap-3 min-w-0\"><h1 class=\"text-2xl font-bold\">Objective</h1>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" hx-trigger=\"keyup from:[form=edit-objective] delay:1s, change from:[form=edit-objective] delay:500ms\" hx-swap=\"none\"></form><div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 pt-5 pb-3\"><div id=\"quest-title-group\" class=\"flex items-center gap-3 min-w-0\"><h1 class=\"text-2xl font-bold\">Objective</h1>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if data.ParentTitle != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span class=\"text-sm opacity-50 truncate hidden sm:inline\">in ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<span class=\"text-sm opacity-50 truncate hidden sm:inline\">in ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -747,12 +737,12 @@ func EditObjective(data EditObjectiveData) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</div><div class=\"flex items-center gap-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div><div class=\"flex items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -764,7 +754,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div id=\"visibility-control\" class=\"contents\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div id=\"visibility-control\" class=\"contents\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -772,7 +762,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div><!-- In a menu so an irreversible action is not at primary weight. --><details class=\"dropdown dropdown-end\"><summary class=\"btn btn-sm btn-ghost btn-circle\" aria-label=\"More actions\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</div><!-- In a menu so an irreversible action is not at primary weight. --><details class=\"dropdown dropdown-end\"><summary class=\"btn btn-sm btn-ghost btn-circle\" aria-label=\"More actions\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -780,7 +770,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</summary><ul class=\"dropdown-content menu bg-base-100 rounded-box z-20 w-56 p-2 shadow-lg border border-base-300\"><li><button type=\"button\" class=\"text-error\" onclick=\"confirm_delete_modal.showModal();\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</summary><ul class=\"dropdown-content menu bg-base-100 rounded-box z-20 w-56 p-2 shadow-lg border border-base-300\"><li><button type=\"button\" class=\"text-error\" onclick=\"confirm_delete_modal.showModal();\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -788,7 +778,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "Delete objective</button></li></ul></details></div></div><div id=\"objective-depends-edit\" class=\"px-6 pb-3 empty:hidden\"></div><div id=\"objective-lint\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "Delete objective</button></li></ul></details></div></div><div id=\"objective-depends-edit\" class=\"px-6 pb-3 empty:hidden\"></div><div id=\"objective-lint\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -796,7 +786,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</div><!-- No items-start: the sticky preview needs a column as tall as the form. --><div class=\"w-full px-6 pb-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-8\"><!-- Wide gaps so expanded zones read as separate. --><div class=\"flex flex-col gap-50 pb-50 min-w-0\"><section id=\"zone-card\" data-zone=\"card\" class=\"flex flex-col gap-1 scroll-mt-4\"><fieldset class=\"fieldset w-full\"><legend class=\"fieldset-legend\">The task &mdash; what the player is asked to do</legend> <input type=\"text\" id=\"title\" name=\"title\" form=\"edit-objective\" class=\"input input-lg w-full font-semibold\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</div><!-- No items-start: the sticky preview needs a column as tall as the form. --><div class=\"w-full px-6 pb-5 grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_auto] gap-8\"><!-- Wide gaps so expanded zones read as separate. --><div class=\"flex flex-col gap-50 pb-50 min-w-0\"><section id=\"zone-card\" data-zone=\"card\" class=\"flex flex-col gap-1 scroll-mt-4\"><fieldset class=\"fieldset w-full\"><legend class=\"fieldset-legend\">The task &mdash; what the player is asked to do</legend> <input type=\"text\" id=\"title\" name=\"title\" form=\"edit-objective\" class=\"input input-lg w-full font-semibold\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -809,7 +799,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" placeholder=\"Find the plan chest in the Architecture Library\" _=\"on input set #objective-card-title's textContent to my value\"><p class=\"label text-xs\">Say what they have to do, not where it is. The place can go in the words.</p></fieldset>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\" placeholder=\"Find the plan chest in the Architecture Library\" _=\"on input set #objective-card-title's textContent to my value\"><p class=\"label text-xs\">Say what they have to do, not where it is. The place can go in the words.</p></fieldset>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -821,7 +811,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -837,7 +827,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -845,7 +835,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</div><!-- Hidden form for block reordering via HTMX -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div><!-- Hidden form for block reordering via HTMX -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -853,7 +843,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this objective?</h3><p class=\"pt-4\">You are about to delete this objective. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"button\" class=\"btn btn-error\" hx-delete=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<dialog id=\"confirm_delete_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this objective?</h3><p class=\"pt-4\">You are about to delete this objective. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_modal.close()\">Nevermind</button> <button type=\"button\" class=\"btn btn-error\" hx-delete=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -866,7 +856,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\" hx-trigger=\"click\" onclick=\"confirm_delete_modal.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\" hx-trigger=\"click\" onclick=\"confirm_delete_modal.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -908,7 +898,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 			templ_7745c5c3_Var31 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<button id=\"visibility-btn\" type=\"button\" class=\"btn btn-ghost tooltip\" data-tip=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<button id=\"visibility-btn\" type=\"button\" class=\"btn btn-ghost tooltip\" data-tip=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -921,7 +911,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" _=\"on click\n\t\t\tset cb to #published-checkbox\n\t\t\tset cb.checked to not cb.checked\n\t\t\tsend change to cb\n\t\t\tif cb.checked\n\t\t\t\tadd .hidden to #visibility-eye-off\n\t\t\t\tremove .hidden from #visibility-eye\n\t\t\t\tset #visibility-label's textContent to 'Published'\n\t\t\telse\n\t\t\t\tadd .hidden to #visibility-eye\n\t\t\t\tremove .hidden from #visibility-eye-off\n\t\t\t\tset #visibility-label's textContent to 'Draft'\n\t\t\tend\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\" _=\"on click\n\t\t\tset cb to #published-checkbox\n\t\t\tset cb.checked to not cb.checked\n\t\t\tsend change to cb\n\t\t\tif cb.checked\n\t\t\t\tadd .hidden to #visibility-eye-off\n\t\t\t\tremove .hidden from #visibility-eye\n\t\t\t\tset #visibility-label's textContent to 'Published'\n\t\t\telse\n\t\t\t\tadd .hidden to #visibility-eye\n\t\t\t\tremove .hidden from #visibility-eye-off\n\t\t\t\tset #visibility-label's textContent to 'Draft'\n\t\t\tend\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -930,7 +920,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<span id=\"visibility-eye\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<span id=\"visibility-eye\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -943,7 +933,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -951,7 +941,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "</span> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</span> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -960,7 +950,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<span id=\"visibility-eye-off\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<span id=\"visibility-eye-off\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -973,7 +963,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -981,32 +971,32 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</span> <span id=\"visibility-label\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</span> <span id=\"visibility-label\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if draft {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "Draft")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "Draft")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "Published")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "Published")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</span></button> <input type=\"checkbox\" id=\"published-checkbox\" name=\"published\" value=\"true\" form=\"edit-objective\" class=\"hidden\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</span></button> <input type=\"checkbox\" id=\"published-checkbox\" name=\"published\" value=\"true\" form=\"edit-objective\" class=\"hidden\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if !draft {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1037,7 +1027,7 @@ func ObjectiveVisibilityOOB(draft bool) templ.Component {
 			templ_7745c5c3_Var37 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div id=\"visibility-control\" class=\"contents\" hx-swap-oob=\"true\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "<div id=\"visibility-control\" class=\"contents\" hx-swap-oob=\"true\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1045,7 +1035,7 @@ func ObjectiveVisibilityOOB(draft bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

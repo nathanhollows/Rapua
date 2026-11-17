@@ -132,7 +132,6 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 
 	data := templates.EditObjectiveData{
 		Settings:     user.CurrentQuest.Settings,
-		QuestName:    user.CurrentQuest.Name,
 		ParentTitle:  parentTitle,
 		ParentRule:   parentRule,
 		Objective:    *objective,
