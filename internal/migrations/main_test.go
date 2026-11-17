@@ -23,16 +23,14 @@ func (w testWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// TestFullMigration ensures the full suite runs up and with without error.
-// This only tests the migrations, not the repository or service.
-// Repository and service tests should ensure the migrations are correct.
+// TestFullMigration checks only that the chain runs both ways: repository and
+// service tests cover whether the schema is right.
 func TestFullMigration(t *testing.T) {
 	t.Setenv("DB_CONNECTION", "file::memory:?cache=shared")
 	t.Setenv("DB_TYPE", "sqlite3")
 	db := db.MustOpen(newTLogger(t))
 	ctx := context.Background()
 
-	// Setup the migrator
 	migrator := migrate.NewMigrator(db, migrations.Migrations)
 	if err := migrator.Init(ctx); err != nil {
 		require.NoError(t, err)
@@ -49,13 +47,11 @@ func TestFullMigration(t *testing.T) {
 		db.Close()
 	}()
 
-	// Migrate up
 	_, err := migrator.Migrate(ctx)
 	if err != nil {
 		require.NoError(t, err)
 	}
 
-	// Rollback the migrations
 	_, err = migrator.Rollback(ctx)
 	if err != nil {
 		require.NoError(t, err)

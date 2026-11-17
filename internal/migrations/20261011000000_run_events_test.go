@@ -8,8 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// m20261011000000_indexes names the indexes the up creates, so both tests assert
-// the same set.
 func m20261011000000_indexes() []string {
 	return []string{
 		"idx_run_events_run_code_created_at",
@@ -45,8 +43,6 @@ func TestRunEventsMigration_DownDropsEverything(t *testing.T) {
 	}
 }
 
-// Both directions are guarded on what already exists, so a retry after a partial
-// failure finishes the job instead of erroring on the half already done.
 func TestRunEventsMigration_IsRepeatable(t *testing.T) {
 	dbc := m20260827_setupDBThrough(t, "20261011000000")
 	ctx := context.Background()

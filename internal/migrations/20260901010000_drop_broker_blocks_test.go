@@ -10,9 +10,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// m20260901010000_seedQuest inserts a bare quest and run. The sibling
-// migration's fixture builds a whole location tree and needs tables a later
-// migration drops; these tests only need something to hang blocks off.
 func m20260901010000_seedQuest(t *testing.T, dbc *bun.DB) (string, string) {
 	t.Helper()
 	ctx := context.Background()
@@ -26,8 +23,7 @@ func m20260901010000_seedQuest(t *testing.T, dbc *bun.DB) (string, string) {
 	return questID, runCode
 }
 
-// m20260901010000_seedBlock inserts one block and a run state against it,
-// bypassing the models so the removed broker type can still be written.
+// m20260901010000_seedBlock uses raw SQL so the retired type can be written.
 func m20260901010000_seedBlock(t *testing.T, dbc *bun.DB, questID, runCode, blockType string) string {
 	t.Helper()
 	ctx := context.Background()
@@ -55,8 +51,6 @@ func m20260901010000_countRows(t *testing.T, dbc *bun.DB, query string, args ...
 	return count
 }
 
-// A surviving broker row cannot be loaded into a block at all now that the type
-// has left the registry, so the objective holding it would fail to render.
 func TestDropBrokerBlocks_RemovesBrokersAndTheirState(t *testing.T) {
 	dbc := m20260827_setupDB(t)
 	ctx := context.Background()
@@ -82,8 +76,6 @@ func TestDropBrokerBlocks_RemovesBrokersAndTheirState(t *testing.T) {
 		"and so is their state")
 }
 
-// An upload is a player's own file. It outlives the block it was made against
-// rather than being deleted with it, so it only loses the reference.
 func TestDropBrokerBlocks_DetachesUploadsRatherThanDeletingThem(t *testing.T) {
 	dbc := m20260827_setupDB(t)
 	ctx := context.Background()
@@ -108,8 +100,6 @@ func TestDropBrokerBlocks_DetachesUploadsRatherThanDeletingThem(t *testing.T) {
 		"but no longer points at it")
 }
 
-// The overwhelmingly common case is a database that never held one, and a
-// rerun after a partial failure must not care either.
 func TestDropBrokerBlocks_NoBrokersIsANoOp(t *testing.T) {
 	dbc := m20260827_setupDB(t)
 	ctx := context.Background()

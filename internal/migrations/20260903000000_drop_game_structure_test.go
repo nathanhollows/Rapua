@@ -21,8 +21,7 @@ func TestDropGameStructure_DropsBothColumns(t *testing.T) {
 	assert.False(t, columnExists(ctx, dbc, "runs", "skipped_group_ids"))
 }
 
-// The migration ships after the columns are already gone from a fresh schema,
-// so it has to survive finding nothing to drop.
+// A fresh schema never had the columns.
 func TestDropGameStructure_RerunIsANoOp(t *testing.T) {
 	dbc := m20260827_setupDBThrough(t, "20260902000000")
 	ctx := context.Background()
@@ -41,6 +40,5 @@ func TestDropGameStructure_DownRestoresThemEmpty(t *testing.T) {
 	assert.True(t, columnExists(ctx, dbc, "quests", "game_structure"))
 	assert.True(t, columnExists(ctx, dbc, "runs", "skipped_group_ids"))
 
-	// Restoring twice must not fail on the column already being back.
 	require.NoError(t, m20260903000000_down(ctx, dbc))
 }

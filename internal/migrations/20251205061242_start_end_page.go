@@ -34,8 +34,6 @@ type m20251205061242_Block struct {
 	ValidationRequired bool                `bun:"validation_required"`
 }
 
-// Block data structures for migration (self-contained).
-
 type m20251205061242_HeaderBlockData struct {
 	Icon      string `json:"icon"`
 	TitleText string `json:"title_text"`
@@ -79,7 +77,6 @@ const m20251205061242_FinishCongratulations = `` +
 
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-		// PART 1: Add header blocks to all existing locations
 		var locations []m20251205061242_Location
 		err := db.NewSelect().
 			Model(&locations).
@@ -89,7 +86,6 @@ func init() {
 		}
 
 		for _, location := range locations {
-			// Bump all location_content blocks ordering by 1 (if any exist)
 			_, err = db.NewUpdate().
 				Model((*m20251205061242_Block)(nil)).
 				Set("ordering = ordering + 1").
@@ -100,7 +96,6 @@ func init() {
 				return fmt.Errorf("failed to update block ordering for location %s: %w", location.ID, err)
 			}
 
-			// Create header block for location
 			headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{
 				Icon:      "map-pin-check-inside",
 				TitleText: location.Name,
@@ -124,7 +119,6 @@ func init() {
 			}
 		}
 
-		// PART 2: Add start and complete blocks to all existing instances
 		var instances []m20251205061242_Instance
 		err = db.NewSelect().
 			Model(&instances).
@@ -134,7 +128,6 @@ func init() {
 		}
 
 		for _, instance := range instances {
-			// Create start blocks
 			startBlocks := m20251205061242_createStartBlocks(instance.ID, instance.Name)
 			if len(startBlocks) > 0 {
 				_, err = db.NewInsert().Model(&startBlocks).Exec(ctx)
@@ -143,7 +136,6 @@ func init() {
 				}
 			}
 
-			// Create complete blocks
 			finishBlocks := m20251205061242_createFinishBlocks(instance.ID)
 			if len(finishBlocks) > 0 {
 				_, err = db.NewInsert().Model(&finishBlocks).Exec(ctx)
@@ -155,7 +147,6 @@ func init() {
 
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
-		// ROLLBACK PART 1: Delete location header blocks
 		_, err := db.NewDelete().
 			Model((*m20251205061242_Block)(nil)).
 			Where("type = ?", "header").
@@ -165,7 +156,6 @@ func init() {
 			return fmt.Errorf("failed to delete location header blocks: %w", err)
 		}
 
-		// Decrement ordering for all remaining location_content blocks
 		_, err = db.NewUpdate().
 			Model((*m20251205061242_Block)(nil)).
 			Set("ordering = ordering - 1").
@@ -176,7 +166,6 @@ func init() {
 			return fmt.Errorf("failed to restore block ordering: %w", err)
 		}
 
-		// ROLLBACK PART 2: Delete all start and complete blocks
 		_, err = db.NewDelete().
 			Model((*m20251205061242_Block)(nil)).
 			Where("context IN (?, ?)", blocks.ContextStart, blocks.ContextFinish).
@@ -189,12 +178,9 @@ func init() {
 	})
 }
 
-// m20251205061242_createStartBlocks creates the default blocks for an instance's start page.
-
 func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251205061242_Block {
 	result := make([]m20251205061242_Block, 7)
 
-	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{
 		Icon:      "map-pin-check-inside",
 		TitleText: instanceName,
@@ -211,7 +197,6 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		ValidationRequired: false,
 	}
 
-	// 2. Game status alert
 	gameStatusData, _ := json.Marshal(m20251205061242_GameStatusAlertBlockData{
 		ClosedMessage:    "This game is not yet open.",
 		ScheduledMessage: "This game will start soon.",
@@ -228,7 +213,6 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		ValidationRequired: false,
 	}
 
-	// 3. Divider - Instructions
 	divider1Data, _ := json.Marshal(m20251205061242_DividerBlockData{Title: "How to play"})
 	result[2] = m20251205061242_Block{
 		ID:       uuid.New().String(),
@@ -240,7 +224,6 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		ValidationRequired: false,
 	}
 
-	// 4. Markdown - Instructions
 	markdownData, _ := json.Marshal(m20251205061242_MarkdownBlockData{Content: m20251205061242_StartInstructions})
 	result[3] = m20251205061242_Block{
 		ID:       uuid.New().String(),
@@ -252,7 +235,6 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		ValidationRequired: false,
 	}
 
-	// 5. Divider - Team Info
 	divider2Data, _ := json.Marshal(m20251205061242_DividerBlockData{Title: "Team Info"})
 	result[4] = m20251205061242_Block{
 		ID:       uuid.New().String(),
@@ -264,7 +246,6 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		ValidationRequired: false,
 	}
 
-	// 6. Team name changer
 	teamNameData, _ := json.Marshal(m20251205061242_TeamNameChangerBlockData{
 		BlockText:     "Set your team name",
 		AllowChanging: true,
@@ -276,10 +257,9 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 		Context:  blocks.ContextStart,
 		Data:     teamNameData,
 		Ordering: 5, Points: 0,
-		ValidationRequired: true, // TeamNameChangerBlock requires validation
+		ValidationRequired: true,
 	}
 
-	// 7. Start game button
 	startData, _ := json.Marshal(m20251205061242_StartGameButtonBlockData{
 		ScheduledButtonText: "Game starts soon...",
 		ActiveButtonText:    "Start Game",
@@ -298,12 +278,9 @@ func m20251205061242_createStartBlocks(instanceID, instanceName string) []m20251
 	return result
 }
 
-// m20251205061242_createFinishBlocks creates the default blocks for an instance's complete page.
-
 func m20251205061242_createFinishBlocks(instanceID string) []m20251205061242_Block {
 	result := make([]m20251205061242_Block, 2)
 
-	// 1. Header
 	headerData, _ := json.Marshal(m20251205061242_HeaderBlockData{
 		Icon:      "party-popper",
 		TitleText: "Congratulations!",
@@ -320,7 +297,6 @@ func m20251205061242_createFinishBlocks(instanceID string) []m20251205061242_Blo
 		ValidationRequired: false,
 	}
 
-	// 2. Markdown - Congratulations
 	markdownData, _ := json.Marshal(m20251205061242_MarkdownBlockData{Content: m20251205061242_FinishCongratulations})
 	result[1] = m20251205061242_Block{
 		ID:                 uuid.New().String(),

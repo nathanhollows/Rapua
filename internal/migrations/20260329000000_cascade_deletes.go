@@ -8,7 +8,6 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// getColumnNames returns the column names for a table using PRAGMA table_info.
 func getColumnNames(ctx context.Context, db bun.IDB, tableName string) ([]string, error) {
 	rows, err := db.QueryContext(ctx, fmt.Sprintf(`PRAGMA table_info("%s")`, tableName))
 	if err != nil {
@@ -31,35 +30,29 @@ func getColumnNames(ctx context.Context, db bun.IDB, tableName string) ([]string
 	return names, rows.Err()
 }
 
-// recreateTable performs the SQLite rename-create-copy-drop dance to add FK constraints.
-// It queries the old table's column list and copies only columns that exist in both tables,
-// which handles column order differences from ALTER TABLE ADD COLUMN migrations.
+// recreateTable copies only the columns both tables share: ADD COLUMN migrations
+// left column orders differing between databases.
 func recreateTable(ctx context.Context, db bun.IDB, tableName, newCreateSQL string) error {
 	oldName := tableName + "_old"
 
-	// Get column names from the existing table using raw SQL scan
 	colNames, err := getColumnNames(ctx, db, tableName)
 	if err != nil {
 		return fmt.Errorf("getting columns for %s: %w", tableName, err)
 	}
 
-	// Rename old table
 	if _, err := db.ExecContext(ctx, fmt.Sprintf(`ALTER TABLE "%s" RENAME TO "%s"`, tableName, oldName)); err != nil {
 		return fmt.Errorf("renaming %s: %w", tableName, err)
 	}
 
-	// Create new table with FK constraints
 	if _, err := db.ExecContext(ctx, newCreateSQL); err != nil {
 		return fmt.Errorf("creating new %s: %w", tableName, err)
 	}
 
-	// Get column names from the new table to find the intersection
 	newColNames, err := getColumnNames(ctx, db, tableName)
 	if err != nil {
 		return fmt.Errorf("getting new columns for %s: %w", tableName, err)
 	}
 
-	// Build intersection of columns (only copy columns that exist in both)
 	newColSet := make(map[string]bool, len(newColNames))
 	for _, name := range newColNames {
 		newColSet[name] = true
@@ -72,13 +65,11 @@ func recreateTable(ctx context.Context, db bun.IDB, tableName, newCreateSQL stri
 	}
 	colList := strings.Join(quotedCols, ", ")
 
-	// Copy data using explicit column list
 	copySQL := fmt.Sprintf(`INSERT INTO "%s" (%s) SELECT %s FROM "%s"`, tableName, colList, colList, oldName)
 	if _, err := db.ExecContext(ctx, copySQL); err != nil {
 		return fmt.Errorf("copying data to %s: %w\nSQL: %s", tableName, err, copySQL)
 	}
 
-	// Drop old table
 	if _, err := db.ExecContext(ctx, fmt.Sprintf(`DROP TABLE "%s"`, oldName)); err != nil {
 		return fmt.Errorf("dropping %s: %w", oldName, err)
 	}
@@ -89,8 +80,7 @@ func recreateTable(ctx context.Context, db bun.IDB, tableName, newCreateSQL stri
 func init() {
 	Migrations.MustRegister(
 		func(ctx context.Context, db *bun.DB) error {
-			// Must disable FK checks during table recreation to avoid
-			// constraint violations while copying data between old/new tables.
+			// Off, or copying between old and new tables trips the constraints.
 			if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
 				return fmt.Errorf("disabling foreign keys: %w", err)
 			}
@@ -99,10 +89,9 @@ func init() {
 				db.ExecContext(ctx, "PRAGMA foreign_keys=ON")
 			}()
 
-			// Parents before children: rows orphaned by a parent's deletion must
-			// still be swept, or they survive into the copy below and violate the
-			// constraint being added. NOT EXISTS, not NOT IN — NOT IN matches
-			// nothing at all if its subquery yields a NULL.
+			// Parents first, or a parent's delete orphans rows that survive into the
+			// copy. NOT EXISTS, since NOT IN matches nothing once its subquery yields
+			// a NULL.
 			orphanCleanups := []string{
 				`DELETE FROM "instances" WHERE user_id IS NOT NULL
 					AND NOT EXISTS (SELECT 1 FROM users WHERE users.id = instances.user_id)`,
@@ -152,10 +141,8 @@ func init() {
 				}
 			}
 
-			// Order matters: recreate parent tables before children so FK
-			// references point to the final (new) version of each parent.
+			// Parents first, so children reference each parent's final table.
 
-			// --- instances (parent of many tables, child of users) ---
 			err := recreateTable(ctx, db, "instances", `CREATE TABLE "instances" (
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 				"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -173,7 +160,6 @@ func init() {
 				return err
 			}
 
-			// --- credit_purchases (parent of credit_adjustments) ---
 			err = recreateTable(ctx, db, "credit_purchases", `CREATE TABLE "credit_purchases" (
 				"id" VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -191,7 +177,6 @@ func init() {
 				return err
 			}
 
-			// --- instance_settings ---
 			err = recreateTable(ctx, db, "instance_settings", `CREATE TABLE "instance_settings" (
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 				"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -206,7 +191,6 @@ func init() {
 				return err
 			}
 
-			// --- locations ---
 			err = recreateTable(ctx, db, "locations", `CREATE TABLE "locations" (
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 				"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -225,7 +209,6 @@ func init() {
 			if err != nil {
 				return err
 			}
-			// Recreate the unique partial index on location slugs
 			if _, err := db.ExecContext(
 				ctx,
 				`CREATE UNIQUE INDEX IF NOT EXISTS "locations_instance_slug" ON "locations" ("instance_id", "slug") WHERE "slug" != ''`,
@@ -233,7 +216,6 @@ func init() {
 				return fmt.Errorf("creating locations slug index: %w", err)
 			}
 
-			// --- teams ---
 			err = recreateTable(ctx, db, "teams", `CREATE TABLE "teams" (
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 				"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -256,11 +238,8 @@ func init() {
 				return fmt.Errorf("creating teams id index: %w", err)
 			}
 
-			// --- blocks ---
-			// owner_id is polymorphic: location_id for content blocks,
-			// instance_id for start/finish blocks. A single FK reference
-			// cannot cover both, so cascade deletion of blocks is handled
-			// explicitly in the application (DeleteService).
+			// No FK on owner_id: it holds a location or an instance id, so
+			// DeleteService cascades blocks itself.
 			err = recreateTable(ctx, db, "blocks", `CREATE TABLE "blocks" (
 				"id" VARCHAR(36) NOT NULL PRIMARY KEY,
 				"owner_id" VARCHAR(36) NOT NULL,
@@ -275,7 +254,6 @@ func init() {
 				return err
 			}
 
-			// --- check_ins ---
 			err = recreateTable(ctx, db, "check_ins", `CREATE TABLE "check_ins" (
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 				"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -293,7 +271,6 @@ func init() {
 				return err
 			}
 
-			// --- team_block_states ---
 			err = recreateTable(ctx, db, "team_block_states", `CREATE TABLE "team_block_states" (
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 				"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -308,7 +285,6 @@ func init() {
 				return err
 			}
 
-			// --- notifications ---
 			err = recreateTable(ctx, db, "notifications", `CREATE TABLE "notifications" (
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
 				"updated_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -322,7 +298,6 @@ func init() {
 				return err
 			}
 
-			// --- uploads ---
 			err = recreateTable(ctx, db, "uploads", `CREATE TABLE "uploads" (
 				"id" VARCHAR(36) NOT NULL PRIMARY KEY,
 				"original_url" VARCHAR NOT NULL,
@@ -339,7 +314,6 @@ func init() {
 				return err
 			}
 
-			// --- credit_adjustments ---
 			err = recreateTable(ctx, db, "credit_adjustments", `CREATE TABLE "credit_adjustments" (
 				"id" VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -364,7 +338,6 @@ func init() {
 				return fmt.Errorf("creating credit_adjustments purchase_id index: %w", err)
 			}
 
-			// --- team_start_logs ---
 			err = recreateTable(ctx, db, "team_start_logs", `CREATE TABLE "team_start_logs" (
 				"id" VARCHAR(36) UNIQUE NOT NULL PRIMARY KEY,
 				"created_at" DATETIME NOT NULL DEFAULT current_timestamp,
@@ -388,7 +361,7 @@ func init() {
 				return fmt.Errorf("creating team_start_logs instance_id index: %w", err)
 			}
 
-			// Recreate indexes on credit_purchases (dropped during table recreation)
+			// Recreation dropped these.
 			if _, err := db.ExecContext(
 				ctx,
 				`CREATE INDEX IF NOT EXISTS "idx_credit_purchases_user_id" ON "credit_purchases" ("user_id")`,
@@ -408,7 +381,6 @@ func init() {
 				return fmt.Errorf("creating credit_purchases status index: %w", err)
 			}
 
-			// --- facilitator_tokens ---
 			err = recreateTable(ctx, db, "facilitator_tokens", `CREATE TABLE "facilitator_tokens" (
 				"token" VARCHAR NOT NULL PRIMARY KEY,
 				"instance_id" VARCHAR(36) NOT NULL REFERENCES "instances"("id") ON DELETE CASCADE,
@@ -419,7 +391,6 @@ func init() {
 				return err
 			}
 
-			// --- share_links ---
 			err = recreateTable(ctx, db, "share_links", `CREATE TABLE "share_links" (
 				"id" VARCHAR(36) NOT NULL PRIMARY KEY,
 				"template_id" VARCHAR(36) NOT NULL REFERENCES "instances"("id") ON DELETE CASCADE,
@@ -434,8 +405,6 @@ func init() {
 				return err
 			}
 
-			// Index on blocks.owner_id is beneficial for lookups even though
-			// owner_id has no FK constraint (it is polymorphic).
 			if _, err := db.ExecContext(
 				ctx,
 				`CREATE INDEX IF NOT EXISTS "idx_blocks_owner_id" ON "blocks" ("owner_id")`,
@@ -443,7 +412,7 @@ func init() {
 				return fmt.Errorf("creating blocks owner_id index: %w", err)
 			}
 
-			// --- Add indexes on FK columns for cascade performance ---
+			// A cascade scans the child column, so each one is indexed.
 			fkIndexes := []struct {
 				name  string
 				table string
@@ -472,7 +441,6 @@ func init() {
 				}
 			}
 
-			// Verify FK integrity
 			rows, err := db.QueryContext(ctx, "PRAGMA foreign_key_check")
 			if err != nil {
 				return fmt.Errorf("checking foreign key integrity: %w", err)
@@ -493,7 +461,6 @@ func init() {
 			return nil
 		},
 
-		// Down migration: recreate tables without FK constraints
 		func(ctx context.Context, db *bun.DB) error {
 			if _, err := db.ExecContext(ctx, "PRAGMA foreign_keys=OFF"); err != nil {
 				return fmt.Errorf("disabling foreign keys: %w", err)
@@ -503,7 +470,6 @@ func init() {
 				db.ExecContext(ctx, "PRAGMA foreign_keys=ON")
 			}()
 
-			// Drop FK indexes added by up migration
 			dropIndexes := []string{
 				"idx_instances_user_id",
 				"idx_instances_template_id",
@@ -526,7 +492,7 @@ func init() {
 				}
 			}
 
-			// Recreate tables without FK constraints (reverse order: children first)
+			// Children first, the reverse of up.
 			err := recreateTable(ctx, db, "share_links", `CREATE TABLE "share_links" (
 				"id" VARCHAR(36) NOT NULL PRIMARY KEY,
 				"template_id" VARCHAR(36) NOT NULL,

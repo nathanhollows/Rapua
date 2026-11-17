@@ -11,10 +11,8 @@ func init() {
 	Migrations.MustRegister(m20260905010000_up, m20260905010000_down)
 }
 
-// m20260905010000_up drops quest_settings.show_team_count: models.QuestSettings
-// has had no such field since the visiting-teams display was removed, and the
-// column would otherwise sit unmapped, inviting a later reader to wonder
-// whether the display still exists.
+// m20260905010000_up drops an unmapped column, which would suggest the
+// visiting-teams display still exists.
 func m20260905010000_up(ctx context.Context, db *bun.DB) error {
 	if !columnExists(ctx, db, "quest_settings", "show_team_count") {
 		return nil
@@ -27,7 +25,6 @@ func m20260905010000_up(ctx context.Context, db *bun.DB) error {
 	return nil
 }
 
-// m20260905010000_down restores the column (schema only, not data).
 func m20260905010000_down(ctx context.Context, db *bun.DB) error {
 	if columnExists(ctx, db, "quest_settings", "show_team_count") {
 		return nil

@@ -8,9 +8,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Repairs foreign key violations left by 20260329000000, which swept orphaned
-// children before deleting the instances that orphaned them. The sweep order is
-// fixed now, but databases that already ran it keep the bad rows.
+// 20260329000000 once swept children before deleting the instances that
+// orphaned them, and databases that ran that version kept the bad rows.
 func init() {
 	Migrations.MustRegister(
 		repairFKViolations,
@@ -27,9 +26,7 @@ type fkViolation struct {
 	fkID  int
 }
 
-// repairFKViolations resolves every row reported by PRAGMA foreign_key_check,
-// honouring each constraint's declared ON DELETE action. Deleting an orphan can
-// orphan its own children, so it repeats until the check comes back clean.
+// repairFKViolations repeats because deleting an orphan can orphan its children.
 func repairFKViolations(ctx context.Context, db *bun.DB) error {
 	const maxPasses = 10
 

@@ -23,7 +23,6 @@ func TestProgressFeedbackMigration_DownDropsIt(t *testing.T) {
 	assert.False(t, columnExists(ctx, dbc, "quest_settings", "progress_feedback"))
 }
 
-// A retry after a partial failure must finish the job.
 func TestProgressFeedbackMigration_IsRepeatable(t *testing.T) {
 	dbc := m20260827_setupDBThrough(t, "20261103000000")
 	ctx := context.Background()

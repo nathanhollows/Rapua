@@ -11,14 +11,12 @@ import (
 
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-		// SQLite does not allow NOT NULL without DEFAULT in ALTER TABLE ADD COLUMN.
-		// Use DEFAULT '' so existing rows satisfy the constraint during the alter.
+		// SQLite refuses ADD COLUMN NOT NULL without a default.
 		_, err := db.ExecContext(ctx, `ALTER TABLE locations ADD COLUMN slug TEXT DEFAULT ''`)
 		if err != nil {
 			return fmt.Errorf("adding slug column: %w", err)
 		}
 
-		// Backfill slugs from existing location names, unique per instance.
 		var locations []m20260316_Location
 		if err = db.NewSelect().Model(&locations).Scan(ctx); err != nil {
 			return fmt.Errorf("fetching locations: %w", err)
@@ -52,8 +50,7 @@ func init() {
 			}
 		}
 
-		// Partial unique index: only enforce uniqueness on non-empty slugs so that
-		// test fixtures inserting rows without slugs do not violate the constraint.
+		// Partial, so fixtures can insert slugless rows.
 		_, err = db.ExecContext(
 			ctx,
 			`CREATE UNIQUE INDEX locations_instance_slug `+

@@ -12,27 +12,18 @@ func init() {
 	Migrations.MustRegister(m20261010010000_up, m20261010010000_down)
 }
 
-// m20261010010000_up renames random_clue blocks to random_text.
-//
-// The block shows each team one text from a list, and its old name taught the
-// retired clue-and-QR model to anyone who opened the block picker. The list key
-// moves with the type so stored blocks match the field the spec now names and
-// nothing has to translate between the two spellings.
+// m20261010010000_up exists because the old name taught the retired clue model.
+// The key moves too, so nothing translates between spellings.
 func m20261010010000_up(ctx context.Context, db *bun.DB) error {
 	return renameRandomText(ctx, db, "random_clue", "random_text", "clues", "texts")
 }
 
-// m20261010010000_down restores the old names. Reversible in full: the rename
-// rewrites two strings and drops nothing.
 func m20261010010000_down(ctx context.Context, db *bun.DB) error {
 	return renameRandomText(ctx, db, "random_text", "random_clue", "texts", "clues")
 }
 
-// renameRandomText rewrites the type and the list key of every matching block
-// in place, keeping each row's id, owner, context and ordering so the block
-// stays where it was on the page. A row whose data does not parse still gets
-// the new type: the registry only needs the type, and an unreadable list
-// cannot be renamed anyway.
+// renameRandomText still retypes unparseable data: the registry needs only the
+// type.
 func renameRandomText(ctx context.Context, db *bun.DB, from, to, fromKey, toKey string) error {
 	if !tableExists(ctx, db, "blocks") {
 		return nil

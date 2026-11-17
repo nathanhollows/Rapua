@@ -11,8 +11,7 @@ func init() {
 	Migrations.MustRegister(m20261103000000_up, m20261103000000_down)
 }
 
-// Existing quests default to "fraction", what they already showed: anything else
-// would change a running game under its players.
+// Fraction is what existing quests showed, so running games do not change.
 func m20261103000000_up(ctx context.Context, db *bun.DB) error {
 	if columnExists(ctx, db, "quest_settings", "progress_feedback") {
 		return nil
@@ -24,7 +23,6 @@ func m20261103000000_up(ctx context.Context, db *bun.DB) error {
 	return nil
 }
 
-// Every quest goes back to fraction, the only feedback the older schema can say.
 func m20261103000000_down(ctx context.Context, db *bun.DB) error {
 	if !columnExists(ctx, db, "quest_settings", "progress_feedback") {
 		return nil

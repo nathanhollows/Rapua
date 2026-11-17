@@ -17,7 +17,6 @@ func init() {
 	})
 }
 
-// m20260317_rewriteEnums loads all game_structure JSON, applies fn to each, and saves back.
 func m20260317_rewriteEnums(
 	ctx context.Context,
 	db *bun.DB,
@@ -66,7 +65,6 @@ type m20260317_Row struct {
 	GameStructure string `bun:"game_structure"`
 }
 
-// Mapping tables for forward migration (int → string).
 var (
 	m20260317_routingForward = map[float64]string{
 		0: "randomised",
@@ -100,7 +98,6 @@ var (
 	}
 )
 
-// m20260317_migrateGroup converts integer routing/navigation to strings recursively.
 func m20260317_migrateGroup(group map[string]any) bool {
 	changed := m20260317_convertField(group, "routing", m20260317_routingForward)
 	if m20260317_convertField(group, "navigation", m20260317_navigationForward) {
@@ -117,7 +114,6 @@ func m20260317_migrateGroup(group map[string]any) bool {
 	return changed
 }
 
-// m20260317_reverseGroup converts string routing/navigation back to integers recursively.
 func m20260317_reverseGroup(group map[string]any) bool {
 	changed := m20260317_reverseField(group, "routing", m20260317_routingReverse)
 	if m20260317_reverseField(group, "navigation", m20260317_navigationReverse) {
@@ -134,7 +130,6 @@ func m20260317_reverseGroup(group map[string]any) bool {
 	return changed
 }
 
-// m20260317_convertField converts a single float64 field to its string equivalent.
 func m20260317_convertField(
 	group map[string]any,
 	key string,
@@ -157,7 +152,6 @@ func m20260317_convertField(
 	return true
 }
 
-// m20260317_reverseField converts a single string field back to its float64 equivalent.
 func m20260317_reverseField(
 	group map[string]any,
 	key string,

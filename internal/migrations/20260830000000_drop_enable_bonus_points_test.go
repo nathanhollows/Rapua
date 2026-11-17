@@ -28,6 +28,5 @@ func TestDropEnableBonusPoints_DownRestoresColumn(t *testing.T) {
 	require.NoError(t, m20260830000000_down(ctx, dbc))
 	require.True(t, columnExists(ctx, dbc, "quest_settings", "enable_bonus_points"))
 
-	// Idempotent the other direction too.
 	require.NoError(t, m20260830000000_down(ctx, dbc))
 }

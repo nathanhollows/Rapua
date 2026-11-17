@@ -7,10 +7,8 @@ import (
 	"github.com/uptrace/bun"
 )
 
-// Renames facilitator_tokens.locations to objectives: facilitator token
-// scoping now targets objectives, not locations. A straight rename, not an
-// additive column: the admin UI never had a location-picker for this field,
-// so no real data depends on the old one.
+// A rename rather than a new column: the admin UI never had a picker for it, so
+// no data depends on the old one.
 func init() {
 	Migrations.MustRegister(
 		func(ctx context.Context, db *bun.DB) error {
