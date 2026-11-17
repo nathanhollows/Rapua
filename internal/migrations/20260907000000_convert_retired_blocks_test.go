@@ -31,8 +31,6 @@ func blockRow(t *testing.T, dbc *bun.DB, id string) (string, string, bool) {
 	return blockType, data, true
 }
 
-// A task held a sentence somebody typed. Deleting it because the type was
-// retired loses the author's words with nothing said.
 func TestConvertRetiredBlocks_TaskKeepsItsWordsAsAChecklist(t *testing.T) {
 	dbc := m20260827_setupDBThrough(t, "20260906000000")
 	id := gofakeit.UUID()
@@ -59,7 +57,67 @@ func TestConvertRetiredBlocks_TaskKeepsItsWordsAsAChecklist(t *testing.T) {
 	assert.False(t, checklist.Items[0].Checked)
 }
 
-// The navigation residue holds nothing anyone wrote.
+func TestConvertRetiredBlocks_TaskGatesAndKeepsItsTicks(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	ctx := context.Background()
+
+	user := gofakeit.UUID()
+	quest := gofakeit.UUID()
+	for _, stmt := range []struct {
+		sql  string
+		args []any
+	}{
+		{`INSERT INTO "users" ("id", "name", "email") VALUES (?, ?, ?)`, []any{user, gofakeit.Name(), gofakeit.Email()}},
+		{`INSERT INTO "quests" ("id", "name", "user_id") VALUES (?, 'Tasks', ?)`, []any{quest, user}},
+	} {
+		_, err := dbc.ExecContext(ctx, stmt.sql, stmt.args...)
+		require.NoError(t, err)
+	}
+	done := m20260827_seedRun(t, dbc, quest)
+	pending := m20260827_seedRun(t, dbc, quest)
+
+	id := gofakeit.UUID()
+	seedBlock(t, dbc, id, "task", `{"task":"Find the bell"}`)
+	for _, run := range []struct {
+		code     string
+		complete bool
+	}{{done, true}, {pending, false}} {
+		_, err := dbc.ExecContext(ctx,
+			`INSERT INTO "run_block_states" ("run_code", "block_id", "quest_id", "is_complete", "points_awarded")`+
+				` VALUES (?, ?, ?, ?, 0)`, run.code, id, quest, run.complete)
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, m20260907000000_up(ctx, dbc))
+
+	var validation bool
+	require.NoError(t, dbc.QueryRowContext(ctx,
+		`SELECT "validation_required" FROM "blocks" WHERE "id" = ?`, id).Scan(&validation))
+	assert.True(t, validation, "a checklist requires validation, and duplication copies the stored flag")
+
+	_, data, _ := blockRow(t, dbc, id)
+	var checklist struct {
+		Items []struct {
+			ID string `json:"id"`
+		} `json:"items"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(data), &checklist))
+	require.Len(t, checklist.Items, 1)
+
+	stateOf := func(runCode string) string {
+		var playerData *string
+		require.NoError(t, dbc.QueryRowContext(ctx,
+			`SELECT "player_data" FROM "run_block_states" WHERE "run_code" = ? AND "block_id" = ?`,
+			runCode, id).Scan(&playerData))
+		if playerData == nil {
+			return ""
+		}
+		return *playerData
+	}
+	assert.JSONEq(t, `{"checked_items":["`+checklist.Items[0].ID+`"]}`, stateOf(done))
+	assert.Empty(t, stateOf(pending), "an unfinished task has nothing to tick")
+}
+
 func TestConvertRetiredBlocks_StructuralResidueIsDeleted(t *testing.T) {
 	dbc := m20260827_setupDBThrough(t, "20260906000000")
 	listID, slotID := gofakeit.UUID(), gofakeit.UUID()
@@ -74,7 +132,6 @@ func TestConvertRetiredBlocks_StructuralResidueIsDeleted(t *testing.T) {
 	}
 }
 
-// A block whose type is still registered is left exactly as it was.
 func TestConvertRetiredBlocks_LeavesLiveBlocksAlone(t *testing.T) {
 	dbc := m20260827_setupDBThrough(t, "20260906000000")
 	id := gofakeit.UUID()
@@ -88,7 +145,6 @@ func TestConvertRetiredBlocks_LeavesLiveBlocksAlone(t *testing.T) {
 	assert.JSONEq(t, `{"content":"Read this"}`, data)
 }
 
-// A task with no text still becomes something an author can find and edit.
 func TestConvertRetiredBlocks_EmptyTaskStillConverts(t *testing.T) {
 	dbc := m20260827_setupDBThrough(t, "20260906000000")
 	id := gofakeit.UUID()
