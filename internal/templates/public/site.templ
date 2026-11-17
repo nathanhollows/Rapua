@@ -59,7 +59,8 @@ templ siteDocument(title string, extraHead templ.Component) {
 	</html>
 }
 
-// Sign-in says admin because players never sign in: they join with a code.
+// Players never sign in (they join with a code), so the signed-out button invites
+// creators to start and the signed-in one says admin.
 templ siteHeader(authed bool, current string) {
 	<header class="relative z-[3] site-wrap flex items-center justify-between h-16">
 		<div class="flex items-center gap-1">
@@ -80,9 +81,9 @@ templ siteHeader(authed bool, current string) {
 				>{ l.Label }</a>
 			}
 			if authed {
-				<a href="/admin" class="px-3 py-2 rounded-full border-2 border-base-content/12" hx-boost="false">Admin</a>
+				<a href="/admin" class="px-3 py-2 rounded-full border-2 border-primary bg-primary text-primary-content" hx-boost="false">Admin</a>
 			} else {
-				<a href="/login" class="px-3 py-2 rounded-full border-2 border-base-content/12" hx-boost="false">Admin login</a>
+				<a href="/login" class="px-3 py-2 rounded-full border-2 border-primary bg-primary text-primary-content" hx-boost="false">Create a Quest</a>
 			}
 		</nav>
 	</header>

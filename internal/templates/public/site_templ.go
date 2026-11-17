@@ -146,7 +146,8 @@ func siteDocument(title string, extraHead templ.Component) templ.Component {
 	})
 }
 
-// Sign-in says admin because players never sign in: they join with a code.
+// Players never sign in (they join with a code), so the signed-out button invites
+// creators to start and the signed-in one says admin.
 func siteHeader(authed bool, current string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -193,7 +194,7 @@ func siteHeader(authed bool, current string) templ.Component {
 			var templ_7745c5c3_Var8 templ.SafeURL
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(l.Href))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/site.templ`, Line: 75, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/site.templ`, Line: 76, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -229,7 +230,7 @@ func siteHeader(authed bool, current string) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(l.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/site.templ`, Line: 80, Col: 14}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/site.templ`, Line: 81, Col: 14}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -241,12 +242,12 @@ func siteHeader(authed bool, current string) templ.Component {
 			}
 		}
 		if authed {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<a href=\"/admin\" class=\"px-3 py-2 rounded-full border-2 border-base-content/12\" hx-boost=\"false\">Admin</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<a href=\"/admin\" class=\"px-3 py-2 rounded-full border-2 border-primary bg-primary text-primary-content\" hx-boost=\"false\">Admin</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<a href=\"/login\" class=\"px-3 py-2 rounded-full border-2 border-base-content/12\" hx-boost=\"false\">Admin login</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<a href=\"/login\" class=\"px-3 py-2 rounded-full border-2 border-primary bg-primary text-primary-content\" hx-boost=\"false\">Create a Quest</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
