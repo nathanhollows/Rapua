@@ -1030,3 +1030,19 @@ func TestLint_BlockVarsAreKnownFields(t *testing.T) {
 		assert.NotEqual(t, "UNKNOWN_FIELD", diag.Code, "unexpected: %s", diag.Path)
 	}
 }
+
+func TestLint_UnknownProgressFeedback_Error(t *testing.T) {
+	doc := validDoc()
+	doc.Settings.ProgressFeedback = "Count"
+
+	assert.True(t, game.Lint(doc, newTestRegistry()).HasError("INVALID_PROGRESS_FEEDBACK"))
+}
+
+func TestLint_ProgressFeedbackValuesAndUnset_NoError(t *testing.T) {
+	for _, value := range []string{"", "fraction", "count", "none"} {
+		doc := validDoc()
+		doc.Settings.ProgressFeedback = value
+
+		assert.False(t, game.Lint(doc, newTestRegistry()).HasError("INVALID_PROGRESS_FEEDBACK"), value)
+	}
+}

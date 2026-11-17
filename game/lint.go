@@ -124,6 +124,14 @@ func (l *linter) checkSchema() {
 			"the root objective is the quest rather than a place in it, so there is nothing "+
 				"for pass_through to hide; mark the sections beneath it instead")
 	}
+	// An unknown value would import as fraction and silently set the wrong study
+	// condition. Empty means the default.
+	if fb := l.doc.Settings.ProgressFeedback; fb != "" {
+		if _, err := ParseProgressFeedback(fb); err != nil {
+			l.errorf("settings.progress_feedback", "INVALID_PROGRESS_FEEDBACK",
+				"progress_feedback must be \"fraction\", \"count\" or \"none\", got %q", fb)
+		}
+	}
 	l.checkRootIsContainer()
 	if len(l.doc.Structure.Depends) > 0 {
 		l.errorf("structure.depends", "ROOT_DEPENDS",
