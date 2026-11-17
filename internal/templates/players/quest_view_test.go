@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -166,9 +167,10 @@ func TestQuestView_FinishableSectionCarriesThePressOnItsPlace(t *testing.T) {
 	require.Len(t, quest.Places, 1)
 	place := quest.Places[0]
 	assert.Equal(t, "Visit the east wing", place.Title)
-	assert.True(t, place.CanFinish)
-	assert.Equal(t, "Leave the wing", place.FinishLabel)
-	assert.Equal(t, "wing", place.FinishSlug)
+	require.Len(t, place.Finishes, 1)
+	assert.Equal(t, "Leave the wing", place.Finishes[0].Label)
+	assert.Equal(t, "wing", place.Finishes[0].Slug)
+	assert.Equal(t, "Visit the east wing", place.Finishes[0].Title)
 	require.Len(t, place.Rows, 1, "its children stay tasks; the section itself is not one")
 	assert.Equal(t, "Find the statue", place.Rows[0].Title)
 	assert.Equal(t, 0, place.Found)
@@ -182,7 +184,7 @@ func TestQuestView_FinishLabelFallsBackToPlainWords(t *testing.T) {
 	view := viewOf([]models.Objective{rows[1]}, rows)
 	view.Frontier.Status["wing"] = navigation.StatusFinishable
 
-	assert.Equal(t, "Finish", BuildQuestView(view).Places[0].FinishLabel)
+	assert.Equal(t, "Finish", BuildQuestView(view).Places[0].Finishes[0].Label)
 }
 
 func TestQuestView_SectionStatesItsBandAndProgress(t *testing.T) {
@@ -203,7 +205,7 @@ func TestQuestView_SectionStatesItsBandAndProgress(t *testing.T) {
 	assert.Equal(t, "Complete all three", place.Rule)
 	assert.Equal(t, 2, place.Found)
 	assert.Equal(t, 3, place.Total)
-	assert.False(t, place.CanFinish, "a band with no range offers no choice")
+	assert.Empty(t, place.Finishes, "a band with no range offers no choice")
 }
 
 func TestQuestView_BandPastNineChildrenUsesTheNumeral(t *testing.T) {
@@ -224,8 +226,9 @@ func TestQuestView_FinishableRootStaysAtTheTop(t *testing.T) {
 
 	require.Len(t, quest.Places, 1)
 	assert.False(t, quest.Places[0].IsSection)
-	assert.True(t, quest.Places[0].CanFinish)
-	assert.Equal(t, "root", quest.Places[0].FinishSlug)
+	require.Len(t, quest.Places[0].Finishes, 1)
+	assert.Equal(t, "root", quest.Places[0].Finishes[0].Slug)
+	assert.True(t, quest.Places[0].Finishes[0].WholeQuest)
 }
 
 func TestQuestView_SurvivesAMissingTree(t *testing.T) {
@@ -267,11 +270,11 @@ func TestMetricFor_ProgressIsDoneAgainstWhatIsStillOwed(t *testing.T) {
 }
 
 func TestMetricFor_FoundHasNoTotal(t *testing.T) {
-	got := metricFor(models.QuestSettings{ProgressFeedback: game.ProgressFeedbackCount}, navigation.Progress{Done: 3, Remaining: 6})
+	got := metricFor(models.QuestSettings{ProgressFeedback: game.ProgressFeedbackCount}, navigation.Progress{Done: 5, Found: 3, Remaining: 6})
 
 	assert.True(t, got.Show)
 	assert.False(t, got.HasTotal)
-	assert.Equal(t, 3, got.Done)
+	assert.Equal(t, 3, got.Done, "tasks found, not the sections that completed around them")
 	assert.Equal(t, "found", got.Label)
 }
 
@@ -289,7 +292,7 @@ func headerRun(metric game.ProgressFeedback, points bool) models.Run {
 }
 
 func TestQuestHeader_ShowsTheMetricTheAuthorChose(t *testing.T) {
-	view := &services.PlayerObjectiveView{Progress: navigation.Progress{Done: 3, Remaining: 6}}
+	view := &services.PlayerObjectiveView{Progress: navigation.Progress{Done: 3, Found: 3, Remaining: 6}}
 
 	html := render(t, questHeader(ObjectivesParams{Run: headerRun(game.ProgressFeedbackFraction, false), View: view}))
 	assert.Contains(t, html, "The Perfumer&#39;s Garden")
@@ -389,6 +392,23 @@ func TestSectionHues_PassThroughSectionsTakeNoNumber(t *testing.T) {
 	assert.Equal(t, HueFor(0), hues["b"])
 }
 
+func TestSectionHues_ASectionPastTheDepthCapTakesNoColour(t *testing.T) {
+	rows := tree(obj("root", "", "Quest"))
+	parent := "root"
+	for i := 0; i <= navigation.MaxDrawnDepth; i++ {
+		id := fmt.Sprintf("s%d", i)
+		rows = append(rows, obj(id, parent, id), obj(id+"-leaf", id, id+"-leaf"))
+		parent = id
+	}
+	rows = append(rows, obj("next", "root", "Next"), obj("next-leaf", "next", "Leaf"))
+
+	hues := sectionHues(rows)
+
+	deepest := fmt.Sprintf("s%d", navigation.MaxDrawnDepth)
+	assert.NotContains(t, hues, deepest, "never drawn, so it uses up no hue")
+	assert.Equal(t, HueFor(navigation.MaxDrawnDepth), hues["next"], "the next drawn section takes the next unused hue")
+}
+
 func TestQuestView_GroupsPlacesUnderTheirOutermostSection(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -442,9 +462,9 @@ func TestBandWords_ACeilingBelowTheChildCountIsAPick(t *testing.T) {
 
 func finishablePlace() QuestPlace {
 	return QuestPlace{
-		IsSection: true, Title: "The still room", CanFinish: true,
-		FinishLabel: "That's enough for now", FinishSlug: "still",
-		Rows: []QuestRow{{Slug: "steam", Title: "Steam distillation"}},
+		IsSection: true, Title: "The still room",
+		Finishes: []QuestFinish{{Slug: "still", Label: "That's enough for now", Title: "The still room"}},
+		Rows:     []QuestRow{{Slug: "steam", Title: "Steam distillation"}},
 	}
 }
 
@@ -468,7 +488,7 @@ func TestQuestPlace_MetBandOffersTheRestThenOrThenAConfirmedPress(t *testing.T) 
 
 func TestQuestPlace_NoPressUntilTheBandIsMet(t *testing.T) {
 	place := finishablePlace()
-	place.CanFinish = false
+	place.Finishes = nil
 
 	html := render(t, questPlace(place, false))
 
@@ -478,7 +498,7 @@ func TestQuestPlace_NoPressUntilTheBandIsMet(t *testing.T) {
 
 func TestQuestPlace_WearsItsPillAndTheSectionsHue(t *testing.T) {
 	place := finishablePlace()
-	place.CanFinish = false
+	place.Finishes = nil
 	place.Pill = "1 of 3 done"
 	place.Hue = HueFor(2)
 
@@ -496,4 +516,41 @@ func TestQuestRow_OnlyAGuidedFirstRowIsTheHero(t *testing.T) {
 	assert.Contains(t, render(t, questRow(row, true)), "q-hero")
 	assert.Contains(t, render(t, questRow(row, true)), "Next up")
 	assert.NotContains(t, render(t, questRow(row, false)), "q-hero")
+}
+
+func TestQuestView_SectionWithRowsAndSubsectionsIsNamedOnce(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("scent", "root", "Make your scent"), obj("own", "scent", "Own task"),
+		obj("top", "scent", "Top note"), obj("t1", "top", "Bergamot"),
+	)
+
+	view := BuildQuestView(viewOf([]models.Objective{rows[2], rows[4]}, rows))
+	groups := view.Groups()
+
+	require.Len(t, groups, 1)
+	assert.Equal(t, "Make your scent", groups[0].Title)
+	require.Len(t, groups[0].Places, 2)
+	assert.True(t, groups[0].Places[0].NamedByGroup, "the group heading already names the section")
+	assert.False(t, groups[0].Places[1].NamedByGroup)
+}
+
+func TestQuestView_PassThroughFinishNamesItselfAndKeepsAnAncestorsPress(t *testing.T) {
+	rows := tree(
+		obj("root", "", "Quest"),
+		obj("gallery", "root", "Gallery"),
+		obj("bonus", "gallery", "Bonus"), obj("b1", "bonus", "Hidden"),
+	)
+	rows[2].PassThrough = true
+
+	view := viewOf([]models.Objective{rows[1], rows[2]}, rows)
+	view.Frontier.Status["gallery"] = navigation.StatusFinishable
+	view.Frontier.Status["bonus"] = navigation.StatusFinishable
+
+	place := BuildQuestView(view).Places[0]
+
+	require.Len(t, place.Finishes, 2, "neither press overwrites the other")
+	assert.Equal(t, "Gallery", place.Finishes[0].Title)
+	assert.Equal(t, "Bonus", place.Finishes[1].Title)
+	assert.Equal(t, "bonus", place.Finishes[1].Slug)
 }

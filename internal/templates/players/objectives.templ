@@ -65,7 +65,9 @@ templ questPlace(place QuestPlace, grouped bool) {
 				</p>
 			}
 			<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-				<h3 class={ "q-head", templ.KV("q-head-sub", grouped) }>{ place.Title }</h3>
+				if !place.NamedByGroup {
+					<h3 class={ "q-head", templ.KV("q-head-sub", grouped) }>{ place.Title }</h3>
+				}
 				if place.Pill != "" {
 					<span class="q-pill">{ place.Pill }</span>
 				}
@@ -82,30 +84,30 @@ templ questPlace(place QuestPlace, grouped bool) {
 
 // It asks first because finishing skips whatever is left.
 templ questPlaceFooter(place QuestPlace) {
-	if place.CanFinish {
-		{{ dialogID := "finish-" + place.FinishSlug }}
+	for _, finish := range place.Finishes {
+		{{ dialogID := "finish-" + finish.Slug }}
 		<div class="q-or" aria-hidden="true">or</div>
 		<button
 			type="button"
 			class="q-fin"
 			_={ "on click call #" + dialogID + ".showModal()" }
 		>
-			{ place.FinishLabel }
+			{ finish.Label }
 		</button>
 		<dialog id={ dialogID } class="modal modal-bottom sm:modal-middle">
 			<div class="modal-box">
 				<h3 class="text-xl font-bold text-pretty">
-					if place.IsSection {
-						Finish { place.Title }?
-					} else {
+					if finish.WholeQuest {
 						Finish the quest?
+					} else {
+						Finish { finish.Title }?
 					}
 				</h3>
 				<p class="py-3 text-pretty">
-					if place.IsSection {
-						This closes the section and skips what is left.
-					} else {
+					if finish.WholeQuest {
 						This ends the run: anything unfinished is left behind.
+					} else {
+						This closes the section and skips what is left.
 					}
 				</p>
 				<div class="modal-action">
@@ -113,9 +115,9 @@ templ questPlaceFooter(place QuestPlace) {
 						<button class="btn btn-ghost">Keep going</button>
 					</form>
 					<!-- Boosted so the list swaps in: an Hx-Redirect reloads the document. -->
-					<form method="post" action={ templ.URL("/objective/" + place.FinishSlug + "/finish") } hx-boost="true">
+					<form method="post" action={ templ.URL("/objective/" + finish.Slug + "/finish") } hx-boost="true">
 						<button type="submit" class="btn btn-success">
-							{ place.FinishLabel }
+							{ finish.Label }
 						</button>
 					</form>
 				</div>
@@ -203,7 +205,7 @@ func metricFor(settings models.QuestSettings, progress navigation.Progress) head
 	case game.ProgressFeedbackNone:
 		return headerMetric{}
 	case game.ProgressFeedbackCount:
-		return headerMetric{Show: true, Done: progress.Done, Label: "found"}
+		return headerMetric{Show: true, Done: progress.Found, Label: "found"}
 	default:
 		if progress.Total() == 0 {
 			return headerMetric{}

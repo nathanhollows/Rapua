@@ -30,13 +30,9 @@ type QuestPlace struct {
 	Path []string
 	Rows []QuestRow
 
-	// CanFinish lives on the place because the heading already names the section:
-	// a row of its own would read as a task called the same thing.
-	CanFinish   bool
-	FinishLabel string
-	// FinishSlug differs from Slug when the section is drawn under an ancestor
-	// because it sits past the depth cap.
-	FinishSlug string
+	// Finishes live on the place because a row would read as a task named like the
+	// heading. Several when hidden sections finish under a drawn ancestor.
+	Finishes []QuestFinish
 
 	// Found, Total and Minimum are the band as it stands, and zero on a place
 	// that is not a section.
@@ -47,6 +43,19 @@ type QuestPlace struct {
 	Pill    string
 	Ordered bool
 	Hue     int
+
+	// NamedByGroup suppresses the title the group heading already shows.
+	NamedByGroup bool
+}
+
+// QuestFinish carries its own title because its place may be an ancestor's.
+type QuestFinish struct {
+	// Slug is the finished section's own, not its place's.
+	Slug  string
+	Label string
+	Title string
+	// WholeQuest is true for the root, where the dialog ends the run.
+	WholeQuest bool
 }
 
 // QuestGroup holds places under one outermost section. Anything deeper stays in
@@ -61,11 +70,17 @@ type QuestGroup struct {
 // order.
 func (q QuestView) Groups() []QuestGroup {
 	var groups []QuestGroup
-	for _, place := range q.Places {
+	for i, place := range q.Places {
 		title := ""
 		if len(place.Path) > 0 {
 			title = place.Path[0]
 			place.Path = place.Path[1:]
+		} else if place.IsSection && i+1 < len(q.Places) {
+			// Joins its own subsections' group so the title prints once.
+			if next := q.Places[i+1]; len(next.Path) > 0 && next.Path[0] == place.Title {
+				title = place.Title
+				place.NamedByGroup = true
+			}
 		}
 		if n := len(groups); n > 0 && groups[n-1].Title == title && title != "" {
 			groups[n-1].Places = append(groups[n-1].Places, place)
@@ -91,10 +106,12 @@ func HueOfObjective(objectives []models.Objective, objective models.Objective) i
 }
 
 // Counted over the whole authored tree so opening one section never recolours
-// another. Pass-through sections are not drawn and take no number.
+// another. Undrawn sections (pass-through, past the depth cap) take no number.
 func sectionHues(objectives []models.Objective) map[string]int {
+	byID := make(map[string]models.Objective, len(objectives))
 	hasChildren := make(map[string]bool, len(objectives))
 	for _, objective := range objectives {
+		byID[objective.ID] = objective
 		if objective.ParentID != "" {
 			hasChildren[objective.ParentID] = true
 		}
@@ -102,7 +119,10 @@ func sectionHues(objectives []models.Objective) map[string]int {
 	hues := make(map[string]int, len(objectives))
 	next := 0
 	for _, objective := range objectives {
-		if objective.ParentID == "" || !hasChildren[objective.ID] || objective.PassThrough {
+		if objective.ParentID == "" || !hasChildren[objective.ID] {
+			continue
+		}
+		if navigation.KindOf(byID, objective) != navigation.SectionDrawn {
 			continue
 		}
 		hues[objective.ID] = HueFor(next)
@@ -260,9 +280,12 @@ func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 		if view.Frontier.StatusOf(objective.ID) == navigation.StatusFinishable {
 			place, path := b.finishPlace(objective)
 			at := placeAt(place, path)
-			built.Places[at].CanFinish = true
-			built.Places[at].FinishLabel = finishLabel(objective)
-			built.Places[at].FinishSlug = objective.Slug
+			built.Places[at].Finishes = append(built.Places[at].Finishes, QuestFinish{
+				Slug:       objective.Slug,
+				Label:      finishLabel(objective),
+				Title:      objective.Title,
+				WholeQuest: objective.ParentID == "",
+			})
 			continue
 		}
 

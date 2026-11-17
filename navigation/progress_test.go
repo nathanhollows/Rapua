@@ -142,3 +142,17 @@ func TestComputeProgress_NeverGoesBackwards(t *testing.T) {
 	}
 	assert.Zero(t, prev.Remaining, "everything complete leaves nothing owed")
 }
+
+func TestComputeProgress_FoundCountsOnlyCompletedLeaves(t *testing.T) {
+	objectives := []models.Objective{
+		{ID: "root"},
+		{ID: "sec", ParentID: "root"},
+		{ID: "a", ParentID: "sec"},
+		{ID: "b", ParentID: "sec"},
+	}
+
+	p := navigation.ComputeProgress(objectives, map[string]bool{"a": true, "b": true, "sec": true})
+
+	assert.Equal(t, 3, p.Done)
+	assert.Equal(t, 2, p.Found, "the section completing is not a task found")
+}

@@ -18,6 +18,8 @@ import (
 type Progress struct {
 	Done      int
 	Remaining int
+	// Found is completed leaves only: Done also counts sections, so it jumps.
+	Found int
 }
 
 // Total is what the run's length looks like from here: everything done, plus
@@ -36,9 +38,18 @@ func ComputeProgress(objectives []models.Objective, complete map[string]bool) Pr
 	t := newTree(InPlay(objectives))
 
 	p := Progress{}
+	hasChildren := make(map[string]bool, len(objectives))
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			hasChildren[obj.ParentID] = true
+		}
+	}
 	for _, obj := range objectives {
 		if complete[obj.ID] {
 			p.Done++
+			if !hasChildren[obj.ID] {
+				p.Found++
+			}
 		}
 	}
 	for _, root := range t.roots {
