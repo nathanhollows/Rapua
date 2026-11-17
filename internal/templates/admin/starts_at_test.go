@@ -55,8 +55,9 @@ func TestStartsAtFrom_CountsCalendarDays(t *testing.T) {
 
 // The browser gets the instant because the server only knows its own timezone.
 func TestQuestStatus_ScheduledCarriesTheInstant(t *testing.T) {
+	// Next year, so the quest is always still ahead and the year always shows.
 	// time.Local, because the fallback text is written in the server's zone.
-	start := time.Date(2026, 11, 14, 21, 43, 0, 0, time.Local)
+	start := time.Date(time.Now().Year()+1, 11, 14, 21, 43, 0, 0, time.Local)
 	quest := models.Quest{StartTime: bun.NullTime{Time: start}}
 
 	var out strings.Builder
@@ -66,7 +67,7 @@ func TestQuestStatus_ScheduledCarriesTheInstant(t *testing.T) {
 	assert.Contains(t, html, `datetime="`+start.UTC().Format(time.RFC3339)+`"`,
 		"the moment, not the wording")
 	assert.Contains(t, html, "data-starts-at")
-	assert.Contains(t, html, "Starts 14 Nov", "and the server's words until a script runs")
+	assert.Contains(t, html, "Starts 14 Nov "+start.Format("2006"), "and the server's words until a script runs")
 }
 
 // An empty datetime would be read as 1970.
