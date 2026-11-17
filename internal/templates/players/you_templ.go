@@ -16,12 +16,10 @@ import (
 )
 
 type YouParams struct {
-	Run models.Run
-	// Leaderboard is empty when the quest does not show one.
+	Run         models.Run
 	Leaderboard []services.LeaderBoardTeamData
 }
 
-// standing finds this run's own entry so its position can be stated.
 func (data YouParams) standing() (services.LeaderBoardTeamData, bool) {
 	for _, entry := range data.Leaderboard {
 		if entry.Code == data.Run.Code {
@@ -31,10 +29,7 @@ func (data YouParams) standing() (services.LeaderBoardTeamData, bool) {
 	return services.LeaderBoardTeamData{}, false
 }
 
-// You shows the run's identity and standing.
-//
 // Facts are flat: one drawn like a button invites a tap that goes nowhere.
-// The board ranks by points when enabled, otherwise by objectives done.
 func You(data YouParams) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -71,7 +66,7 @@ func You(data YouParams) templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue("Game code " + spaced(data.Run.Code))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 37, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 32, Col: 87}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -89,7 +84,7 @@ func You(data YouParams) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(string(char))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 39, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 34, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -105,7 +100,7 @@ func You(data YouParams) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		me, ranked := data.standing()
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<!-- Points and the board are separate settings, so the score comes from the\n\t\trun, not from a board entry that may not exist. -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<!-- Points and the board are separate settings, so score reads off the run. -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -122,7 +117,7 @@ func You(data YouParams) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(data.Run.Points))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 51, Col: 52}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 45, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -141,7 +136,7 @@ func You(data YouParams) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(ordinal(me.Rank))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 58, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 52, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -154,7 +149,7 @@ func You(data YouParams) templ.Component {
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(len(data.Leaderboard)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 59, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 53, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -165,7 +160,7 @@ func You(data YouParams) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<!-- Needs a board for the count; hidden with points on, which already\n\t\t\t\trank the board. Uses the entry's total because the quest's objective\n\t\t\t\tcount includes the root and drafts. -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<!-- The entry's total, as the quest's objective count includes the root\n\t\t\t\tand drafts. -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -177,7 +172,7 @@ func You(data YouParams) templ.Component {
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(me.Progress))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 70, Col: 32}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 63, Col: 32}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -195,7 +190,7 @@ func You(data YouParams) templ.Component {
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(me.Total))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 72, Col: 52}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 65, Col: 52}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -240,7 +235,6 @@ func spaced(code string) string {
 	return string(out)
 }
 
-// TeamNameControl is the team name with its rename pencil.
 func TeamNameControl(team models.Run) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -292,7 +286,7 @@ func TeamNameControl(team models.Run) templ.Component {
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(team.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 101, Col: 15}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 93, Col: 15}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 			if templ_7745c5c3_Err != nil {
@@ -320,8 +314,6 @@ func TeamNameControl(team models.Run) templ.Component {
 	})
 }
 
-// TeamNameField replaces the head with the input focused.
-//
 // Its own endpoint: the start page's saves through a block a quest need not
 // contain.
 func TeamNameField(team models.Run) templ.Component {
@@ -352,7 +344,7 @@ func TeamNameField(team models.Run) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(team.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 136, Col: 20}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 126, Col: 20}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
@@ -444,7 +436,7 @@ func teamBoard(data YouParams) templ.Component {
 					var templ_7745c5c3_Var18 string
 					templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(entry.Rank))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 169, Col: 50}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 159, Col: 50}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 					if templ_7745c5c3_Err != nil {
@@ -458,7 +450,7 @@ func teamBoard(data YouParams) templ.Component {
 						var templ_7745c5c3_Var19 string
 						templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Name)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 172, Col: 21}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 162, Col: 21}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 						if templ_7745c5c3_Err != nil {
@@ -472,7 +464,7 @@ func teamBoard(data YouParams) templ.Component {
 						var templ_7745c5c3_Var20 string
 						templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(entry.Code)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 174, Col: 21}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 164, Col: 21}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 						if templ_7745c5c3_Err != nil {
@@ -497,7 +489,7 @@ func teamBoard(data YouParams) templ.Component {
 						var templ_7745c5c3_Var21 string
 						templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(entry.Points))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 182, Col: 35}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 172, Col: 35}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 						if templ_7745c5c3_Err != nil {
@@ -507,7 +499,7 @@ func teamBoard(data YouParams) templ.Component {
 						var templ_7745c5c3_Var22 string
 						templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(entry.Progress))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 184, Col: 37}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/you.templ`, Line: 174, Col: 37}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 						if templ_7745c5c3_Err != nil {

@@ -236,12 +236,9 @@ func (h *PlayerHandler) ValidateBlock(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// renderObjectiveZoneSwapIfProofJustCompleted completes an objective's reveal
-// when the block that just completed was the last unvalidated one in its proof.
-// A player gets a toast that fetches the reveal after a beat; an editor's
-// preview gets the reveal swapped in at once. The reveal is often content-only,
-// with nothing to POST, so its completion is triggered here. It reports whether
-// it swapped the zone.
+// renderObjectiveZoneSwapIfProofJustCompleted reports whether it swapped the
+// zone. The reveal is often content-only with nothing to POST, so its completion
+// is triggered here.
 func (h *PlayerHandler) renderObjectiveZoneSwapIfProofJustCompleted(
 	w http.ResponseWriter, r *http.Request, team *models.Run, block blocks.Block,
 ) bool {
@@ -298,7 +295,7 @@ func (h *PlayerHandler) renderObjectiveZoneSwapIfProofJustCompleted(
 		}
 		return true
 	}
-	// Already complete above, so leaving before the toast fires loses nothing.
+	// Already complete, so leaving before the toast fires loses nothing.
 	if err := playerTemplates.RevealToast(objective.Slug).Render(r.Context(), w); err != nil {
 		h.logger.ErrorContext(r.Context(), "validateBlock: rendering reveal toast", "error", err.Error())
 	}

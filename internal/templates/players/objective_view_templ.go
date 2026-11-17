@@ -15,11 +15,8 @@ import (
 )
 
 type ObjectiveViewData struct {
-	Settings models.QuestSettings
-	// Title is the task being asked for, not a label for a place.
-	Title string
-	// Description is the detail that will not fit in a title short enough to
-	// read in a list, shown under it on arrival.
+	Settings    models.QuestSettings
+	Title       string
 	Description string
 	Zone        game.BlockContext
 	Blocks      blocks.Blocks
@@ -28,23 +25,16 @@ type ObjectiveViewData struct {
 	Hidden map[string]bool
 	// Preview shows every block, noting on the gated ones what they wait for.
 	Preview bool
-	// Slug is the address the proof's hand-off to the reveal fetches. Unused on a
-	// preview.
+	// Slug is where the proof hands off to the reveal. Unused on a preview.
 	Slug string
-	// Hue is the palette colour of the task's section. Zero leaves the default.
-	// Only the proof wears it.
+	// Hue is zero for the default. Only the proof wears it.
 	Hue int
 }
 
-// ObjectiveView is a task's page: proof while it is unproven, reveal once it is
-// proven.
-//
-// The reveal does not take the section's hue: once a player is reading what
-// they found, the group is no help. It offers no next-task button either: the
-// next task may be in another group, and the list is where that choice is made.
-//
-// The page is at least screen height so "Back to the quest" sits at the bottom
-// where the thumb expects it.
+// The reveal drops the section's hue, as the group no longer helps once a player
+// is reading what they found. It has no next-task button because the next task
+// may be in another group: the list is where that choice is made. The page is at
+// least screen height so "Back to the quest" sits where the thumb expects.
 func ObjectiveView(data ObjectiveViewData) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -95,7 +85,7 @@ func ObjectiveView(data ObjectiveViewData) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 51, Col: 76}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 41, Col: 76}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -113,7 +103,7 @@ func ObjectiveView(data ObjectiveViewData) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(data.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 53, Col: 60}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 43, Col: 60}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -137,7 +127,7 @@ func ObjectiveView(data ObjectiveViewData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if !data.Preview {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<!-- Filled when the proof's last block is answered, so the page never\n\t\t\tchanges unannounced. --> <div id=\"reveal-toast\" aria-live=\"polite\"></div><div class=\"q-dim mt-auto pt-2\"><a href=\"/objectives\" hx-boost=\"true\" class=\"q-back\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<!-- So the page never changes unannounced. --> <div id=\"reveal-toast\" aria-live=\"polite\"></div><div class=\"q-dim mt-auto pt-2\"><a href=\"/objectives\" hx-boost=\"true\" class=\"q-back\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -158,12 +148,9 @@ func ObjectiveView(data ObjectiveViewData) templ.Component {
 	})
 }
 
-// RevealToast tells a player the page is about to change, and changes it.
-//
-// A swap at once reads as the page jumping under a thumb, so the proof stays on
-// screen for a beat, with a bar draining so the wait has a visible length, then
-// the page is fetched again. The reveal is already complete on the server. A tap
-// goes now.
+// A swap at once reads as the page jumping under a thumb, so the proof stays for
+// a beat with a bar draining. The reveal is already complete on the server, and
+// a tap skips the wait.
 func RevealToast(slug string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -192,7 +179,7 @@ func RevealToast(slug string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue("/objective/" + slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 84, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objective_view.templ`, Line: 70, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
@@ -214,7 +201,6 @@ func RevealToast(slug string) templ.Component {
 	})
 }
 
-// ObjectiveChrome lights the quest tab, which a task is reached from.
 func ObjectiveChrome(team models.Run) AppChrome {
 	return AppChrome{Run: team, Active: "quest"}
 }

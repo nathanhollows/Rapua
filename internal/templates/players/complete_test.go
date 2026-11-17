@@ -22,7 +22,6 @@ func renderComplete(t *testing.T, run models.Run) string {
 	return render(t, Complete(run, nil, map[string]blocks.PlayerState{}, map[string]bool{}, false))
 }
 
-// The last page of a game carries no footer line.
 func TestComplete_HasNoFooterLine(t *testing.T) {
 	html := renderComplete(t, finishedRun(80, true))
 
@@ -40,7 +39,6 @@ func TestComplete_SaysWhatWasFinishedAndTheScore(t *testing.T) {
 	assert.Contains(t, html, `href="/journal"`)
 }
 
-// A score of nothing is not announced, and neither is one nobody is keeping.
 func TestComplete_OnlyAnnouncesAScoreThatExists(t *testing.T) {
 	assert.NotContains(t, renderComplete(t, finishedRun(0, true)), "points")
 	assert.NotContains(t, renderComplete(t, finishedRun(80, false)), "points")

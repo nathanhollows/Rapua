@@ -240,12 +240,10 @@ func appHead(title string) templ.Component {
 	})
 }
 
-// AppChrome is what the dock needs. Headings belong to each page.
 type AppChrome struct {
 	Run models.Run
-	// Active names the dock tab to light: "quest", "journal", "you", or "" on
-	// a page that is on none of them. The dock shows regardless, since one that
-	// comes and goes is more disorienting than one that is always there.
+	// Active is "quest", "journal", "you", or "" on any other page. The dock
+	// shows regardless: one that comes and goes disorients.
 	Active string
 }
 
@@ -287,7 +285,7 @@ func AppLayout(contents templ.Component, chrome AppChrome, title string, message
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 100, Col: 132}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 98, Col: 132}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -300,7 +298,7 @@ func AppLayout(contents templ.Component, chrome AppChrome, title string, message
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(os.Getenv("MAPBOX_KEY"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 101, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/layout.templ`, Line: 99, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
@@ -364,7 +362,7 @@ func PreviewChrome() templ.Component {
 			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<!-- player: take the player's tokens whatever theme the editor is in. --><div class=\"player flex flex-col h-full bg-base-200 text-base-content\"><!-- Clears the frame's corner, which crops the top edge. --><div class=\"shrink-0 h-8\" aria-hidden=\"true\"></div><!-- No padding here: what is inside scrolls, and a hover outline drawn\n\t\tpast a block's edge has to have room within the scrolling box or it is\n\t\tclipped and pushes a horizontal scrollbar out. --><div class=\"grow overflow-hidden\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<!-- Takes the player's tokens whatever theme the editor is in. --><div class=\"player flex flex-col h-full bg-base-200 text-base-content\"><!-- Clears the frame's corner, which crops the top edge. --><div class=\"shrink-0 h-8\" aria-hidden=\"true\"></div><!-- No padding here: what is inside scrolls, and a hover outline drawn\n\t\tpast a block's edge has to have room within the scrolling box or it is\n\t\tclipped and pushes a horizontal scrollbar out. --><div class=\"grow overflow-hidden\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

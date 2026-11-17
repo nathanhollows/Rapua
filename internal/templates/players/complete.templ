@@ -7,11 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// Complete is the finish page: what the run did, then the author's content, then
-// the way to the journal.
-//
-// No footer: the header says the quest and score, and the code is on the You
-// tab.
+// No footer: the header says the quest and score, and the code is on the You tab.
 templ Complete(
 	team models.Run, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState,
 	hidden map[string]bool, preview bool,
@@ -29,7 +25,6 @@ templ Complete(
 						You finished.
 					}
 				</h1>
-				<!-- A score of nothing is not announced. -->
 				if team.Quest.Settings.EnablePoints && team.Points > 0 {
 					<p class="q-finish-pts">{ fmt.Sprint(team.Points) } points</p>
 				}

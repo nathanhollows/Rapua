@@ -52,8 +52,7 @@ templ Journal(data JournalParams) {
 	</div>
 }
 
-// journalTabs filter the diary. Pills scroll sideways when there are more than
-// fit, and the chosen one is inverted: a shape, not only a colour.
+// The chosen pill is inverted: a shape, not only a colour.
 templ journalTabs(show string) {
 	<div role="tablist" class="q-chips">
 		for _, chip := range journalChipsList() {
@@ -73,10 +72,8 @@ templ journalTabs(show string) {
 	</div>
 }
 
-// journalEntry draws one line of the diary.
-//
 // Only a find is a link, so only a find is raised: a line drawn like a button
-// would invite a tap that goes nowhere.
+// invites a tap that goes nowhere.
 templ journalEntry(entry services.JournalEntry, showPoints bool) {
 	switch entry.Kind {
 		case services.JournalFind:

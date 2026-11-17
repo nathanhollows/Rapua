@@ -6,7 +6,6 @@ import (
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 )
 
-// You serves /you.
 func (h *PlayerHandler) You(w http.ResponseWriter, r *http.Request) {
 	team, err := h.getRunFromContext(r.Context())
 	if err != nil {

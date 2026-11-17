@@ -9,11 +9,9 @@ import (
 
 type YouParams struct {
 	Run models.Run
-	// Leaderboard is empty when the quest does not show one.
 	Leaderboard []services.LeaderBoardTeamData
 }
 
-// standing finds this run's own entry so its position can be stated.
 func (data YouParams) standing() (services.LeaderBoardTeamData, bool) {
 	for _, entry := range data.Leaderboard {
 		if entry.Code == data.Run.Code {
@@ -23,10 +21,7 @@ func (data YouParams) standing() (services.LeaderBoardTeamData, bool) {
 	return services.LeaderBoardTeamData{}, false
 }
 
-// You shows the run's identity and standing.
-//
 // Facts are flat: one drawn like a button invites a tap that goes nowhere.
-// The board ranks by points when enabled, otherwise by objectives done.
 templ You(data YouParams) {
 	<div class="flex flex-col gap-7">
 		<header id="team-name-slot" class="flex items-center gap-4">
@@ -41,8 +36,7 @@ templ You(data YouParams) {
 			</div>
 		</div>
 		{{ me, ranked := data.standing() }}
-		<!-- Points and the board are separate settings, so the score comes from the
-		run, not from a board entry that may not exist. -->
+		<!-- Points and the board are separate settings, so score reads off the run. -->
 		if data.Run.Quest.Settings.EnablePoints || ranked {
 			<div class="grid grid-cols-2 gap-4">
 				if data.Run.Quest.Settings.EnablePoints {
@@ -60,9 +54,8 @@ templ You(data YouParams) {
 						</b>
 					</div>
 				}
-				<!-- Needs a board for the count; hidden with points on, which already
-				rank the board. Uses the entry's total because the quest's objective
-				count includes the root and drafts. -->
+				<!-- The entry's total, as the quest's objective count includes the root
+				and drafts. -->
 				if ranked && !data.Run.Quest.Settings.EnablePoints {
 					<div class="q-stat">
 						<span class="q-label">Objectives done</span>
@@ -92,7 +85,6 @@ func spaced(code string) string {
 	return string(out)
 }
 
-// TeamNameControl is the team name with its rename pencil.
 templ TeamNameControl(team models.Run) {
 	<span class="grow min-w-0 flex flex-col">
 		<span class="q-label">Team</span>
@@ -116,8 +108,6 @@ templ TeamNameControl(team models.Run) {
 	</button>
 }
 
-// TeamNameField replaces the head with the input focused.
-//
 // Its own endpoint: the start page's saves through a block a quest need not
 // contain.
 templ TeamNameField(team models.Run) {

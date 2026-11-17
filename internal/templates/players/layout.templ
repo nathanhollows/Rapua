@@ -80,12 +80,10 @@ templ appHead(title string) {
 		<script src="/static/js/hyperscript-0.9.13.min.js" defer></script>
 }
 
-// AppChrome is what the dock needs. Headings belong to each page.
 type AppChrome struct {
 	Run models.Run
-	// Active names the dock tab to light: "quest", "journal", "you", or "" on
-	// a page that is on none of them. The dock shows regardless, since one that
-	// comes and goes is more disorienting than one that is always there.
+	// Active is "quest", "journal", "you", or "" on any other page. The dock
+	// shows regardless: one that comes and goes disorients.
 	Active string
 }
 
@@ -120,7 +118,7 @@ templ AppLayout(contents templ.Component, chrome AppChrome, title string, messag
 // is right in the app and wrong inside a phone frame, so it is made static
 // here.
 templ PreviewChrome() {
-	<!-- player: take the player's tokens whatever theme the editor is in. -->
+	<!-- Takes the player's tokens whatever theme the editor is in. -->
 	<div class="player flex flex-col h-full bg-base-200 text-base-content">
 		<!-- Clears the frame's corner, which crops the top edge. -->
 		<div class="shrink-0 h-8" aria-hidden="true"></div>

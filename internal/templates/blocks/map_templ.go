@@ -131,7 +131,7 @@ func mapPlayer(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><script>\n\t\t(function() {\n\t\t\twindow.__mapInstances = window.__mapInstances || {};\n\n\t\t\tfunction destroyMapInstance(id) {\n\t\t\t\tvar inst = window.__mapInstances[id];\n\t\t\t\tif (!inst) return;\n\t\t\t\tdelete window.__mapInstances[id];\n\t\t\t\ttry { inst.remove(); } catch(e) {}\n\t\t\t}\n\n\t\t\t// Destroy quests BEFORE HTMX removes their canvas.\n\t\t\tif (!window.__mapBeforeSwapBound) {\n\t\t\t\twindow.__mapBeforeSwapBound = true;\n\t\t\t\tdocument.body.addEventListener('htmx:beforeSwap', function(e) {\n\t\t\t\t\tvar target = e.detail && e.detail.target;\n\t\t\t\t\tif (!target) return;\n\t\t\t\t\ttarget.querySelectorAll('[id^=\"player-map-block-\"]').forEach(function(mapEl) {\n\t\t\t\t\t\tdestroyMapInstance(mapEl.id);\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Mapbox loads on first use. Where nothing provides loadMapbox (editor\n\t\t\t// pages carry it in their head) it is already there.\n\t\t\t(window.loadMapbox ? window.loadMapbox() : Promise.resolve()).then(function() {\n\t\t\t\tvar keyEl = document.getElementById('mapbox_key');\n\t\t\t\tif (!keyEl) return;\n\t\t\t\tmapboxgl.accessToken = keyEl.dataset.key;\n\n\t\t\t\tvar isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;\n\t\t\t\tvar style = isDark\n\t\t\t\t\t? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n\t\t\t\t\t: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n\t\t\t\tdocument.querySelectorAll('.player-map-uninit').forEach(function(el) {\n\t\t\t\t\tel.classList.remove('player-map-uninit');\n\t\t\t\t\tdestroyMapInstance(el.id);\n\n\t\t\t\t\tvar lat = parseFloat(el.dataset.lat) || 0;\n\t\t\t\t\tvar lng = parseFloat(el.dataset.lng) || 0;\n\t\t\t\t\tvar zoom = parseFloat(el.dataset.zoom) || 14;\n\t\t\t\t\tvar hideMarker = el.dataset.hideMarker === 'true';\n\n\t\t\t\t\t// Two rAFs settle layout after an HTMX swap. The 150ms setTimeout\n\t\t\t\t\t// gives the browser time to release WebGL GPU resources from any maps\n\t\t\t\t\t// destroyed in htmx:beforeSwap (healthy initial maps need more cleanup\n\t\t\t\t\t// time than already-broken maps from a prior failed reload).\n\t\t\t\t\trequestAnimationFrame(function() {\n\t\t\t\t\t\trequestAnimationFrame(function() {\n\t\t\t\t\t\t\tsetTimeout(function() {\n\t\t\t\t\t\t\t\tif (!document.body.contains(el)) return;\n\t\t\t\t\t\t\t\tvar map = new mapboxgl.Map({\n\t\t\t\t\t\t\t\t\tcontainer: el,\n\t\t\t\t\t\t\t\t\tstyle: style,\n\t\t\t\t\t\t\t\t\tcenter: [lng, lat],\n\t\t\t\t\t\t\t\t\tzoom: zoom,\n\t\t\t\t\t\t\t\t\tinteractive: false,\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t\twindow.__mapInstances[el.id] = map;\n\n\t\t\t\t\t\t\t\tvar marker = null;\n\t\t\t\t\t\t\t\tif (!hideMarker) {\n\t\t\t\t\t\t\t\t\tmarker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);\n\t\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t\tmap.on('load', function() {\n\t\t\t\t\t\t\t\t\tif (window.__mapInstances[el.id] !== map) return;\n\t\t\t\t\t\t\t\t\tmap.resize();\n\t\t\t\t\t\t\t\t\tsetTimeout(function() {\n\t\t\t\t\t\t\t\t\t\tif (window.__mapInstances[el.id] === map) map.resize();\n\t\t\t\t\t\t\t\t\t}, 150);\n\t\t\t\t\t\t\t\t\tMapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, marker ? [marker] : []);\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}, 150);\n\t\t\t\t\t\t});\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t}).catch(function(err) {\n\t\t\t\tconsole.error('map block: Mapbox did not load', err);\n\t\t\t});\n\t\t})();\n\t\t</script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><script>\n\t\t(function() {\n\t\t\twindow.__mapInstances = window.__mapInstances || {};\n\n\t\t\tfunction destroyMapInstance(id) {\n\t\t\t\tvar inst = window.__mapInstances[id];\n\t\t\t\tif (!inst) return;\n\t\t\t\tdelete window.__mapInstances[id];\n\t\t\t\ttry { inst.remove(); } catch(e) {}\n\t\t\t}\n\n\t\t\t// Destroy quests BEFORE HTMX removes their canvas.\n\t\t\tif (!window.__mapBeforeSwapBound) {\n\t\t\t\twindow.__mapBeforeSwapBound = true;\n\t\t\t\tdocument.body.addEventListener('htmx:beforeSwap', function(e) {\n\t\t\t\t\tvar target = e.detail && e.detail.target;\n\t\t\t\t\tif (!target) return;\n\t\t\t\t\ttarget.querySelectorAll('[id^=\"player-map-block-\"]').forEach(function(mapEl) {\n\t\t\t\t\t\tdestroyMapInstance(mapEl.id);\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Editor pages carry Mapbox in their head and have no loadMapbox.\n\t\t\t(window.loadMapbox ? window.loadMapbox() : Promise.resolve()).then(function() {\n\t\t\t\tvar keyEl = document.getElementById('mapbox_key');\n\t\t\t\tif (!keyEl) return;\n\t\t\t\tmapboxgl.accessToken = keyEl.dataset.key;\n\n\t\t\t\tvar isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;\n\t\t\t\tvar style = isDark\n\t\t\t\t\t? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n\t\t\t\t\t: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n\t\t\t\tdocument.querySelectorAll('.player-map-uninit').forEach(function(el) {\n\t\t\t\t\tel.classList.remove('player-map-uninit');\n\t\t\t\t\tdestroyMapInstance(el.id);\n\n\t\t\t\t\tvar lat = parseFloat(el.dataset.lat) || 0;\n\t\t\t\t\tvar lng = parseFloat(el.dataset.lng) || 0;\n\t\t\t\t\tvar zoom = parseFloat(el.dataset.zoom) || 14;\n\t\t\t\t\tvar hideMarker = el.dataset.hideMarker === 'true';\n\n\t\t\t\t\t// Two rAFs settle layout after an HTMX swap. The 150ms setTimeout\n\t\t\t\t\t// gives the browser time to release WebGL GPU resources from any maps\n\t\t\t\t\t// destroyed in htmx:beforeSwap (healthy initial maps need more cleanup\n\t\t\t\t\t// time than already-broken maps from a prior failed reload).\n\t\t\t\t\trequestAnimationFrame(function() {\n\t\t\t\t\t\trequestAnimationFrame(function() {\n\t\t\t\t\t\t\tsetTimeout(function() {\n\t\t\t\t\t\t\t\tif (!document.body.contains(el)) return;\n\t\t\t\t\t\t\t\tvar map = new mapboxgl.Map({\n\t\t\t\t\t\t\t\t\tcontainer: el,\n\t\t\t\t\t\t\t\t\tstyle: style,\n\t\t\t\t\t\t\t\t\tcenter: [lng, lat],\n\t\t\t\t\t\t\t\t\tzoom: zoom,\n\t\t\t\t\t\t\t\t\tinteractive: false,\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t\twindow.__mapInstances[el.id] = map;\n\n\t\t\t\t\t\t\t\tvar marker = null;\n\t\t\t\t\t\t\t\tif (!hideMarker) {\n\t\t\t\t\t\t\t\t\tmarker = new mapboxgl.Marker().setLngLat([lng, lat]).addTo(map);\n\t\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t\tmap.on('load', function() {\n\t\t\t\t\t\t\t\t\tif (window.__mapInstances[el.id] !== map) return;\n\t\t\t\t\t\t\t\t\tmap.resize();\n\t\t\t\t\t\t\t\t\tsetTimeout(function() {\n\t\t\t\t\t\t\t\t\t\tif (window.__mapInstances[el.id] === map) map.resize();\n\t\t\t\t\t\t\t\t\t}, 150);\n\t\t\t\t\t\t\t\t\tMapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, marker ? [marker] : []);\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}, 150);\n\t\t\t\t\t\t});\n\t\t\t\t\t});\n\t\t\t\t});\n\t\t\t}).catch(function(err) {\n\t\t\t\tconsole.error('map block: Mapbox did not load', err);\n\t\t\t});\n\t\t})();\n\t\t</script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -168,7 +168,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 119, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 118, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 		if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 120, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 119, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
@@ -194,7 +194,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("change from:#form-%s delay:800ms", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 121, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 120, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
@@ -207,7 +207,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("admin-map-block-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 126, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 125, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
@@ -220,7 +220,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.6f", block.Latitude))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 128, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 127, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -233,7 +233,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.6f", block.Longitude))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 129, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 128, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
@@ -246,7 +246,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 130, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 129, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 		if templ_7745c5c3_Err != nil {
@@ -259,7 +259,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%v", block.HideMarker))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 131, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 130, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 		if templ_7745c5c3_Err != nil {
@@ -272,7 +272,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 132, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 131, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 		if templ_7745c5c3_Err != nil {
@@ -285,7 +285,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("map-overlay-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 133, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 132, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 		if templ_7745c5c3_Err != nil {
@@ -298,7 +298,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("edit-map-btn-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 134, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 133, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
@@ -311,7 +311,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("map-overlay-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 137, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 136, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
@@ -324,7 +324,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("edit-map-btn-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 143, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 142, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 		if templ_7745c5c3_Err != nil {
@@ -345,7 +345,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.6f", block.Latitude))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 151, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 150, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {
@@ -358,7 +358,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.6f", block.Longitude))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 152, Col: 84}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 151, Col: 84}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 		if templ_7745c5c3_Err != nil {
@@ -371,7 +371,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.Caption)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 160, Col: 25}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 159, Col: 25}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 		if templ_7745c5c3_Err != nil {
@@ -384,7 +384,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("show-marker-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 169, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 168, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 		if templ_7745c5c3_Err != nil {
@@ -407,7 +407,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("zoom-input-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 183, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 182, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 		if templ_7745c5c3_Err != nil {
@@ -420,7 +420,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		var templ_7745c5c3_Var27 string
 		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 187, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 186, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {

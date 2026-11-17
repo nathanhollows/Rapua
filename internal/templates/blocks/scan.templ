@@ -51,9 +51,8 @@ templ scanCard(settings models.QuestSettings, block blocks.ScanBlock, data block
 // The camera posts "scanned" and the box posts "code" so the server can tell a
 // scan from a code someone was told.
 //
-// At rest there is the scan button and a quieter type-it button: most players
-// scan, so an open code box is a choice they are not making. While the camera
-// runs only the video and Stop remain.
+// The code box stays closed at rest: most players scan, so an open one is a
+// choice they are not making.
 templ scanForm(block blocks.ScanBlock, attempted bool) {
 	<form
 		id={ fmt.Sprintf("scan-form-%s", block.ID) }
@@ -75,8 +74,7 @@ templ scanForm(block blocks.ScanBlock, attempted bool) {
 					@icon("scan-qr-code", templ.Attributes{"class": "w-7 h-7"})
 					Scan a code
 				</button>
-				<!-- Open already after a miss: a second tap to get back to the box
-				would tax a wrong answer. -->
+				<!-- Open after a miss: a second tap would tax a wrong answer. -->
 				<button
 					type="button"
 					id={ fmt.Sprintf("scan-type-open-%s", block.ID) }

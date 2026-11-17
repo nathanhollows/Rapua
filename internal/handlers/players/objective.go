@@ -144,8 +144,8 @@ func (h *PlayerHandler) ObjectiveView(w http.ResponseWriter, r *http.Request) {
 	h.renderObjective(w, r, team, objective, data)
 }
 
-// sectionHue finds the colour of the section an objective is in. A failure only
-// costs the tint, so it returns the default instead of failing the page.
+// A failure only costs the tint, so it returns the default instead of failing
+// the page.
 func (h *PlayerHandler) sectionHue(r *http.Request, team *models.Run, objective *models.Objective) int {
 	view, err := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
 	if err != nil {

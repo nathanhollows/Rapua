@@ -86,21 +86,18 @@ func (c CompletionType) Description() string {
 }
 
 // ProgressFeedback is what a quest tells a player about how far through they
-// are. Each value is a different condition: a visible target, a bare count or
-// nothing, so games compared across studies must say which a player had.
+// are. Each value is a different condition, so games compared across studies
+// must say which a player had.
 type ProgressFeedback string
 
 const (
-	// ProgressFeedbackFraction tells the player completions out of the fewest the
-	// run needs.
+	// ProgressFeedbackFraction is completions out of the fewest the run needs.
 	ProgressFeedbackFraction ProgressFeedback = "fraction"
-	// ProgressFeedbackCount tells the player completions alone, with no target.
+	// ProgressFeedbackCount is completions alone, with no target.
 	ProgressFeedbackCount ProgressFeedback = "count"
-	// ProgressFeedbackNone tells the player nothing.
-	ProgressFeedbackNone ProgressFeedback = "none"
+	ProgressFeedbackNone  ProgressFeedback = "none"
 )
 
-// ParseProgressFeedback returns a ProgressFeedback from its canonical string value.
 func ParseProgressFeedback(s string) (ProgressFeedback, error) {
 	switch ProgressFeedback(s) {
 	case ProgressFeedbackFraction, ProgressFeedbackCount, ProgressFeedbackNone:
@@ -110,9 +107,8 @@ func ParseProgressFeedback(s string) (ProgressFeedback, error) {
 	}
 }
 
-// Normalised reads an unset value as fraction, what every quest showed before
-// the choice existed. An unknown stored value reads the same way, so a bad row
-// never means no feedback.
+// Normalised reads unset as fraction, what every quest showed before the choice
+// existed. An unknown value reads the same, so a bad row never means no feedback.
 func (m ProgressFeedback) Normalised() ProgressFeedback {
 	if parsed, err := ParseProgressFeedback(string(m)); err == nil {
 		return parsed

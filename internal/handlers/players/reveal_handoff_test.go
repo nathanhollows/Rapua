@@ -17,8 +17,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// The last answer of a proof offers a toast that fetches the reveal a beat
-// later, not a swap under the player's thumb.
 func TestPlayerHandler_ValidateBlock_LastAnswerOffersAToastNotTheReveal(t *testing.T) {
 	checkInService, blockService, dbc, cleanup := setupObjectivePreviewServices(t)
 	defer cleanup()

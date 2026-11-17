@@ -51,8 +51,7 @@ templ mapPlayer(_ models.QuestSettings, block blocks.MapBlock) {
 				});
 			}
 
-			// Mapbox loads on first use. Where nothing provides loadMapbox (editor
-			// pages carry it in their head) it is already there.
+			// Editor pages carry Mapbox in their head and have no loadMapbox.
 			(window.loadMapbox ? window.loadMapbox() : Promise.resolve()).then(function() {
 				var keyEl = document.getElementById('mapbox_key');
 				if (!keyEl) return;

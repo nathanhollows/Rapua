@@ -328,11 +328,10 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 					<span class="text-xs font-medium">Leaderboard</span>
 				</label>
 			</div>
-			<!-- Its own box, not a third toggle in Scoring: it is not about score
-			and has three answers. -->
+			<!-- Not a third toggle in Scoring: it is not about score and has three answers. -->
 			<div id="quest-progress-feedback" class="flex items-center gap-3 h-10 px-4 rounded-full border border-base-content/15 bg-base-100">
 				<div class="flex items-center gap-1">
-					<!-- A card rather than a tooltip: three options need a line each. -->
+					<!-- A card, as three options need a line each. -->
 					<div class="dropdown dropdown-hover">
 						<div tabindex="0" role="button" aria-label="About progress" class="btn btn-circle btn-ghost btn-xs text-info">
 							@icon("info", templ.Attributes{"class": "w-4 h-4"})
@@ -575,11 +574,8 @@ const rowRevealClass = "opacity-0 group-hover/row:opacity-100 group-focus-within
 const dragHandleClass = "w-4 h-4 text-base-content/40 group-hover/row:text-base-content " +
 	"group-hover/header:text-base-content transition-colors cursor-move objective-drag-handle shrink-0"
 
-	// objectivePassThroughMark is the ghost that leads a section's rule pill: it
-	// qualifies how the section itself is shown before the routing says how it
-	// shows what is inside. It sits in the pill because its switch is in the
-	// pill's menu, as everything else the pill shows is. The tooltip is for the
-	// mouse; a screen reader hears the same words as part of the pill.
+	// It sits in the pill because its switch is in the pill's menu. The tooltip is
+	// for the mouse; a screen reader hears the same words as part of the pill.
 
 templ objectivePassThroughMark(node *ObjectiveTreeNode) {
 	if passThroughShown(node) {

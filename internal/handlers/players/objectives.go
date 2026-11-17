@@ -37,8 +37,8 @@ func (h *PlayerHandler) Objectives(w http.ResponseWriter, r *http.Request) {
 	// Only the root completing means the run is finished. An empty list can
 	// also mean everything left is waiting on something.
 	//
-	// Drawn in place, not redirected to (see renderComplete). The address is
-	// still corrected so a reload lands on the finish page.
+	// Drawn in place (see renderComplete), with the address corrected so a reload
+	// lands on the finish page.
 	if view.Complete {
 		if r.Header.Get("Hx-Request") == "true" {
 			w.Header().Set("Hx-Replace-Url", "/complete")

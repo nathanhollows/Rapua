@@ -15,11 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-// Complete is the finish page: what the run did, then the author's content, then
-// the way to the journal.
-//
-// No footer: the header says the quest and score, and the code is on the You
-// tab.
+// No footer: the header says the quest and score, and the code is on the You tab.
 func Complete(
 	team models.Run, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState,
 	hidden map[string]bool, preview bool,
@@ -64,7 +60,7 @@ func Complete(
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(team.Quest.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/complete.templ`, Line: 27, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/complete.templ`, Line: 23, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 			if templ_7745c5c3_Err != nil {
@@ -80,7 +76,7 @@ func Complete(
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</h1><!-- A score of nothing is not announced. -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</h1>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -92,7 +88,7 @@ func Complete(
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(team.Points))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/complete.templ`, Line: 34, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/complete.templ`, Line: 29, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {

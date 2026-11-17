@@ -22,12 +22,8 @@ type ObjectivesParams struct {
 	View *services.PlayerObjectiveView
 }
 
-// Objectives is the quest screen: what the run can work on now, grouped under
-// the section each row came out of. The frontier is flat, so without grouping
-// three parts of one task read as three unrelated tasks.
-//
-// Three levels and no more: group heading, section, tasks. Locked and finished
-// sections are not drawn: neither can be acted on.
+// Objectives groups the frontier by section: it is flat, so three parts of one
+// task would otherwise read as three tasks.
 func Objectives(data ObjectivesParams) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -83,14 +79,11 @@ func Objectives(data ObjectivesParams) templ.Component {
 	})
 }
 
-// hueClass names the palette class that sets a section's --h. A class, not an
-// inline style: every hue is contrast-checked once, and a style attribute would
-// carry a value templ cannot be told is safe.
+// A class, not an inline style, so each hue is contrast-checked once.
 func hueClass(hue int) string {
 	return fmt.Sprintf("q-h%d", hue)
 }
 
-// questGroup is places under one outermost section, and the heading over them.
 func questGroup(group QuestGroup) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -124,7 +117,7 @@ func questGroup(group QuestGroup) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(group.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 50, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 43, Col: 36}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -149,11 +142,8 @@ func questGroup(group QuestGroup) templ.Component {
 	})
 }
 
-// questPlace is one section the run is standing in, and what it is offering.
-//
-// A heading, not a card: a bordered container looks tappable, and the only
-// raised things on the page should be the tasks. Colour is carried by the tasks
-// and a dot, never by a box.
+// A heading, not a card: a bordered box looks tappable, and only the tasks
+// should.
 func questPlace(place QuestPlace, grouped bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -199,7 +189,7 @@ func questPlace(place QuestPlace, grouped bool) templ.Component {
 		}
 		if place.IsSection {
 			if len(place.Path) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Anything deeper than the group, in the smallest type on the\n\t\t\t\tscreen: an ancestor is history, and history costs no indent. --> <p class=\"flex flex-wrap items-center gap-1.5 text-sm q-soft\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Ancestors are history, so the smallest type and no indent. --> <p class=\"flex flex-wrap items-center gap-1.5 text-sm q-soft\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -217,7 +207,7 @@ func questPlace(place QuestPlace, grouped bool) templ.Component {
 					var templ_7745c5c3_Var7 string
 					templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(ancestor)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 74, Col: 22}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 63, Col: 22}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 					if templ_7745c5c3_Err != nil {
@@ -262,7 +252,7 @@ func questPlace(place QuestPlace, grouped bool) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(place.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 79, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 68, Col: 73}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -280,7 +270,7 @@ func questPlace(place QuestPlace, grouped bool) templ.Component {
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(place.Pill)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 81, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 70, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -322,11 +312,7 @@ func questPlace(place QuestPlace, grouped bool) templ.Component {
 	})
 }
 
-// questPlaceFooter is the section's way out once its band is met with room to
-// spare.
-//
-// The remaining tasks stay and the press follows under an "or". It asks first
-// because it closes the section and skips the rest.
+// It asks first because finishing skips whatever is left.
 func questPlaceFooter(place QuestPlace) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -357,7 +343,7 @@ func questPlaceFooter(place QuestPlace) templ.Component {
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue("on click call #" + dialogID + ".showModal()")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 106, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 91, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 			if templ_7745c5c3_Err != nil {
@@ -370,7 +356,7 @@ func questPlaceFooter(place QuestPlace) templ.Component {
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(place.FinishLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 108, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 93, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -383,7 +369,7 @@ func questPlaceFooter(place QuestPlace) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(dialogID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 110, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 95, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 			if templ_7745c5c3_Err != nil {
@@ -401,7 +387,7 @@ func questPlaceFooter(place QuestPlace) templ.Component {
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(place.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 114, Col: 26}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 99, Col: 26}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -432,14 +418,14 @@ func questPlaceFooter(place QuestPlace) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</p><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn btn-ghost\">Keep going</button></form><!-- Boosted, so the quest list is swapped in: an Hx-Redirect would\n\t\t\t\t\treload the whole document. --><form method=\"post\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</p><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn btn-ghost\">Keep going</button></form><!-- Boosted so the list swaps in: an Hx-Redirect reloads the document. --><form method=\"post\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 templ.SafeURL
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/objective/" + place.FinishSlug + "/finish"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 132, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 116, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -452,7 +438,7 @@ func questPlaceFooter(place QuestPlace) templ.Component {
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(place.FinishLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 134, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 118, Col: 26}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -467,9 +453,8 @@ func questPlaceFooter(place QuestPlace) templ.Component {
 	})
 }
 
-// PreviewSection is a place with something inside it, for the editor showing one
-// row in its container. It uses the game's heading and pill so authors see what
-// players meet.
+// PreviewSection reuses the game's heading and pill so authors see what players
+// meet.
 func PreviewSection(title, rule string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -498,7 +483,7 @@ func PreviewSection(title, rule string) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 152, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 135, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -516,7 +501,7 @@ func PreviewSection(title, rule string) templ.Component {
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(rule)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 154, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 137, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -543,8 +528,8 @@ func PreviewSection(title, rule string) templ.Component {
 	})
 }
 
-// questRow is one objective on offer. hero draws it as the single next step of a
-// guided section, where nothing competes for the biggest thing on screen.
+// hero is the single next step of an ordered section, where nothing competes
+// with it.
 func questRow(row QuestRow, hero bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -578,7 +563,7 @@ func questRow(row QuestRow, hero bool) templ.Component {
 		var templ_7745c5c3_Var24 templ.SafeURL
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/objective/" + row.Slug))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 167, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 150, Col: 44}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -634,7 +619,7 @@ func questRow(row QuestRow, hero bool) templ.Component {
 		var templ_7745c5c3_Var26 string
 		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(row.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 187, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 170, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
@@ -652,7 +637,7 @@ func questRow(row QuestRow, hero bool) templ.Component {
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(row.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 189, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 172, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -698,24 +683,17 @@ func QuestChrome(run models.Run) AppChrome {
 	return AppChrome{Run: run, Active: "quest"}
 }
 
-// headerMetric is the header's progress display, decided in Go so a test can
-// reach the choice.
+// headerMetric is decided in Go so a test can reach the choice.
 type headerMetric struct {
-	// Show is false when the header says nothing: the author chose that, or
-	// there is no total to count against.
-	Show  bool
-	Done  int
-	Total int
-	// HasTotal is false for count, which has no target.
+	Show     bool
+	Done     int
+	Total    int
 	HasTotal bool
 	Label    string
 }
 
-// metricFor reads the quest's choice off the run's own account.
-//
-// Fraction divides by what the run still owes, not the authored tree: bands and
-// seeded windows make an authored total end short or overshoot. Count has no
-// total to be wrong about.
+// metricFor divides by what the run still owes, not the authored tree: bands and
+// seeded windows make an authored total end short or overshoot.
 func metricFor(settings models.QuestSettings, progress navigation.Progress) headerMetric {
 	switch settings.ProgressFeedback.Normalised() {
 	case game.ProgressFeedbackNone:
@@ -730,10 +708,8 @@ func metricFor(settings models.QuestSettings, progress navigation.Progress) head
 	}
 }
 
-// QuestPage is the quest as a run sees it: the header, then what it can do.
-//
-// The header is not part of Objectives because the editor previews that in its
-// own frame, where a count and team name would be invented.
+// The header is not part of Objectives: the editor previews that in its own
+// frame, where a count and team name would be invented.
 func QuestPage(data ObjectivesParams) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -775,11 +751,8 @@ func QuestPage(data ObjectivesParams) templ.Component {
 	})
 }
 
-// questHeader says whose run this is and, if the author wants it, how far along.
-// It scrolls away: a sticky bar costs room on the screen read most.
-//
-// Rank is not here: a comparison would put standing ahead of place. It lives on
-// the You tab.
+// It scrolls away, as a sticky bar costs room on the screen read most. Rank lives
+// on the You tab: here it would put standing ahead of place.
 func questHeader(data ObjectivesParams) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -809,7 +782,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 		var templ_7745c5c3_Var30 string
 		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(data.Run.Quest.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 259, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 230, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 		if templ_7745c5c3_Err != nil {
@@ -823,7 +796,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 			var templ_7745c5c3_Var31 string
 			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(data.Run.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 262, Col: 20}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 233, Col: 20}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 			if templ_7745c5c3_Err != nil {
@@ -847,7 +820,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(data.Run.Points))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 268, Col: 103}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 239, Col: 103}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -875,7 +848,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 				var templ_7745c5c3_Var33 string
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d of %d done", metric.Done, metric.Total))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 276, Col: 73}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 247, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 				if templ_7745c5c3_Err != nil {
@@ -893,7 +866,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d found", metric.Done))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 278, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 249, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 				if templ_7745c5c3_Err != nil {
@@ -911,7 +884,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(metric.Done))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 281, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 252, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -929,7 +902,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(metric.Total))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 283, Col: 89}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 254, Col: 89}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -947,7 +920,7 @@ func questHeader(data ObjectivesParams) templ.Component {
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(metric.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 285, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/players/objectives.templ`, Line: 256, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {

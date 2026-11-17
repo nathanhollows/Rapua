@@ -8,7 +8,6 @@ type QuestSettings struct {
 	QuestID         string `bun:"quest_id,pk,type:varchar(36)"`
 	EnablePoints    bool   `bun:"enable_points,type:bool"`
 	ShowLeaderboard bool   `bun:"show_leaderboard,type:bool"`
-	// ProgressFeedback is what the player is told about their progress. Read it
-	// through Normalised: a row from before the column carries nothing.
+	// Read through Normalised: a row from before the column carries nothing.
 	ProgressFeedback game.ProgressFeedback `bun:"progress_feedback,type:varchar(16)"`
 }

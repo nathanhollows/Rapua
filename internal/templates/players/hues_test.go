@@ -59,8 +59,7 @@ func contrast(a, b [3]float64) float64 {
 	return (la + 0.05) / (lb + 0.05)
 }
 
-// playerTokens reads the .player token blocks out of main.css: the first is the
-// light theme and the one inside the dark media query is the dark.
+// The first .player block is light and the one in the dark media query is dark.
 func playerTokens(t *testing.T) (light, dark map[string]float64) {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
@@ -95,8 +94,8 @@ func playerTokens(t *testing.T) (light, dark map[string]float64) {
 	return light, merged
 }
 
-// The admin picks its theme by attribute, so its preview uses the dracula block.
-// It must match the media query or the preview shows colours the game never does.
+// The admin picks its theme by attribute: a mismatch would preview colours the
+// game never shows.
 func TestPlayerTokens_AttributeBlocksMatchTheirMediaQuery(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
 	require.NoError(t, err)
@@ -113,8 +112,7 @@ func TestPlayerTokens_AttributeBlocksMatchTheirMediaQuery(t *testing.T) {
 	assert.ElementsMatch(t, want, token.FindAllString(attr[1], -1))
 }
 
-// Every palette hue must carry text on its tile and the glyph on its icon tile
-// at 7:1 in both themes: a glyph is small and drawn thin.
+// 7:1 because a glyph is small and drawn thin.
 func TestQuestHues_MeetContrastFloors(t *testing.T) {
 	light, dark := playerTokens(t)
 	inkLight := oklchToRGB(0.23574, 0.066, 313.189)
@@ -139,8 +137,7 @@ func TestQuestHues_MeetContrastFloors(t *testing.T) {
 	}
 }
 
-// Each alert face must carry the alert text at body-text contrast in both
-// themes. Read from the CSS so it cannot drift from what ships.
+// Read from the CSS so it cannot drift from what ships.
 func TestPlayerAlerts_MeetContrastInBothThemes(t *testing.T) {
 	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
 	require.NoError(t, err)

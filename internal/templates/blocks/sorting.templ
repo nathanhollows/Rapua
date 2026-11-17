@@ -213,16 +213,10 @@ templ sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, da
 		</div>
 	</div>
 	<script>
-		// Adds drag-to-reorder to every sorting block that has not had it yet.
-		//
-		// Only the dragging: each item carries its own hidden order input and the
-		// arrow buttons move items themselves, so rewriting those inputs here would
-		// lose them.
-		//
-		// Blocks are found by markup, not names written into this script: a script
-		// element is raw text, so a Go expression in it would print as written. It
-		// reruns after an htmx swap because a re-rendered block arrives without a
-		// page load.
+		// Only the dragging: items carry their own order input, so rewriting it
+		// here would lose it. Blocks are found by markup because a Go expression
+		// in a script prints as written. It reruns after an htmx swap, as a
+		// re-rendered block arrives without a page load.
 		(function() {
 			function setUpSorting() {
 				if (typeof Sortable === 'undefined') {

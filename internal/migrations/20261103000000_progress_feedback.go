@@ -11,8 +11,6 @@ func init() {
 	Migrations.MustRegister(m20261103000000_up, m20261103000000_down)
 }
 
-// m20261103000000_up lets an author choose what players are told about progress.
-//
 // Existing quests default to "fraction", what they already showed: anything else
 // would change a running game under its players.
 func m20261103000000_up(ctx context.Context, db *bun.DB) error {
@@ -26,8 +24,7 @@ func m20261103000000_up(ctx context.Context, db *bun.DB) error {
 	return nil
 }
 
-// m20261103000000_down drops the column. Every quest goes back to fraction, the
-// only feedback the schema below this migration can express.
+// Every quest goes back to fraction, the only feedback the older schema can say.
 func m20261103000000_down(ctx context.Context, db *bun.DB) error {
 	if !columnExists(ctx, db, "quest_settings", "progress_feedback") {
 		return nil

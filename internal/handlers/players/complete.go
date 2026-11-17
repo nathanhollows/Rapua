@@ -40,11 +40,9 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	h.renderComplete(w, r, team)
 }
 
-// renderComplete draws the finish page for a run already known to be finished.
-//
 // Split from Complete so the objectives list can draw it in place: a redirect
-// from a boosted request becomes an Hx-Redirect, which htmx answers with a full
-// page load that recomputes the view and refetches every script.
+// from a boosted request becomes an Hx-Redirect, which reloads the whole
+// document and refetches every script.
 func (h *PlayerHandler) renderComplete(w http.ResponseWriter, r *http.Request, team *models.Run) {
 	// Get blocks for the complete page
 	var pageBlocks []blocks.Block

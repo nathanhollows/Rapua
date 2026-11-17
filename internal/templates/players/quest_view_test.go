@@ -19,8 +19,6 @@ func obj(id, parent, title string) models.Objective {
 	return models.Objective{ID: id, Slug: id, Title: title, ParentID: parent}
 }
 
-// viewOf is the service's own output, which is what the grouping takes: the
-// value the handler already holds, rather than four arguments pulled out of it.
 func viewOf(available, objectives []models.Objective) *services.PlayerObjectiveView {
 	status := map[string]navigation.Status{}
 	for _, row := range available {
@@ -32,9 +30,6 @@ func viewOf(available, objectives []models.Objective) *services.PlayerObjectiveV
 	}
 }
 
-// The frontier is flat on purpose: a section that is merely open does not
-// appear, because its children are listed in its place. The view has to put
-// that section back, or three parts of one task read as three unrelated tasks.
 func TestQuestView_RebuildsTheSectionTheFrontierFlattened(t *testing.T) {
 	rows := tree(
 		obj("root", "", "The Perfumer's Garden"),
@@ -53,8 +48,6 @@ func TestQuestView_RebuildsTheSectionTheFrontierFlattened(t *testing.T) {
 	assert.Equal(t, "Bergamot", place.Rows[0].Title)
 }
 
-// A section inside a section is the path, not a box: the ancestor is named in
-// small type above the heading and costs no indent at all.
 func TestQuestView_AncestorsBecomeThePath(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -70,9 +63,7 @@ func TestQuestView_AncestorsBecomeThePath(t *testing.T) {
 	assert.Equal(t, []string{"Make your scent"}, view.Places[0].Path)
 }
 
-// Past the drawn depth a container passes through: it still bands and routes,
-// it simply has no place on the screen, and its rows join the last section that
-// does. The author's tree has no depth limit; the screen has a fixed one.
+// The author's tree has no depth limit; the screen has a fixed one.
 func TestQuestView_DeeperSectionsPassThrough(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -91,9 +82,6 @@ func TestQuestView_DeeperSectionsPassThrough(t *testing.T) {
 	assert.Equal(t, "A task", view.Places[0].Rows[0].Title, "and the row is still offered")
 }
 
-// Rows from two passed-through sections meet in the place above them, which is
-// the whole point: the screen shows where the player is, not every box the
-// author drew around it.
 func TestQuestView_PassedThroughRowsMerge(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -108,8 +96,7 @@ func TestQuestView_PassedThroughRowsMerge(t *testing.T) {
 	assert.Len(t, view.Places[0].Rows, 2)
 }
 
-// A row under the root belongs to no section a player would recognise, and
-// wrapping it in one would invent a container the author never wrote.
+// Wrapping it in a section would invent a container the author never wrote.
 func TestQuestView_RowsUnderTheRootStandAlone(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -125,8 +112,6 @@ func TestQuestView_RowsUnderTheRootStandAlone(t *testing.T) {
 	assert.True(t, view.Places[1].IsSection)
 }
 
-// Places keep the frontier's order, which is the tree order the engine already
-// walked: re-sorting would rearrange a quest the author laid out by hand.
 func TestQuestView_KeepsTheFrontierOrder(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -141,8 +126,6 @@ func TestQuestView_KeepsTheFrontierOrder(t *testing.T) {
 	assert.Equal(t, "Section A", view.Places[1].Title)
 }
 
-// An objective with no proof is a door: opening it is the whole of what there
-// is to do, so the row must not promise work.
 func TestQuestView_RowWithoutProofIsADoor(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("read", "root", "Read the safety notice"))
 
@@ -153,8 +136,6 @@ func TestQuestView_RowWithoutProofIsADoor(t *testing.T) {
 	assert.False(t, BuildQuestView(withProof).Places[0].Rows[0].IsDoor)
 }
 
-// The row's icon is the first block in its proof that asks for something, so a
-// card says what is coming without anyone classifying objectives into kinds.
 func TestQuestView_RowBorrowsItsProofBlocksIcon(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("gate", "root", "Scan the tag"))
 
@@ -167,9 +148,6 @@ func TestQuestView_RowBorrowsItsProofBlocksIcon(t *testing.T) {
 
 func intPtr(n int) *int { return &n }
 
-// A finishable section is the finish press on the section itself, not a row of
-// its own: the heading already names it, and a row would print the name a
-// second time.
 func TestQuestView_FinishableSectionCarriesThePressOnItsPlace(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -198,8 +176,6 @@ func TestQuestView_FinishableSectionCarriesThePressOnItsPlace(t *testing.T) {
 	assert.Equal(t, "Complete at least one", place.Rule, "a ranged band says what the least is")
 }
 
-// An author who names no label still gets a button: the band decides one
-// appears, and a blank label would render an empty one.
 func TestQuestView_FinishLabelFallsBackToPlainWords(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("wing", "root", "Visit the east wing"))
 
@@ -209,7 +185,6 @@ func TestQuestView_FinishLabelFallsBackToPlainWords(t *testing.T) {
 	assert.Equal(t, "Finish", BuildQuestView(view).Places[0].FinishLabel)
 }
 
-// A section states its band and its progress, press or no press.
 func TestQuestView_SectionStatesItsBandAndProgress(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -231,15 +206,12 @@ func TestQuestView_SectionStatesItsBandAndProgress(t *testing.T) {
 	assert.False(t, place.CanFinish, "a band with no range offers no choice")
 }
 
-// A band past nine children says the numeral: "Complete all several" is not a
-// rule a player can follow.
 func TestQuestView_BandPastNineChildrenUsesTheNumeral(t *testing.T) {
 	rule := questRule(models.Objective{Routing: models.RouteStrategyFreeRoam}, 12, 12)
 	assert.Equal(t, "Complete all 12 · in any order", rule)
 }
 
-// A finishable root is the quest-level press: the root draws no place of its
-// own, so the affordance lands in the loose group at the top.
+// The root draws no place of its own, so the press lands in the loose group.
 func TestQuestView_FinishableRootStaysAtTheTop(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("intro", "root", "Say hello"))
 	rows[0].ChildrenMin = intPtr(1)
@@ -256,8 +228,6 @@ func TestQuestView_FinishableRootStaysAtTheTop(t *testing.T) {
 	assert.Equal(t, "root", quest.Places[0].FinishSlug)
 }
 
-// A quest whose tree failed to load must not lose its rows: with no tree there
-// are no sections to find, but every row still has to appear.
 func TestQuestView_SurvivesAMissingTree(t *testing.T) {
 	orphan := obj("lost", "nowhere", "Still a task")
 
@@ -268,9 +238,7 @@ func TestQuestView_SurvivesAMissingTree(t *testing.T) {
 	assert.Equal(t, "Still a task", view.Places[0].Rows[0].Title)
 }
 
-// A parent chain that loops must not hang the page, and must not swallow the
-// row: storage can hold a cycle and lint reports one, but the work underneath
-// it is still work the run can do.
+// Storage can hold a cycle, but the work under it is still work the run can do.
 func TestQuestView_SurvivesAParentCycle(t *testing.T) {
 	rows := tree(obj("a", "b", "A"), obj("b", "a", "B"), obj("leaf", "a", "A task"))
 
@@ -286,7 +254,6 @@ func TestQuestView_SurvivesAParentCycle(t *testing.T) {
 	}
 }
 
-// The header counts against what the run still owes, not the authored tree.
 func TestMetricFor_ProgressIsDoneAgainstWhatIsStillOwed(t *testing.T) {
 	progress := navigation.Progress{Done: 11, Remaining: 4}
 
@@ -299,7 +266,6 @@ func TestMetricFor_ProgressIsDoneAgainstWhatIsStillOwed(t *testing.T) {
 	assert.Equal(t, "done", got.Label)
 }
 
-// Count has no target, so it cannot disagree with a total.
 func TestMetricFor_FoundHasNoTotal(t *testing.T) {
 	got := metricFor(models.QuestSettings{ProgressFeedback: game.ProgressFeedbackCount}, navigation.Progress{Done: 3, Remaining: 6})
 
@@ -339,7 +305,6 @@ func TestQuestHeader_ShowsTheMetricTheAuthorChose(t *testing.T) {
 	assert.NotContains(t, html, "aria-label=")
 }
 
-// Points are the run's own score. Rank is a comparison and is not on this page.
 func TestQuestHeader_ShowsPointsOnlyWhenOnAndNeverRank(t *testing.T) {
 	view := &services.PlayerObjectiveView{Progress: navigation.Progress{Done: 1, Remaining: 1}}
 
@@ -352,7 +317,6 @@ func TestQuestHeader_ShowsPointsOnlyWhenOnAndNeverRank(t *testing.T) {
 	assert.NotContains(t, off, "pts")
 }
 
-// A run with no name is told so, not shown a blank.
 func TestQuestHeader_NamesAnUnnamedTeam(t *testing.T) {
 	run := headerRun("", false)
 	run.Name = ""
@@ -361,9 +325,6 @@ func TestQuestHeader_NamesAnUnnamedTeam(t *testing.T) {
 	assert.Contains(t, html, "No name yet")
 }
 
-// A row carries the description under its title, which is what the second
-// field is for: the name is read in a list, the description is read standing
-// in front of the thing.
 func TestQuestView_RowCarriesItsDescription(t *testing.T) {
 	rows := tree(obj("root", "", "Quest"), obj("chest", "root", "Find the plan chest"))
 	rows[1].Description = "Level 2, past the model-making room."
@@ -373,8 +334,6 @@ func TestQuestView_RowCarriesItsDescription(t *testing.T) {
 	assert.Equal(t, "Level 2, past the model-making room.", view.Places[0].Rows[0].Description)
 }
 
-// An author's pass-through is the same cut made on purpose: the flagged section
-// has no place on the screen, and what sat below it is drawn in its stead.
 func TestQuestView_AFlaggedSectionPassesThrough(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -393,8 +352,6 @@ func TestQuestView_AFlaggedSectionPassesThrough(t *testing.T) {
 	assert.Equal(t, "Find the owl", view.Places[0].Rows[0].Title)
 }
 
-// A section's colour is its place in the authored tree, so unlocking another
-// never recolours it.
 func TestSectionHues_AreFixedByPositionNotByWhatIsUnlocked(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -417,7 +374,6 @@ func TestSectionHues_AreFixedByPositionNotByWhatIsUnlocked(t *testing.T) {
 	assert.Equal(t, HueFor(2), view.Places[0].Hue)
 }
 
-// A pass-through section is not drawn: no colour, no number.
 func TestSectionHues_PassThroughSectionsTakeNoNumber(t *testing.T) {
 	pass := obj("p", "root", "P")
 	pass.PassThrough = true
@@ -433,8 +389,6 @@ func TestSectionHues_PassThroughSectionsTakeNoNumber(t *testing.T) {
 	assert.Equal(t, HueFor(0), hues["b"])
 }
 
-// Groups join neighbours under the outermost section and drop it from the path;
-// deeper ancestors stay as the crumb.
 func TestQuestView_GroupsPlacesUnderTheirOutermostSection(t *testing.T) {
 	rows := tree(
 		obj("root", "", "Quest"),
@@ -464,7 +418,6 @@ func TestQuestPill_SaysTheCountWhereTheBandAsksForSeveral(t *testing.T) {
 	assert.Equal(t, "3 of 3 done", questPill(section, band, 5, 4), "never past the band's own minimum")
 }
 
-// Free roam is never said: any order is the only order on offer.
 func TestQuestPill_NeverSaysInAnyOrder(t *testing.T) {
 	section := models.Objective{Routing: models.RouteStrategyFreeRoam}
 	band := game.FillBand(nil, nil, 3)
@@ -479,8 +432,6 @@ func TestQuestPill_OrderedIsNextUp(t *testing.T) {
 	assert.Equal(t, "Next up", questPill(section, game.FillBand(nil, nil, 3), 3, 0))
 }
 
-// A ceiling below the child count is a pick: "Complete all three" would say keep
-// going after the section had shut.
 func TestBandWords_ACeilingBelowTheChildCountIsAPick(t *testing.T) {
 	one := 1
 	band := game.FillBand(&one, &one, 3)
@@ -497,8 +448,6 @@ func finishablePlace() QuestPlace {
 	}
 }
 
-// Tasks still on offer come first, then an "or", then the press, which asks
-// before it acts.
 func TestQuestPlace_MetBandOffersTheRestThenOrThenAConfirmedPress(t *testing.T) {
 	html := render(t, questPlace(finishablePlace(), false))
 
@@ -527,7 +476,6 @@ func TestQuestPlace_NoPressUntilTheBandIsMet(t *testing.T) {
 	assert.NotContains(t, html, "<dialog")
 }
 
-// The pill carries the count, so no separate "found" footer is drawn.
 func TestQuestPlace_WearsItsPillAndTheSectionsHue(t *testing.T) {
 	place := finishablePlace()
 	place.CanFinish = false

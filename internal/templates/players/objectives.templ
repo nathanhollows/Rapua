@@ -14,12 +14,8 @@ type ObjectivesParams struct {
 	View *services.PlayerObjectiveView
 }
 
-// Objectives is the quest screen: what the run can work on now, grouped under
-// the section each row came out of. The frontier is flat, so without grouping
-// three parts of one task read as three unrelated tasks.
-//
-// Three levels and no more: group heading, section, tasks. Locked and finished
-// sections are not drawn: neither can be acted on.
+// Objectives groups the frontier by section: it is flat, so three parts of one
+// task would otherwise read as three tasks.
 templ Objectives(data ObjectivesParams) {
 	{{ view := BuildQuestView(data.View) }}
 	if len(view.Places) == 0 {
@@ -36,14 +32,11 @@ templ Objectives(data ObjectivesParams) {
 	}
 }
 
-// hueClass names the palette class that sets a section's --h. A class, not an
-// inline style: every hue is contrast-checked once, and a style attribute would
-// carry a value templ cannot be told is safe.
+// A class, not an inline style, so each hue is contrast-checked once.
 func hueClass(hue int) string {
 	return fmt.Sprintf("q-h%d", hue)
 }
 
-// questGroup is places under one outermost section, and the heading over them.
 templ questGroup(group QuestGroup) {
 	<div class="flex flex-col gap-6">
 		if group.Title != "" {
@@ -55,17 +48,13 @@ templ questGroup(group QuestGroup) {
 	</div>
 }
 
-// questPlace is one section the run is standing in, and what it is offering.
-//
-// A heading, not a card: a bordered container looks tappable, and the only
-// raised things on the page should be the tasks. Colour is carried by the tasks
-// and a dot, never by a box.
+// A heading, not a card: a bordered box looks tappable, and only the tasks
+// should.
 templ questPlace(place QuestPlace, grouped bool) {
 	<section class={ "q-sec flex flex-col gap-4", templ.KV(hueClass(place.Hue), place.IsSection) }>
 		if place.IsSection {
 			if len(place.Path) > 0 {
-				<!-- Anything deeper than the group, in the smallest type on the
-				screen: an ancestor is history, and history costs no indent. -->
+				<!-- Ancestors are history, so the smallest type and no indent. -->
 				<p class="flex flex-wrap items-center gap-1.5 text-sm q-soft">
 					for i, ancestor := range place.Path {
 						if i > 0 {
@@ -91,11 +80,7 @@ templ questPlace(place QuestPlace, grouped bool) {
 	</section>
 }
 
-// questPlaceFooter is the section's way out once its band is met with room to
-// spare.
-//
-// The remaining tasks stay and the press follows under an "or". It asks first
-// because it closes the section and skips the rest.
+// It asks first because finishing skips whatever is left.
 templ questPlaceFooter(place QuestPlace) {
 	if place.CanFinish {
 		{{ dialogID := "finish-" + place.FinishSlug }}
@@ -127,8 +112,7 @@ templ questPlaceFooter(place QuestPlace) {
 					<form method="dialog">
 						<button class="btn btn-ghost">Keep going</button>
 					</form>
-					<!-- Boosted, so the quest list is swapped in: an Hx-Redirect would
-					reload the whole document. -->
+					<!-- Boosted so the list swaps in: an Hx-Redirect reloads the document. -->
 					<form method="post" action={ templ.URL("/objective/" + place.FinishSlug + "/finish") } hx-boost="true">
 						<button type="submit" class="btn btn-success">
 							{ place.FinishLabel }
@@ -143,9 +127,8 @@ templ questPlaceFooter(place QuestPlace) {
 	}
 }
 
-// PreviewSection is a place with something inside it, for the editor showing one
-// row in its container. It uses the game's heading and pill so authors see what
-// players meet.
+// PreviewSection reuses the game's heading and pill so authors see what players
+// meet.
 templ PreviewSection(title, rule string) {
 	<section class="q-sec flex flex-col gap-4">
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
@@ -160,8 +143,8 @@ templ PreviewSection(title, rule string) {
 	</section>
 }
 
-// questRow is one objective on offer. hero draws it as the single next step of a
-// guided section, where nothing competes for the biggest thing on screen.
+// hero is the single next step of an ordered section, where nothing competes
+// with it.
 templ questRow(row QuestRow, hero bool) {
 	<a
 		href={ templ.URL("/objective/" + row.Slug) }
@@ -204,24 +187,17 @@ func QuestChrome(run models.Run) AppChrome {
 	return AppChrome{Run: run, Active: "quest"}
 }
 
-// headerMetric is the header's progress display, decided in Go so a test can
-// reach the choice.
+// headerMetric is decided in Go so a test can reach the choice.
 type headerMetric struct {
-	// Show is false when the header says nothing: the author chose that, or
-	// there is no total to count against.
-	Show  bool
-	Done  int
-	Total int
-	// HasTotal is false for count, which has no target.
+	Show     bool
+	Done     int
+	Total    int
 	HasTotal bool
 	Label    string
 }
 
-// metricFor reads the quest's choice off the run's own account.
-//
-// Fraction divides by what the run still owes, not the authored tree: bands and
-// seeded windows make an authored total end short or overshoot. Count has no
-// total to be wrong about.
+// metricFor divides by what the run still owes, not the authored tree: bands and
+// seeded windows make an authored total end short or overshoot.
 func metricFor(settings models.QuestSettings, progress navigation.Progress) headerMetric {
 	switch settings.ProgressFeedback.Normalised() {
 	case game.ProgressFeedbackNone:
@@ -236,10 +212,8 @@ func metricFor(settings models.QuestSettings, progress navigation.Progress) head
 	}
 }
 
-// QuestPage is the quest as a run sees it: the header, then what it can do.
-//
-// The header is not part of Objectives because the editor previews that in its
-// own frame, where a count and team name would be invented.
+// The header is not part of Objectives: the editor previews that in its own
+// frame, where a count and team name would be invented.
 templ QuestPage(data ObjectivesParams) {
 	<div class="flex flex-col gap-5">
 		@questHeader(data)
@@ -247,11 +221,8 @@ templ QuestPage(data ObjectivesParams) {
 	</div>
 }
 
-// questHeader says whose run this is and, if the author wants it, how far along.
-// It scrolls away: a sticky bar costs room on the screen read most.
-//
-// Rank is not here: a comparison would put standing ahead of place. It lives on
-// the You tab.
+// It scrolls away, as a sticky bar costs room on the screen read most. Rank lives
+// on the You tab: here it would put standing ahead of place.
 templ questHeader(data ObjectivesParams) {
 	{{ metric := metricFor(data.Run.Quest.Settings, data.View.Progress) }}
 	<header class="flex items-start gap-4">

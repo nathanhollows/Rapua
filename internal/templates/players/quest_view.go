@@ -11,81 +11,54 @@ import (
 	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
-// QuestView is the frontier arranged as the places a run is standing in.
-//
-// The frontier omits an open section and lists its children in its place, which
-// suits the engine and makes three parts of one task read as three tasks. This
-// puts the section back, but as a heading rather than a box: a container is not
-// something a player can do, and drawing it like one gives the screen two kinds
-// of object when only one is real.
+// QuestView puts back the sections the frontier omits, as headings rather than
+// boxes: a container is not something a player can do.
 type QuestView struct {
 	Places []QuestPlace
 }
 
-// QuestPlace is one section and the rows of it on offer, or the rows that
-// belong to no section at all.
-//
-// Flat, not recursive. Nesting cards inside cards indents every level by the
-// same amount, so a reader counts margins to work out where they are, and the
-// tasks end up in the narrowest column on the screen. Depth is carried by Path
-// instead, which costs no width at all.
+// QuestPlace is flat, not recursive: nested cards indent every level equally and
+// squeeze the tasks into the narrowest column. Depth lives in Path instead.
 type QuestPlace struct {
-	// IsSection is false for rows sitting directly under the root, which belong
-	// to no container a player would recognise.
+	// IsSection is false for rows directly under the root.
 	IsSection bool
 	ID        string
 	Slug      string
 	Title     string
-	// Rule is how this place offers what it is showing, in the words a player
-	// reads: its band first, then its routing.
-	Rule string
-	// Path names the drawn sections above this one, outermost first. It is what
-	// replaces the nesting: where you came from, in small type, rather than a
-	// border around everything you are looking at.
+	Rule      string
+	// Path names the drawn sections above this one, outermost first.
 	Path []string
 	Rows []QuestRow
 
-	// CanFinish marks a section whose band's minimum is met with room still
-	// above it. The finish affordance lives here, on the place, because the
-	// heading above it already names the section: a row of its own would print
-	// the name a second time and read as a task called the same thing.
-	CanFinish bool
-	// FinishLabel is the author's word for the press, or the plainest one.
+	// CanFinish lives on the place because the heading already names the section:
+	// a row of its own would read as a task called the same thing.
+	CanFinish   bool
 	FinishLabel string
-	// FinishSlug is the section's own slug for the finish post. It differs from
-	// Slug when the section is drawn under an ancestor because it sits past the
-	// depth cap.
+	// FinishSlug differs from Slug when the section is drawn under an ancestor
+	// because it sits past the depth cap.
 	FinishSlug string
 
-	// Found, Total and Minimum are the section's band as it stands: children in
-	// play that are complete, children in play, and the band's minimum. They are
-	// zero on a place that is not a section.
+	// Found, Total and Minimum are the band as it stands, and zero on a place
+	// that is not a section.
 	Found   int
 	Total   int
 	Minimum int
 
-	// Pill is the short text beside the heading: the count towards the band, or
-	// the rule.
-	Pill string
-	// Ordered marks a section that offers one thing at a time, drawn as the
-	// single next step.
+	Pill    string
 	Ordered bool
-	// Hue is the section's palette colour by its place in the tree, fixed for the
-	// run.
-	Hue int
+	Hue     int
 }
 
-// QuestGroup is places sharing an outermost section, under one heading. Anything
-// deeper stays in a place's Path as a crumb, so the screen reads group, section,
-// task and no further.
+// QuestGroup holds places under one outermost section. Anything deeper stays in
+// a place's Path, so the screen reads group, section, task and no further.
 type QuestGroup struct {
 	// Title is empty for places with no section above them.
 	Title  string
 	Places []QuestPlace
 }
 
-// Groups gathers consecutive places sharing an outermost section. Only
-// neighbours merge: pulling two apart would rearrange the author's order.
+// Groups merges only neighbours: pulling two apart would rearrange the author's
+// order.
 func (q QuestView) Groups() []QuestGroup {
 	var groups []QuestGroup
 	for _, place := range q.Places {
@@ -103,8 +76,8 @@ func (q QuestView) Groups() []QuestGroup {
 	return groups
 }
 
-// HueOfObjective is the hue of the section a task sits in, so opening a task
-// keeps its list colour. Zero when no drawn section contains it.
+// HueOfObjective keeps a task's list colour when it is opened. Zero when no drawn
+// section contains it.
 func HueOfObjective(objectives []models.Objective, objective models.Objective) int {
 	byID := make(map[string]models.Objective, len(objectives))
 	for _, o := range objectives {
@@ -117,9 +90,6 @@ func HueOfObjective(objectives []models.Objective, objective models.Objective) i
 	return sectionHues(objectives)[place.ID]
 }
 
-// sectionHues gives each section a player sees as a place its palette hue,
-// numbered in tree order.
-//
 // Counted over the whole authored tree so opening one section never recolours
 // another. Pass-through sections are not drawn and take no number.
 func sectionHues(objectives []models.Objective) map[string]int {
@@ -141,30 +111,21 @@ func sectionHues(objectives []models.Objective) map[string]int {
 	return hues
 }
 
-// QuestRow is one objective on offer.
 type QuestRow struct {
 	ID    string
 	Slug  string
 	Title string
-	// Description is the detail a player needs on arrival. The title is read
-	// in a list; this is read standing in front of the thing.
+	// Description is read standing in front of the thing, where the title is read
+	// in a list.
 	Description string
-	// IsDoor marks an objective with no proof: there is nothing to do but open
-	// it, so the row must not promise work.
+	// IsDoor is an objective with no proof, so the row must not promise work.
 	IsDoor bool
-	// IconSVG is the first block in this objective's proof that asks for
-	// something: the plainest answer to "what will this want from me". Empty
-	// when the proof asks nothing.
+	// IconSVG is empty when the proof asks nothing.
 	IconSVG string
 }
 
-// RoutingRule words a section's routing for players, who are never told
-// "randomised": they are told three of these are theirs, which is the same fact
-// and the better one.
-//
-// Exported because the objective editor previews a row inside its own section,
-// and a preview wording the rule differently from the game would be describing
-// something else.
+// RoutingRule is exported so the editor's preview words the rule exactly as the
+// game does. Players are never told "randomised", only what is theirs.
 func RoutingRule(parent models.Objective, offered int) string {
 	switch parent.Routing {
 	case models.RouteStrategyOrdered:
@@ -187,9 +148,8 @@ func RoutingRule(parent models.Objective, offered int) string {
 
 var numberWords = []string{"none", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"}
 
-// numberWord words a count for copy that reads as prose. Past nine it falls
-// back to the numeral, because "Complete all several" is not a rule a player
-// can follow.
+// numberWord falls back to the numeral past nine, as "Complete all several" is
+// not a rule a player can follow.
 func numberWord(n int) string {
 	if n >= 0 && n < len(numberWords) {
 		return numberWords[n]
@@ -201,10 +161,8 @@ func pluralise(n int, suffix string) string {
 	return numberWord(n) + " " + suffix
 }
 
-// bandWords words a section's band for a player.
-//
-// A band whose ceiling is below the child count is a pick: "Complete all three"
-// would tell the player to keep going after the section had shut.
+// A ceiling below the child count is a pick: "Complete all three" would tell the
+// player to keep going after the section had shut.
 func bandWords(band game.Band, childCount int) string {
 	switch {
 	case band.AutoCompletes() && band.Max < childCount:
@@ -221,8 +179,6 @@ func bandWords(band game.Band, childCount int) string {
 	}
 }
 
-// questRule words a section's band for a player, then its routing.
-//
 // A range means the section can close before everything is found, so the rule
 // says the least. The band counts children in play; routing counts what is on
 // offer.
@@ -240,11 +196,8 @@ func questRule(objective models.Objective, childCount, offered int) string {
 	}
 }
 
-// questPill is the short text a section wears beside its heading.
-//
-// Where the band asks for several it is the count towards it ("1 of 3 done"),
-// which beats a rule read once. Free roam is never said: only what can be done
-// is on offer, so any order is the only order.
+// The count towards a band beats a rule read once. Free roam is never said: only
+// what can be done is on offer, so any order is the only order.
 func questPill(objective models.Objective, band game.Band, childCount, found int) string {
 	if objective.Routing == models.RouteStrategyOrdered {
 		return "Next up"
@@ -259,9 +212,8 @@ func questPill(objective models.Objective, band game.Band, childCount, found int
 	return text
 }
 
-// finishLabel names the button on a finishable section. An author may name it;
-// otherwise it says the plainest true thing, because the band is what decides
-// the button appears and a blank label would render an empty one.
+// The band decides the button appears, so a blank label must not render an
+// empty one.
 func finishLabel(objective models.Objective) string {
 	if objective.FinishLabel != "" {
 		return objective.FinishLabel
@@ -269,15 +221,12 @@ func finishLabel(objective models.Objective) string {
 	return "Finish"
 }
 
-// BuildQuestView groups the frontier into the places it is offering.
+// BuildQuestView needs the quest's whole tree because a frontier row carries only
+// its parent's id. A row whose parent is missing is kept and shown alone, as
+// dropping it would hide work behind a lookup failure.
 //
-// objectives is the quest's whole tree, because a frontier row carries only its
-// parent's id and a place needs the ancestors above it. A row whose parent is
-// missing is kept and shown standing alone: losing it would hide work the run
-// can do behind a lookup failure.
-//
-// A nil HasProof reads as "no proof", which makes rows doors: that opens, where
-// the other way round would promise work that is not there.
+// A nil HasProof reads as no proof: a door opens, where the reverse would
+// promise work that is not there.
 func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 	byID := make(map[string]models.Objective, len(view.Objectives))
 	for _, objective := range view.Objectives {
@@ -287,8 +236,7 @@ func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 	b := builder{byID: byID, view: view}
 	hues := sectionHues(view.Objectives)
 	var built QuestView
-	// Places keep the frontier's tree order: sorting would rearrange a quest
-	// the author laid out by hand.
+	// Sorting would rearrange a quest the author laid out by hand.
 	index := make(map[string]int, len(view.Objectives))
 	placeAt := func(place models.Objective, path []string) int {
 		key := place.ID
@@ -307,9 +255,8 @@ func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 	}
 
 	for _, objective := range view.Frontier.Available {
-		// A finishable section is not something to do. It is the finish press on
-		// the section itself, so it lands on the place the section's heading
-		// already draws: a row of its own would print the name twice.
+		// A finishable section is a press on its own heading, not a task: a row
+		// would print the name twice.
 		if view.Frontier.StatusOf(objective.ID) == navigation.StatusFinishable {
 			place, path := b.finishPlace(objective)
 			at := placeAt(place, path)
@@ -353,7 +300,6 @@ func BuildQuestView(view *services.PlayerObjectiveView) QuestView {
 	return built
 }
 
-// inPlaySet is the objectives a run can still reach, as a set.
 func inPlaySet(objectives []models.Objective) map[string]bool {
 	set := make(map[string]bool, len(objectives))
 	for _, objective := range navigation.InPlay(objectives) {
@@ -367,15 +313,11 @@ type builder struct {
 	view *services.PlayerObjectiveView
 }
 
-// placeFor finds the section a row is shown under, and the titles of the drawn
-// sections above it.
 func (b builder) placeFor(objective models.Objective) (models.Objective, []string) {
 	place, path := navigation.PlaceFor(b.byID, objective)
 	return place, titlesOf(path)
 }
 
-// finishPlace finds the drawn container a finishable section's press belongs
-// on.
 func (b builder) finishPlace(section models.Objective) (models.Objective, []string) {
 	place, path := navigation.FinishPlaceFor(b.byID, section)
 	return place, titlesOf(path)

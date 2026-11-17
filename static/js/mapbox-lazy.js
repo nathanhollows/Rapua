@@ -1,6 +1,4 @@
-// Loads Mapbox GL on first use: it is most of a megabyte and most player pages
-// have no map. Pages that carry Mapbox in their head (the editor) never load this
-// file, and the blocks call straight through.
+// Most of a megabyte, and most player pages have no map.
 (function () {
 	var BASE = "https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl";
 	var pending = null;

@@ -17,7 +17,6 @@ func pointsRun(points int, enabled bool) models.Run {
 	}
 }
 
-// Points and the leaderboard are separate settings.
 func TestYou_ShowsPointsWithoutALeaderboard(t *testing.T) {
 	html := render(t, You(YouParams{Run: pointsRun(140, true)}))
 
@@ -27,7 +26,6 @@ func TestYou_ShowsPointsWithoutALeaderboard(t *testing.T) {
 	assert.NotContains(t, html, "<h2")
 }
 
-// With the board off and no score, there is nothing to report but identity.
 func TestYou_ShowsOnlyIdentityWhenNothingIsCounted(t *testing.T) {
 	html := render(t, You(YouParams{Run: pointsRun(0, false)}))
 
@@ -36,7 +34,6 @@ func TestYou_ShowsOnlyIdentityWhenNothingIsCounted(t *testing.T) {
 	assert.NotContains(t, html, ">Position</span>")
 }
 
-// Position needs a board to be a position in.
 func TestYou_ShowsPositionOnlyWithABoard(t *testing.T) {
 	run := pointsRun(140, true)
 	html := render(t, You(YouParams{
@@ -53,7 +50,6 @@ func TestYou_ShowsPositionOnlyWithABoard(t *testing.T) {
 	assert.Equal(t, 1, strings.Count(html, ">Points</span>"), "the score is said once")
 }
 
-// Progress counts against the board entry's total, the denominator the rank used.
 func TestYou_ProgressCountsAgainstTheBoardTotal(t *testing.T) {
 	html := render(t, You(YouParams{
 		Run: pointsRun(0, false),
@@ -74,7 +70,6 @@ func TestYou_TheGameCodeIsOneTilePerLetterAndReadAsLetters(t *testing.T) {
 	assert.Contains(t, html, `aria-label="Game code F Y H G"`)
 }
 
-// A stat drawn like a button invites a tap that goes nowhere.
 func TestYou_OnlyTheRenameIsAButton(t *testing.T) {
 	html := render(t, You(YouParams{Run: pointsRun(140, true)}))
 

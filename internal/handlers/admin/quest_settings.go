@@ -22,8 +22,7 @@ func (h *Handler) QuestSettingsPost(w http.ResponseWriter, r *http.Request) {
 	user.CurrentQuest.Settings.EnablePoints = r.Form.Get("enablePoints") == "on"
 	user.CurrentQuest.Settings.ShowLeaderboard = r.Form.Get("showLeaderboard") == "on"
 
-	// Unlike the toggles, absent means unchanged: a select always submits, so a
-	// request without one was not about this setting.
+	// Unlike the toggles, absent means unchanged: a select always submits.
 	if raw := r.Form.Get("progressFeedback"); raw != "" {
 		metric, err := game.ParseProgressFeedback(raw)
 		if err != nil {

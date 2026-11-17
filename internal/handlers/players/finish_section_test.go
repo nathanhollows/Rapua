@@ -9,8 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// The press is a boosted form, so no exit may be an Hx-Redirect, which reloads
-// the whole document.
+// The press is a boosted form, and an Hx-Redirect reloads the document.
 func TestPlayerHandler_FinishSection_RedirectsAreNeverHxRedirects(t *testing.T) {
 	handler := players.NewTestPlayerHandler()
 
