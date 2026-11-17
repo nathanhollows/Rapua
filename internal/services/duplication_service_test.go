@@ -72,10 +72,10 @@ func TestDuplicationService_DuplicateQuest(t *testing.T) {
 
 		// Create settings
 		settings := &models.QuestSettings{
-			QuestID:         sourceInstance.ID,
-			EnablePoints:    true,
-			ShowLeaderboard: true,
-			ProgressFeedback:    game.ProgressFeedbackCount,
+			QuestID:          sourceInstance.ID,
+			EnablePoints:     true,
+			ShowLeaderboard:  true,
+			ProgressFeedback: game.ProgressFeedbackCount,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)

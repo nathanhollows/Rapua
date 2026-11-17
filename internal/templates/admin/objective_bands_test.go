@@ -159,7 +159,6 @@ func TestEditObjective_ShowsTheObjectiveLink(t *testing.T) {
 	assert.NotContains(t, html, "not wired")
 }
 
-
 // A row on its own says what it is; a row inside its container says what it is
 // part of. The preview draws the container when there is one.
 func TestEditObjective_PreviewShowsTheContainer(t *testing.T) {

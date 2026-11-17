@@ -81,10 +81,10 @@ func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
 		Routing: game.RouteStrategyOrdered,
 	})
 	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{
-		QuestID:         inst.ID,
-		EnablePoints:    true,
-		ShowLeaderboard: true,
-		ProgressFeedback:    game.ProgressFeedbackCount,
+		QuestID:          inst.ID,
+		EnablePoints:     true,
+		ShowLeaderboard:  true,
+		ProgressFeedback: game.ProgressFeedbackCount,
 	}))
 
 	doc, _, err := svc.ExportInstance(ctx, inst.ID)

@@ -231,10 +231,10 @@ func (s *ImportService) importCreate(
 
 	// Create QuestSettings
 	settings := &models.QuestSettings{
-		QuestID:         newInstance.ID,
-		EnablePoints:    doc.Settings.EnablePoints,
-		ShowLeaderboard: doc.Settings.ShowLeaderboard,
-		ProgressFeedback:    game.ProgressFeedback(doc.Settings.ProgressFeedback).Normalised(),
+		QuestID:          newInstance.ID,
+		EnablePoints:     doc.Settings.EnablePoints,
+		ShowLeaderboard:  doc.Settings.ShowLeaderboard,
+		ProgressFeedback: game.ProgressFeedback(doc.Settings.ProgressFeedback).Normalised(),
 	}
 	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, settings); err != nil {
 		return nil, fmt.Errorf("create settings: %w", err)

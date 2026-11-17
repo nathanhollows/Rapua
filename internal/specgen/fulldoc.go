@@ -213,9 +213,9 @@ func documentSpec() ObjectSpec { //nolint:funlen
 			},
 			{Name: "name", Type: "string", Required: true, Description: "Game name."},
 			{
-				Name:        "settings",
-				Type:        "object",
-				Required:    true,
+				Name:     "settings",
+				Type:     "object",
+				Required: true,
 				Description: "Game-wide settings. Each changes what players experience, so two games are only " +
 					"comparable when these match as well as their structure.",
 				Fields: []game.FieldSpec{
