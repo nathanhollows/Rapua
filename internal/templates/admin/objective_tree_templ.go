@@ -332,7 +332,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "> <span class=\"text-xs font-medium\">Points</span></label><!-- Beside points because it reads off them: with points on the\n\t\t\t\tboard ranks by score, and with them off by how much of the quest\n\t\t\t\teach team has done. --><label class=\"flex items-center gap-2 cursor-pointer tooltip tooltip-bottom\" data-tip=\"Players can see how their team compares to the others\"><input type=\"checkbox\" name=\"showLeaderboard\" class=\"toggle toggle-sm toggle-primary leaderboard-toggle\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "> <span class=\"text-xs font-medium\">Points</span></label><!-- Beside points because it reads off them: with points on the\n\t\t\t\tboard ranks by score, and with them off by how much of the quest\n\t\t\t\teach team has done. --><label class=\"flex items-center gap-2 cursor-pointer tooltip tooltip-bottom\" data-tip=\"Players can see how their team compares to the others. Ranked by points when Points is on, otherwise by how much each team has done\"><input type=\"checkbox\" name=\"showLeaderboard\" class=\"toggle toggle-sm toggle-primary leaderboard-toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
