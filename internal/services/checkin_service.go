@@ -61,10 +61,10 @@ func (s *CheckInService) ValidateAndUpdateBlockState(
 	team models.Run,
 	data map[string][]string,
 ) (blocks.PlayerState, blocks.Block, error) {
-	blockID := data["block"][0]
-	if blockID == "" {
+	if len(data["block"]) == 0 || data["block"][0] == "" {
 		return nil, nil, errors.New("blockID must be set")
 	}
+	blockID := data["block"][0]
 
 	// Preview uses fresh mock state and writes nothing, events included. It
 	// carries the run code "preview", which has no row in runs, so anything
@@ -316,7 +316,7 @@ func (s *CheckInService) planCompletion(
 	}
 
 	if blockContext != game.ContextObjectiveProof && blockContext != game.ContextObjectiveReveal {
-		return completionPlan{awardPoints: true}, nil
+		return s.planQuestBlock(ctx, team, block, blockContext)
 	}
 
 	objective, err := s.objectiveRepo.GetByID(ctx, block.GetOwnerID())
@@ -350,6 +350,30 @@ func (s *CheckInService) planCompletion(
 		}
 	}
 	return plan, nil
+}
+
+// planQuestBlock exists because the block lookup matches on id alone: without the
+// owner check a player could claim another quest's block. Finish waits for the
+// run to be complete, as the page is only offered then.
+func (s *CheckInService) planQuestBlock(
+	ctx context.Context, team *models.Run, block blocks.Block, blockContext game.BlockContext,
+) (completionPlan, error) {
+	if blockContext != game.ContextStart && blockContext != game.ContextFinish {
+		return completionPlan{}, nil
+	}
+	if block.GetOwnerID() != team.QuestID {
+		return completionPlan{}, nil
+	}
+	if blockContext == game.ContextFinish {
+		objectives, state, _, err := s.loader.load(ctx, team)
+		if err != nil {
+			return completionPlan{}, fmt.Errorf("loading run state: %w", err)
+		}
+		if !rootsComplete(objectives, navigation.ComputeCompleted(objectives, state)) {
+			return completionPlan{}, nil
+		}
+	}
+	return completionPlan{awardPoints: true}, nil
 }
 
 // CompleteObjectiveContext logs the completion once every block in the context
