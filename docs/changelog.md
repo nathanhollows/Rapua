@@ -28,6 +28,7 @@ v8.0.0 replaces Locations with Objectives, which changes how much of the system 
 ### Added
 
 - Draft objectives: hidden from players, with everything beneath them, until published. New objectives start as drafts.
+- Secret objectives: never listed, found by scanning their code from anywhere in the quest. Once found they count toward their section, and one with children opens as a side quest.
 - A running game can't be edited. Stop it first, or duplicate it and work on the copy.
 - Keys and locks: interactive blocks can set a variable, and objectives and content blocks can wait on variables. Locked content stays hidden until its variables are set, then appears on the page that unlocks it.
 - Quest tree: see, drag, publish and park the whole quest at once. Each section has a rule pill for its routing and completion band. A live lint panel flags problems on the row they belong to.
@@ -48,7 +49,7 @@ v8.0.0 replaces Locations with Objectives, which changes how much of the system 
 
 ### Changed
 
-- **Breaking:** Location, Marker, and Check-in are gone. Locations with a marker convert to objectives on upgrade. Old QR check-in links and printed posters stop working.
+- **Breaking:** Location, Marker, and Check-in are gone. Locations with a marker convert to objectives on upgrade, and printed posters keep working.
 - **Breaking:** Navigation display modes (Map, Labelled Map, List, Custom Clues, Tasks) are gone. Every objective uses the same navigation and content blocks.
 - **Breaking:** There are no separate groups. A group's routing and completion rule is now what any objective does once it has children. "All" / "minimum required" becomes a completion band: equal bounds finish automatically, a range adds an optional finish button.
 - **Breaking:** Ending a section early is done by the player pressing finish, not by a facilitator skipping the team. Runs with a skipped section reopen as unfinished.
@@ -56,7 +57,7 @@ v8.0.0 replaces Locations with Objectives, which changes how much of the system 
 - **Breaking:** Task blocks become one-item checklists on upgrade. Leftover Task List blocks are deleted.
 - **Breaking:** "Team" is now "Run" and "Instance"/"Game" is now "Quest" in admin routes (`/admin/quests/*`, `/admin/runs/*`). Old URLs no longer resolve.
 - **Breaking:** The spec API moved from `/api/v7/*` to `/api/v8/*`, and documents must declare `"rapua": "v8"`.
-- Routing is required on every objective and defaults to "ordered". Unset or "Secret" routing becomes "ordered" on upgrade.
+- Routing is required on every objective and defaults to "ordered". Unset routing becomes free roam on upgrade, as it played in v7, and a secret group's locations become secret objectives in its parent.
 - Points live on blocks. An objective's total is the sum of its blocks.
 - The points toggle moved to the quest page; the Experience settings page is gone.
 - A run is marked started, and its credit spent, when a player presses Start, not when they join.
