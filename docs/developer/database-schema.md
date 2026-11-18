@@ -84,6 +84,7 @@ the quest rather than a place in it and is never rendered to a player.
 | title | string | Name of the objective |
 | draft | bool | Held out of play along with everything beneath it, without moving any of it |
 | pass_through | bool | Stops the section being a place the player stands: it still routes and bands, but its rows join the nearest drawn section |
+| secret | bool | Unlisted until a run finds it by scanning. Outside its parent's routing; counted in its band only once found |
 | depends | text | JSON array of variables that must all be set before the objective opens. NULL means no gate |
 | routing | string | How children are offered: `ordered`, `free_roam` or `randomised`. Inert without children |
 | children_min | int | Completion band lower bound. NULL and 0 differ: see the [game spec](/docs/developer/game-spec) |

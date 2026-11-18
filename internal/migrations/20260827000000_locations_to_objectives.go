@@ -1,10 +1,12 @@
 package migrations
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/google/uuid"
@@ -155,7 +157,7 @@ func m20260827_convertQuest(ctx context.Context, tx bun.Tx, q m20260827_quest) e
 		}
 	}
 
-	rootID, next, err := c.convertGroup(ctx, root, nil, 0)
+	rootID, next, err := c.convertGroup(ctx, root, nil, 0, false)
 	if err != nil {
 		return err
 	}
@@ -164,12 +166,92 @@ func m20260827_convertQuest(ctx context.Context, tx bun.Tx, q m20260827_quest) e
 		if c.placed[locID] {
 			continue
 		}
-		if err := c.convertLocation(ctx, c.locations[locID], rootID, next); err != nil {
+		if err := c.convertLocation(ctx, c.locations[locID], rootID, next, false); err != nil {
 			return err
 		}
 		next++
 	}
+	return c.settleSecrets(ctx)
+}
+
+type m20260827_sibling struct {
+	ID       string
+	ParentID string
+	Secret   bool
+}
+
+// settleSecrets moves secrets to the tail of their siblings, where the editor
+// expects them, and clamps each band to the visible rows: v7 may have counted
+// a dissolved secret group toward its minimum, and a band never needs a secret.
+func (c *m20260827_converter) settleSecrets(ctx context.Context) error {
+	rows, err := c.loadRows(ctx)
+	if err != nil {
+		return err
+	}
+	byParent := map[string][]m20260827_sibling{}
+	for _, row := range rows {
+		byParent[row.ParentID] = append(byParent[row.ParentID], row)
+	}
+
+	// Two passes, because (parent_id, position) is unique.
+	for i, row := range rows {
+		if _, err := c.tx.ExecContext(ctx,
+			`UPDATE "objectives" SET "position" = ? WHERE "id" = ?`, 1_000_000+i, row.ID); err != nil {
+			return fmt.Errorf("parking objective %s: %w", row.ID, err)
+		}
+	}
+	for parentID, siblings := range byParent {
+		visible := 0
+		for _, row := range siblings {
+			if !row.Secret {
+				visible++
+			}
+		}
+		slices.SortStableFunc(siblings, func(a, b m20260827_sibling) int {
+			return cmp.Compare(m20260827_bit(a.Secret), m20260827_bit(b.Secret))
+		})
+		for position, row := range siblings {
+			if _, err := c.tx.ExecContext(ctx,
+				`UPDATE "objectives" SET "position" = ? WHERE "id" = ?`, position, row.ID); err != nil {
+				return fmt.Errorf("placing objective %s: %w", row.ID, err)
+			}
+		}
+		if _, err := c.tx.ExecContext(ctx,
+			`UPDATE "objectives" SET`+
+				` "children_min" = MIN("children_min", ?), "children_max" = MIN("children_max", ?)`+
+				` WHERE "id" = ?`, visible, visible, parentID); err != nil {
+			return fmt.Errorf("clamping the band of %s: %w", parentID, err)
+		}
+	}
 	return nil
+}
+
+// loadRows reads in full before writing, for the same reason as loadBlocks.
+func (c *m20260827_converter) loadRows(ctx context.Context) ([]m20260827_sibling, error) {
+	result, err := c.tx.QueryContext(ctx,
+		`SELECT "id", "parent_id", "secret" FROM "objectives"`+
+			` WHERE "quest_id" = ? AND "parent_id" IS NOT NULL ORDER BY "parent_id", "position"`, c.quest.ID)
+	if err != nil {
+		return nil, fmt.Errorf("loading objectives to settle: %w", err)
+	}
+	defer func() { _ = result.Close() }()
+
+	var rows []m20260827_sibling
+	for result.Next() {
+		var row m20260827_sibling
+		if err := result.Scan(&row.ID, &row.ParentID, &row.Secret); err != nil {
+			return nil, fmt.Errorf("scanning objective: %w", err)
+		}
+		rows = append(rows, row)
+	}
+	return rows, result.Err()
+}
+
+func m20260827_bit(b bool) int {
+	if b {
+		return 1
+	}
+	return 0
 }
 
 // loadLocations reserves location slugs first: they are in links and print, so
@@ -198,7 +280,7 @@ func (c *m20260827_converter) loadLocations(ctx context.Context) error {
 }
 
 func (c *m20260827_converter) convertGroup(
-	ctx context.Context, group m20260827_group, parentID *string, position int,
+	ctx context.Context, group m20260827_group, parentID *string, position int, secret bool,
 ) (string, int, error) {
 	title := group.Name
 	if parentID == nil && title == "" {
@@ -216,38 +298,110 @@ func (c *m20260827_converter) convertGroup(
 	sectionID := uuid.New().String()
 	if _, err := c.tx.ExecContext(ctx,
 		`INSERT INTO "objectives" ("id", "quest_id", "slug", "title", "parent_id", "position",`+
-			` "routing", "max_next", "children_min", "children_max")`+
-			` VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			` "routing", "max_next", "children_min", "children_max", "secret")`+
+			` VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 		sectionID, c.quest.ID, m20260827_uniqueSlug(slugSeed, "section", c.takenSlugs), title,
-		parentID, position, m20260827_routingFor(group), group.MaxNext, minChildren, maxChildren,
+		parentID, position, m20260827_routingFor(group), group.MaxNext, minChildren, maxChildren, secret,
 	); err != nil {
 		return "", 0, fmt.Errorf("inserting section %q: %w", title, err)
 	}
+	if secret {
+		if err := c.seedSecretSection(ctx, group, sectionID); err != nil {
+			return "", 0, err
+		}
+	}
 
-	child := 0
-	for _, locID := range group.LocationIDs {
+	child, err := c.convertLocations(ctx, group.LocationIDs, sectionID, 0, false)
+	if err != nil {
+		return "", 0, err
+	}
+	child, err = c.convertSubGroups(ctx, group.SubGroups, sectionID, child, false)
+	if err != nil {
+		return "", 0, err
+	}
+	return sectionID, child, nil
+}
+
+// seedSecretSection gives a section from a group inside a secret group its
+// first location's code: a secret is found by its own scan, a group held none,
+// and in v7 that poster was the way in. No points, since the location keeps
+// its own, and a run that checked in there has already found the section.
+func (c *m20260827_converter) seedSecretSection(
+	ctx context.Context, group m20260827_group, sectionID string,
+) error {
+	loc, ok := c.firstLocation(group)
+	if !ok {
+		return nil
+	}
+	loc.Points = 0
+	scanID, err := c.insertScanBlock(ctx, loc, sectionID)
+	if err != nil {
+		return err
+	}
+	return c.carryCheckIns(ctx, loc, sectionID, scanID)
+}
+
+func (c *m20260827_converter) firstLocation(group m20260827_group) (m20260827_location, bool) {
+	for _, id := range group.LocationIDs {
+		if loc, ok := c.locations[id]; ok && !c.placed[id] {
+			return loc, true
+		}
+	}
+	for _, sub := range group.SubGroups {
+		if loc, ok := c.firstLocation(sub); ok {
+			return loc, true
+		}
+	}
+	return m20260827_location{}, false
+}
+
+// convertSubGroups dissolves a secret group into its parent: v7 let its
+// locations be scanned from anywhere beside it, which is a secret objective's
+// reach, while a section of its own would become a required step. A group
+// held no content, so each of its children, groups included, becomes a secret
+// in its place.
+func (c *m20260827_converter) convertSubGroups(
+	ctx context.Context, groups []m20260827_group, parentID string, position int, secret bool,
+) (int, error) {
+	for _, sub := range groups {
+		if sub.Routing != "secret" {
+			if _, _, err := c.convertGroup(ctx, sub, &parentID, position, secret); err != nil {
+				return 0, err
+			}
+			position++
+			continue
+		}
+		var err error
+		if position, err = c.convertLocations(ctx, sub.LocationIDs, parentID, position, true); err != nil {
+			return 0, err
+		}
+		if position, err = c.convertSubGroups(ctx, sub.SubGroups, parentID, position, true); err != nil {
+			return 0, err
+		}
+	}
+	return position, nil
+}
+
+func (c *m20260827_converter) convertLocations(
+	ctx context.Context, locIDs []string, parentID string, position int, secret bool,
+) (int, error) {
+	for _, locID := range locIDs {
 		loc, ok := c.locations[locID]
 		if !ok || c.placed[locID] {
 			continue
 		}
-		if err := c.convertLocation(ctx, loc, sectionID, child); err != nil {
-			return "", 0, err
+		if err := c.convertLocation(ctx, loc, parentID, position, secret); err != nil {
+			return 0, err
 		}
-		child++
+		position++
 	}
-	for _, sub := range group.SubGroups {
-		if _, _, err := c.convertGroup(ctx, sub, &sectionID, child); err != nil {
-			return "", 0, err
-		}
-		child++
-	}
-	return sectionID, child, nil
+	return position, nil
 }
 
 // convertLocation puts the points on the scan block because an objective has
 // none of its own.
 func (c *m20260827_converter) convertLocation(
-	ctx context.Context, loc m20260827_location, parentID string, position int,
+	ctx context.Context, loc m20260827_location, parentID string, position int, secret bool,
 ) error {
 	c.placed[loc.ID] = true
 
@@ -268,9 +422,9 @@ func (c *m20260827_converter) convertLocation(
 
 	objID := uuid.New().String()
 	if _, err := c.tx.ExecContext(ctx,
-		`INSERT INTO "objectives" ("id", "quest_id", "slug", "title", "parent_id", "position", "routing")`+
-			` VALUES (?, ?, ?, ?, ?, ?, 'ordered')`,
-		objID, c.quest.ID, slug, loc.Name, parentID, position,
+		`INSERT INTO "objectives" ("id", "quest_id", "slug", "title", "parent_id", "position", "routing", "secret")`+
+			` VALUES (?, ?, ?, ?, ?, ?, 'ordered', ?)`,
+		objID, c.quest.ID, slug, loc.Name, parentID, position, secret,
 	); err != nil {
 		return fmt.Errorf("inserting objective for location %s: %w", loc.ID, err)
 	}
@@ -318,7 +472,9 @@ func (c *m20260827_converter) moveBlocks(ctx context.Context, locID, objID strin
 
 	for _, b := range blks {
 		newContext := "objective_reveal"
-		if b.Context == "navigation" || (b.Context == "location_content" && m20260827_interactiveBlockTypes[b.Type]) {
+		// A checkpoint verified the player was there, which is what proof is.
+		if b.Context == "navigation" || b.Context == "checkpoint" ||
+			(b.Context == "location_content" && m20260827_interactiveBlockTypes[b.Type]) {
 			newContext = "objective_proof"
 		}
 		if _, err := c.tx.ExecContext(ctx,
@@ -333,10 +489,12 @@ func (c *m20260827_converter) moveBlocks(ctx context.Context, locID, objID strin
 func (c *m20260827_converter) insertScanBlock(
 	ctx context.Context, loc m20260827_location, objID string,
 ) (string, error) {
+	// Case-insensitive, as v7 took typed codes. The block reads the code out of
+	// the SITE_URL/s/CODE links v7 printed on its posters.
 	data, err := json.Marshal(map[string]any{
 		"prompt": "Scan the code to prove you found it",
 		"codes":  []map[string]any{{"value": loc.MarkerID, "generate": false}},
-		"match":  "exact",
+		"match":  "ci",
 	})
 	if err != nil {
 		return "", fmt.Errorf("encoding scan block for location %s: %w", loc.ID, err)
@@ -419,8 +577,7 @@ func (c *m20260827_converter) loadCheckIns(ctx context.Context, locID string) ([
 }
 
 // m20260827_routingFor makes a group of groups ordered: v7 walked subgroups one
-// at a time whatever its routing said. Empty and secret both played as free
-// roam.
+// at a time whatever its routing said. Empty played as free roam.
 func m20260827_routingFor(group m20260827_group) string {
 	if len(group.SubGroups) > 0 {
 		return "ordered"

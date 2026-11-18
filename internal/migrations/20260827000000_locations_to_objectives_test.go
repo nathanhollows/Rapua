@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
@@ -273,7 +274,10 @@ func TestLocationsToObjectives_MovesBlocksAndSeedsTheScan(t *testing.T) {
 	require.NoError(t, dbc.QueryRowContext(ctx,
 		`SELECT "data", "points", "ordering" FROM "blocks" WHERE "owner_id" = ? AND "type" = 'scan'`,
 		objective.ID).Scan(&data, &points, &ordering))
-	assert.Contains(t, data, code, "the marker code is what the scan accepts")
+	var scan blocks.ScanBlock
+	require.NoError(t, json.Unmarshal([]byte(data), &scan))
+	assert.True(t, scan.Matches(code), "the code typed in")
+	assert.True(t, scan.Matches("https://rapua.nz/s/"+code), "a v7 poster read by the camera")
 	assert.Equal(t, 15, points, "the location's points move onto the scan")
 	assert.Equal(t, -1, ordering)
 }
@@ -339,6 +343,159 @@ func TestLocationsToObjectives_CarriesCheckInsOver(t *testing.T) {
 	assert.Empty(t, completions(midway), "its content blocks still decide the proof")
 }
 
+func TestLocationsToObjectives_SecretGroupsDissolveIntoTheirParent(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	questID := m20260827_seedQuest(t, dbc, "Trace")
+	main, _ := m20260827_seedLocation(t, dbc, questID, "Library", "library", 10)
+	bonus, _ := m20260827_seedLocation(t, dbc, questID, "Rooftop", "rooftop", 50)
+	raw, err := json.Marshal(map[string]any{
+		"is_root": true,
+		"sub_groups": []any{
+			map[string]any{"name": "Main", "routing": "ordered", "location_ids": []string{main}},
+			map[string]any{"name": "Bonus locations", "routing": "secret", "location_ids": []string{bonus}},
+		},
+	})
+	require.NoError(t, err)
+	m20260827_exec(t, dbc, `UPDATE "quests" SET "game_structure" = ? WHERE "id" = ?`, string(raw), questID)
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	rows := m20260827_rows(t, dbc, questID)
+	top := m20260827_childrenOf(rows, m20260827_root(t, rows).ID)
+	require.Equal(t, []string{"Main", "Rooftop"}, m20260827_titles(top),
+		"the secret group leaves no section behind")
+	assert.Equal(t, 1, top[1].Position)
+
+	secretOf := func(id string) bool {
+		var secret bool
+		require.NoError(t, dbc.QueryRowContext(ctx,
+			`SELECT "secret" FROM "objectives" WHERE "id" = ?`, id).Scan(&secret))
+		return secret
+	}
+	assert.True(t, secretOf(top[1].ID))
+	assert.False(t, secretOf(top[0].ID))
+	assert.False(t, secretOf(m20260827_childrenOf(rows, top[0].ID)[0].ID))
+}
+
+// A group held no content, so a group inside a secret one is a child like any
+// location: it becomes a secret section, a side quest once found, whose own
+// contents play as usual.
+func TestLocationsToObjectives_GroupsInASecretGroupBecomeSecretSections(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	questID := m20260827_seedQuest(t, dbc, "Trace")
+	main, _ := m20260827_seedLocation(t, dbc, questID, "Library", "library", 10)
+	bonus, _ := m20260827_seedLocation(t, dbc, questID, "Rooftop", "rooftop", 50)
+	tunnel, tunnelCode := m20260827_seedLocation(t, dbc, questID, "Tunnel", "tunnel", 20)
+	runCode := m20260827_seedRun(t, dbc, questID)
+	m20260827_seedCheckIn(t, dbc, runCode, questID, tunnel, false)
+	raw, err := json.Marshal(map[string]any{
+		"is_root": true,
+		"sub_groups": []any{
+			map[string]any{"name": "Main", "routing": "ordered", "location_ids": []string{main}},
+			map[string]any{
+				"name": "Bonus", "routing": "secret", "location_ids": []string{bonus},
+				"sub_groups": []any{
+					map[string]any{"name": "Undercroft", "routing": "free_roam", "location_ids": []string{tunnel}},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	m20260827_exec(t, dbc, `UPDATE "quests" SET "game_structure" = ? WHERE "id" = ?`, string(raw), questID)
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	rows := m20260827_rows(t, dbc, questID)
+	top := m20260827_childrenOf(rows, m20260827_root(t, rows).ID)
+	require.Equal(t, []string{"Main", "Rooftop", "Undercroft"}, m20260827_titles(top))
+
+	secretOf := func(id string) bool {
+		var secret bool
+		require.NoError(t, dbc.QueryRowContext(ctx,
+			`SELECT "secret" FROM "objectives" WHERE "id" = ?`, id).Scan(&secret))
+		return secret
+	}
+	assert.True(t, secretOf(top[2].ID), "the nested group is a secret in the dissolved group's place")
+	inside := m20260827_childrenOf(rows, top[2].ID)
+	require.Equal(t, []string{"Tunnel"}, m20260827_titles(inside))
+	assert.False(t, secretOf(inside[0].ID), "its own contents play as usual once found")
+
+	// The section is found by its first poster, as the way in was in v7.
+	var scanID, data string
+	var points int
+	require.NoError(t, dbc.QueryRowContext(ctx,
+		`SELECT "id", "data", "points" FROM "blocks"`+
+			` WHERE "owner_id" = ? AND "type" = 'scan' AND "context" = 'objective_proof'`,
+		top[2].ID).Scan(&scanID, &data, &points))
+	var scan blocks.ScanBlock
+	require.NoError(t, json.Unmarshal([]byte(data), &scan))
+	assert.True(t, scan.Matches(tunnelCode))
+	assert.True(t, scan.Matches("https://rapua.nz/s/"+tunnelCode), "an old poster link still opens it")
+	assert.Zero(t, points, "the location keeps the points")
+
+	var found bool
+	require.NoError(t, dbc.QueryRowContext(ctx,
+		`SELECT "is_complete" FROM "run_block_states" WHERE "run_code" = ? AND "block_id" = ?`,
+		runCode, scanID).Scan(&found))
+	assert.True(t, found, "a team that checked in there has already found it")
+}
+
+// The editor posts a visible row's index in its own list, which is only its
+// position while secrets keep to the tail.
+func TestLocationsToObjectives_SecretsSettleAtTheTail(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	questID := m20260827_seedQuest(t, dbc, "Trace")
+	main, _ := m20260827_seedLocation(t, dbc, questID, "Library", "library", 10)
+	bonus, _ := m20260827_seedLocation(t, dbc, questID, "Rooftop", "rooftop", 50)
+	m20260827_seedLocation(t, dbc, questID, "Stray", "stray", 0)
+	raw, err := json.Marshal(map[string]any{
+		"is_root": true, "completion_type": "minimum", "minimum_required": 3, "auto_advance": true,
+		"sub_groups": []any{
+			map[string]any{"name": "Bonus locations", "routing": "secret", "location_ids": []string{bonus}},
+			map[string]any{"name": "Main", "routing": "ordered", "location_ids": []string{main}},
+		},
+	})
+	require.NoError(t, err)
+	m20260827_exec(t, dbc, `UPDATE "quests" SET "game_structure" = ? WHERE "id" = ?`, string(raw), questID)
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	rows := m20260827_rows(t, dbc, questID)
+	root := m20260827_root(t, rows)
+	top := m20260827_childrenOf(rows, root.ID)
+	require.Equal(t, []string{"Main", "Stray", "Rooftop"}, m20260827_titles(top),
+		"listed or not, visible rows come before the secret")
+	for i, row := range top {
+		assert.Equal(t, i, row.Position)
+	}
+	require.NotNil(t, root.ChildrenMin)
+	require.NotNil(t, root.ChildrenMax)
+	assert.Equal(t, 2, *root.ChildrenMin, "the band asks no more than the visible rows")
+	assert.Equal(t, 2, *root.ChildrenMax)
+}
+
+func TestLocationsToObjectives_CheckpointBlocksBecomeProof(t *testing.T) {
+	dbc := m20260827_setupPreConversion(t)
+	ctx := context.Background()
+
+	questID := m20260827_seedQuest(t, dbc, "Checkpoints")
+	locID, _ := m20260827_seedLocation(t, dbc, questID, "Gate", "gate", 0)
+	password := m20260827_seedBlock(t, dbc, locID, "password", "checkpoint")
+
+	require.NoError(t, m20260827_up(ctx, dbc))
+
+	var blockContext string
+	require.NoError(t, dbc.QueryRowContext(ctx,
+		`SELECT "context" FROM "blocks" WHERE "id" = ?`, password).Scan(&blockContext))
+	assert.Equal(t, "objective_proof", blockContext)
+}
+
 func TestLocationsToObjectives_RoutingFor(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
@@ -346,7 +503,6 @@ func TestLocationsToObjectives_RoutingFor(t *testing.T) {
 		want  string
 	}{
 		{"empty was the engine default", m20260827_group{}, "free_roam"},
-		{"secret could be scanned in any order", m20260827_group{Routing: "secret"}, "free_roam"},
 		{"unknown values play as the default did", m20260827_group{Routing: "custom"}, "free_roam"},
 		{"ordered is kept", m20260827_group{Routing: "ordered"}, "ordered"},
 		{"randomised is kept", m20260827_group{Routing: "randomised"}, "randomised"},

@@ -40,6 +40,7 @@ var m20260822000000_statements = []struct{ name, sql string }{
 		"finish_label" VARCHAR(255),
 		"draft" BOOLEAN NOT NULL DEFAULT FALSE,
 		"pass_through" BOOLEAN NOT NULL DEFAULT FALSE,
+		"secret" BOOLEAN NOT NULL DEFAULT FALSE,
 		"depends" TEXT
 	)`},
 	{"idx_objectives_quest_id", `CREATE INDEX IF NOT EXISTS "idx_objectives_quest_id" ON "objectives" ("quest_id")`},
