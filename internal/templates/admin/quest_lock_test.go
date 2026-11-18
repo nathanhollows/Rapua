@@ -207,13 +207,13 @@ func TestQuestSwitch_IconFollowsTheState(t *testing.T) {
 	}
 }
 
-// The hover text carries the full name, which truncates.
+// The tooltip carries the full name, which truncates.
 func TestQuestSwitch_TitleSaysNameAndState(t *testing.T) {
 	quest := running()
 	quest.Name = "A very long game name that will not fit"
 	html := renderNav(t, quest)
 
-	assert.Contains(t, html, `title="A very long game name that will not fit · Live"`)
+	assert.Contains(t, html, `data-tip="Select a game. Current: A very long game name that will not fit · Live"`)
 	assert.Contains(t, html, "truncate")
 }
 
@@ -222,7 +222,7 @@ func TestQuestLock_SlotComesBeforeTheSwitcher(t *testing.T) {
 	html := renderNav(t, running())
 
 	slot := strings.Index(html, "quest-unlock-slot")
-	switcher := strings.Index(html, "btn btn-ghost flex-nowrap")
+	switcher := strings.Index(html, "tooltip-bottom flex-nowrap")
 	require.GreaterOrEqual(t, slot, 0)
 	require.GreaterOrEqual(t, switcher, 0)
 	assert.Less(t, slot, switcher)

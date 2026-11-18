@@ -1586,6 +1586,119 @@ p.label {
 }
 
 
+/* Before the player block: the admin preview embeds .player, which must win ties.
+   daisyUI's custom properties are set, not its final properties, so a utility
+   on one element still beats the shared look. Tokens derive from the theme and
+   stay out of the theme blocks, which theme_colours_test.go guards. */
+.adm {
+  --adm-line: color-mix(in oklab, var(--color-base-content) 13%, transparent);
+  --adm-line2: color-mix(in oklab, var(--color-base-content) 24%, transparent);
+  --adm-soft: color-mix(in oklab, var(--color-base-content) 66%, var(--color-base-100));
+  --adm-act: color-mix(in oklab, var(--color-primary) 76%, white);
+  --adm-act-on: oklch(14% .04 135);
+  --adm-secf: color-mix(in oklab, var(--color-secondary) 76%, white);
+  --adm-live: oklch(60% .17 148);
+  --adm-disp: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --adm-sh: 0 1px 2px rgba(20,10,30,.06), 0 8px 18px -10px rgba(20,10,30,.28);
+  --adm-btn-edge: var(--adm-line2);
+  --adm-nav-ink: color-mix(in oklab, var(--color-base-content) 88%, var(--color-base-100));
+  --adm-danger-bg: oklch(95% .045 27); --adm-danger-fg: oklch(42% .18 27); --adm-danger-edge: oklch(80% .08 27);
+  --adm-logo: oklch(60% .17 140);
+  --adm-tint-info: oklch(95% .035 225); --adm-tint-success: oklch(95% .04 148);
+  --adm-tint-warning: oklch(95% .05 80); --adm-tint-error: oklch(95% .045 27);
+  --adm-ico-info: oklch(48% .12 225); --adm-ico-success: oklch(45% .14 148);
+  --adm-ico-warning: oklch(52% .13 75); --adm-ico-error: oklch(50% .19 27);
+  --radius-field: 14px; --radius-box: 1.25rem; --border: 1.5px; --depth: 0; --noise: 0;
+  font-weight: 500;
+}
+[data-theme="dracula"] .adm {
+  --adm-act: var(--color-primary); --adm-act-on: var(--color-primary-content);
+  --adm-secf: var(--color-secondary);
+  --adm-live: oklch(78% .17 148);
+  --adm-sh: 0 1px 1px rgba(0,0,0,.18), 0 4px 10px -8px rgba(0,0,0,.35);
+  --adm-btn-edge: oklch(17% .02 277);
+  --adm-danger-bg: oklch(31% .045 27); --adm-danger-fg: oklch(84% .13 27); --adm-danger-edge: oklch(30% .06 27);
+  --adm-logo: oklch(60% .17 128);
+  --adm-tint-info: oklch(31% .04 225); --adm-tint-success: oklch(31% .045 148);
+  --adm-tint-warning: oklch(33% .05 80); --adm-tint-error: oklch(31% .05 27);
+  --adm-ico-info: var(--color-info); --adm-ico-success: var(--color-success);
+  --adm-ico-warning: oklch(80% .14 85); --adm-ico-error: oklch(80% .13 27);
+}
+.adm h1 { font-family: var(--adm-disp); letter-spacing: -.03em; }
+
+/* Only a pressable thing gets the lip, so the flat variants are excluded. */
+.adm .btn:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--btn-color, var(--color-base-100));
+  --btn-border: var(--btn-color, var(--adm-btn-edge));
+  --btn-inset: 0 0 0 0 transparent;
+  --btn-shadow: 0 2px 0 var(--btn-lip, var(--adm-btn-edge));
+  font-weight: 700;
+  transition-property: color, background-color, border-color, box-shadow, transform;
+}
+.adm .btn:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link):active {
+  transform: translateY(2px); translate: none; scale: 1; --btn-shadow: 0 0 0 transparent;
+}
+.adm .btn-primary, .adm .btn-secondary, .adm .btn-accent, .adm .btn-info,
+.adm .btn-success, .adm .btn-warning, .adm .btn-neutral {
+  --btn-lip: color-mix(in oklab, var(--btn-color) 55%, black);
+}
+.adm .btn-primary:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--adm-act); --btn-fg: var(--adm-act-on); --btn-border: transparent;
+}
+.adm .btn-secondary:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--adm-secf); --btn-fg: oklch(14% .04 154); --btn-border: transparent;
+}
+[data-theme="dracula"] .adm .btn-secondary:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) { --btn-fg: var(--color-secondary-content); }
+.adm .btn-error:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--adm-danger-bg); --btn-fg: var(--adm-danger-fg);
+  --btn-border: var(--adm-danger-edge); --btn-lip: var(--adm-danger-edge);
+}
+
+/* Tint instead of daisyUI's outlined and filled alerts, including alert-outline in the lint panels. */
+.adm .alert, .adm .alert-outline, .adm .alert-soft, .adm .alert-dash {
+  --alert-tint: var(--color-base-200); --alert-ico: var(--adm-soft);
+  background: var(--alert-tint); background-image: none;
+  border: 0; border-radius: 16px; box-shadow: none;
+  color: var(--color-base-content); padding: 12px 16px; gap: 12px;
+  font-size: .9375rem; line-height: 1.4;
+}
+.adm .alert-info { --alert-tint: var(--adm-tint-info); --alert-ico: var(--adm-ico-info); }
+.adm .alert-success { --alert-tint: var(--adm-tint-success); --alert-ico: var(--adm-ico-success); }
+.adm .alert-warning { --alert-tint: var(--adm-tint-warning); --alert-ico: var(--adm-ico-warning); }
+.adm .alert-error { --alert-tint: var(--adm-tint-error); --alert-ico: var(--adm-ico-error); }
+.adm .alert > svg:first-child { color: var(--alert-ico); }
+
+/* The ring is a sibling of the chip so it is not tilted and squashed with it. */
+.adm-nav { border-bottom: 3px dotted var(--adm-line); }
+.adm-logo { display: inline-flex; align-items: center; gap: .65rem; padding: .25rem .5rem; border-radius: 12px; font-size: 1.125rem; font-weight: 800; cursor: pointer; }
+.adm-logo:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 2px; }
+.adm-lmw { position: relative; display: block; isolation: isolate; }
+.adm-lm { position: relative; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--adm-logo); color: #fff; transform: rotate(-5deg); transform-origin: 50% 100%; }
+.adm-lm svg { width: 19px; height: 23px; overflow: visible; fill: currentColor; }
+.adm-lmw::after { content: ""; position: absolute; z-index: 0; left: 50%; bottom: -1px; width: 14px; height: 6px; margin-left: -7px; border: 2px solid var(--adm-logo); border-radius: 50%; opacity: 0; pointer-events: none; }
+.adm-lmw.adm-hop .adm-lm { animation: adm-hop .65s linear; }
+.adm-lmw.adm-hop::after { animation: adm-ring .65s linear; }
+/* Contact is the 50% frame here and in the ring, so the ripple starts at impact. */
+@keyframes adm-hop {
+  0%   { transform: rotate(-5deg) scale(1, 1); animation-timing-function: ease-out; }
+  10%  { transform: rotate(-5deg) scale(1.08, .88); animation-timing-function: cubic-bezier(.2,.8,.3,1); }
+  30%  { transform: translateY(-13px) rotate(9deg) scale(.96, 1.06); animation-timing-function: cubic-bezier(.55,0,1,.6); }
+  50%  { transform: translateY(0) rotate(-5deg) scale(1.15, .83); animation-timing-function: cubic-bezier(.2,.8,.3,1); }
+  64%  { transform: translateY(-5px) rotate(-6deg) scale(.98, 1.04); animation-timing-function: cubic-bezier(.55,0,1,.6); }
+  78%  { transform: translateY(0) rotate(-5deg) scale(1.05, .95); animation-timing-function: cubic-bezier(.3,1.7,.5,1); }
+  100% { transform: rotate(-5deg) scale(1, 1); }
+}
+@keyframes adm-ring { 0%, 49.9% { opacity: 0; transform: scale(.3); } 50% { opacity: .85; transform: scale(.5); } 100% { opacity: 0; transform: scale(3.4); } }
+@media (prefers-reduced-motion: reduce) { .adm-lmw.adm-hop .adm-lm, .adm-lmw.adm-hop::after { animation: none; } }
+/* The tooltip would sit over the menu it opened. */
+.adm .dropdown:focus-within > .tooltip::before, .adm .dropdown:focus-within > .tooltip::after { display: none; }
+.adm-tabs { display: flex; gap: .25rem; font-size: .875rem; font-weight: 700; }
+.adm-tab { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem .875rem; border: 2px solid transparent; border-radius: 999px; color: var(--adm-nav-ink); }
+.adm-tab:hover { color: var(--color-base-content); background: var(--adm-line); }
+.adm-nav .menu-title { color: var(--adm-nav-ink); opacity: 1; }
+.adm-tab[aria-current="page"] { background: var(--adm-act); border-color: var(--adm-act); color: var(--adm-act-on); box-shadow: 0 2px 0 color-mix(in oklab, var(--color-primary) 55%, black); }
+.adm-tab:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 2px; }
+
 /* Player shell tokens.
    A tile's face, edge and icon are one hue at three lightnesses; the hue is set
    per section (--h) from the palette in internal/templates/players/hues.go.
