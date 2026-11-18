@@ -167,6 +167,18 @@ func documentSpec() ObjectSpec { //nolint:funlen
 				"children (PASS_THROUGH_ON_LEAF).",
 		},
 		{
+			Name: "secret",
+			Type: "bool",
+			Description: "Keeps this objective unlisted until a player finds it by scanning one of its " +
+				"proof codes, from anywhere inside its parent while the parent is open. It sits outside " +
+				"the parent's routing. Once found it joins the parent's band like any other child: " +
+				"required under complete-all, counted toward a minimum. An unfound secret is never " +
+				"required. A secret with children becomes a side quest once found, and closes with its " +
+				"parent. Omitting the key leaves an existing objective's state alone. Needs a scan block " +
+				"in its proof (SECRET_NEEDS_SCAN); the root may not be secret (ROOT_SECRET), nor may a " +
+				"secret section pass through (SECRET_PASS_THROUGH).",
+		},
+		{
 			Name:  "depends",
 			Type:  "list",
 			Items: &game.FieldSpec{Type: "string"},

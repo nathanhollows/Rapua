@@ -22,6 +22,10 @@ const (
 	StatusFinishable Status = "finishable"
 	// StatusComplete means the objective is done and its branch is closed.
 	StatusComplete Status = "complete"
+	// StatusHidden is an unfound secret whose parent is open: a scan can find it,
+	// but nothing lists it. Its own status, so a reader asking for available
+	// never offers one by mistake.
+	StatusHidden Status = "hidden"
 )
 
 // RunState is everything about one run that the frontier reads. All of it is
@@ -50,6 +54,9 @@ type RunState struct {
 	// Vars holds the variables the run's blocks have set. Only reachability
 	// reads them; completion never does.
 	Vars map[string]bool
+	// Discovered holds the secrets this run has found. A found secret joins its
+	// parent's band; an unfound one is never required.
+	Discovered map[string]bool
 	// RunCode seeds the shuffle for randomised routing, so a run sees a stable
 	// order across requests.
 	RunCode string
@@ -87,16 +94,24 @@ type tree struct {
 	inPlay map[string]bool
 }
 
-// publishedChildCount is what a band counts: a parked child can never earn a
-// completion row, so a band counting one is one no run can meet.
-func (t tree) publishedChildCount(objectiveID string) int {
+// counted is whether a band counts the child: a parked child can never earn a
+// completion row, and an unfound secret is a bonus nobody owes.
+func (t tree) counted(child models.Objective, discovered map[string]bool) bool {
+	return t.inPlay[child.ID] && (!child.Secret || discovered[child.ID])
+}
+
+func (t tree) countedChildCount(objectiveID string, discovered map[string]bool) int {
 	count := 0
 	for _, child := range t.children[objectiveID] {
-		if t.inPlay[child.ID] {
+		if t.counted(child, discovered) {
 			count++
 		}
 	}
 	return count
+}
+
+func hidden(obj models.Objective, state RunState) bool {
+	return obj.Secret && !state.Discovered[obj.ID]
 }
 
 func newTree(objectives []models.Objective) tree {
@@ -253,9 +268,12 @@ func ComputeFrontier(objectives []models.Objective, state RunState, complete map
 func collectAvailable(t tree, obj models.Objective, state RunState, frontier *Frontier) {
 	children := t.children[obj.ID]
 	status := frontier.StatusOf(obj.ID)
+	if status == StatusHidden {
+		return
+	}
 
-	// Nothing in play below it makes it a leaf, however it got that way.
-	leaf := t.publishedChildCount(obj.ID) == 0
+	// Nothing counted below it makes it a leaf, however it got that way.
+	leaf := t.countedChildCount(obj.ID, state.Discovered) == 0
 	actionable := status == StatusFinishable ||
 		(status == StatusAvailable && (leaf || !proofCleared(obj, state) || hasUnseenContent(obj, state)))
 	if actionable {
@@ -284,22 +302,22 @@ func markComplete(t tree, obj models.Objective, state RunState, complete map[str
 	if !proofCleared(obj, state) {
 		return
 	}
-	published := t.publishedChildCount(obj.ID)
-	// Nothing in play below it: its proof is the whole of its completion, so
-	// the log has to say so.
-	if published == 0 && !state.ProofCompleted[obj.ID] {
+	counted := t.countedChildCount(obj.ID, state.Discovered)
+	// Nothing counted below it: its proof is the whole of its completion, so the
+	// log has to say so.
+	if counted == 0 && !state.ProofCompleted[obj.ID] {
 		return
 	}
 
-	// Both sides count the children in play: one already complete must not
-	// satisfy a band that no longer counts it.
+	// Both sides count the same children: one already complete must not satisfy
+	// a band that no longer counts it.
 	completedChildren := 0
 	for _, child := range children {
-		if t.inPlay[child.ID] && complete[child.ID] {
+		if t.counted(child, state.Discovered) && complete[child.ID] {
 			completedChildren++
 		}
 	}
-	if bandMet(bandOf(obj, published), completedChildren, state.SectionFinished[obj.ID]) {
+	if bandMet(bandOf(obj, counted), completedChildren, state.SectionFinished[obj.ID]) {
 		complete[obj.ID] = true
 	}
 }
@@ -353,15 +371,24 @@ func assignStatuses(
 		frontier.Status[obj.ID] = StatusComplete
 	case !open:
 		frontier.Status[obj.ID] = StatusLocked
+	case hidden(obj, state):
+		frontier.Status[obj.ID] = StatusHidden
 	default:
 		frontier.Status[obj.ID] = openStatus(t, obj, state, complete)
 	}
 
 	children := t.children[obj.ID]
-	childrenOpen := open && !complete[obj.ID] && proofCleared(obj, state)
-	admitted := admittedChildren(obj, children, complete, state.RunCode)
+	childrenOpen := open && !complete[obj.ID] && proofCleared(obj, state) && !hidden(obj, state)
+	// A secret sits outside routing: it neither takes a turn nor fills a window.
+	routed := make([]models.Objective, 0, len(children))
 	for _, child := range children {
-		childOpen := childrenOpen && admitted[child.ID] && game.DependsMet(child.Depends, state.Vars)
+		if !child.Secret {
+			routed = append(routed, child)
+		}
+	}
+	admitted := admittedChildren(obj, routed, complete, state.RunCode)
+	for _, child := range children {
+		childOpen := childrenOpen && (child.Secret || admitted[child.ID]) && game.DependsMet(child.Depends, state.Vars)
 		assignStatuses(t, child, childOpen, state, complete, frontier)
 	}
 }
@@ -376,7 +403,7 @@ func hasUnseenContent(obj models.Objective, state RunState) bool {
 // to it: offering a finish button, or simply there to work on.
 func openStatus(t tree, obj models.Objective, state RunState, complete map[string]bool) Status {
 	children := t.children[obj.ID]
-	band := bandOf(obj, t.publishedChildCount(obj.ID))
+	band := bandOf(obj, t.countedChildCount(obj.ID, state.Discovered))
 	// A band with no range has no decision to offer, and a section already
 	// finished is waiting on its children rather than on the player.
 	if band.AutoCompletes() || state.SectionFinished[obj.ID] {
@@ -385,7 +412,7 @@ func openStatus(t tree, obj models.Objective, state RunState, complete map[strin
 
 	completedChildren := 0
 	for _, child := range children {
-		if complete[child.ID] {
+		if t.counted(child, state.Discovered) && complete[child.ID] {
 			completedChildren++
 		}
 	}
@@ -435,10 +462,7 @@ func admittedChildren(
 	case game.RouteStrategyFreeRoam:
 		fallthrough
 	default:
-		// Anything unrecognised reads as free roam, including the retired
-		// secret value a row written before it was retired can still carry.
-		// What that value meant was keeping a group out of the listings, and
-		// nothing is kept out of listings now; admitting nothing instead would
+		// Anything unrecognised reads as free roam: admitting nothing would
 		// leave authored content no player could reach.
 		for _, child := range children {
 			admitted[child.ID] = true

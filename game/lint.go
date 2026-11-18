@@ -124,6 +124,11 @@ func (l *linter) checkSchema() {
 			"the root objective is the quest rather than a place in it, so there is nothing "+
 				"for pass_through to hide; mark the sections beneath it instead")
 	}
+	if l.doc.Structure.IsSecret() {
+		l.errorf("structure.secret", "ROOT_SECRET",
+			"the root objective is the quest itself, so hiding it hides everything; "+
+				"mark the objectives beneath it secret instead")
+	}
 	// An unknown value would import as fraction and silently set the wrong study
 	// condition. Empty means the default.
 	if fb := l.doc.Settings.ProgressFeedback; fb != "" {
@@ -164,6 +169,7 @@ const MaxDrawnDepth = 2
 // sections above it the player's screen draws.
 func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc, depth, drawn int) {
 	l.checkObjectiveIdentity(path, obj)
+	l.checkSecret(path, obj)
 	l.checkChildSettings(path, obj)
 
 	childDrawn := drawn
@@ -214,12 +220,49 @@ func (l *linter) checkObjectiveIdentity(path string, obj ObjectiveDoc) {
 		"a non-empty proof context must contain at least one interactive block, or it gates nothing")
 }
 
+// checkSecret holds a secret to being findable: nothing lists it, so its proof
+// has to be something a player can do without seeing it.
+func (l *linter) checkSecret(path string, obj ObjectiveDoc) {
+	if !obj.IsSecret() {
+		return
+	}
+	if !hasBlockOfType(obj.Proof.Blocks, DiscoveryBlockTypes()) {
+		l.errorf(path+".proof", "SECRET_NEEDS_SCAN",
+			"a secret is never listed, so players can only find it by scanning; "+
+				"add a scan block to its proof")
+	}
+	if obj.IsPassThrough() && obj.PublishedChildCount() > 0 {
+		l.errorf(path+".pass_through", "SECRET_PASS_THROUGH",
+			"a secret section becomes a side quest players enter once they find it, "+
+				"so it cannot pass through; turn pass_through off")
+	}
+}
+
+func hasBlockOfType(blocks []BlockDoc, types []string) bool {
+	for _, b := range blocks {
+		typ, _ := b["type"].(string)
+		for _, want := range types {
+			if typ == want {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 // checkChildSettings validates everything that only means something to a node
 // with children: routing, the completion band, max_next, and the finish label.
 func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
-	// Published children only: the player engine never loads a draft, so a band
-	// counting one is a band no run can meet.
-	childCount := obj.PublishedChildCount()
+	// Published, unhidden children only: the player engine never loads a draft
+	// and never requires an unfound secret, so a band counting either is one no
+	// run is bound to meet.
+	childCount := obj.BandChildCount()
+	if childCount == 0 && obj.PublishedChildCount() > 0 {
+		l.errorf(path, "ONLY_SECRET_CHILDREN",
+			"every child in play is secret, so nothing holds this objective open: it completes "+
+				"on arrival and its secrets close before anyone can find them; add a visible child")
+		return
+	}
 	if childCount == 0 {
 		// With nothing below it in play, the node behaves as a leaf: its own
 		// proof is the whole of its completion. Worth saying when the author

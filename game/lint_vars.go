@@ -127,6 +127,17 @@ type varNode struct {
 	blocks   []*varBlock
 }
 
+// visibleChildCount is what a band is judged against: no secret is required.
+func (n *varNode) visibleChildCount() int {
+	count := 0
+	for _, c := range n.children {
+		if !c.doc.IsSecret() {
+			count++
+		}
+	}
+	return count
+}
+
 func (n *varNode) isWithin(ancestor *varNode) bool {
 	for p := n; p != nil; p = p.parent {
 		if p == ancestor {
@@ -400,20 +411,23 @@ func (r *reachability) visit(n *varNode) bool {
 // all available and, in an ordered section, every child before it can be
 // completed.
 func (r *reachability) canOpen(parent *varNode, i int) bool {
-	if !DependsMet(parent.children[i].doc.Depends, r.avail) {
+	child := parent.children[i]
+	if !DependsMet(child.doc.Depends, r.avail) {
 		return false
 	}
-	if parent.doc.Routing != RouteStrategyOrdered {
+	// A secret takes no turn in the order, and no turn waits on one.
+	if parent.doc.Routing != RouteStrategyOrdered || child.doc.IsSecret() {
 		return true
 	}
 	for _, earlier := range parent.children[:i] {
-		if !r.completable(earlier) {
+		if !earlier.doc.IsSecret() && !r.completable(earlier) {
 			return false
 		}
 	}
 	return true
 }
 
+// completable never counts on a secret being found: none is required.
 func (r *reachability) completable(n *varNode) bool {
 	if !r.open[n] {
 		return false
@@ -421,13 +435,17 @@ func (r *reachability) completable(n *varNode) bool {
 	if len(n.children) == 0 {
 		return true
 	}
-	done := 0
+	visible, done := 0, 0
 	for _, c := range n.children {
+		if c.doc.IsSecret() {
+			continue
+		}
+		visible++
 		if r.completable(c) {
 			done++
 		}
 	}
-	return done >= FillBand(n.doc.ChildrenMin, n.doc.ChildrenMax, len(n.children)).Min
+	return done >= FillBand(n.doc.ChildrenMin, n.doc.ChildrenMax, visible).Min
 }
 
 // unmet returns the names in deps the play-through never made available, or
@@ -561,10 +579,17 @@ func (l *linter) checkRandomisedWindows(g *varGraph) {
 		if n.draft || n.doc.Routing != RouteStrategyRandomised {
 			continue
 		}
-		if n.doc.MaxNext <= 0 || n.doc.MaxNext >= len(n.children) {
+		// Secrets never take a place in the window.
+		var windowed []*varNode
+		for _, c := range n.children {
+			if !c.doc.IsSecret() {
+				windowed = append(windowed, c)
+			}
+		}
+		if n.doc.MaxNext <= 0 || n.doc.MaxNext >= len(windowed) {
 			continue
 		}
-		for _, c := range n.children {
+		for _, c := range windowed {
 			if len(c.doc.Depends) > 0 {
 				l.warnf(c.path+".depends", "DEPENDS_IN_RANDOMISED_WINDOW",
 					"objective %q is gated inside a section that offers %d at a time, so while it is "+
@@ -583,15 +608,16 @@ func (l *linter) checkExclusiveBands(g *varGraph) {
 			continue
 		}
 		lost, groups := g.exclusiveLoss(n)
-		need := FillBand(n.doc.ChildrenMin, n.doc.ChildrenMax, len(n.children)).Min
-		if lost == 0 || need <= len(n.children)-lost {
+		visible := n.visibleChildCount()
+		need := FillBand(n.doc.ChildrenMin, n.doc.ChildrenMax, visible).Min
+		if lost == 0 || need <= visible-lost {
 			continue
 		}
 		l.warnf(n.path, "BAND_NEEDS_EXCLUSIVE_CHOICES",
 			"objective %q needs %d of its %d children, but some are gated on different options of the "+
 				"same choice (%s) and a player can open at most %d; lower children_min or move the "+
-				"branches into a section of their own", n.doc.Slug, need, len(n.children),
-			strings.Join(groups, ", "), len(n.children)-lost)
+				"branches into a section of their own", n.doc.Slug, need, visible,
+			strings.Join(groups, ", "), visible-lost)
 	}
 }
 
@@ -602,6 +628,9 @@ func (g *varGraph) exclusiveLoss(n *varNode) (int, []string) {
 	// For each choice, how many children each of its options opens.
 	perGroup := make(map[string]map[string]int)
 	for _, c := range n.children {
+		if c.doc.IsSecret() {
+			continue
+		}
 		counted := make(map[string]bool)
 		for _, name := range c.doc.Depends {
 			group := g.exclusiveGroup(name)
@@ -643,7 +672,7 @@ func (l *linter) checkBandClosesFirst(g *varGraph) {
 		if n.draft || len(n.children) == 0 {
 			continue
 		}
-		closesAt := FillBand(n.doc.ChildrenMin, n.doc.ChildrenMax, len(n.children)).Max
+		closesAt := FillBand(n.doc.ChildrenMin, n.doc.ChildrenMax, n.visibleChildCount()).Max
 		for _, c := range n.children {
 			needed := g.siblingsHolding(n, c)
 			if len(needed) == 0 || len(needed) < closesAt {

@@ -38,6 +38,22 @@ func TestScanBlock_Matches(t *testing.T) {
 			name: "contains rejects another code", match: blocks.MatchContains,
 			scanned: "https://rapua.nz/s/FGHJK", want: false,
 		},
+		{
+			name: "exact reads a scan link", match: blocks.MatchExact,
+			scanned: "https://rapua.nz/s/ABCDE", want: true,
+		},
+		{
+			name: "ci reads a scan link", match: blocks.MatchCaseInsensitive,
+			scanned: "http://localhost/s/abcde/", want: true,
+		},
+		{
+			name: "a scan link for a longer code is not this one", match: blocks.MatchCaseInsensitive,
+			scanned: "https://rapua.nz/s/ABCDEF", want: false,
+		},
+		{
+			name: "exact rejects another link", match: blocks.MatchExact,
+			scanned: "https://rapua.nz/s/FGHJK", want: false,
+		},
 	}
 
 	for _, c := range cases {

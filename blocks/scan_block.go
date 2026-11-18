@@ -155,12 +155,29 @@ func (b *ScanBlock) MintedCodes() []string {
 // Any one of the block's codes satisfies it.
 func (b *ScanBlock) Matches(scanned string) bool {
 	scanned = strings.TrimSpace(scanned)
+	link := scanLinkCode(scanned)
 	for _, c := range b.Codes {
-		if expected := strings.TrimSpace(c.Value); expected != "" && matches(b.matchRule(), scanned, expected) {
+		expected := strings.TrimSpace(c.Value)
+		if expected == "" {
+			continue
+		}
+		if matches(b.matchRule(), scanned, expected) || (link != "" && matches(b.matchRule(), link, expected)) {
 			return true
 		}
 	}
 	return false
+}
+
+// scanLinkCode reads the code out of a Rapua scan link, SITE_URL/s/CODE, which
+// is what printed v7 posters encode. Contains would match those too, but it
+// also matches a short code inside a longer one.
+func scanLinkCode(scanned string) string {
+	i := strings.LastIndex(scanned, "/s/")
+	if i < 0 {
+		return ""
+	}
+	code, _, _ := strings.Cut(scanned[i+len("/s/"):], "?")
+	return strings.TrimSuffix(code, "/")
 }
 
 func matches(rule MatchRule, scanned, expected string) bool {

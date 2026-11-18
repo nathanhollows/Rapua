@@ -31,10 +31,11 @@ func (p Progress) Total() int { return p.Done + p.Remaining }
 //
 // Done counts every row given to it, drafts included: what a run did, it did.
 // Remaining walks what is in play, because a parked node is not work anyone
-// still owes. Routing does not enter at all: a window slide is not progress,
-// and any child can come up while its parent is unfinished, so no run code and
-// no shuffle belong in this signature.
-func ComputeProgress(objectives []models.Objective, complete map[string]bool) Progress {
+// still owes, and skips unfound secrets for the same reason. Routing does not
+// enter at all: a window slide is not progress, and any child can come up while
+// its parent is unfinished, so no run code and no shuffle belong in this
+// signature.
+func ComputeProgress(objectives []models.Objective, complete, discovered map[string]bool) Progress {
 	t := newTree(InPlay(objectives))
 
 	p := Progress{}
@@ -53,7 +54,7 @@ func ComputeProgress(objectives []models.Objective, complete map[string]bool) Pr
 		}
 	}
 	for _, root := range t.roots {
-		p.Remaining += remaining(t, root, complete)
+		p.Remaining += remaining(t, root, complete, discovered)
 	}
 	return p
 }
@@ -61,26 +62,31 @@ func ComputeProgress(objectives []models.Objective, complete map[string]bool) Pr
 // remaining is the fewest completions still owed beneath and including obj,
 // assuming every open choice is taken the cheap way: the player may pick any
 // children, so the honest reading of an unmade choice is its least cost.
-func remaining(t tree, obj models.Objective, complete map[string]bool) int {
+func remaining(t tree, obj models.Objective, complete, discovered map[string]bool) int {
 	if complete[obj.ID] {
 		return 0
 	}
 
 	children := t.children[obj.ID]
+	counted := 0
 	completed := 0
 	rems := make([]int, 0, len(children))
 	for _, child := range children {
+		if !t.counted(child, discovered) {
+			continue
+		}
+		counted++
 		if complete[child.ID] {
 			completed++
 			continue
 		}
-		rems = append(rems, remaining(t, child, complete))
+		rems = append(rems, remaining(t, child, complete, discovered))
 	}
 
 	// Min, not Max, because the finish press is the cheap way out: reaching the
 	// minimum offers the button, and the button completes the node. A node with
 	// nothing left to count, a leaf included, needs only its own completion.
-	need := bandOf(obj, len(children)).Min - completed
+	need := bandOf(obj, counted).Min - completed
 	if need <= 0 {
 		return 1
 	}

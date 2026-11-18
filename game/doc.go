@@ -54,6 +54,9 @@ type ObjectiveDoc struct {
 	// the nearest section that is drawn. A pointer for the same reason Draft is
 	// one: a document that never mentions it leaves the stored state alone.
 	PassThrough *bool `json:"pass_through,omitempty"`
+	// Secret keeps this node unlisted until a run finds it by scanning. A pointer
+	// for the same reason Draft is one.
+	Secret *bool `json:"secret,omitempty"`
 	// Depends lists the variables that must all be set before this objective
 	// opens. Not a pointer, unlike the flags above: a gate is part of how the
 	// quest plays, so a document that omits it states there is none.
@@ -125,7 +128,7 @@ func (b Band) AutoCompletes() bool { return b.Min >= b.Max }
 // counting a child no run can reach is a band no run can meet. This is the same
 // count the frontier works from, which loads published rows only.
 func (o ObjectiveDoc) Band() Band {
-	return FillBand(o.ChildrenMin, o.ChildrenMax, o.PublishedChildCount())
+	return FillBand(o.ChildrenMin, o.ChildrenMax, o.BandChildCount())
 }
 
 // IsDraft reports whether the node is held out of play. An omitted key is not a
@@ -137,6 +140,21 @@ func (o ObjectiveDoc) IsDraft() bool { return o.Draft != nil && *o.Draft }
 // place. An omitted key is not a pass-through, for the same reason it is not a
 // draft.
 func (o ObjectiveDoc) IsPassThrough() bool { return o.PassThrough != nil && *o.PassThrough }
+
+// IsSecret reports whether the node is unlisted until found.
+func (o ObjectiveDoc) IsSecret() bool { return o.Secret != nil && *o.Secret }
+
+// BandChildCount is what a band is judged against: published children a run
+// is bound to meet. A secret counts only once found, so no band may need one.
+func (o ObjectiveDoc) BandChildCount() int {
+	count := 0
+	for _, child := range o.Children {
+		if !child.IsDraft() && !child.IsSecret() {
+			count++
+		}
+	}
+	return count
+}
 
 // PublishedChildCount is how many of a node's children are in play.
 func (o ObjectiveDoc) PublishedChildCount() int {

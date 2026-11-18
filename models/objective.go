@@ -24,6 +24,9 @@ type Objective struct {
 	// PassThrough stops a section being a place the player stands. It still
 	// routes, bands and gates; its rows join the nearest section that is drawn.
 	PassThrough bool `bun:"pass_through,type:boolean"`
+	// Secret keeps an objective unlisted until a run finds it by scanning. It
+	// sits outside its parent's routing, and its band counts it only once found.
+	Secret bool `bun:"secret,type:boolean"`
 	// Depends holds the objective locked until the run has set every variable
 	// in it.
 	Depends game.DependsField `bun:"depends,type:text,nullzero"`

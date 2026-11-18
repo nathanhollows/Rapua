@@ -38,7 +38,7 @@ var (
 	}
 	knownObjectiveDocFields = map[string]bool{
 		"id": true, "slug": true, "title": true, "description": true, "draft": true, "pass_through": true,
-		"depends": true, "proof": true, "reveal": true,
+		"secret": true, "depends": true, "proof": true, "reveal": true,
 		"routing": true, "children_min": true, "children_max": true,
 		"max_next": true, "finish_label": true, "children": true,
 	}

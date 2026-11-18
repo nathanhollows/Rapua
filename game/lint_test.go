@@ -80,6 +80,7 @@ func newTestRegistry() *mockRegistry {
 			"start_button": true,
 			"game_status":  true,
 			"password":     true,
+			"scan":         true,
 		},
 		contexts: map[string][]game.BlockContext{
 			"text": {
@@ -95,11 +96,13 @@ func newTestRegistry() *mockRegistry {
 			},
 			"start_button": {game.ContextStart},
 			"game_status":  {game.ContextStart},
+			"scan":         {game.ContextObjectiveProof},
 		},
 		interactive: map[string]bool{
 			"quiz":     true,
 			"choice":   true,
 			"password": true,
+			"scan":     true,
 		},
 	}
 }

@@ -11,6 +11,12 @@ var ErrBlockTypeNotFound = errors.New("block type not found")
 // FormValueTrue is the string value "true" used in form checkbox comparisons.
 const FormValueTrue = "true"
 
+// DiscoveryBlockTypes are the proof blocks that can find a secret: the player
+// has nothing else on screen to answer, since a secret is never listed. A
+// geofence is not among them because a hidden fence would have to be sent to
+// the player's device to be checked there.
+func DiscoveryBlockTypes() []string { return []string{"scan"} }
+
 // PlayerState tracks a player's progress on a block.
 type PlayerState interface {
 	GetBlockID() string

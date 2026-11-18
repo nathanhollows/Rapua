@@ -37,20 +37,20 @@ func TestComputeProgress_TheCutBranchNeverCounts(t *testing.T) {
 		leaves("A", "A1", "A2"), leaves("B", "B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10")...,
 	)...)
 
-	start := navigation.ComputeProgress(objectives, map[string]bool{})
+	start := navigation.ComputeProgress(objectives, map[string]bool{}, nil)
 	assert.Equal(t, 0, start.Done)
 	assert.Equal(t, 4, start.Remaining, "the small branch, not the ten")
 
 	afterA := navigation.ComputeProgress(objectives, map[string]bool{
 		"A": true, "A1": true, "A2": true,
-	})
+	}, nil)
 	assert.Equal(t, 3, afterA.Done)
 	assert.Equal(t, 1, afterA.Remaining, "nothing left but the finish press")
 	assert.Equal(t, start.Total(), afterA.Total(), "the total held while the press was owed")
 
 	afterPress := navigation.ComputeProgress(objectives, map[string]bool{
 		"root": true, "A": true, "A1": true, "A2": true,
-	})
+	}, nil)
 	assert.Zero(t, afterPress.Remaining)
 	assert.Equal(t, afterPress.Done, afterPress.Total())
 }
@@ -62,10 +62,10 @@ func TestComputeProgress_ExplicitZeroBandIsPressOnly(t *testing.T) {
 	root.ChildrenMax = intPtr(2)
 	objectives := append([]models.Objective{root}, leaves("root", "C1", "C2")...)
 
-	p := navigation.ComputeProgress(objectives, map[string]bool{})
+	p := navigation.ComputeProgress(objectives, map[string]bool{}, nil)
 	assert.Equal(t, 1, p.Remaining, "the press is the whole of the work")
 
-	done := navigation.ComputeProgress(objectives, map[string]bool{"root": true})
+	done := navigation.ComputeProgress(objectives, map[string]bool{"root": true}, nil)
 	assert.Zero(t, done.Remaining)
 }
 
@@ -76,7 +76,7 @@ func TestComputeProgress_FinishableReadsOneRemaining(t *testing.T) {
 	root.ChildrenMax = intPtr(5)
 	objectives := append([]models.Objective{root}, leaves("root", "C1", "C2", "C3", "C4", "C5")...)
 
-	p := navigation.ComputeProgress(objectives, map[string]bool{"C1": true, "C2": true})
+	p := navigation.ComputeProgress(objectives, map[string]bool{"C1": true, "C2": true}, nil)
 	assert.Equal(t, 2, p.Done)
 	assert.Equal(t, 1, p.Remaining)
 }
@@ -92,18 +92,18 @@ func TestComputeProgress_Drafts(t *testing.T) {
 		leaves("kept", "K1"), leaves("drafted", "D1", "D2", "D3")...,
 	)...)
 
-	p := navigation.ComputeProgress(objectives, map[string]bool{})
+	p := navigation.ComputeProgress(objectives, map[string]bool{}, nil)
 	assert.Equal(t, 3, p.Remaining, "root, the one in-play child, and its leaf")
 
 	earned := navigation.ComputeProgress(objectives, map[string]bool{
 		"drafted": true, "D1": true, "D2": true, "D3": true,
-	})
+	}, nil)
 	assert.Equal(t, 4, earned.Done, "finished before it was parked, so it counts")
 	assert.Equal(t, 3, earned.Remaining)
 }
 
 func TestComputeProgress_EmptyQuest(t *testing.T) {
-	p := navigation.ComputeProgress(nil, map[string]bool{})
+	p := navigation.ComputeProgress(nil, map[string]bool{}, nil)
 	assert.Zero(t, p.Done)
 	assert.Zero(t, p.Total())
 }
@@ -127,11 +127,11 @@ func TestComputeProgress_NeverGoesBackwards(t *testing.T) {
 	}
 
 	complete := map[string]bool{}
-	prev := navigation.ComputeProgress(objectives, complete)
+	prev := navigation.ComputeProgress(objectives, complete, nil)
 	rng := rand.New(rand.NewSource(1))
 	for _, i := range rng.Perm(len(ids)) {
 		complete[ids[i]] = true
-		next := navigation.ComputeProgress(objectives, complete)
+		next := navigation.ComputeProgress(objectives, complete, nil)
 
 		assert.LessOrEqual(t, next.Remaining, prev.Remaining, "remaining rose after %s", ids[i])
 		if prev.Total() > 0 {
@@ -151,7 +151,7 @@ func TestComputeProgress_FoundCountsOnlyCompletedLeaves(t *testing.T) {
 		{ID: "b", ParentID: "sec"},
 	}
 
-	p := navigation.ComputeProgress(objectives, map[string]bool{"a": true, "b": true, "sec": true})
+	p := navigation.ComputeProgress(objectives, map[string]bool{"a": true, "b": true, "sec": true}, nil)
 
 	assert.Equal(t, 3, p.Done)
 	assert.Equal(t, 2, p.Found, "the section completing is not a task found")

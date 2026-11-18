@@ -24,6 +24,9 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - `routing` is required on an objective with children, and must name one of the three strategies: an empty value is an unmade choice, not a default. It is inert on an objective without children, which is not worth reporting: every objective carries one. *(`INVALID_ROUTING`)*
 - The player's screen draws at most 2 sections deep. A section nested further, below 2 that are drawn, passes through: it still routes and bands, but its tasks appear in the section above. Warns so the author can mark it `pass_through` on purpose; sections marked `pass_through` do not count toward the 2. *(`FORCED_PASS_THROUGH`)*
 - A `pass_through` section needs `children_min` equal to `children_max`, because players never see its finish button. *(`PASS_THROUGH_RANGED_BAND`)* Asking for fewer children than it shows at once warns. *(`PASS_THROUGH_HIDDEN_CHOICE`)*
+- A `secret` objective is never listed. Players find it by scanning one of its proof codes while its parent is open, so its proof needs a scan block. *(`SECRET_NEEDS_SCAN`)* The root may not be secret. *(`ROOT_SECRET`)*
+- Bands are judged against visible children: a found secret joins the band, but `children_min` and `children_max` may not need one. *(`BAND_OUT_OF_RANGE`)* A section whose children are all secret completes on arrival, before any can be found. *(`ONLY_SECRET_CHILDREN`)*
+- A secret with children becomes a side quest once found, so it may not pass through. *(`SECRET_PASS_THROUGH`)*
 
 **Import modes**
 - **Create-import** (`POST /admin/quests/import`): omit `id` on objectives and blocks: new UUIDs are generated.
@@ -183,6 +186,11 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "description": "Stops this section being a place the player stands. It still routes, bands and gates its children, but they are shown as if they sat in the nearest section that is drawn, so a pool can hand a player one pick without saying it came from a pool. A pass-through section does not count toward the depth the player's screen draws. Omitting the key leaves an existing objective's state alone. The root may not be a pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no children (PASS_THROUGH_ON_LEAF)."
           },
           {
+            "name": "secret",
+            "type": "bool",
+            "description": "Keeps this objective unlisted until a player finds it by scanning one of its proof codes, from anywhere inside its parent while the parent is open. It sits outside the parent's routing. Once found it joins the parent's band like any other child: required under complete-all, counted toward a minimum. An unfound secret is never required. A secret with children becomes a side quest once found, and closes with its parent. Omitting the key leaves an existing objective's state alone. Needs a scan block in its proof (SECRET_NEEDS_SCAN); the root may not be secret (ROOT_SECRET), nor may a secret section pass through (SECRET_PASS_THROUGH)."
+          },
+          {
             "name": "depends",
             "type": "list",
             "description": "Variables that must all be set before this objective opens; until then it shows as locked. Variables are set by interactive blocks and choice options. Absent or empty means no gate. The root is always open (ROOT_DEPENDS), and a gate whose variables are only set behind it can never open (DEPENDS_UNSATISFIABLE).",
@@ -285,6 +293,11 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
             "name": "pass_through",
             "type": "bool",
             "description": "Stops this section being a place the player stands. It still routes, bands and gates its children, but they are shown as if they sat in the nearest section that is drawn, so a pool can hand a player one pick without saying it came from a pool. A pass-through section does not count toward the depth the player's screen draws. Omitting the key leaves an existing objective's state alone. The root may not be a pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no children (PASS_THROUGH_ON_LEAF)."
+          },
+          {
+            "name": "secret",
+            "type": "bool",
+            "description": "Keeps this objective unlisted until a player finds it by scanning one of its proof codes, from anywhere inside its parent while the parent is open. It sits outside the parent's routing. Once found it joins the parent's band like any other child: required under complete-all, counted toward a minimum. An unfound secret is never required. A secret with children becomes a side quest once found, and closes with its parent. Omitting the key leaves an existing objective's state alone. Needs a scan block in its proof (SECRET_NEEDS_SCAN); the root may not be secret (ROOT_SECRET), nor may a secret section pass through (SECRET_PASS_THROUGH)."
           },
           {
             "name": "depends",
