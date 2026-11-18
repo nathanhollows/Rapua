@@ -122,6 +122,45 @@ A few things to know:
 - The quest itself cannot be pass-through. An objective with nothing inside can
   carry the flag, but it does nothing there, and the editor warns about it.
 
+## Secrets
+
+A secret is an objective players are never shown. It is not in their list and
+nothing on screen says it is there: they find it by scanning its code. A QR code
+on the back of a door, a barcode on a book, a sign around a corner most teams
+walk past. Use secrets to reward the team that looks more closely.
+
+Turn on the secret toggle beside the eye in the editor, or the **Secret** button
+on the objective's page. The objective moves into a footer at the bottom of its
+section, with no number and no place in the order. Drag it into another section
+and it joins that section's footer. A secret needs a scan block in its proof;
+blocks after the scan play as usual once the team lands on the page.
+
+Players get a floating scan button in the corner of the quest page whenever there
+is something to scan, and a phone camera on a printed QR code works too. A secret
+can be found while its section is open, and closes with it.
+
+An unfound secret is never required and adds nothing to the total players see.
+Once found, it joins its section's band:
+
+- **All of them** means everything visible plus every secret the team has found.
+- **Some of them** (say 3 of 5) counts a finished secret toward the 3.
+- A section that finishes at a number finishes on the find that reaches it.
+
+A band cannot ask for more than the visible objectives, so no section depends on
+a team finding a secret. Putting a secret beside a "some of" band says it
+counts: if teams must cover particular ground, ask for all of them.
+
+A secret can have objectives inside it. Once found, it opens as a side quest
+with its own routing and band, and still closes when the section around it does.
+
+A few things to know:
+
+- A section whose objectives are all secret finishes as soon as it opens, so the
+  editor asks for at least one visible objective.
+- The quest itself cannot be secret.
+- Quests from before objectives had their secret groups converted: each location
+  in a secret group became a secret in the section above.
+
 ## Keys and locks
 
 An objective can stay locked until a team has done something somewhere else.

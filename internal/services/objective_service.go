@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"math"
 	"slices"
 
 	"github.com/google/uuid"
@@ -50,6 +51,10 @@ var ErrCannotDraftRoot = errors.New("the root objective cannot be a draft")
 // through. The root is the quest rather than a place in it, so there is nothing
 // for the flag to hide.
 var ErrCannotPassThroughRoot = errors.New("the root objective cannot be a pass-through")
+
+// ErrCannotSecretRoot is returned when an edit would hide the root, which would
+// hide the whole quest. Lint refuses the same shape (ROOT_SECRET).
+var ErrCannotSecretRoot = errors.New("the root objective cannot be secret")
 
 // ErrCannotGateRoot is returned when an edit would make the root wait on a
 // variable. The root is the quest itself and always open, which lint also
@@ -158,6 +163,50 @@ func applyPassThrough(objective *models.Objective, data ObjectiveUpdateData) (bo
 		return false, fmt.Errorf("%w: %q", ErrCannotPassThroughRoot, objective.ID)
 	}
 	objective.PassThrough = *data.PassThrough
+	return true, nil
+}
+
+// applyFlags applies draft, pass-through, secrecy and the gate. It reports the
+// secrecy change on its own because only that one moves the row.
+func (s objectiveService) applyFlags(
+	ctx context.Context, objective *models.Objective, data ObjectiveUpdateData,
+) (bool, bool, error) {
+	draftChanged, err := s.applyDraft(ctx, objective, data)
+	if err != nil {
+		return false, false, err
+	}
+	passThroughChanged, err := applyPassThrough(objective, data)
+	if err != nil {
+		return false, false, err
+	}
+	secretChanged, err := s.applySecret(ctx, objective, data)
+	if err != nil {
+		return false, false, err
+	}
+	dependsChanged, err := applyDepends(objective, data)
+	if err != nil {
+		return false, false, err
+	}
+	return draftChanged || passThroughChanged || secretChanged || dependsChanged, secretChanged, nil
+}
+
+// applySecret leaves a missing scan to lint: an author turns secrecy on before
+// adding the scan as often as after.
+func (s objectiveService) applySecret(
+	ctx context.Context, objective *models.Objective, data ObjectiveUpdateData,
+) (bool, error) {
+	if data.Secret == nil || *data.Secret == objective.Secret {
+		return false, nil
+	}
+	if *data.Secret && objective.ParentID == "" {
+		return false, fmt.Errorf("%w: %q", ErrCannotSecretRoot, objective.ID)
+	}
+	if *data.Secret {
+		if err := s.checkParkingLeavesBandSatisfiable(ctx, objective); err != nil {
+			return false, err
+		}
+	}
+	objective.Secret = *data.Secret
 	return true, nil
 }
 
@@ -349,6 +398,15 @@ func (s objectiveService) CreateObjective(
 		Routing: models.RouteStrategyOrdered,
 	}
 
+	// Read before the transaction opens: a pool read under a held tx deadlocks.
+	placeAt := -1
+	if parentID != "" {
+		placeAt, err = s.tailSafePosition(ctx, questID, &objective, parentID, math.MaxInt)
+		if err != nil {
+			return models.Objective{}, err
+		}
+	}
+
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return models.Objective{}, fmt.Errorf("beginning transaction: %w", err)
@@ -356,6 +414,13 @@ func (s objectiveService) CreateObjective(
 	if err := s.objectiveRepo.CreateTx(ctx, tx, &objective); err != nil {
 		_ = tx.Rollback()
 		return models.Objective{}, fmt.Errorf("saving objective: %w", err)
+	}
+	if placeAt >= 0 && placeAt != objective.Position {
+		if err := s.objectiveRepo.Reposition(ctx, tx, objective.ID, parentID, placeAt); err != nil {
+			_ = tx.Rollback()
+			return models.Objective{}, fmt.Errorf("placing objective above the secrets: %w", err)
+		}
+		objective.Position = placeAt
 	}
 	if err := tx.Commit(); err != nil {
 		return models.Objective{}, fmt.Errorf("committing transaction: %w", err)
@@ -399,9 +464,10 @@ func (s objectiveService) checkParkingLeavesBandSatisfiable(
 		return fmt.Errorf("loading siblings to check the band: %w", err)
 	}
 
+	// A secret is never required, so it cannot make up the minimum.
 	remaining := 0
 	for _, sibling := range siblings {
-		if sibling.ID != objective.ID && !sibling.Draft {
+		if sibling.ID != objective.ID && !sibling.Draft && !sibling.Secret {
 			remaining++
 		}
 	}
@@ -458,23 +524,11 @@ func (s objectiveService) UpdateObjective(
 		update = true
 	}
 
-	draftChanged, err := s.applyDraft(ctx, &candidate, data)
+	flagsChanged, secretChanged, err := s.applyFlags(ctx, &candidate, data)
 	if err != nil {
 		return err
 	}
-	update = update || draftChanged
-
-	passThroughChanged, err := applyPassThrough(&candidate, data)
-	if err != nil {
-		return err
-	}
-	update = update || passThroughChanged
-
-	dependsChanged, err := applyDepends(&candidate, data)
-	if err != nil {
-		return err
-	}
-	update = update || dependsChanged
+	update = update || flagsChanged
 
 	settingsChanged, err := s.applySettings(ctx, &candidate, data)
 	if err != nil {
@@ -486,6 +540,16 @@ func (s objectiveService) UpdateObjective(
 		return nil
 	}
 
+	// Secrecy moves the row: a secret to the tail, a revealed one to the end of
+	// the visible rows. Computed before the transaction opens, and written in it.
+	moveTo := -1
+	if secretChanged {
+		moveTo, err = s.tailSafePosition(ctx, candidate.QuestID, &candidate, candidate.ParentID, math.MaxInt)
+		if err != nil {
+			return err
+		}
+	}
+
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
 	if err != nil {
 		return fmt.Errorf("beginning transaction: %w", err)
@@ -493,6 +557,13 @@ func (s objectiveService) UpdateObjective(
 	if err := s.objectiveRepo.UpdateTx(ctx, tx, &candidate); err != nil {
 		_ = tx.Rollback()
 		return fmt.Errorf("updating objective: %w", err)
+	}
+	if moveTo >= 0 {
+		if err := s.objectiveRepo.Reposition(ctx, tx, candidate.ID, candidate.ParentID, moveTo); err != nil {
+			_ = tx.Rollback()
+			return fmt.Errorf("moving the objective past the secrets: %w", err)
+		}
+		candidate.Position = moveTo
 	}
 	if err := tx.Commit(); err != nil {
 		return fmt.Errorf("committing transaction: %w", err)
@@ -522,6 +593,32 @@ func (s objectiveService) FindChildren(
 	return s.objectiveRepo.FindChildren(ctx, questID, parentID)
 }
 
+// tailSafePosition keeps secrets at the tail of their siblings. The tree draws
+// them in a footer and posts each row's index in its own list, which is only
+// its real position while no secret sits among the visible rows.
+func (s objectiveService) tailSafePosition(
+	ctx context.Context, questID string, objective *models.Objective, parentID string, position int,
+) (int, error) {
+	siblings, err := s.objectiveRepo.FindChildren(ctx, questID, parentID)
+	if err != nil {
+		return 0, fmt.Errorf("finding siblings: %w", err)
+	}
+	others, visible := 0, 0
+	for _, sibling := range siblings {
+		if sibling.ID == objective.ID {
+			continue
+		}
+		others++
+		if !sibling.Secret {
+			visible++
+		}
+	}
+	if objective.Secret {
+		return visible + min(position, others-visible), nil
+	}
+	return min(position, visible), nil
+}
+
 func (s objectiveService) Reposition(
 	ctx context.Context, questID, objectiveID, newParentID string, newPosition int,
 ) error {
@@ -539,6 +636,11 @@ func (s objectiveService) Reposition(
 	}
 	if newParent.QuestID != questID {
 		return fmt.Errorf("%w: %q", ErrObjectiveNotInQuest, newParentID)
+	}
+
+	newPosition, err = s.tailSafePosition(ctx, questID, objective, newParentID, newPosition)
+	if err != nil {
+		return err
 	}
 
 	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})

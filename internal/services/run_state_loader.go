@@ -58,11 +58,17 @@ func (l runStateLoader) load(
 	// Only reachability reads the variables, and only through an objective's
 	// depends, so a quest with no gated objective needs no query.
 	if slices.ContainsFunc(objectives, func(o models.Objective) bool { return len(o.Depends) > 0 }) {
-		vars, err := l.runVariableRepo.FindNamesByRunCode(ctx, team.Code)
+		var vars []string
+		vars, err = l.runVariableRepo.FindNamesByRunCode(ctx, team.Code)
 		if err != nil {
 			return nil, navigation.RunState{}, nil, fmt.Errorf("loading run variables: %w", err)
 		}
 		state.Vars = setOf(vars)
+	}
+
+	state.Discovered, err = l.discoveredSecrets(ctx, objectives, team.Code)
+	if err != nil {
+		return nil, navigation.RunState{}, nil, err
 	}
 
 	// Completion is derived once, over every row, drafts included: what a run
@@ -92,6 +98,30 @@ func (l runStateLoader) proofBlockOwners(
 	owners, err := l.blockRepo.FindOwnerIDsWithContext(ctx, ownerIDs, game.ContextObjectiveProof)
 	if err != nil {
 		return nil, fmt.Errorf("loading proof block owners: %w", err)
+	}
+	return setOf(owners), nil
+}
+
+// discoveredSecrets returns the secrets whose discovery block the run has
+// completed. Most quests have no secrets, so they cost no query.
+func (l runStateLoader) discoveredSecrets(
+	ctx context.Context, objectives []models.Objective, runCode string,
+) (map[string]bool, error) {
+	var secretIDs []string
+	for _, obj := range objectives {
+		if obj.Secret {
+			secretIDs = append(secretIDs, obj.ID)
+		}
+	}
+	if len(secretIDs) == 0 {
+		return map[string]bool{}, nil
+	}
+
+	owners, err := l.blockRepo.FindOwnerIDsWithCompletedBlock(
+		ctx, secretIDs, runCode, game.ContextObjectiveProof, game.DiscoveryBlockTypes(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("loading discovered secrets: %w", err)
 	}
 	return setOf(owners), nil
 }

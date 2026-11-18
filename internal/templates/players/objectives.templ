@@ -220,7 +220,123 @@ templ QuestPage(data ObjectivesParams) {
 	<div class="flex flex-col gap-5">
 		@questHeader(data)
 		@Objectives(data)
+		if data.View.CanDiscover {
+			@questScan()
+			<!-- Scrolled to the end, the last card clears the floating button. -->
+			<div class="h-14" aria-hidden="true"></div>
+		}
 	</div>
+}
+
+// questScan proves an objective by being there, from anywhere in the quest,
+// and is the only way to find a secret. Its ids follow the scan block's, so
+// scan.js drives both. The button opens the camera straight away; closing the
+// sheet releases it, and the sheet closes on any answer so the toast is not
+// left behind the modal.
+//
+// Quieter than a card: opening an objective is the main way to play, and a
+// quest of quizzes should not read as a scavenger hunt.
+templ questScan() {
+	<button
+		type="button"
+		class="fixed z-40 bottom-[calc(5.75rem+env(safe-area-inset-bottom))] right-[max(1rem,calc((100%-28rem)/2+1rem))] flex items-center justify-center w-14 h-14 rounded-full bg-base-100 text-base-content border border-base-300 shadow-md active:scale-95 transition-transform cursor-pointer"
+		aria-label="Scan a code"
+		data-scan-open="anywhere"
+		_="on click call #scan-sheet.showModal()"
+	>
+		@icon("scan-qr-code", templ.Attributes{"class": "w-7 h-7 shrink-0"})
+	</button>
+	<dialog
+		id="scan-sheet"
+		class="modal modal-bottom sm:modal-middle"
+		_={ "on close call #scan-stop-anywhere.click() then " + scanToCamera }
+	>
+		<div class="modal-box flex flex-col gap-4">
+			<h3 class="text-xl font-bold">Scan a code</h3>
+			@questScanForm()
+		</div>
+		<form method="dialog" class="modal-backdrop">
+			<button>Close</button>
+		</form>
+	</dialog>
+}
+
+// The camera and the typed code take turns: the sheet opens on the camera, and
+// typing replaces it rather than sitting beside it.
+const (
+	scanToTyping = "on click add .hidden to #scan-type-switch-anywhere then add .hidden to #scan-status-anywhere then " +
+		"remove .hidden from #scan-type-anywhere then call #code-anywhere.focus()"
+	scanToCamera = "add .hidden to #scan-type-anywhere then " +
+		"remove .hidden from #scan-type-switch-anywhere"
+)
+
+templ questScanForm() {
+	<form
+		id="scan-form-anywhere"
+		hx-post="/s/"
+		hx-swap="none"
+		class="flex flex-col gap-3"
+		_="on htmx:afterRequest call #scan-sheet.close()"
+	>
+		<input type="hidden" name="scanned" value=""/>
+		<!-- scan.js hides this row while the camera runs. Visibility toggles sit on
+		wrapper divs because q-alt sets its own display, which .hidden loses to. -->
+		<div id="scan-controls-anywhere" class="flex gap-2 not-prose">
+			<div class="grow">
+				<button type="button" class="q-alt w-full" data-scan-open="anywhere" _={ "on click " + scanToCamera }>
+					@icon("scan-qr-code", templ.Attributes{"class": "w-6 h-6"})
+					Use the camera
+				</button>
+			</div>
+			<!-- Shown only when the camera failed to open and nothing is typed yet. -->
+			<div id="scan-type-switch-anywhere" class="grow">
+				<button type="button" class="q-alt w-full" _={ scanToTyping }>
+					@icon("keyboard", templ.Attributes{"class": "w-6 h-6"})
+					Type it instead
+				</button>
+			</div>
+		</div>
+		<div id="scan-type-anywhere" class="hidden">
+			<div class="flex gap-2">
+				<input
+					id="code-anywhere"
+					name="code"
+					type="text"
+					placeholder="Code"
+					class="q-input grow min-w-0"
+					autocomplete="off"
+					required
+				/>
+				<button type="submit" class="q-act q-act-fit">Check</button>
+			</div>
+		</div>
+		<div id="scan-viewport-anywhere" class="hidden not-prose">
+			<div class="flex flex-col gap-3">
+				<div class="relative rounded-2xl overflow-hidden bg-base-300">
+					<video id="scan-video-anywhere" class="w-full" muted autoplay playsinline></video>
+				</div>
+				<div class="flex gap-2">
+					<button
+						type="button"
+						class="q-alt grow"
+						data-scan-close="anywhere"
+						_={ scanToTyping }
+					>
+						@icon("keyboard", templ.Attributes{"class": "w-6 h-6"})
+						Type it instead
+					</button>
+					<button
+						type="button"
+						id="scan-stop-anywhere"
+						class="q-alt q-act-fit"
+						data-scan-close="anywhere"
+						_="on click call #scan-sheet.close()"
+					>Close</button>
+				</div>
+			</div>
+		</div>
+		<p id="scan-status-anywhere" class="text-base text-center q-soft hidden"></p>
+	</form>
 }
 
 // It scrolls away, as a sticky bar costs room on the screen read most. Rank lives

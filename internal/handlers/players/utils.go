@@ -57,6 +57,9 @@ type CheckInService interface {
 	) error
 	// RunVars returns the variables the run has set, none in preview.
 	RunVars(ctx context.Context, team *models.Run) (map[string]bool, error)
+	ScanCode(
+		ctx context.Context, team *models.Run, value string, modality blocks.ScanModality,
+	) (*models.Objective, error)
 }
 
 type QuestService interface {

@@ -341,6 +341,117 @@ func TestObjectiveService_UpdateObjective_PassThrough(t *testing.T) {
 	})
 }
 
+func TestObjectiveService_UpdateObjective_Secret(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	rooftop, err := service.CreateObjective(ctx, questID, root.ID, "Rooftop")
+	require.NoError(t, err)
+
+	on, off := true, false
+	require.NoError(t, service.UpdateObjective(ctx, &rooftop, services.ObjectiveUpdateData{Secret: &on}))
+	reloaded, err := service.GetByQuestIDAndSlug(ctx, questID, rooftop.Slug)
+	require.NoError(t, err)
+	assert.True(t, reloaded.Secret)
+
+	require.NoError(t, service.UpdateObjective(ctx, &rooftop, services.ObjectiveUpdateData{Title: "Roof"}))
+	assert.True(t, rooftop.Secret, "a form with no opinion keeps it")
+
+	require.NoError(t, service.UpdateObjective(ctx, &rooftop, services.ObjectiveUpdateData{Secret: &off}))
+	assert.False(t, rooftop.Secret)
+
+	err = service.UpdateObjective(ctx, &root, services.ObjectiveUpdateData{Secret: &on})
+	require.ErrorIs(t, err, services.ErrCannotSecretRoot)
+	assert.False(t, root.Secret)
+}
+
+// The tree draws secrets in a footer and posts a visible row's index in its own
+// list, which is only its position while secrets keep to the tail.
+func TestObjectiveService_SecretsKeepToTheTail(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	var made []models.Objective
+	for _, title := range []string{"Alpha", "Bravo", "Charlie"} {
+		obj, createErr := service.CreateObjective(ctx, questID, root.ID, title)
+		require.NoError(t, createErr)
+		made = append(made, obj)
+	}
+	order := func() []string {
+		children, findErr := service.FindChildren(ctx, questID, root.ID)
+		require.NoError(t, findErr)
+		titles := make([]string, len(children))
+		for i, c := range children {
+			titles[i] = c.Title
+		}
+		return titles
+	}
+
+	on := true
+	require.NoError(t, service.UpdateObjective(ctx, &made[0], services.ObjectiveUpdateData{Secret: &on}))
+	assert.Equal(t, []string{"Bravo", "Charlie", "Alpha"}, order(), "made secret, it moves to the tail")
+
+	require.NoError(t, service.Reposition(ctx, questID, made[1].ID, root.ID, 10))
+	assert.Equal(t, []string{"Charlie", "Bravo", "Alpha"}, order(), "a visible row lands before the secrets")
+
+	require.NoError(t, service.Reposition(ctx, questID, made[0].ID, root.ID, 0))
+	assert.Equal(t, []string{"Charlie", "Bravo", "Alpha"}, order(), "a secret stays at the tail")
+
+	_, err = service.CreateObjective(ctx, questID, root.ID, "Delta")
+	require.NoError(t, err)
+	assert.Equal(t, []string{"Charlie", "Bravo", "Delta", "Alpha"}, order(), "a new row lands before the secrets")
+
+	require.NoError(t, service.UpdateObjective(ctx, &made[1], services.ObjectiveUpdateData{Secret: &on}))
+	assert.Equal(t, []string{"Charlie", "Delta", "Alpha", "Bravo"}, order())
+
+	require.NoError(t, service.Reposition(ctx, questID, made[1].ID, root.ID, 0))
+	assert.Equal(t, []string{"Charlie", "Delta", "Bravo", "Alpha"}, order(), "the footer index orders the secrets")
+
+	off := false
+	require.NoError(t, service.UpdateObjective(ctx, &made[0], services.ObjectiveUpdateData{Secret: &off}))
+	assert.Equal(t, []string{"Charlie", "Delta", "Alpha", "Bravo"}, order(), "revealed, it leaves the footer")
+}
+
+// A band never needs a secret, so neither hiding a row nor parking one beside a
+// secret may leave the minimum out of the visible rows' reach.
+func TestObjectiveService_SecretsCannotMakeUpTheMinimum(t *testing.T) {
+	service, dbc, cleanup := setupObjectiveService(t)
+	defer cleanup()
+	ctx := context.Background()
+	questID := validQuestID(t, dbc)
+
+	root, err := service.CreateObjective(ctx, questID, "", "Root")
+	require.NoError(t, err)
+	section, err := service.CreateObjective(ctx, questID, root.ID, "Section")
+	require.NoError(t, err)
+	children := make([]models.Objective, 0, 3)
+	for _, title := range []string{"One", "Two", "Three"} {
+		child, childErr := service.CreateObjective(ctx, questID, section.ID, title)
+		require.NoError(t, childErr)
+		require.NoError(t, service.UpdateObjective(ctx, &child, services.ObjectiveUpdateData{Draft: boolPtr(false)}))
+		children = append(children, child)
+	}
+	require.NoError(t, service.UpdateObjective(ctx, &section, services.ObjectiveUpdateData{
+		Band: &services.BandUpdate{Min: intPtr(2), Max: intPtr(3)},
+	}))
+	require.NoError(t, service.UpdateObjective(ctx, &children[2], services.ObjectiveUpdateData{Secret: boolPtr(true)}))
+
+	err = service.UpdateObjective(ctx, &children[0], services.ObjectiveUpdateData{Draft: boolPtr(true)})
+	require.ErrorIs(t, err, services.ErrParkingBreaksBand, "the secret does not count as left in play")
+
+	err = service.UpdateObjective(ctx, &children[1], services.ObjectiveUpdateData{Secret: boolPtr(true)})
+	require.ErrorIs(t, err, services.ErrParkingBreaksBand)
+	assert.False(t, children[1].Secret)
+}
+
 // Lint refuses a finishable pass-through in a document, so the editor must not
 // be able to build one the document cannot carry.
 func TestObjectiveService_UpdateObjective_PassThroughNeedsAnAutoCompletingBand(t *testing.T) {

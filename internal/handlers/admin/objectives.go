@@ -423,6 +423,47 @@ func (h *Handler) ObjectivePassThroughTogglePost(w http.ResponseWriter, r *http.
 	h.handleSuccess(w, r, "Pass-through updated")
 }
 
+// ObjectiveSecretTogglePost posts from the tree and from the edit page alike.
+func (h *Handler) ObjectiveSecretTogglePost(w http.ResponseWriter, r *http.Request) {
+	if err := r.ParseForm(); err != nil {
+		h.handleError(w, r, "ObjectiveSecretTogglePost: parsing form", "Could not update secrecy", "error", err)
+		return
+	}
+
+	user := h.UserFromContext(r.Context())
+	slug := chi.URLParam(r, "slug")
+	objective, err := h.objectiveService.GetByQuestIDAndSlug(r.Context(), user.CurrentQuestID, slug)
+	if err != nil {
+		h.handleError(w, r, "ObjectiveSecretTogglePost: finding objective", "Objective not found", "error", err)
+		return
+	}
+
+	err = h.objectiveService.UpdateObjective(r.Context(), objective, services.ObjectiveUpdateData{
+		Secret: boolPtr(r.FormValue("secret") == publishedFormValue),
+	})
+	// The edit page shows the stored state, refusals included; the tree
+	// re-fetches itself instead.
+	if r.FormValue("surface") == "edit" {
+		if renderErr := templates.ObjectiveSecretOOB(*objective).Render(r.Context(), w); renderErr != nil {
+			h.logger.ErrorContext(r.Context(), "ObjectiveSecretTogglePost: rendering control", "error", renderErr)
+		}
+	}
+	if errors.Is(err, services.ErrCannotSecretRoot) {
+		h.handleError(w, r, "ObjectiveSecretTogglePost: refused", services.ErrCannotSecretRoot.Error(), "error", err)
+		return
+	}
+	if err != nil {
+		h.handleError(w, r, "ObjectiveSecretTogglePost: updating objective", "Error updating secrecy", "error", err)
+		return
+	}
+
+	if objective.Secret {
+		h.handleSuccess(w, r, "Secret: players find it by scanning")
+		return
+	}
+	h.handleSuccess(w, r, "No longer secret")
+}
+
 // ObjectiveReposition always responds with a flash, never a redirect: the
 // tree re-fetches regardless of outcome, refused moves included.
 func (h *Handler) ObjectiveReposition(w http.ResponseWriter, r *http.Request) {

@@ -142,7 +142,9 @@ templ objectivePreview(data EditObjectiveData) {
 						the panes are always rendered and always in place. -->
 						<div class="relative h-full">
 						<div data-preview="card" class="absolute inset-0 p-4 flex flex-col justify-center transition-opacity duration-200 motion-reduce:transition-none">
-							if data.ParentTitle != "" {
+							if data.Objective.Secret {
+								@objectiveSecretListPreview()
+							} else if data.ParentTitle != "" {
 								@pTemplates.PreviewSection(data.ParentTitle, data.ParentRule) {
 									@objectiveCardRow(data)
 								}
@@ -182,6 +184,21 @@ templ objectivePreview(data EditObjectiveData) {
 	@objectivePreviewScript()
 	@previewHoverScript()
 	@previewSortableScript()
+}
+
+// objectiveSecretListPreview draws what a player has instead of the card: a
+// secret is never in the list, and the quest page's scan control is the only
+// way in.
+templ objectiveSecretListPreview() {
+	<div class="flex flex-col gap-3 items-stretch">
+		<div class="q-alt" aria-hidden="true">
+			@icon("scan-qr-code", templ.Attributes{"class": "w-6 h-6"})
+			Scan a code
+		</div>
+		<p class="q-soft text-sm text-center text-pretty">
+			Not in the list. Players open this by scanning its code, from the quest page or with their phone's camera.
+		</p>
+	</div>
 }
 
 // objectiveCardRow is the row itself, drawn the same whether or not it sits
@@ -358,6 +375,9 @@ templ EditObjective(data EditObjectiveData) {
 		<div class="flex items-center gap-2">
 		@objectiveSaveState()
 		@ObjectiveDependsButton(data.Objective)
+		<div id="secret-control" class="contents">
+			@objectiveSecretControl(data.Objective)
+		</div>
 		<div id="visibility-control" class="contents">
 			@objectiveVisibilityControl(data.Objective.Draft)
 		</div>
@@ -488,6 +508,45 @@ templ objectiveVisibilityControl(draft bool) {
 		class="hidden"
 		checked?={ !draft }
 	/>
+}
+
+// objectiveSecretControl posts on its own rather than through the autosaving
+// form: secrecy is one action, and the server sends the control back with the
+// stored state either way. The root has none, since it cannot be secret.
+templ objectiveSecretControl(objective models.Objective) {
+	if objective.ParentID != "" {
+		<button
+			id="secret-btn"
+			type="button"
+			class="btn btn-ghost tooltip"
+			data-tip={ secretBtnTip(objective.Secret) }
+			aria-pressed={ fmt.Sprint(objective.Secret) }
+			hx-post={ "/admin/objective/" + objective.Slug + "/secret" }
+			hx-vals={ fmt.Sprintf(`{"secret":"%t","surface":"edit"}`, !objective.Secret) }
+			hx-swap="none"
+		>
+			if objective.Secret {
+				@icon("gem", templ.Attributes{"class": "w-4 h-4 text-primary"})
+			} else {
+				@icon("gem", templ.Attributes{"class": "w-4 h-4"})
+			}
+			Secret
+		</button>
+	}
+}
+
+func secretBtnTip(secret bool) string {
+	if secret {
+		return "Secret: unlisted until a player scans it. Click to list it"
+	}
+	return "Make secret: unlisted until a player scans it"
+}
+
+// ObjectiveSecretOOB puts the stored secrecy back on screen after a toggle.
+templ ObjectiveSecretOOB(objective models.Objective) {
+	<div id="secret-control" class="contents" hx-swap-oob="true">
+		@objectiveSecretControl(objective)
+	</div>
 }
 
 // ObjectiveVisibilityOOB puts the stored visibility back on screen after a

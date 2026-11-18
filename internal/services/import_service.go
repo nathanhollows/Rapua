@@ -1,12 +1,14 @@
 package services
 
 import (
+	"cmp"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
@@ -282,7 +284,8 @@ func (s *ImportService) createObjectiveTree(
 		stats.Objectives++
 	}
 
-	for i, child := range objDoc.Children {
+	// The repository appends, so creating secrets last is what puts them there.
+	for i, child := range secretDocsLast(objDoc.Children) {
 		if err := s.createObjectiveTree(ctx, tx, questID, objID, i, child, stats); err != nil {
 			return err
 		}
@@ -306,6 +309,7 @@ func (s *ImportService) createObjective(
 		Description: valueOrEmpty(objDoc.Description),
 		Draft:       objDoc.IsDraft(),
 		PassThrough: objDoc.IsPassThrough(),
+		Secret:      objDoc.IsSecret(),
 		Depends:     game.NormaliseDepends(objDoc.Depends),
 		Routing:     objDoc.Routing,
 		ChildrenMin: objDoc.ChildrenMin,
@@ -391,6 +395,7 @@ func (s *ImportService) importUpdate(
 		objBySlug:  objBySlug,
 		blockByID:  blockByID,
 		seenObjIDs: make(map[string]bool),
+		secret:     make(map[string]bool),
 		result:     result,
 	}
 
@@ -440,11 +445,53 @@ func (s *ImportService) importUpdate(
 	// Placement last, once the orphans are gone: their slots are freed by the
 	// deletes above, and the document's own rows then settle into a tree with
 	// nothing left over to collide with.
-	if err := s.objectiveRepo.PlaceTx(ctx, tx, state.placements); err != nil {
+	if err := s.objectiveRepo.PlaceTx(ctx, tx, secretPlacementsLast(state.placements, state.secret)); err != nil {
 		return nil, err
 	}
 
 	return result, nil
+}
+
+func secretDocsLast(children []game.ObjectiveDoc) []game.ObjectiveDoc {
+	ordered := make([]game.ObjectiveDoc, 0, len(children))
+	for _, secret := range []bool{false, true} {
+		for _, child := range children {
+			if child.IsSecret() == secret {
+				ordered = append(ordered, child)
+			}
+		}
+	}
+	return ordered
+}
+
+// secretPlacementsLast renumbers each sibling list with its secrets at the
+// tail. It reads the stored flag, since a document that omits secret keeps it.
+func secretPlacementsLast(placements []repositories.Placement, secret map[string]bool) []repositories.Placement {
+	byParent := map[string][]int{}
+	var parents []string
+	for i, placement := range placements {
+		if _, ok := byParent[placement.ParentID]; !ok {
+			parents = append(parents, placement.ParentID)
+		}
+		byParent[placement.ParentID] = append(byParent[placement.ParentID], i)
+	}
+	for _, parent := range parents {
+		indexes := byParent[parent]
+		slices.SortStableFunc(indexes, func(a, b int) int {
+			pa, pb := placements[a], placements[b]
+			if secret[pa.ObjectiveID] != secret[pb.ObjectiveID] {
+				if secret[pa.ObjectiveID] {
+					return 1
+				}
+				return -1
+			}
+			return cmp.Compare(pa.Position, pb.Position)
+		})
+		for position, i := range indexes {
+			placements[i].Position = position
+		}
+	}
+	return placements
 }
 
 // reconcileState is what an update carries down the document walk: what the
@@ -460,6 +507,7 @@ type reconcileState struct {
 	// put it on a slot another row has not left yet, which is any document that
 	// reorders siblings or drops one from the middle.
 	placements []repositories.Placement
+	secret     map[string]bool
 	result     *ImportResult
 }
 
@@ -527,6 +575,7 @@ func (s *ImportService) reconcileObjective(
 		state.placements = append(state.placements, repositories.Placement{
 			ObjectiveID: newObjID, ParentID: parentID, Position: position,
 		})
+		state.secret[newObjID] = objDoc.IsSecret()
 		return newObjID, nil
 	}
 
@@ -545,6 +594,9 @@ func (s *ImportService) reconcileObjective(
 	}
 	if objDoc.PassThrough != nil {
 		existingObj.PassThrough = *objDoc.PassThrough
+	}
+	if objDoc.Secret != nil {
+		existingObj.Secret = *objDoc.Secret
 	}
 	// Unlike the flags above, an omitted gate is no gate: a document that
 	// leaves depends out is saying the objective is open.
@@ -565,6 +617,7 @@ func (s *ImportService) reconcileObjective(
 	state.placements = append(state.placements, repositories.Placement{
 		ObjectiveID: existingObj.ID, ParentID: parentID, Position: position,
 	})
+	state.secret[existingObj.ID] = existingObj.Secret
 
 	for _, pair := range []struct {
 		docs []game.BlockDoc

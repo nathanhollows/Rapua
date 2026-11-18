@@ -109,6 +109,9 @@ const (
 	// before further ones are refused.
 	maxCodeGuesses  = 10
 	codeGuessWindow = time.Minute
+	// maxScans is higher than maxCodeGuesses: a team scans constantly, and a
+	// scan is limited to codes in a quest it has already joined.
+	maxScans = 30
 )
 
 // tooManyCodeGuesses answers /play/check in the JSON its caller expects and
@@ -236,6 +239,27 @@ func setupPlayerRoutes(
 		// Sub-routers get their own default NotFoundHandler unless set explicitly
 		// (chi does not fall back to the parent router's), which otherwise
 		// surfaces chi's bare, unstyled 404 instead of the site's own.
+		r.NotFound(publicHandler.NotFound)
+	})
+
+	// Scanning from anywhere: the only way to find a secret, and the address v7
+	// printed on its posters.
+	scans := middlewares.RateLimitByClient(maxScans, codeGuessWindow, tooManyCodeGuesses)
+	router.Route("/s", func(r chi.Router) {
+		// First, so a refused request costs no run lookup.
+		r.Use(scans)
+		r.Use(func(next http.Handler) http.Handler {
+			return middlewares.PreviewMiddleware(
+				logger,
+				playerHandler.GetRunService(),
+				playerHandler.GetQuestService(),
+				adminHandler.GetIdentityService(),
+				middlewares.RunMiddleware(logger, playerHandler.GetRunService(),
+					middlewares.StartMiddleware(playerHandler.GetRunService(), next)),
+			)
+		})
+		r.Post("/", playerHandler.ScanPost)
+		r.Get("/{code}", playerHandler.ScanLink)
 		r.NotFound(publicHandler.NotFound)
 	})
 
@@ -441,6 +465,7 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Post("/{slug:[a-z0-9-]+}/settings", adminHandler.ObjectiveSettingsPost)
 			r.Post("/{slug:[a-z0-9-]+}/draft", adminHandler.ObjectiveDraftTogglePost)
 			r.Post("/{slug:[a-z0-9-]+}/pass-through", adminHandler.ObjectivePassThroughTogglePost)
+			r.Post("/{slug:[a-z0-9-]+}/secret", adminHandler.ObjectiveSecretTogglePost)
 			r.Get("/{slug:[a-z0-9-]+}/depends", adminHandler.ObjectiveDependsEdit)
 			r.Post("/{slug:[a-z0-9-]+}/depends", adminHandler.ObjectiveDependsPost)
 			r.Delete("/{slug:[a-z0-9-]+}", adminHandler.ObjectiveDelete)

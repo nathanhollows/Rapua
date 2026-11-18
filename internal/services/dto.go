@@ -32,6 +32,9 @@ type ObjectiveUpdateData struct {
 	// PassThrough marks the objective as a section the player never stands in.
 	// A pointer for the same reason Draft is one.
 	PassThrough *bool
+	// Secret keeps the objective unlisted until found. A pointer for the same
+	// reason Draft is one.
+	Secret *bool
 	// Routing names the route strategy. Nil leaves it alone; a set value is
 	// validated before it is applied.
 	Routing *string

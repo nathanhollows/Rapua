@@ -42,16 +42,43 @@ type ObjectiveTreeNode struct {
 	BlockVars services.VarUsage
 }
 
-// publishedCount is how many of these rows are in play, which is what the
-// completion band counts.
+// publishedCount is how many of these rows a band counts: in play, and not a
+// secret, since no band may need a find.
 func publishedCount(nodes []*ObjectiveTreeNode) int {
 	count := 0
 	for _, node := range nodes {
-		if !node.Draft {
+		if !node.Draft && !node.Objective.Secret {
 			count++
 		}
 	}
 	return count
+}
+
+func visibleChildren(nodes []*ObjectiveTreeNode) []*ObjectiveTreeNode {
+	out := make([]*ObjectiveTreeNode, 0, len(nodes))
+	for _, node := range nodes {
+		if !node.Objective.Secret {
+			out = append(out, node)
+		}
+	}
+	return out
+}
+
+func secretChildren(nodes []*ObjectiveTreeNode) []*ObjectiveTreeNode {
+	var out []*ObjectiveTreeNode
+	for _, node := range nodes {
+		if node.Objective.Secret {
+			out = append(out, node)
+		}
+	}
+	return out
+}
+
+func secretTip(node *ObjectiveTreeNode) string {
+	if node.Objective.Secret {
+		return "Secret: found by scanning. Click to list it"
+	}
+	return "Make secret: unlisted until a player scans it"
 }
 
 // maxRenderDepth bounds the recursion in objectiveNode, which walks Children
@@ -73,6 +100,8 @@ const (
 	RailWindow RailMark = "window"
 	RailPool   RailMark = "pool"
 	RailParked RailMark = "parked"
+	// RailSecret draws nothing: a secret takes no turn in its parent's routing.
+	RailSecret RailMark = "secret"
 )
 
 // MarkChildren sets each child's rail mark from the parent's routing. Drafts
@@ -83,6 +112,10 @@ func MarkChildren(parent models.Objective, children []*ObjectiveTreeNode) {
 	for _, child := range children {
 		if child.Draft {
 			child.Mark = RailParked
+			continue
+		}
+		if child.Objective.Secret {
+			child.Mark = RailSecret
 			continue
 		}
 		switch parent.Routing {
@@ -419,10 +452,11 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 						</div>
 					} else {
 						<ul class="objective-children flex flex-col w-full" data-parent-id={ root.ID } data-routing={ string(root.Routing) }>
-							for _, node := range nodes {
+							for _, node := range visibleChildren(nodes) {
 								@objectiveNode(node, settings.EnablePoints, 0)
 							}
 						</ul>
+						@objectiveSecretFooter(root.ID, secretChildren(nodes), settings.EnablePoints, 0)
 					}
 				</div>
 				@objectiveSystemPageLink("Complete", "/admin/quest/complete")
@@ -560,6 +594,42 @@ templ objectiveVisibilityToggle(node *ObjectiveTreeNode) {
 			@icon("eye", templ.Attributes{"class": "w-4 h-4 text-base-content/60 " + rowRevealClass})
 		}
 	</button>
+}
+
+// objectiveSecretToggle posts to /admin/objective/{slug}/secret. Lit at rest
+// only on a secret, like the eye on a draft: nearly no row is one.
+templ objectiveSecretToggle(node *ObjectiveTreeNode) {
+	<button
+		type="button"
+		class="btn btn-xs btn-ghost btn-circle tooltip objective-secret-toggle shrink-0"
+		data-tip={ secretTip(node) }
+		data-objective-slug={ node.Objective.Slug }
+		data-secret={ fmt.Sprint(node.Objective.Secret) }
+	>
+		if node.Objective.Secret {
+			@icon("gem", templ.Attributes{"class": "w-4 h-4 text-primary"})
+		} else {
+			@icon("gem", templ.Attributes{"class": "w-4 h-4 text-base-content/60 " + rowRevealClass})
+		}
+	</button>
+}
+
+// objectiveSecretFooter holds a group's secrets below everything routed. They
+// take no turn in the order, so they sit outside the rail.
+templ objectiveSecretFooter(parentID string, secrets []*ObjectiveTreeNode, enablePoints bool, depth int) {
+	if len(secrets) > 0 {
+		<div class="objective-secret-footer mt-2 pt-2 border-t border-dashed border-base-content/15">
+			<p class="flex items-center gap-1.5 px-1 pb-1 text-xs font-medium text-base-content/60">
+				@icon("gem", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"})
+				Secrets: unlisted until a player scans one, then counted with the rest
+			</p>
+			<ul class="objective-children flex flex-col w-full" data-parent-id={ parentID } data-secret-footer="true">
+				for _, node := range secrets {
+					@objectiveNode(node, enablePoints, depth)
+				}
+			</ul>
+		</div>
+	}
 }
 
 // rowRevealClass hides an icon until its own row or section header is hovered
@@ -1010,6 +1080,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 			data-objective-slug={ node.Objective.Slug }
 			data-child-count={ fmt.Sprint(node.PublishedChildren) }
 			data-mark={ string(node.Mark) }
+			data-secret={ fmt.Sprint(node.Objective.Secret) }
 			{ objectiveVarAttrs(node)... }
 		>
 			@objectiveRailMark(node)
@@ -1043,14 +1114,16 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 						tree for, and a control before it pushes every name out of line
 						with the one above. -->
 						@objectiveRulePicker(node, true)
+						@objectiveSecretToggle(node)
 						@objectiveVisibilityToggle(node)
 					</div>
 					<div class="p-3 objective-group-body">
 						<ul class="objective-children flex flex-col w-full min-h-8" data-parent-id={ node.Objective.ID }>
-							for _, child := range node.Children {
+							for _, child := range visibleChildren(node.Children) {
 								@objectiveNode(child, enablePoints, depth+1)
 							}
 						</ul>
+						@objectiveSecretFooter(node.Objective.ID, secretChildren(node.Children), enablePoints, depth+1)
 					</div>
 				</div>
 			</div>
@@ -1061,6 +1134,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 			data-objective-id={ node.Objective.ID }
 			data-search-text={ node.Objective.Title }
 			data-mark={ string(node.Mark) }
+			data-secret={ fmt.Sprint(node.Objective.Secret) }
 			{ objectiveVarAttrs(node)... }
 		>
 			@objectiveRailMark(node)
@@ -1076,6 +1150,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 				@objectiveVarsBadges(node)
 				@objectiveLintBadge(node.Lint)
 				<div class="flex-grow"></div>
+				@objectiveSecretToggle(node)
 				@objectiveVisibilityToggle(node)
 			</div>
 			<!-- Plain flow, not absolute: lets Sortable grow this to show the
@@ -1596,7 +1671,14 @@ templ objectiveSortableScript() {
 				// tree refresh, so a lock applied earlier would otherwise be
 				// undone by the rebuild.
 				disabled: document.body.dataset.questLocked === 'true',
-				group: 'objectives',
+				// A visible row dropped in a footer would only be sent back up:
+				// the footer holds secrets, and secrecy is the gem's job.
+				group: {
+					name: 'objectives',
+					put: function(to, from, dragEl) {
+						return to.el.dataset.secretFooter !== 'true' || dragEl.dataset.secret === 'true';
+					},
+				},
 				handle: '.objective-drag-handle',
 				animation: 150,
 				fallbackOnBody: true,
@@ -1718,6 +1800,13 @@ templ objectiveSortableScript() {
 			rememberOpenRule(passThrough.closest('details.settings-rule'));
 			postObjectiveUpdate('/admin/objective/' + passThrough.dataset.objectiveSlug + '/pass-through', {
 				pass_through: passThrough.dataset.passThrough !== 'true' ? 'true' : 'false',
+			});
+			return;
+		}
+		var secretToggle = evt.target.closest('.objective-secret-toggle');
+		if (secretToggle) {
+			postObjectiveUpdate('/admin/objective/' + secretToggle.dataset.objectiveSlug + '/secret', {
+				secret: secretToggle.dataset.secret !== 'true' ? 'true' : 'false',
 			});
 			return;
 		}

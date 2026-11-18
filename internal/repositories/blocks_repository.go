@@ -107,6 +107,18 @@ type BlockRepository interface {
 	FindOwnerIDsWithContext(
 		ctx context.Context, ownerIDs []string, blockContext blocks.BlockContext,
 	) ([]string, error)
+
+	// FindOwnerIDsWithCompletedBlock returns which of the given owners have a
+	// block of one of the types, in the context, that the run has completed.
+	FindOwnerIDsWithCompletedBlock(
+		ctx context.Context, ownerIDs []string, runCode string, blockContext blocks.BlockContext, types []string,
+	) ([]string, error)
+
+	// AnyOfType reports whether any of the owners has a block of one of the
+	// types in the context.
+	AnyOfType(
+		ctx context.Context, ownerIDs []string, blockContext blocks.BlockContext, types []string,
+	) (bool, error)
 }
 
 type blockRepository struct {
@@ -170,6 +182,44 @@ func (r *blockRepository) FindOwnerIDsWithContext(
 		return nil, err
 	}
 	return owners, nil
+}
+
+// FindOwnerIDsWithCompletedBlock implements BlockRepository.
+func (r *blockRepository) FindOwnerIDsWithCompletedBlock(
+	ctx context.Context, ownerIDs []string, runCode string, blockContext blocks.BlockContext, types []string,
+) ([]string, error) {
+	if len(ownerIDs) == 0 || len(types) == 0 {
+		return nil, nil
+	}
+	var owners []string
+	err := r.db.NewSelect().
+		TableExpr("blocks AS b").
+		ColumnExpr("DISTINCT b.owner_id").
+		Join("JOIN run_block_states AS s ON s.block_id = b.id AND s.run_code = ?", runCode).
+		Where("b.owner_id IN (?)", bun.In(ownerIDs)).
+		Where("b.context = ?", blockContext).
+		Where("b.type IN (?)", bun.In(types)).
+		Where("s.is_complete").
+		Scan(ctx, &owners)
+	if err != nil {
+		return nil, err
+	}
+	return owners, nil
+}
+
+// AnyOfType implements BlockRepository.
+func (r *blockRepository) AnyOfType(
+	ctx context.Context, ownerIDs []string, blockContext blocks.BlockContext, types []string,
+) (bool, error) {
+	if len(ownerIDs) == 0 || len(types) == 0 {
+		return false, nil
+	}
+	return r.db.NewSelect().
+		Model((*models.Block)(nil)).
+		Where("owner_id IN (?)", bun.In(ownerIDs)).
+		Where("context = ?", blockContext).
+		Where("type IN (?)", bun.In(types)).
+		Exists(ctx)
 }
 
 // FindByOwnerIDAndContext fetches all blocks for an owner with specific context.

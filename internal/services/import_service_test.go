@@ -3,6 +3,7 @@ package services_test
 import (
 	"context"
 	"log/slog"
+	"slices"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
@@ -503,6 +504,84 @@ func TestImportService_ImportCreate_CarriesPassThrough(t *testing.T) {
 	require.Len(t, bySlug, 2)
 	assert.False(t, bySlug["shown"].PassThrough)
 	assert.True(t, bySlug["birds"].PassThrough)
+}
+
+func TestImportService_ImportCreate_CarriesSecret(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Trace")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "library", Title: "Library"},
+		{
+			Slug: "rooftop", Title: "Rooftop", Secret: boolPtr(true),
+			Proof: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{{
+				"type": "scan", "prompt": "Scan the sign",
+				"codes": []any{map[string]any{"value": "ROOF"}}, "match": "exact",
+			}}},
+		},
+	}
+
+	result, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	bySlug := make(map[string]models.Objective)
+	for _, obj := range importedChildren(t, objectiveRepo, result.QuestID) {
+		bySlug[obj.Slug] = obj
+	}
+	require.Len(t, bySlug, 2)
+	assert.False(t, bySlug["library"].Secret)
+	assert.True(t, bySlug["rooftop"].Secret)
+}
+
+// The tree posts a visible row's index in its own list, which is only its
+// position while secrets keep to the tail, so import puts them there whatever
+// order the document lists them in.
+func TestImportService_SecretsLandAtTheTail(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	rooftop := game.ObjectiveDoc{
+		Slug: "rooftop", Title: "Rooftop", Secret: boolPtr(true),
+		Proof: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{{
+			"type": "scan", "prompt": "Scan the sign",
+			"codes": []any{map[string]any{"value": "ROOF"}}, "match": "exact",
+		}}},
+	}
+	order := func(questID string) []string {
+		children := importedChildren(t, objectiveRepo, questID)
+		slices.SortFunc(children, func(a, b models.Objective) int { return a.Position - b.Position })
+		slugs := make([]string, len(children))
+		for i, c := range children {
+			slugs[i] = c.Slug
+		}
+		return slugs
+	}
+
+	doc := minimalValidDoc("Trace")
+	doc.Structure.Children = []game.ObjectiveDoc{rooftop, {Slug: "library", Title: "Library"}}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"library", "rooftop"}, order(created.QuestID))
+
+	silent := rooftop
+	silent.Secret = nil
+	update := minimalValidDoc("Trace")
+	update.Structure.Children = []game.ObjectiveDoc{
+		silent, {Slug: "library", Title: "Library"}, {Slug: "gallery", Title: "Gallery"},
+	}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, update)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"library", "gallery", "rooftop"}, order(created.QuestID),
+		"a document silent on secret keeps the stored flag, and the tail with it")
 }
 
 // A document that never mentions pass_through has no opinion about it, so a

@@ -7,6 +7,7 @@ import (
 	"log/slog"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 
 	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/nathanhollows/Rapua/v8/internal/repositories"
@@ -59,6 +60,19 @@ type PlayerObjectiveView struct {
 	// icon, so a card says what is coming without anyone classifying
 	// objectives into kinds.
 	FirstProofBlock map[string]string
+	// CanDiscover is whether the quest holds anything a player proves by being
+	// there, a scan now and a geofence later, so the list offers a way to do it.
+	CanDiscover bool
+}
+
+// canDiscover asks of the whole quest, not of what is on offer, so the button
+// holds still for the run and never marks where an unfound secret is.
+func (s *NavigationService) canDiscover(ctx context.Context, objectives []models.Objective) (bool, error) {
+	ids := make([]string, len(objectives))
+	for i, obj := range objectives {
+		ids[i] = obj.ID
+	}
+	return s.loader.blockRepo.AnyOfType(ctx, ids, game.ContextObjectiveProof, game.DiscoveryBlockTypes())
 }
 
 // NewNavigationService creates a NavigationService.
@@ -122,15 +136,21 @@ func (s *NavigationService) GetPlayerObjectiveView(
 	if err != nil {
 		s.logger.WarnContext(ctx, "loading proof blocks", "error", err, "run", team.Code)
 	}
+	// Like the icons, a failure costs the page one control, not the page.
+	discover, err := s.canDiscover(ctx, objectives)
+	if err != nil {
+		s.logger.WarnContext(ctx, "checking for discovery blocks", "error", err, "run", team.Code)
+	}
 
 	return &PlayerObjectiveView{
 		Settings:        team.Quest.Settings,
 		Frontier:        frontier,
 		Complete:        rootComplete(objectives, frontier),
-		Progress:        navigation.ComputeProgress(objectives, complete),
+		Progress:        navigation.ComputeProgress(objectives, complete, state.Discovered),
 		Objectives:      objectives,
 		HasProof:        state.HasProofBlocks,
 		FirstProofBlock: icons,
+		CanDiscover:     discover,
 	}, nil
 }
 

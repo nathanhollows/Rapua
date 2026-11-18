@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
@@ -15,6 +16,10 @@ import (
 	"github.com/nathanhollows/Rapua/v8/navigation"
 	"github.com/uptrace/bun"
 )
+
+// ErrSecretOutOfReach is returned for a secret's discovery block submitted
+// while the secret is locked or its section is closed.
+var ErrSecretOutOfReach = errors.New("secret is out of reach")
 
 type CheckInService struct {
 	transactor                     db.Transactor
@@ -170,7 +175,7 @@ func (s *CheckInService) applyAnswer(
 		// The block's computed value, not its configured points: a partial score
 		// is what the player was shown, and it is what they earn.
 		credited = state.GetPointsAwarded()
-		if err := s.teamRepo.AddPointsWithTx(ctx, tx, team.Code, credited); err != nil {
+		if err = s.teamRepo.AddPointsWithTx(ctx, tx, team.Code, credited); err != nil {
 			return false, fmt.Errorf("awarding points: %w", err)
 		}
 	}
@@ -328,8 +333,21 @@ func (s *CheckInService) planCompletion(
 	if err != nil {
 		return completionPlan{}, fmt.Errorf("loading run state: %w", err)
 	}
-	if !reachableIn(navigation.ComputeFrontier(objectives, state, completion), objective) {
+	frontier := navigation.ComputeFrontier(objectives, state, completion)
+	discovering := frontier.StatusOf(objective.ID) == navigation.StatusHidden &&
+		blockContext == game.ContextObjectiveProof && slices.Contains(game.DiscoveryBlockTypes(), block.GetType())
+	if !reachableIn(frontier, objective) && !discovering {
+		// Elsewhere an unreachable block keeps its state and earns nothing, but
+		// a completed discovery block is the find itself.
+		if objective.Secret && blockContext == game.ContextObjectiveProof &&
+			slices.Contains(game.DiscoveryBlockTypes(), block.GetType()) {
+			return completionPlan{}, fmt.Errorf("%w: %q", ErrSecretOutOfReach, objective.ID)
+		}
 		return completionPlan{}, nil
+	}
+	if discovering {
+		// The find is part of what the run-completion derivation below counts.
+		state.Discovered[objective.ID] = true
 	}
 
 	stillRequired, err := s.blockService.checkValidationRequiredExcluding(
@@ -526,7 +544,7 @@ func reachableIn(frontier navigation.Frontier, objective *models.Objective) bool
 	switch frontier.StatusOf(objective.ID) {
 	case navigation.StatusAvailable, navigation.StatusFinishable, navigation.StatusComplete:
 		return true
-	case navigation.StatusLocked:
+	case navigation.StatusLocked, navigation.StatusHidden:
 		return false
 	}
 	return false

@@ -136,7 +136,8 @@ func buildObjectiveTree(
 	for _, node := range nodes {
 		node.PublishedChildren = 0
 		for _, child := range node.Children {
-			if !child.Draft {
+			// A band never needs a find, so its picker never counts a secret.
+			if !child.Draft && !child.Objective.Secret {
 				node.PublishedChildren++
 			}
 		}

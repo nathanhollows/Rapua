@@ -85,13 +85,13 @@ func (s *NavigationService) GetJournal(ctx context.Context, team *models.Run) (J
 		return JournalView{}, fmt.Errorf("loading run events: %w", err)
 	}
 
-	objectives, _, complete, err := s.loader.load(ctx, team)
+	objectives, state, complete, err := s.loader.load(ctx, team)
 	if err != nil {
 		return JournalView{}, err
 	}
 
 	view := BuildJournal(events, objectives, complete)
-	progress := navigation.ComputeProgress(objectives, complete)
+	progress := navigation.ComputeProgress(objectives, complete, state.Discovered)
 	view.Done = progress.Done
 	view.Total = progress.Total()
 	return view, nil

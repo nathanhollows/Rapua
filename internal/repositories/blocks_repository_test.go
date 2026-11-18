@@ -298,6 +298,72 @@ func TestBlockRepository_Create_NewOwnerID(t *testing.T) {
 	assert.NotEqual(t, block.GetOwnerID(), newBlock.GetOwnerID())
 }
 
+func TestBlockRepository_FindOwnerIDsWithCompletedBlock(t *testing.T) {
+	repo, blockStateRepo, _, dbc, cleanup := setupBlockRepo(t)
+	defer cleanup()
+	ctx := context.Background()
+	parents := createTestParents(t, dbc)
+	runCode := createTestTeam(t, dbc, parents.QuestID)
+	otherRun := createTestTeam(t, dbc, parents.QuestID)
+
+	seed := func(block blocks.Block, ownerID string, blockContext blocks.BlockContext, completeFor string) {
+		t.Helper()
+		created, err := repo.Create(ctx, block, ownerID, blockContext)
+		require.NoError(t, err)
+		if completeFor == "" {
+			return
+		}
+		state, err := blockStateRepo.NewBlockState(ctx, created.GetID(), completeFor, parents.QuestID)
+		require.NoError(t, err)
+		state.SetComplete(true)
+		_, err = blockStateRepo.Create(ctx, state)
+		require.NoError(t, err)
+	}
+
+	scanned, unscanned, quizzed, revealed, elsewhere := gofakeit.UUID(), gofakeit.UUID(), gofakeit.UUID(),
+		gofakeit.UUID(), gofakeit.UUID()
+	seed(blocks.NewScanBlock(blocks.BaseBlock{OwnerID: scanned}), scanned, blocks.ContextObjectiveProof, runCode)
+	seed(blocks.NewScanBlock(blocks.BaseBlock{OwnerID: unscanned}), unscanned, blocks.ContextObjectiveProof, "")
+	seed(blocks.NewQuizBlock(blocks.BaseBlock{OwnerID: quizzed}), quizzed, blocks.ContextObjectiveProof, runCode)
+	seed(blocks.NewScanBlock(blocks.BaseBlock{OwnerID: revealed}), revealed, blocks.ContextObjectiveReveal, runCode)
+	seed(blocks.NewScanBlock(blocks.BaseBlock{OwnerID: elsewhere}), elsewhere, blocks.ContextObjectiveProof, otherRun)
+
+	owners, err := repo.FindOwnerIDsWithCompletedBlock(ctx,
+		[]string{scanned, unscanned, quizzed, revealed, elsewhere},
+		runCode, blocks.ContextObjectiveProof, []string{"scan", "geofence"})
+	require.NoError(t, err)
+	assert.ElementsMatch(t, []string{scanned}, owners,
+		"only a completed proof block of a listed type, for this run")
+}
+
+func TestBlockRepository_AnyOfType(t *testing.T) {
+	repo, _, _, _, cleanup := setupBlockRepo(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	quizzed, revealed, scanned := gofakeit.UUID(), gofakeit.UUID(), gofakeit.UUID()
+	for owner, block := range map[string]struct {
+		b   blocks.Block
+		ctx blocks.BlockContext
+	}{
+		quizzed:  {blocks.NewQuizBlock(blocks.BaseBlock{OwnerID: quizzed}), blocks.ContextObjectiveProof},
+		revealed: {blocks.NewScanBlock(blocks.BaseBlock{OwnerID: revealed}), blocks.ContextObjectiveReveal},
+		scanned:  {blocks.NewScanBlock(blocks.BaseBlock{OwnerID: scanned}), blocks.ContextObjectiveProof},
+	} {
+		_, err := repo.Create(ctx, block.b, owner, block.ctx)
+		require.NoError(t, err)
+	}
+	types := []string{"scan", "geofence"}
+
+	none, err := repo.AnyOfType(ctx, []string{quizzed, revealed}, blocks.ContextObjectiveProof, types)
+	require.NoError(t, err)
+	assert.False(t, none, "a quiz, and a scan outside proof, do not count")
+
+	some, err := repo.AnyOfType(ctx, []string{quizzed, scanned}, blocks.ContextObjectiveProof, types)
+	require.NoError(t, err)
+	assert.True(t, some)
+}
+
 func TestBlockRepository_GetBlockAndStateByBlockIDAndRunCode(t *testing.T) {
 	repo, blockStateRepo, transactor, dbc, cleanup := setupBlockRepo(t)
 	defer cleanup()
