@@ -47,14 +47,18 @@ func (h *Handler) toggleGameStatus(
 	}
 
 	msg := *flash.NewSuccess(successMsg)
-	err = templates.GameScheduleStatus(user.CurrentQuest, msg).Render(r.Context(), w)
+	err = templates.GameControl(user.CurrentQuest, msg).Render(r.Context(), w)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(), action+" game: rendering GameScheduleStatus template", "error", err)
+		h.logger.ErrorContext(r.Context(), action+" game: rendering GameControl template", "error", err)
 		return
 	}
-	err = templates.ActivityStatusBadgeOOB(user.CurrentQuest).Render(r.Context(), w)
+	err = templates.QuestSwitcherOOB(*user, "Activity").Render(r.Context(), w)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(), action+" game: rendering ActivityStatusBadgeOOB template", "error", err)
+		h.logger.ErrorContext(r.Context(), action+" game: rendering QuestSwitcherOOB template", "error", err)
+	}
+	err = templates.JustNowSlot(user.CurrentQuest, true).Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), action+" game: rendering JustNowSlot template", "error", err)
 	}
 }
 
@@ -107,15 +111,19 @@ func (h *Handler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.GameScheduleStatus(user.CurrentQuest, *flash.NewSuccess("Schedule updated!")).
+	err = templates.GameControl(user.CurrentQuest, *flash.NewSuccess("Schedule updated!")).
 		Render(r.Context(), w)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering GameScheduleStatus template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering GameControl template", "error", err)
 		return
 	}
-	err = templates.ActivityStatusBadgeOOB(user.CurrentQuest).Render(r.Context(), w)
+	err = templates.QuestSwitcherOOB(*user, "Activity").Render(r.Context(), w)
 	if err != nil {
-		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering ActivityStatusBadgeOOB template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering QuestSwitcherOOB template", "error", err)
+	}
+	err = templates.JustNowSlot(user.CurrentQuest, true).Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering JustNowSlot template", "error", err)
 	}
 }
 

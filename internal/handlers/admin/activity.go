@@ -2,6 +2,7 @@ package admin
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
@@ -143,6 +144,30 @@ func (h *Handler) ActivityStats(w http.ResponseWriter, r *http.Request) {
 	err = templates.ActivityStats(user.CurrentQuest, summaries).Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "ActivityStats: rendering template", "error", err)
+	}
+}
+
+// A feed older than a session stops being news.
+const (
+	recentWindow = 3 * time.Hour
+	recentLimit  = 8
+)
+
+func (h *Handler) ActivityRecent(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+	if user.CurrentQuest.GetStatus() != models.Active {
+		return
+	}
+
+	entries, err := h.runService.RecentActivity(r.Context(), &user.CurrentQuest, recentWindow, recentLimit)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "ActivityRecent: loading recent activity", "error", err)
+		return
+	}
+
+	err = templates.RecentActivity(entries, user.CurrentQuest.Settings.EnablePoints).Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "ActivityRecent: rendering template", "error", err)
 	}
 }
 

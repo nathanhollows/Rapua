@@ -1699,6 +1699,68 @@ p.label {
 .adm-tab[aria-current="page"] { background: var(--adm-act); border-color: var(--adm-act); color: var(--adm-act-on); box-shadow: 0 2px 0 color-mix(in oklab, var(--color-primary) 55%, black); }
 .adm-tab:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 2px; }
 
+.adm-card { background: var(--color-base-100); border: 1px solid var(--adm-line); border-radius: 24px; box-shadow: var(--adm-sh); }
+.adm-kick { font-size: .75rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--adm-soft); }
+.adm .progress-primary, .adm .progress-success { color: var(--adm-live); }
+
+.adm-strip { display: grid; grid-template-columns: repeat(4, 1fr); border-radius: 26px; }
+.adm-cell { display: grid; align-content: start; gap: .15rem; padding: 1.1rem 1.5rem 1.2rem; }
+.adm-cell + .adm-cell { border-left: 1px solid var(--adm-line); }
+.adm-cell small { color: var(--adm-soft); font-size: .875rem; }
+.adm-num { font-family: var(--adm-disp); font-size: 2.75rem; font-weight: 800; letter-spacing: -.04em; line-height: 1.05; }
+@media (max-width: 760px) {
+  .adm-strip { grid-template-columns: 1fr 1fr; }
+  .adm-cell:nth-child(3) { border-left: 0; }
+  .adm-cell:nth-child(n+3) { border-top: 1px solid var(--adm-line); }
+}
+
+.adm-gc { overflow: hidden; }
+.adm-gc-open { background: color-mix(in oklab, var(--adm-live) 8%, var(--color-base-100)); }
+.adm-gc-scheduled { background: color-mix(in oklab, var(--color-info) 8%, var(--color-base-100)); }
+.adm-gc-main { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.4rem; padding: 1.1rem 1.4rem; }
+.adm-gc-chipw { position: relative; flex: none; }
+.adm-gc-chip { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: var(--color-base-300); color: var(--adm-soft); transform: rotate(-4deg); }
+.adm-gc-open .adm-gc-chip { background: color-mix(in oklab, var(--adm-live) 38%, var(--color-base-100)); color: var(--color-base-content); }
+.adm-gc-scheduled .adm-gc-chip { background: color-mix(in oklab, var(--color-info) 38%, var(--color-base-100)); color: var(--color-base-content); }
+/* A sibling of the chip, so its tilt is set here. */
+.adm-gc-open .adm-gc-chipw::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--adm-live); border-radius: 18px; transform: rotate(-4deg); animation: adm-ping 1.8s ease-out infinite; pointer-events: none; }
+@keyframes adm-ping { 0% { transform: rotate(-4deg) scale(1); opacity: .65; } 100% { transform: rotate(-4deg) scale(1.55); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .adm-gc-open .adm-gc-chipw::after { animation: none; opacity: 0; } }
+.adm-gc-text { flex: 1 1 15rem; min-width: 0; }
+.adm-gc-text h2 { font-family: var(--adm-disp); font-size: 1.65rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
+.adm-gc-text p { margin-top: .15rem; color: var(--adm-soft); }
+.adm-gc-cdw { display: grid; gap: .3rem; }
+.adm-cd { display: flex; gap: .5rem; }
+.adm-cd span { display: grid; justify-items: center; min-width: 3.4rem; padding: .35rem .5rem; border-radius: 12px; background: color-mix(in oklab, var(--color-base-100) 75%, transparent); color: var(--adm-soft); font-size: .75rem; font-weight: 700; }
+.adm-cd b { color: var(--color-base-content); font: 800 1.5rem/1.1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.adm-gc-act { display: flex; flex-wrap: wrap; gap: .5rem; }
+.adm-gc-sched { padding: 1rem 1.4rem 1.1rem; border-top: 1px solid var(--adm-line); background: color-mix(in oklab, var(--color-base-100) 70%, transparent); }
+.adm-gc-row { display: grid; grid-template-columns: 7rem 11rem 8rem 1fr; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.adm-gc-row small, .adm-gc-foot small { color: var(--adm-soft); }
+.adm-gc-foot { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; }
+@media (max-width: 760px) { .adm-gc-row { grid-template-columns: 1fr 1fr; } .adm-gc-row small { display: none; } }
+
+.adm-split { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.adm-split:has(.adm-feed) { grid-template-columns: minmax(0, 1fr) 22rem; }
+@media (max-width: 1000px) { .adm-split:has(.adm-feed) { grid-template-columns: minmax(0, 1fr); } }
+
+.adm-feed-list { display: grid; gap: .5rem; margin-top: .5rem; }
+.adm-ev { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .6rem .75rem; border-radius: 16px; background: var(--color-base-200); }
+.adm-ev:hover { background: var(--color-base-300); }
+.adm-ev-ok { background: color-mix(in oklab, var(--adm-live) 10%, var(--color-base-100)); }
+.adm-ev-gold { background: color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100)); }
+.adm-ev-ico { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 11px; background: color-mix(in oklab, var(--color-base-100) 70%, transparent); color: var(--adm-soft); }
+.adm-ev small { color: var(--adm-soft); }
+.adm-ev-r { display: grid; justify-items: end; text-align: right; white-space: nowrap; }
+.adm-empty { margin-top: .75rem; padding: 1.25rem; border: 1.5px dashed var(--adm-line2); border-radius: 14px; text-align: center; color: var(--adm-soft); }
+
+.adm-rows { border-collapse: separate; border-spacing: 0 8px; }
+.adm-rows thead th { padding: 4px 14px; border: 0; background: transparent; color: var(--adm-soft); }
+.adm-rows tbody td { padding: 10px 14px; border: 0; background: var(--color-base-200); }
+.adm-rows tbody td:first-child { border-radius: 16px 0 0 16px; }
+.adm-rows tbody td:last-child { border-radius: 0 16px 16px 0; }
+.adm-rows tbody tr:hover td { background: var(--color-base-300); }
+
 /* Player shell tokens.
    A tile's face, edge and icon are one hue at three lightnesses; the hue is set
    per section (--h) from the palette in internal/templates/players/hues.go.
