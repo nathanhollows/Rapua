@@ -35,7 +35,7 @@ func Instances(quests []models.Quest, currentQuest models.Quest, templates []mod
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-row justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">Games<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-row justify-between items-center w-full p-5\"><h1 class=\"text-4xl font-black\">Games<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -43,7 +43,7 @@ func Instances(quests []models.Quest, currentQuest models.Quest, templates []mod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Quests</h2><p>Quests are the core of your event. They contain all the locations, content, teams, and settings for your event.</p><p>Your active quest is the one you are currently managing. You can switch between games at any time.</p><p>You can run multiple quests at the same time, but only one can be active in the admin panel.</p></div></div></div></h1><span class=\"flex gap-2\"><button class=\"btn btn-outline btn-sm\" onclick=\"import_modal.showModal()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Quests</h2><p>Quests are the core of your event. They contain all the locations, content, teams, and settings for your event.</p><p>Your active quest is the one you are currently managing. You can switch between games at any time.</p><p>You can run multiple quests at the same time, but only one can be active in the admin panel.</p></div></div></div></h1><span class=\"flex gap-2\"><button class=\"btn\" onclick=\"import_modal.showModal()\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -51,7 +51,7 @@ func Instances(quests []models.Quest, currentQuest models.Quest, templates []mod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "Import</button> <button class=\"btn btn-primary btn-sm\" onclick=\"new_modal.showModal()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "Import</button> <button class=\"btn btn-primary\" onclick=\"new_modal.showModal()\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -88,7 +88,7 @@ func Instances(quests []models.Quest, currentQuest models.Quest, templates []mod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<label class=\"input input-sm flex items-center gap-2 ml-auto w-56\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<label class=\"input flex items-center gap-2 ml-auto w-56\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -96,7 +96,7 @@ func Instances(quests []models.Quest, currentQuest models.Quest, templates []mod
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<input id=\"search-quests\" type=\"text\" class=\"grow\" placeholder=\"Search quests\" _=\"on input\n\t\t\t\t\tshow .instance-item\n\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\"></label></div><div id=\"instance-list\" class=\"card bg-base-200 border border-base-300\"><div class=\"card-body p-0 gap-0 divide-y divide-base-300\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<input id=\"search-quests\" type=\"text\" class=\"grow\" placeholder=\"Search quests\" _=\"on input\n\t\t\t\t\tshow .instance-item\n\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\"></label></div><div id=\"instance-list\" class=\"panel\"><div class=\"row-list\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -111,12 +111,12 @@ func Instances(quests []models.Quest, currentQuest models.Quest, templates []mod
 			return templ_7745c5c3_Err
 		}
 		if len(quests) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " class=\"no-teams flex items-center gap-3 px-4 py-3\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " class=\"no-teams basis-full flex items-center gap-3 px-4 py-3\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " class=\"no-teams flex items-center gap-3 px-4 py-3 hidden\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, " class=\"no-teams basis-full flex items-center gap-3 px-4 py-3 hidden\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -461,7 +461,7 @@ func instanceItem(quest models.Quest, active bool, anyActive bool, first bool, l
 			templ_7745c5c3_Var22 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var23 = []any{"instance-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("bg-primary/10", active), templ.KV("rounded-t-box", first), templ.KV("rounded-b-box", last)}
+		var templ_7745c5c3_Var23 = []any{"instance-item list-row flex items-center gap-3 px-4 py-3", templ.KV("list-row-on", active)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var23...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

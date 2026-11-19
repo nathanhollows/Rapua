@@ -18,7 +18,7 @@ templ Templates(templates []models.Quest) {
 	<div id="templates" class="px-5">
 		<!-- Header -->
 		<div class="flex flex-row justify-between items-center w-full py-5 mt-6">
-			<h1 class="text-2xl font-bold">
+			<h1 class="text-4xl font-black">
 				Templates
 				<div class="dropdown dropdown-hover">
 					<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">@icon("info", templ.Attributes{"class": "w-4 h-4"})</div>
@@ -47,7 +47,7 @@ templ Templates(templates []models.Quest) {
 					set my textContent to <.template-item:not( [style*='display: none'] )/>'s length"
 				>{ fmt.Sprint(len(templates)) }</span> templates
 			</span>
-			<label class="input input-sm flex items-center gap-2 ml-auto w-56">
+			<label class="input flex items-center gap-2 ml-auto w-56">
 				@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
 				<input
 					id="search-templates"
@@ -62,16 +62,16 @@ templ Templates(templates []models.Quest) {
 			</label>
 		</div>
 		<!-- Templates list -->
-		<div id="template-list" class="card bg-base-200 border border-base-300">
-			<div class="card-body p-0 gap-0 divide-y divide-base-300">
+		<div id="template-list" class="panel">
+			<div class="row-list">
 				for i, template := range templates {
 					@templateItem(template, i == 0, i == len(templates)-1)
 				}
 				<div
 					if len(templates) == 0 {
-						class="no-teams flex items-center gap-3 px-4 py-3"
+						class="no-teams basis-full flex items-center gap-3 px-4 py-3"
 					} else {
-						class="no-teams flex items-center gap-3 px-4 py-3 hidden"
+						class="no-teams basis-full flex items-center gap-3 px-4 py-3 hidden"
 					}
 					_="on htmx:afterSettle from body
 				if <.template-item/>'s length == 0
@@ -164,7 +164,7 @@ templ TemplateNameEdit(template models.Quest) {
 
 templ templateItem(template models.Quest, first bool, last bool) {
 	<div
-		class={ "template-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("rounded-t-box", first), templ.KV("rounded-b-box", last) }
+		class="template-item list-row flex items-center gap-3 px-4 py-3"
 	>
 		<!-- Template name -->
 		<div

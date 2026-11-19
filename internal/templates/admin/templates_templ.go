@@ -80,7 +80,7 @@ func Templates(templates []models.Quest) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"templates\" class=\"px-5\"><!-- Header --><div class=\"flex flex-row justify-between items-center w-full py-5 mt-6\"><h1 class=\"text-2xl font-bold\">Templates<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"templates\" class=\"px-5\"><!-- Header --><div class=\"flex flex-row justify-between items-center w-full py-5 mt-6\"><h1 class=\"text-4xl font-black\">Templates<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -101,7 +101,7 @@ func Templates(templates []models.Quest) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span> templates</span> <label class=\"input input-sm flex items-center gap-2 ml-auto w-56\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span> templates</span> <label class=\"input flex items-center gap-2 ml-auto w-56\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -109,7 +109,7 @@ func Templates(templates []models.Quest) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<input id=\"search-templates\" type=\"text\" class=\"grow\" placeholder=\"Search templates\" _=\"on input\n\t\t\t\t\tshow .template-item\n\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\"></label></div><!-- Templates list --><div id=\"template-list\" class=\"card bg-base-200 border border-base-300\"><div class=\"card-body p-0 gap-0 divide-y divide-base-300\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<input id=\"search-templates\" type=\"text\" class=\"grow\" placeholder=\"Search templates\" _=\"on input\n\t\t\t\t\tshow .template-item\n\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\"></label></div><!-- Templates list --><div id=\"template-list\" class=\"panel\"><div class=\"row-list\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -124,12 +124,12 @@ func Templates(templates []models.Quest) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if len(templates) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " class=\"no-teams flex items-center gap-3 px-4 py-3\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, " class=\"no-teams basis-full flex items-center gap-3 px-4 py-3\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " class=\"no-teams flex items-center gap-3 px-4 py-3 hidden\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " class=\"no-teams basis-full flex items-center gap-3 px-4 py-3 hidden\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -366,38 +366,20 @@ func templateItem(template models.Quest, first bool, last bool) templ.Component 
 			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var17 = []any{"template-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("rounded-t-box", first), templ.KV("rounded-b-box", last)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"template-item list-row flex items-center gap-3 px-4 py-3\"><!-- Template name --><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var17).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\"><!-- Template name --><div id=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("name-", template.ID))
+		var templ_7745c5c3_Var17 string
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("name-", template.ID))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 171, Col: 40}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" class=\"grow\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"grow\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -405,150 +387,150 @@ func templateItem(template models.Quest, first bool, last bool) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div><span class=\"grow\"></span><!-- Actions --><span class=\"hidden sm:inline-block tooltip\" data-tip=\"Create a game from this template\"><a class=\"btn btn-sm inline-flex\" onclick=\"launchTemplate()\" data-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div><span class=\"grow\"></span><!-- Actions --><span class=\"hidden sm:inline-block tooltip\" data-tip=\"Create a game from this template\"><a class=\"btn btn-sm inline-flex\" onclick=\"launchTemplate()\" data-id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(template.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 182, Col: 37}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" data-name=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.Name)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 183, Col: 29}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket w-4 h-4\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"></path><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"></path><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"></path><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"></path></svg> Launch</a></span> <span class=\"hidden sm:inline-block tooltip\" data-tip=\"Share this template with others\"><a class=\"btn btn-sm inline-flex\" data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(template.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 182, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 192, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" data-name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.Name)
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/templates/", template.ID, "/share"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 183, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 193, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket w-4 h-4\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"></path><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"></path><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"></path><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"></path></svg> Launch</a></span> <span class=\"hidden sm:inline-block tooltip\" data-tip=\"Share this template with others\"><a class=\"btn btn-sm inline-flex\" data-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\" hx-trigger=\"click\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-share-2 w-4 h-4\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg> Share</a></span> <span class=\"tooltip\" data-tip=\"More actions\"><div class=\"dropdown dropdown-end\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm m-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-ellipsis w-5 h-5\"><circle cx=\"12\" cy=\"12\" r=\"1\"></circle><circle cx=\"19\" cy=\"12\" r=\"1\"></circle><circle cx=\"5\" cy=\"12\" r=\"1\"></circle></svg></div><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow\"><!-- Launch --><li class=\"inline-block sm:hidden\"><a onclick=\"launchTemplate()\" data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(template.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 192, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 212, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/templates/", template.ID, "/share"))
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 193, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 213, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\" hx-trigger=\"click\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-share-2 w-4 h-4\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg> Share</a></span> <span class=\"tooltip\" data-tip=\"More actions\"><div class=\"dropdown dropdown-end\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm m-1\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-ellipsis w-5 h-5\"><circle cx=\"12\" cy=\"12\" r=\"1\"></circle><circle cx=\"19\" cy=\"12\" r=\"1\"></circle><circle cx=\"5\" cy=\"12\" r=\"1\"></circle></svg></div><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow\"><!-- Launch --><li class=\"inline-block sm:hidden\"><a onclick=\"launchTemplate()\" data-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket w-4 h-4\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"></path><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"></path><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"></path><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"></path></svg> Launch</a></li><!-- Share --><li class=\"inline-block sm:hidden\"><a data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(template.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 212, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 222, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" data-name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
-		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.Name)
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/templates/", template.ID, "/share"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 213, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 223, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-rocket w-4 h-4\"><path d=\"M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z\"></path><path d=\"m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z\"></path><path d=\"M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0\"></path><path d=\"M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5\"></path></svg> Launch</a></li><!-- Share --><li class=\"inline-block sm:hidden\"><a data-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\" hx-trigger=\"click\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-share-2 w-4 h-4\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg> Share</a></li><!-- Export as JSON --><li><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(template.ID))
+		var templ_7745c5c3_Var26 templ.SafeURL
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/quests/%s/export", template.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 222, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 234, Col: 82}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-download w-4 h-4\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"7 10 12 15 17 10\"></polyline><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"></line></svg> Download JSON</a></li><span class=\"flex sm:hidden divider my-0\"></span> <span class=\"divider my-0\"></span><!-- Delete --><li><a class=\"text-error\" data-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/templates/", template.ID, "/share"))
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(template.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 223, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 245, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\" hx-trigger=\"click\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-share-2 w-4 h-4\"><circle cx=\"18\" cy=\"5\" r=\"3\"></circle><circle cx=\"6\" cy=\"12\" r=\"3\"></circle><circle cx=\"18\" cy=\"19\" r=\"3\"></circle><line x1=\"8.59\" x2=\"15.42\" y1=\"13.51\" y2=\"17.49\"></line><line x1=\"15.41\" x2=\"8.59\" y1=\"6.51\" y2=\"10.49\"></line></svg> Share</a></li><!-- Export as JSON --><li><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" data-name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var28 templ.SafeURL
-		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/quests/%s/export", template.ID)))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 234, Col: 82}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-download w-4 h-4\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4\"></path><polyline points=\"7 10 12 15 17 10\"></polyline><line x1=\"12\" x2=\"12\" y1=\"15\" y2=\"3\"></line></svg> Download JSON</a></li><span class=\"flex sm:hidden divider my-0\"></span> <span class=\"divider my-0\"></span><!-- Delete --><li><a class=\"text-error\" data-id=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var29 string
-		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(template.ID))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 245, Col: 40}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" data-name=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var30 string
-		templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.Name)
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.Name)
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 246, Col: 32}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\" onclick=\"confirmDeleteTemplate()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</a></li></ul></div></span></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" onclick=\"confirmDeleteTemplate()\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-4 h-4\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg> Delete</a></li></ul></div></span></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -572,12 +554,12 @@ func templateModals() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var31 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var31 == nil {
-			templ_7745c5c3_Var31 = templ.NopComponent
+		templ_7745c5c3_Var29 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var29 == nil {
+			templ_7745c5c3_Var29 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<!-- Create template modal --><dialog id=\"create_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose\"><h3 class=\"text-lg font-bold\">Save as template</h3><p class=\"pt-4\">You are saving <code id=\"template-modal-instance-name\"></code> as a template. The template will include all settings, locations, and content of the game. It will not include any teams or history.</p><form hx-post=\"/admin/templates/create\" hx-target=\"#templates\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">New template name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"create_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\" onclick=\"create_template_modal.close()\">Save as template</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Delete template modal --><dialog id=\"confirm_delete_template_modal\" class=\"modal modal-bottom sm:modal-middle p-1\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete a template</h3><p class=\"pt-4\">You are about to delete your <code id=\"delete-template-name\"></code> template and any share links you may have generated. Games that were created from this template will not be impacted.</p><p>This action cannot be undone. Are you sure?</p><form hx-delete=\"/admin/templates\" hx-swap=\"outerHTML\" hx-target=\"#templates\"><div class=\"modal-action\"><input type=\"hidden\" name=\"id\" value=\"\"> <button type=\"button\" class=\"btn\" onclick=\"confirm_delete_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_template_modal.close()\">Delete</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Launch template modal --><dialog id=\"launch_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose overflow-y-visible\"><h3 class=\"text-lg font-bold\">Launch a new game</h3><p>You are about to launch a new game from the <code id=\"launch-template-name\"></code> template.</p><form hx-post=\"/admin/templates/launch\" hx-swap=\"none\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">What is the name of the new game?</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><label class=\"form-control w-full\"></label><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Share template modal --><dialog id=\"share_template_modal\" class=\"modal modal-bottom sm:modal-middle\"></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<!-- Create template modal --><dialog id=\"create_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose\"><h3 class=\"text-lg font-bold\">Save as template</h3><p class=\"pt-4\">You are saving <code id=\"template-modal-instance-name\"></code> as a template. The template will include all settings, locations, and content of the game. It will not include any teams or history.</p><form hx-post=\"/admin/templates/create\" hx-target=\"#templates\" hx-swap=\"outerHTML\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">New template name</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"create_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\" onclick=\"create_template_modal.close()\">Save as template</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Delete template modal --><dialog id=\"confirm_delete_template_modal\" class=\"modal modal-bottom sm:modal-middle p-1\"><div class=\"modal-box prose outline outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete a template</h3><p class=\"pt-4\">You are about to delete your <code id=\"delete-template-name\"></code> template and any share links you may have generated. Games that were created from this template will not be impacted.</p><p>This action cannot be undone. Are you sure?</p><form hx-delete=\"/admin/templates\" hx-swap=\"outerHTML\" hx-target=\"#templates\"><div class=\"modal-action\"><input type=\"hidden\" name=\"id\" value=\"\"> <button type=\"button\" class=\"btn\" onclick=\"confirm_delete_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-error\" onclick=\"confirm_delete_template_modal.close()\">Delete</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Launch template modal --><dialog id=\"launch_template_modal\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose overflow-y-visible\"><h3 class=\"text-lg font-bold\">Launch a new game</h3><p>You are about to launch a new game from the <code id=\"launch-template-name\"></code> template.</p><form hx-post=\"/admin/templates/launch\" hx-swap=\"none\"><input type=\"hidden\" name=\"id\" value=\"\"><fieldset class=\"fieldset not-prose\"><legend class=\"fieldset-legend\">What is the name of the new game?</legend> <input type=\"text\" class=\"input w-full\" name=\"name\" required autocomplete=\"off\"><p class=\"label\">You can change this later.</p></fieldset><label class=\"form-control w-full\"></label><div class=\"form-control my-5 hidden\"><label class=\"label cursor-pointer\"><span class=\"label-text flex items-center\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Sharing location codes allows players in different games to scan the same QR codes and URLs, enabling tailored content for different audiences, such as adults and children, in the same space.</p><p>Generating new location codes creates a unique set for this game, useful when adapting an existing game to a new environment, like a health and safety tour at a different site.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label></div><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"launch_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Launch</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><!-- Share template modal --><dialog id=\"share_template_modal\" class=\"modal modal-bottom sm:modal-middle\"></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -601,38 +583,38 @@ func TemplateShareModal(template models.Quest) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var32 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var32 == nil {
-			templ_7745c5c3_Var32 = templ.NopComponent
+		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var30 == nil {
+			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<div class=\"modal-box\" _=\"on load share_template_modal.showModal()\"><form hx-post=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"modal-box\" _=\"on load share_template_modal.showModal()\"><form hx-post=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var33 string
-		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/templates/", template.ID, "/share"))
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/templates/", template.ID, "/share"))
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 403, Col: 67}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\"><h3 class=\"text-lg font-bold\">Share a template</h3><div class=\"prose py-4\"><p>Share a template with others by creating a shareable link. Anyone with the link will be able to create a new game from this template.</p></div><div class=\"flex md:flex-row flex-col gap-4\"><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Validity</legend> <select id=\"link-validity\" name=\"validity\" class=\"select w-full\"><option value=\"always\" selected>Never expires</option> <option value=\"day\">1 day</option> <option value=\"week\">1 week</option> <option value=\"month\">1 month</option></select><p class=\"label text-wrap\">How long should the link last?</p></fieldset><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Maximum uses</legend> <input id=\"link-limit\" type=\"number\" class=\"input w-full\" name=\"limit\" placeholder=\"Unlimited\" step=\"1\" min=\"1\"><p class=\"label text-wrap\">How many games can be created from this link?</p></fieldset><input type=\"hidden\" name=\"id\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" hx-target=\"#share_template_modal\" hx-swap=\"innerHTML\"><h3 class=\"text-lg font-bold\">Share a template</h3><div class=\"prose py-4\"><p>Share a template with others by creating a shareable link. Anyone with the link will be able to create a new game from this template.</p></div><div class=\"flex md:flex-row flex-col gap-4\"><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Validity</legend> <select id=\"link-validity\" name=\"validity\" class=\"select w-full\"><option value=\"always\" selected>Never expires</option> <option value=\"day\">1 day</option> <option value=\"week\">1 week</option> <option value=\"month\">1 month</option></select><p class=\"label text-wrap\">How long should the link last?</p></fieldset><fieldset class=\"fieldset sm:w-1/2\"><legend class=\"fieldset-legend\">Maximum uses</legend> <input id=\"link-limit\" type=\"number\" class=\"input w-full\" name=\"limit\" placeholder=\"Unlimited\" step=\"1\" min=\"1\"><p class=\"label text-wrap\">How many games can be created from this link?</p></fieldset><input type=\"hidden\" name=\"id\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var34 string
-		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.ID)
+		var templ_7745c5c3_Var32 string
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(template.ID)
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 435, Col: 54}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\"></div><label class=\"label cursor-pointer hidden\"><span class=\"label-text flex items-center pt-4\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Check this box to generate new location codes for every game launched using this template. Useful for adapting games to new sites.</p><p>Leave it unchecked to let game creators choose whether to reuse existing location codes or create new ones. Useful when running multiple games in the same space.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"share_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Create a link</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\"></div><label class=\"label cursor-pointer hidden\"><span class=\"label-text flex items-center pt-4\"><div class=\"dropdown dropdown-hover dropdown-top not-prose\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\" onclick=\"event.preventDefault();\"><svg tabindex=\"0\" xmlns=\"http://www.w3.org/2000/svg\" fill=\"none\" viewBox=\"0 0 24 24\" class=\"h-4 w-4 stroke-current\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z\"></path></svg></div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Location codes</h2><p>Check this box to generate new location codes for every game launched using this template. Useful for adapting games to new sites.</p><p>Leave it unchecked to let game creators choose whether to reuse existing location codes or create new ones. Useful when running multiple games in the same space.</p></div></div></div>Generate new location codes?</span> <input type=\"checkbox\" name=\"regenerate\" class=\"checkbox self-end\" disabled></label><div class=\"modal-action\"><button class=\"btn\" type=\"button\" onclick=\"share_template_modal.close()\">Nevermind</button> <button type=\"submit\" class=\"btn btn-primary\">Create a link</button></div></form><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -656,25 +638,25 @@ func ShareLinkCopyModal(url string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var35 == nil {
-			templ_7745c5c3_Var35 = templ.NopComponent
+		templ_7745c5c3_Var33 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var33 == nil {
+			templ_7745c5c3_Var33 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Link created!</h3><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Template link</legend><div class=\"join w-full\"><input id=\"facilitator_link\" class=\"input join-item w-full\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<div class=\"modal-box\"><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form><h3 class=\"text-lg font-bold\">Link created!</h3><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Template link</legend><div class=\"join w-full\"><input id=\"facilitator_link\" class=\"input join-item w-full\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var36 string
-		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(url)
+		var templ_7745c5c3_Var34 string
+		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(url)
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/templates.templ`, Line: 509, Col: 16}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\"> <button class=\"btn join-item\" _=\"init send click to me \n\t\t\t\t\ton click\n\t\t\t\t    set link to #facilitator_link's value\n\t\t\t\t\t\twriteText(link) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Link</button></div><p class=\"label text-wrap\">This link lets anyone preview the template and create a new game from it.</p></fieldset><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Close</button></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\"> <button class=\"btn join-item\" _=\"init send click to me \n\t\t\t\t\ton click\n\t\t\t\t    set link to #facilitator_link's value\n\t\t\t\t\t\twriteText(link) on navigator.clipboard\n\t\t\t\t\t\tset copyText to my innerHTML\n\t\t\t\t\t\tset my textContent to 'Copied!'\n\t\t\t\t\t\twait 1.5s\n\t\t\t\t\t\tset my innerHTML to copyText\n\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-clipboard-copy w-4 h-4\"><rect width=\"8\" height=\"4\" x=\"8\" y=\"2\" rx=\"1\" ry=\"1\"></rect><path d=\"M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2\"></path><path d=\"M16 4h2a2 2 0 0 1 2 2v4\"></path><path d=\"M21 14H11\"></path><path d=\"m15 10-4 4 4 4\"></path></svg> Copy Link</button></div><p class=\"label text-wrap\">This link lets anyone preview the template and create a new game from it.</p></fieldset><div class=\"modal-action\"><form method=\"dialog\"><!-- if there is a button in form, it will close the modal --><button class=\"btn\">Close</button></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -698,12 +680,12 @@ func templateScripts() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var37 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var37 == nil {
-			templ_7745c5c3_Var37 = templ.NopComponent
+		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var35 == nil {
+			templ_7745c5c3_Var35 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "<script>\nfunction handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {\n\t// Error checking\n\tif (!modalId) {\n\t\tconsole.error('Modal ID is required');\n\t\treturn;\n\t}\n\tif (showInstanceName && !nameFieldId) {\n\t\tconsole.error('Name field ID is required when showing instance name');\n\t\treturn;\n\t}\n\tif (showInstanceName && !document.getElementById(nameFieldId)) {\n\t\tconsole.error('Name field ID does not exist');\n\t\treturn;\n\t}\n\n\tconst { id, name } = event.currentTarget.dataset;\n\tif (!id) {\n\t\tconsole.error('Template ID is required');\n\t\treturn;\n\t}\n\tconst modal = document.getElementById(modalId);\n\tconst form = modal.querySelector('form');\n\tconst input = form.querySelector('input[name=\"name\"]');\n\tconst hidden = form.querySelector('input[name=\"id\"]');\n\n\tif (showInstanceName) {\n\t\tdocument.getElementById(nameFieldId).textContent = name;\n\t}\n\n\tif (input) {\n\t\tinput.value = defaultName ? `${name} ${defaultName}` : name || '';\n\t}\n\thidden.value = id;\n\n\tmodal.showModal();\n}\n\nfunction confirmDeleteTemplate() {\n\thandleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);\n}\n\nfunction launchTemplate() {\n\thandleModalAction('launch_template_modal', 'launch-template-name', '', true);\n}\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<script>\nfunction handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {\n\t// Error checking\n\tif (!modalId) {\n\t\tconsole.error('Modal ID is required');\n\t\treturn;\n\t}\n\tif (showInstanceName && !nameFieldId) {\n\t\tconsole.error('Name field ID is required when showing instance name');\n\t\treturn;\n\t}\n\tif (showInstanceName && !document.getElementById(nameFieldId)) {\n\t\tconsole.error('Name field ID does not exist');\n\t\treturn;\n\t}\n\n\tconst { id, name } = event.currentTarget.dataset;\n\tif (!id) {\n\t\tconsole.error('Template ID is required');\n\t\treturn;\n\t}\n\tconst modal = document.getElementById(modalId);\n\tconst form = modal.querySelector('form');\n\tconst input = form.querySelector('input[name=\"name\"]');\n\tconst hidden = form.querySelector('input[name=\"id\"]');\n\n\tif (showInstanceName) {\n\t\tdocument.getElementById(nameFieldId).textContent = name;\n\t}\n\n\tif (input) {\n\t\tinput.value = defaultName ? `${name} ${defaultName}` : name || '';\n\t}\n\thidden.value = id;\n\n\tmodal.showModal();\n}\n\nfunction confirmDeleteTemplate() {\n\thandleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);\n}\n\nfunction launchTemplate() {\n\thandleModalAction('launch_template_modal', 'launch-template-name', '', true);\n}\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

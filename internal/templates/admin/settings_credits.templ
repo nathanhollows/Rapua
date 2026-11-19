@@ -9,51 +9,32 @@ import (
 	"time"
 )
 
-templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.RunStartSummary) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-4 mt-12">
-		<div class="grid h-fit flex-grow">
-			<div class="stats">
-				<div class="stat">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-check-icon lucide-badge-check w-6 h-6"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="m9 12 2 2 4-4"></path></svg>
-					</div>
-					<div class="stat-title">Free Credits</div>
-					<div class="stat-value">
-						{ fmt.Sprint(freeCredits) }
-					</div>
-					<div class="stat-desc">Refreshed monthly</div>
-				</div>
-				<div class="stat">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-badge-dollar-sign-icon lucide-badge-dollar-sign w-6 h-6"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"></path><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"></path><path d="M12 18V6"></path></svg>
-					</div>
-					<div class="stat-title">Paid Credits</div>
-					<div class="stat-value">
-						{ fmt.Sprint(paidCredits) }
-					</div>
-					<div class="stat-actions">
-						@CreditTopupModal()
-					</div>
-				</div>
-				<div class="stat">
-					<div class="stat-figure text-secondary">
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-refresh-cw-icon lucide-refresh-cw w-6 h-6"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path><path d="M21 3v5h-5"></path><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path><path d="M8 16H3v5"></path></svg>
-					</div>
-					<div class="stat-title">Free monthly credits</div>
-					<div class="stat-value">
-						{ fmt.Sprint(recurring) }
-					</div>
-					<div class="stat-desc">
-						Tops up in { fmt.Sprint(math.Round(time.Date(time.Now().Year(), time.Now().Month()+1, 1, 0, 0, 0, 0, time.Local).Sub(time.Now()).Hours() / 24)) } days
-					</div>
-				</div>
+templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []models.CreditAdjustments, usage []services.RunStartSummary, period string) {
+	<div class="panel stat-strip stat-strip-3">
+		<div class="stat-cell">
+			<span class="kicker">Free credits</span>
+			<b class="stat-num">{ fmt.Sprint(freeCredits) }</b>
+			<small>Refreshed monthly</small>
+		</div>
+		<div class="stat-cell">
+			<span class="kicker">Paid credits</span>
+			<b class="stat-num">{ fmt.Sprint(paidCredits) }</b>
+			<div class="pt-1">
+				@CreditTopupModal()
 			</div>
 		</div>
+		<div class="stat-cell">
+			<span class="kicker">Free monthly credits</span>
+			<b class="stat-num">{ fmt.Sprint(recurring) }</b>
+			<small>
+				Tops up in { fmt.Sprint(math.Round(time.Date(time.Now().Year(), time.Now().Month()+1, 1, 0, 0, 0, 0, time.Local).Sub(time.Now()).Hours() / 24)) } days
+			</small>
+		</div>
 	</div>
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+	<div class="panel p-8">
 		<div class="grid h-fit flex-grow">
 			<div class="">
-				<h2 class="font-bold pb-5 flex justify-between">
+				<h2 class="text-2xl font-extrabold pb-4 flex justify-between items-center">
 					Credit Usage
 					<form
 						class="join"
@@ -62,22 +43,22 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 						hx-swap="innerHTML"
 						hx-trigger="change"
 					>
-						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="week" checked aria-label="Week" autocomplete="off"/>
-						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="month" aria-label="Month" autocomplete="off"/>
-						<input class="join-item btn btn-sm btn-neutral checked:btn-info" type="radio" name="period" value="year" aria-label="Year" autocomplete="off"/>
+						<input class="join-item btn btn-sm" type="radio" name="period" value="week" if period == "week" { checked } aria-label="Week" autocomplete="off"/>
+						<input class="join-item btn btn-sm" type="radio" name="period" value="month" if period == "month" { checked } aria-label="Month" autocomplete="off"/>
+						<input class="join-item btn btn-sm" type="radio" name="period" value="year" if period == "year" { checked } aria-label="Year" autocomplete="off"/>
 					</form>
 				</h2>
 				<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/charts.css/dist/charts.min.css"/>
 				<div id="my-chart">
-					@CreditUsageChart(usage, "week")
+					@CreditUsageChart(usage, period)
 				</div>
 			</div>
 		</div>
 	</div>
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+	<div class="panel p-8">
 		<div class="grid h-fit flex-grow">
 			<div class="">
-				<h2 class="font-bold pb-5 flex justify-between">
+				<h2 class="text-2xl font-extrabold pb-4 flex justify-between items-center">
 					Credit Top-ups
 					<button class="btn btn-sm btn-primary" onclick="topup_modal.showModal()">Top up</button>
 				</h2>
@@ -117,9 +98,9 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 			</div>
 		</div>
 	</div>
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+	<div class="panel p-8">
 		<div class="">
-			<h2 class="font-bold pb-5">Payment method</h2>
+			<h2 class="text-2xl font-extrabold pb-4">Payment method</h2>
 			<div class="prose">
 				<p>All payments are handled securely via Stripe.</p>
 			</div>
@@ -129,7 +110,7 @@ templ SettingsCreditUsage(freeCredits, paidCredits, recurring int, topups []mode
 
 templ CreditTopupModal() {
 	<!-- Open the modal using ID.showModal() method -->
-	<button class="btn btn-xs btn-primary" onclick="topup_modal.showModal()">Top up</button>
+	<button class="btn btn-sm btn-primary" onclick="topup_modal.showModal()">Top up</button>
 	<dialog id="topup_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box">
 			<h3 class="text-lg font-bold">Top Up Credits</h3>
@@ -193,169 +174,197 @@ templ CreditTopupModal() {
 	</script>
 }
 
+// Usage is zero-filled per day, so an empty period is all zeros rather than no rows.
+func noCreditUsage(usage []services.RunStartSummary) bool {
+	for _, row := range usage {
+		if row.Count > 0 {
+			return false
+		}
+	}
+	return true
+}
+
+templ creditUsageNone() {
+	<div class="flex items-center justify-center aspect-[3/1] text-base-content/60">
+		No credits used in this period.
+	</div>
+}
+
 templ CreditUsageWeek(usage []services.RunStartSummary, period string) {
-	<table class="charts-css column show-labels data-spacing-5 data-center">
-		<caption>Team Starts by Day</caption>
-		<thead>
-			<tr>
-				<th scope="col">Date </th>
-				<th scope="col">Count </th>
-			</tr>
-		</thead>
-		<tbody class="!aspect-[3/1]">
-			for _, row := range usage {
+	if noCreditUsage(usage) {
+		@creditUsageNone()
+	} else {
+		<table class="charts-css column show-labels data-spacing-5 data-center">
+			<caption>Team Starts by Day</caption>
+			<thead>
 				<tr>
-					<th scope="row">
-						switch period {
-							case "week":
-								<span class="inline sm:hidden font-normal">
-									{ row.Date.Format("Mon") }
-								</span>
-								<span class="hidden sm:inline font-normal">
-									{ row.Date.Format("Mon 2") }
-								</span>
-							case "month":
-								<span class="font-normal text-sm">
-									{ row.Date.Format("02/01") }
-								</span>
-							case "year":
-								<span class="inline sm:hidden font-normal">
-									{ row.Date.Format("Mon") }
-								</span>
-								<span class="hidden sm:inline font-normal">
-									{ row.Date.Format("Mon 2") }
-								</span>
-							default:
-								<span class="inline sm:hidden font-normal">
-									{ row.Date.Format("Mon") }
-								</span>
-								<span class="hidden sm:inline font-normal">
-									{ row.Date.Format("Mon 2") }
-								</span>
-						}
-					</th>
-					<td
-						data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
-						style="--size: 0"
-						_="init set my style to @data-ratio"
-						class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
-					>
-						if row.Ratio > 0 {
-							<span class="data text-info-content">
-								{ fmt.Sprint(row.Count) }
-							</span>
-						}
-						<span class="tooltip">
-							{ fmt.Sprint(row.Count) } credits used 
-							<br/>
-							{ row.Date.Format("2006-01-02") }
-						</span>
-					</td>
+					<th scope="col">Date </th>
+					<th scope="col">Count </th>
 				</tr>
-			}
-		</tbody>
-	</table>
+			</thead>
+			<tbody class="!aspect-[3/1]">
+				for _, row := range usage {
+					<tr>
+						<th scope="row">
+							switch period {
+								case "week":
+									<span class="inline sm:hidden font-normal">
+										{ row.Date.Format("Mon") }
+									</span>
+									<span class="hidden sm:inline font-normal">
+										{ row.Date.Format("Mon 2") }
+									</span>
+								case "month":
+									<span class="font-normal text-sm">
+										{ row.Date.Format("02/01") }
+									</span>
+								case "year":
+									<span class="inline sm:hidden font-normal">
+										{ row.Date.Format("Mon") }
+									</span>
+									<span class="hidden sm:inline font-normal">
+										{ row.Date.Format("Mon 2") }
+									</span>
+								default:
+									<span class="inline sm:hidden font-normal">
+										{ row.Date.Format("Mon") }
+									</span>
+									<span class="hidden sm:inline font-normal">
+										{ row.Date.Format("Mon 2") }
+									</span>
+							}
+						</th>
+						<td
+							data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
+							style="--size: 0"
+							_="init set my style to @data-ratio"
+							class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
+						>
+							if row.Ratio > 0 {
+								<span class="data text-info-content">
+									{ fmt.Sprint(row.Count) }
+								</span>
+							}
+							<span class="tooltip">
+								{ fmt.Sprint(row.Count) } credits used 
+								<br/>
+								{ row.Date.Format("2006-01-02") }
+							</span>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
 }
 
 templ CreditUsageChart(usage []services.RunStartSummary, period string) {
-	<table class="charts-css column show-labels data-spacing-5 data-center">
-		<caption>Team Starts by Day</caption>
-		<thead>
-			<tr>
-				<th scope="col">Date </th>
-				<th scope="col">Count </th>
-			</tr>
-		</thead>
-		<tbody class="!aspect-[3/1]">
-			for i, row := range usage {
+	if noCreditUsage(usage) {
+		@creditUsageNone()
+	} else {
+		<table class="charts-css column show-labels data-spacing-5 data-center">
+			<caption>Team Starts by Day</caption>
+			<thead>
 				<tr>
-					<th scope="row">
-						switch period {
-							case "week":
-								<span class="inline sm:hidden font-normal">
-									{ row.Date.Format("Mon") }
-								</span>
-								<span class="hidden sm:inline font-normal">
-									{ row.Date.Format("Mon 2") }
-								</span>
-							case "month":
-								if i % 3 == 0 {
-									<span class="font-normal overflow-visible block w-max">
-										{ row.Date.Format("02 Jan") }
-									</span>
-								}
-							case "year":
-								<span class="font-normal">
-									{ row.Date.Format("Jan") }
-								</span>
-							default:
-								<span class="inline sm:hidden font-normal">
-									{ row.Date.Format("Mon") }
-								</span>
-								<span class="hidden sm:inline font-normal">
-									{ row.Date.Format("Mon 2") }
-								</span>
-						}
-					</th>
-					<td
-						data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
-						style="--size: 0"
-						_="init set my style to @data-ratio"
-						class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
-					>
-						if row.Ratio > 0 {
-							<span class="data text-info-content">
-								{ fmt.Sprint(row.Count) }
-							</span>
-						}
-						<span class="tooltip">
-							{ fmt.Sprint(row.Count) } credits used 
-							<br/>
-							{ row.Date.Format("2006-01-02") }
-						</span>
-					</td>
+					<th scope="col">Date </th>
+					<th scope="col">Count </th>
 				</tr>
-			}
-		</tbody>
-	</table>
+			</thead>
+			<tbody class="!aspect-[3/1]">
+				for i, row := range usage {
+					<tr>
+						<th scope="row">
+							switch period {
+								case "week":
+									<span class="inline sm:hidden font-normal">
+										{ row.Date.Format("Mon") }
+									</span>
+									<span class="hidden sm:inline font-normal">
+										{ row.Date.Format("Mon 2") }
+									</span>
+								case "month":
+									if i % 3 == 0 {
+										<span class="font-normal overflow-visible block w-max">
+											{ row.Date.Format("02 Jan") }
+										</span>
+									}
+								case "year":
+									<span class="font-normal">
+										{ row.Date.Format("Jan") }
+									</span>
+								default:
+									<span class="inline sm:hidden font-normal">
+										{ row.Date.Format("Mon") }
+									</span>
+									<span class="hidden sm:inline font-normal">
+										{ row.Date.Format("Mon 2") }
+									</span>
+							}
+						</th>
+						<td
+							data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
+							style="--size: 0"
+							_="init set my style to @data-ratio"
+							class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
+						>
+							if row.Ratio > 0 {
+								<span class="data text-info-content">
+									{ fmt.Sprint(row.Count) }
+								</span>
+							}
+							<span class="tooltip">
+								{ fmt.Sprint(row.Count) } credits used 
+								<br/>
+								{ row.Date.Format("2006-01-02") }
+							</span>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
 }
 
 templ CreditUsageYear(usage []services.RunStartSummary) {
-	<table class="charts-css column show-labels data-spacing-5 data-center">
-		<caption>Team Starts by Day</caption>
-		<thead>
-			<tr>
-				<th scope="col">Month </th>
-				<th scope="col">Count </th>
-			</tr>
-		</thead>
-		<tbody class="!aspect-[3/1]">
-			for _, row := range usage {
+	if noCreditUsage(usage) {
+		@creditUsageNone()
+	} else {
+		<table class="charts-css column show-labels data-spacing-5 data-center">
+			<caption>Team Starts by Day</caption>
+			<thead>
 				<tr>
-					<th scope="row">
-						{ row.Date.Format("Jan") }
-					</th>
-					<td
-						data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
-						style="--size: 0"
-						_="init set my style to @data-ratio"
-						class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
-					>
-						if row.Ratio > 0 {
-							<span class="data text-info-content">
-								{ fmt.Sprint(row.Count) }
-							</span>
-						}
-						<span class="tooltip">
-							{ fmt.Sprint(row.Count) } credits used
-							<br/>
-							{ row.Date.Format("2006-01-02") }
-						</span>
-					</td>
+					<th scope="col">Month </th>
+					<th scope="col">Count </th>
 				</tr>
-			}
-		</tbody>
-	</table>
+			</thead>
+			<tbody class="!aspect-[3/1]">
+				for _, row := range usage {
+					<tr>
+						<th scope="row">
+							{ row.Date.Format("Jan") }
+						</th>
+						<td
+							data-ratio={ fmt.Sprint("--size: ", row.Ratio, ";") }
+							style="--size: 0"
+							_="init set my style to @data-ratio"
+							class="rounded-md shadow !bg-info max-w-10 !mx-auto transition-all hover:outline-1 outline-offset-2 outline-info"
+						>
+							if row.Ratio > 0 {
+								<span class="data text-info-content">
+									{ fmt.Sprint(row.Count) }
+								</span>
+							}
+							<span class="tooltip">
+								{ fmt.Sprint(row.Count) } credits used
+								<br/>
+								{ row.Date.Format("2006-01-02") }
+							</span>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	}
 }
 
 templ CreditPurchaseSuccess(user models.User, sessionID string) {
@@ -363,7 +372,7 @@ templ CreditPurchaseSuccess(user models.User, sessionID string) {
 }
 
 templ CreditPurchaseSuccessContent(sessionID string) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+	<div class="panel p-8">
 		<div class="grid h-fit flex-grow">
 			<div class="my-5">
 				<div class="alert alert-success">
@@ -393,7 +402,7 @@ templ CreditPurchaseCancel(user models.User) {
 }
 
 templ CreditPurchaseCancelContent() {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+	<div class="panel p-8">
 		<div class="grid h-fit flex-grow">
 			<div class="my-5">
 				<div class="alert alert-warning">

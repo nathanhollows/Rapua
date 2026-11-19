@@ -139,7 +139,7 @@ func Layout(contents templ.Component, user models.User, section string, title st
 // Migrated sections sit on base-200 so base-100 cards lift off it; the rest keep base-100, where their
 // bg-base-200 cards would vanish. Applied on #app because hx-boost never swaps body attributes.
 func shadedSection(section string) bool {
-	return section == "Activity" || section == "Runs"
+	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Games and Templates"
 }
 
 func header(title string) templ.Component {

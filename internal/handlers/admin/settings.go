@@ -1,7 +1,9 @@
 package admin
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -14,6 +16,7 @@ const (
 	day             = "day"
 	week            = "week"
 	month           = "month"
+	year            = "year"
 )
 
 // Settings displays the account settings page.
@@ -49,7 +52,6 @@ func (h *Handler) SettingsProfilePost(w http.ResponseWriter, r *http.Request) {
 		"work_type":       r.FormValue("work_type"),
 		"other_work_type": r.FormValue("other_work_type"),
 		"theme":           r.FormValue("theme"),
-		"show_email":      r.FormValue("show_email"),
 	}
 
 	// Update the user in the database using the service
@@ -173,13 +175,7 @@ func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	usageFilter := services.RunStartLogFilter{
-		UserID:    user.ID,
-		StartTime: time.Now().AddDate(0, 0, -6), // Last year
-		EndTime:   time.Now(),
-		GroupBy:   day,
-	}
-	usage, err := h.creditService.GetRunStartLogsSummary(r.Context(), usageFilter)
+	period, usage, err := h.defaultCreditUsage(r.Context(), user.ID)
 	if err != nil {
 		h.handleError(w, r, "SettingsCreditUsage: get team start logs", "Failed to retrieve team start logs", err)
 		return
@@ -191,6 +187,7 @@ func (h *Handler) SettingsCreditUsage(w http.ResponseWriter, r *http.Request) {
 		user.MonthlyCreditLimit,
 		topups,
 		usage,
+		period,
 	))
 	err = templates.Layout(c, *user, "Settings", "Credit Usage & Billing").Render(r.Context(), w)
 	if err != nil {
@@ -208,40 +205,53 @@ func (h *Handler) SettingsCreditUsageChart(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	var start, end time.Time
-	groupBy := day
-	switch r.FormValue("period") {
-	case week:
-		start = time.Now().AddDate(0, 0, -6) // Last week
-		end = time.Now()
-	case month:
-		start = time.Now().AddDate(0, -1, 0) // Last month
-		end = time.Now()
-	case "year":
-		start = time.Now().AddDate(-1, 1, 0) // Last year
-		end = time.Now()
-		groupBy = month
-	default:
-		h.handleError(w, r, "SettingsCreditUsageChart", "Invalid period specified", nil)
-		return
-	}
-
-	usageFilter := services.RunStartLogFilter{
-		UserID:    user.ID,
-		StartTime: start,
-		EndTime:   end,
-		GroupBy:   groupBy,
-	}
-
-	usage, err := h.creditService.GetRunStartLogsSummary(r.Context(), usageFilter)
+	period := r.FormValue("period")
+	usage, err := h.creditUsage(r.Context(), user.ID, period)
 	if err != nil {
 		h.handleError(w, r, "SettingsCreditUsageChart: get team start logs", "Failed to retrieve team start logs", err)
 		return
 	}
 
-	err = templates.CreditUsageChart(usage, r.FormValue("period")).Render(r.Context(), w)
+	err = templates.CreditUsageChart(usage, period).Render(r.Context(), w)
 	if err != nil {
 		h.handleError(w, r, "SettingsCreditUsageChart: render chart", "Failed to render credit usage chart", err)
 		return
 	}
+}
+
+func (h *Handler) creditUsage(ctx context.Context, userID, period string) ([]services.RunStartSummary, error) {
+	now := time.Now()
+	filter := services.RunStartLogFilter{UserID: userID, EndTime: now, GroupBy: day}
+	switch period {
+	case week:
+		filter.StartTime = now.AddDate(0, 0, -6)
+	case month:
+		filter.StartTime = now.AddDate(0, -1, 0)
+	case year:
+		filter.StartTime = now.AddDate(-1, 1, 0)
+		filter.GroupBy = month
+	default:
+		return nil, fmt.Errorf("invalid period %q", period)
+	}
+	return h.creditService.GetRunStartLogsSummary(ctx, filter)
+}
+
+// Opens on the shortest period with usage, so the chart is not empty when a longer one has data.
+func (h *Handler) defaultCreditUsage(ctx context.Context, userID string) (string, []services.RunStartSummary, error) {
+	var fallback []services.RunStartSummary
+	for _, period := range []string{week, month, year} {
+		usage, err := h.creditUsage(ctx, userID, period)
+		if err != nil {
+			return "", nil, err
+		}
+		if period == week {
+			fallback = usage
+		}
+		for _, row := range usage {
+			if row.Count > 0 {
+				return period, usage, nil
+			}
+		}
+	}
+	return week, fallback, nil
 }

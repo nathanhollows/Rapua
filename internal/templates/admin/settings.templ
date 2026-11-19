@@ -1,77 +1,59 @@
 package templates
 
-import (
-	"github.com/nathanhollows/Rapua/v8/models"
-	"strings"
-)
+import "github.com/nathanhollows/Rapua/v8/models"
 
 templ Settings(contents templ.Component) {
-	<main class="max-w-7xl m-auto pb-8">
+	<div>
+		<h1 class="text-4xl font-black p-5 pb-0">Settings</h1>
 		<div class="flex flex-col md:flex-row w-full gap-8 p-5">
-			<ul
-				class="menu rounded-box w-80 h-min gap-1"
-				hx-boost="true"
-			>
-				<li>
-					<h2 class="menu-title">
-						Settings
-					</h2>
-				</li>
-				<li>
-					<a
-						href="/admin/settings/profile"
-						_="init if document.title.includes('Profile') then
-							add .menu-active to me
-						end"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round"><path d="M18 20a6 6 0 0 0-12 0"></path><circle cx="12" cy="10" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>
-						Profile
-					</a>
-				</li>
-				<li>
-					<a
-						href="/admin/settings/appearance"
-						_="init if document.title.includes('Appearance') then
-							add .menu-active to me
-						end"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette-icon lucide-palette"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
-						Appearance
-					</a>
-				</li>
-				<li>
-					<a
-						href="/admin/settings/security"
-						_="init if document.title.includes('Security') then
-							add .menu-active to me
-						end"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-lock-icon lucide-user-lock"><circle cx="10" cy="7" r="4"></circle><path d="M10.3 15H7a4 4 0 0 0-4 4v2"></path><path d="M15 15.5V14a2 2 0 0 1 4 0v1.5"></path><rect width="8" height="5" x="13" y="16" rx=".899"></rect></svg>
-						Security
-					</a>
-				</li>
-				<li>
-					<h2 class="menu-title">
-						Billing
-					</h2>
-				</li>
-				<li>
-					<a
-						href="/admin/settings/credits"
-						_="init if document.title.includes('Billing') then
-							add .menu-active to me
-						end"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-no-axes-column-icon lucide-chart-no-axes-column"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
-						Usage & Billing
-					</a>
-				</li>
-			</ul>
-			<section id="settings" class="w-full order-3">
+			<nav class="side-nav" hx-boost="true" aria-label="Settings">
+				<a
+					href="/admin/settings/profile"
+					class="topnav-tab"
+					_="init if document.title.includes('Profile') then
+						set @aria-current to 'page'
+					end"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-circle-user-round-icon lucide-circle-user-round"><path d="M18 20a6 6 0 0 0-12 0"></path><circle cx="12" cy="10" r="4"></circle><circle cx="12" cy="12" r="10"></circle></svg>
+					Profile
+				</a>
+				<a
+					href="/admin/settings/appearance"
+					class="topnav-tab"
+					_="init if document.title.includes('Appearance') then
+						set @aria-current to 'page'
+					end"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-palette-icon lucide-palette"><path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"></path><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"></circle><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"></circle><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"></circle><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"></circle></svg>
+					Appearance
+				</a>
+				<a
+					href="/admin/settings/security"
+					class="topnav-tab"
+					_="init if document.title.includes('Security') then
+						set @aria-current to 'page'
+					end"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-lock-icon lucide-user-lock"><circle cx="10" cy="7" r="4"></circle><path d="M10.3 15H7a4 4 0 0 0-4 4v2"></path><path d="M15 15.5V14a2 2 0 0 1 4 0v1.5"></path><rect width="8" height="5" x="13" y="16" rx=".899"></rect></svg>
+					Security
+				</a>
+				<span class="kicker">Billing</span>
+				<a
+					href="/admin/settings/credits"
+					class="topnav-tab"
+					_="init if document.title.includes('Billing') then
+						set @aria-current to 'page'
+					end"
+				>
+					<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-chart-no-axes-column-icon lucide-chart-no-axes-column"><line x1="18" x2="18" y1="20" y2="10"></line><line x1="12" x2="12" y1="20" y2="4"></line><line x1="6" x2="6" y1="20" y2="14"></line></svg>
+					Usage & Billing
+				</a>
+			</nav>
+			<section id="settings" class="w-full grid gap-6 content-start">
 				@contents
 			</section>
 		</div>
-	</main>
+	</div>
 }
 
 templ SettingsProfile(user models.User) {
@@ -80,9 +62,9 @@ templ SettingsProfile(user models.User) {
 		hx-trigger="keyup delay:500ms, change delay:500ms"
 		hx-swap="none"
 	>
-		<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="panel p-8">
 			<div class="grid h-fit flex-grow">
-				<h2 class="font-bold pb-5">Update your profile</h2>
+				<h2 class="text-2xl font-extrabold pb-4">Update your profile</h2>
 				<!-- Account settings -->
 				<div class="flex gap-5">
 					<!-- Name -->
@@ -187,45 +169,30 @@ templ SettingsProfile(user models.User) {
 						/>
 					</fieldset>
 				</div>
-				<!-- Preferences -->
-				<div class="my-5">
-					<label class="form-control w-full">
-						<div class="form-control">
-							<label class="label cursor-pointer">
-								<input
-									name="show_email"
-									type="checkbox"
-									class="checkbox"
-									if user.ShareEmail {
-										checked
-									}
-								/>
-								<span class="text-sm text-base-content">Show your email on templates to other logged-in admins?</span>
-							</label>
-						</div>
-					</label>
-				</div>
 			</div>
 		</div>
 	</form>
 }
 
-func themes() []string {
-	return []string{"Cupcake", "Dracula", "System"}
+type themeOption struct{ Value, Label string }
+
+// Values are what localStorage and data-theme hold; labels are only for reading.
+func themes() []themeOption {
+	return []themeOption{{"cupcake", "Light"}, {"dracula", "Dark"}, {"system", "Follow system theme"}}
 }
 
 templ SettingsAppearance(user models.User) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+	<div class="panel p-8">
 		<div class="grid h-fit flex-grow">
 			<div class="">
-				<h2 class="font-bold pb-5">Change your theme</h2>
+				<h2 class="text-2xl font-extrabold pb-4">Change your theme</h2>
 				<p class="text-sm mb-4">Theme preferences are stored in your browser and not tied to your account.</p>
 				<div id="theme-buttons" class="space-y-2">
 					for _, theme := range themes() {
 						<button
 							type="button"
-							class="theme-button outline-base-content text-start outline-offset-4 w-full"
-							data-theme-value={ strings.ToLower(theme) }
+							class="theme-button outline-base-content text-start outline-offset-4 w-full rounded-2xl cursor-pointer hover:bg-base-200"
+							data-theme-value={ theme.Value }
 							_="on click 
 							remove .active from .theme-button
 							remove .visible from .theme-check
@@ -236,25 +203,15 @@ templ SettingsAppearance(user models.User) {
 							call updateThemeUI()
 						"
 						>
-							<span class="bg-base-100 rounded-btn text-base-content block w-full cursor-pointer font-sans" data-theme={ strings.ToLower(theme) }>
-								<span class="grid grid-cols-5 grid-rows-3">
-									<span class="col-span-5 row-span-3 row-start-1 flex items-center gap-2 px-4 py-3">
-										<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
-										<span class="flex-grow text-sm">
-											if theme == "System" {
-												Follow system theme
-											} else {
-												{ theme }
-											}
-										</span>
-										<span class="flex h-full shrink-0 flex-wrap gap-1">
-											<span class="bg-primary rounded-badge w-2"></span>
-											<span class="bg-secondary rounded-badge w-2"></span>
-											<span class="bg-accent rounded-badge w-2"></span>
-											<span class="bg-neutral rounded-badge w-2"></span>
-										</span>
-									</span>
+							<span class="flex items-center gap-3 px-4 py-2.5">
+								<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" class="theme-check h-3 w-3 shrink-0"><path d="M20.285 2l-11.285 11.567-5.286-5.011-3.714 3.716 9 8.728 15-15.285z"></path></svg>
+								<span class="flex gap-1 rounded-xl border border-base-content/15 bg-base-100 p-2" data-theme={ theme.Value }>
+									<span class="bg-primary rounded-badge w-2 h-5"></span>
+									<span class="bg-secondary rounded-badge w-2 h-5"></span>
+									<span class="bg-accent rounded-badge w-2 h-5"></span>
+									<span class="bg-neutral rounded-badge w-2 h-5"></span>
 								</span>
+								<span class="flex-grow text-sm">{ theme.Label }</span>
 							</span>
 						</button>
 					}
@@ -266,8 +223,10 @@ templ SettingsAppearance(user models.User) {
 						// Get current theme from localStorage
 						const currentTheme = localStorage.getItem('theme') || 'system';
 						
-						// Update document attribute
-						document.documentElement.setAttribute('data-theme', currentTheme);
+						// "system" is not a theme: resolve it as the layout does
+						const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+						const resolved = currentTheme === 'system' ? (prefersDark ? 'dracula' : 'cupcake') : currentTheme;
+						document.documentElement.setAttribute('data-theme', resolved);
 						
 						// Hide all checkmarks first
 						document.querySelectorAll('.theme-check').forEach(el => {
@@ -296,12 +255,12 @@ templ SettingsAppearance(user models.User) {
 
 templ SettingsSecurity(user models.User) {
 	if user.Provider == models.ProviderEmail {
-		<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="panel p-8">
 			<p class="text-sm">Logged in with <strong>{ user.Email }</strong></p>
 		</div>
-		<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="panel p-8">
 			<div class="grid h-fit flex-grow">
-				<h2 class="font-bold pb-5">Change your password</h2>
+				<h2 class="text-2xl font-extrabold pb-4">Change your password</h2>
 				<form
 					id="password-form"
 					hx-post="/admin/settings/security"
@@ -372,7 +331,7 @@ templ SettingsSecurity(user models.User) {
 			</div>
 		</div>
 	} else {
-		<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+		<div class="panel p-8">
 			<div class="alert bg-transparent border-0">
 				<svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px" class="w-8 h-8 fill-base-content" viewBox="0 0 32 32">
 					<path d="M 16.003906 14.0625 L 16.003906 18.265625 L 21.992188 18.265625 C 21.210938 20.8125 19.082031 22.636719 16.003906 22.636719 C 12.339844 22.636719 9.367188 19.664063 9.367188 16 C 9.367188 12.335938 12.335938 9.363281 16.003906 9.363281 C 17.652344 9.363281 19.15625 9.96875 20.316406 10.964844 L 23.410156 7.867188 C 21.457031 6.085938 18.855469 5 16.003906 5 C 9.925781 5 5 9.925781 5 16 C 5 22.074219 9.925781 27 16.003906 27 C 25.238281 27 27.277344 18.363281 26.371094 14.078125 Z"></path>
@@ -385,11 +344,11 @@ templ SettingsSecurity(user models.User) {
 			</div>
 		</div>
 	}
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 hover:border-base-content/40 transition-colors flex w-full gap-5 lg:flex-row flex-col border border-base-content/20 bg-base-200/50 rounded-xl px-10 py-10 mt-12">
+	<div class="panel p-8">
 		<div class="grid h-fit flex-grow">
 			<!-- Delete Account Section -->
 			<div class="">
-				<h2 class="font-bold pb-5">Delete your account</h2>
+				<h2 class="text-2xl font-extrabold pb-4">Delete your account</h2>
 				<div class="prose">
 					<p>Deleting your account will remove all data associated with your account including existing games, game data, templates, snapshots, uploaded files, and <strong>any purchased credits</strong>.</p>
 					<p>This is an irreversible process.</p>

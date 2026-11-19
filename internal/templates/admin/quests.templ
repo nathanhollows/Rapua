@@ -8,7 +8,7 @@ import (
 
 templ Instances(quests []models.Quest, currentQuest models.Quest, templates []models.Quest) {
 	<div class="flex flex-row justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">
+		<h1 class="text-4xl font-black">
 			Games
 			<div class="dropdown dropdown-hover">
 				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">@icon("info", templ.Attributes{"class": "w-4 h-4"})</div>
@@ -24,14 +24,14 @@ templ Instances(quests []models.Quest, currentQuest models.Quest, templates []mo
 		</h1>
 		<span class="flex gap-2">
 			<button
-				class="btn btn-outline btn-sm"
+				class="btn"
 				onclick="import_modal.showModal()"
 			>
 				@icon("upload", templ.Attributes{"class": "w-4 h-4"})
 				Import
 			</button>
 			<button
-				class="btn btn-primary btn-sm"
+				class="btn btn-primary"
 				onclick="new_modal.showModal()"
 			>
 				@icon("plus", templ.Attributes{"class": "w-4 h-4"})
@@ -51,7 +51,7 @@ templ Instances(quests []models.Quest, currentQuest models.Quest, templates []mo
 			@statusLegendKey(models.Active, "Live")
 			@statusLegendKey(models.Scheduled, "Scheduled")
 			@statusLegendKey(models.Closed, "Closed")
-			<label class="input input-sm flex items-center gap-2 ml-auto w-56">
+			<label class="input flex items-center gap-2 ml-auto w-56">
 				@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
 				<input
 					id="search-quests"
@@ -65,16 +65,16 @@ templ Instances(quests []models.Quest, currentQuest models.Quest, templates []mo
 				/>
 			</label>
 		</div>
-		<div id="instance-list" class="card bg-base-200 border border-base-300">
-			<div class="card-body p-0 gap-0 divide-y divide-base-300">
+		<div id="instance-list" class="panel">
+			<div class="row-list">
 				for i, quest := range quests {
 					@instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "", i == 0, i == len(quests)-1)
 				}
 				<div
 					if len(quests) == 0 {
-						class="no-teams flex items-center gap-3 px-4 py-3"
+						class="no-teams basis-full flex items-center gap-3 px-4 py-3"
 					} else {
-						class="no-teams flex items-center gap-3 px-4 py-3 hidden"
+						class="no-teams basis-full flex items-center gap-3 px-4 py-3 hidden"
 					}
 					_="on htmx:afterSettle from body
 					if <.instance-item/>'s length == 0
@@ -333,7 +333,7 @@ templ InstanceNameEdit(quest models.Quest) {
 }
 
 templ instanceItem(quest models.Quest, active bool, anyActive bool, first bool, last bool) {
-	<div class={ "instance-item flex items-center gap-3 px-4 py-3 hover:bg-base-300 transition-colors", templ.KV("bg-primary/10", active), templ.KV("rounded-t-box", first), templ.KV("rounded-b-box", last) }>
+	<div class={ "instance-item list-row flex items-center gap-3 px-4 py-3", templ.KV("list-row-on", active) }>
 		<div class="flex items-center gap-3 grow">
 			<!-- Play Status -->
 			<div class="tooltip tooltip-right shrink-0" data-tip={ quest.GetStatus().Description() }>
