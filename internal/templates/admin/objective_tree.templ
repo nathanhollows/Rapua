@@ -100,7 +100,7 @@ const (
 	RailWindow RailMark = "window"
 	RailPool   RailMark = "pool"
 	RailParked RailMark = "parked"
-	// RailSecret draws nothing: a secret takes no turn in its parent's routing.
+	// RailSecret has no step or line: a secret takes no turn in its parent's routing.
 	RailSecret RailMark = "secret"
 )
 
@@ -319,6 +319,29 @@ func bandSummary(min, max *int, childCount int) string {
 	}
 }
 
+type progressFeedbackOption struct {
+	Value       game.ProgressFeedback
+	Label       string
+	Description string
+}
+
+func progressFeedbackOptions() []progressFeedbackOption {
+	return []progressFeedbackOption{
+		{game.ProgressFeedbackFraction, "Out of total", "Players see something like \"3 of 5\", so they know how much is left."},
+		{game.ProgressFeedbackCount, "Count only", "Players see how many they have done, without being told how many there are."},
+		{game.ProgressFeedbackNone, "None", "Players are shown no progress at all."},
+	}
+}
+
+func progressFeedbackLabel(f game.ProgressFeedback) string {
+	for _, option := range progressFeedbackOptions() {
+		if option.Value == f {
+			return option.Label
+		}
+	}
+	return "Out of total"
+}
+
 // ObjectiveTree renders the quest builder tree. A drop posts to
 // /admin/objective/reposition and the tree is re-fetched, since a refused
 // move must be shown as it actually landed.
@@ -327,70 +350,95 @@ func bandSummary(min, max *int, childCount int) string {
 // and band; the row heading the tree reuses the section pickers for those.
 templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, settings models.QuestSettings) {
 	{{ rootPublished := publishedCount(nodes) }}
-	<div class="flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 py-5" hx-boost="true">
-		<div id="quest-title-group" class="flex items-center gap-3">
-			<h1 class="text-2xl font-bold">Quest</h1>
+	<div class="flex flex-col gap-3 md:grid md:grid-cols-[1fr_auto_1fr] items-center w-full px-6 py-5" hx-boost="true">
+		<div id="quest-title-group" class="flex items-center gap-3 md:justify-self-start">
+			<h1 class="text-4xl font-black">Quest</h1>
 		</div>
-		<div class="flex flex-wrap items-center justify-end gap-3">
-			<!-- Beside the quest's title rather than over the tree: these change
-			how the whole game scores, not how any part of it is played. Boxed
-			and named apart from New objective, and as tall as it, so the two
-			read as one row. -->
-			<div id="quest-scoring" class="flex items-center gap-4 h-10 px-4 rounded-full border border-base-content/15 bg-base-100">
-				<span class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Scoring</span>
-				<!-- Here because it controls whether this tree's badges render. -->
-				<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-bottom" data-tip="Teams earn points for checking into locations and completing activities">
-					<input
-						type="checkbox"
-						name="enablePoints"
-						class="toggle toggle-sm toggle-primary points-toggle"
-						checked?={ settings.EnablePoints }
-					/>
-					<span class="text-xs font-medium">Points</span>
-				</label>
-				<!-- Beside points because it reads off them: with points on the
-				board ranks by score, and with them off by how much of the quest
-				each team has done. -->
-				<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-bottom" data-tip="Players can see how their team compares to the others. Ranked by points when Points is on, otherwise by how much each team has done">
-					<input
-						type="checkbox"
-						name="showLeaderboard"
-						class="toggle toggle-sm toggle-primary leaderboard-toggle"
-						checked?={ settings.ShowLeaderboard }
-					/>
-					<span class="text-xs font-medium">Leaderboard</span>
-				</label>
-			</div>
-			<!-- Not a third toggle in Scoring: it is not about score and has three answers. -->
-			<div id="quest-progress-feedback" class="flex items-center gap-3 h-10 px-4 rounded-full border border-base-content/15 bg-base-100">
-				<div class="flex items-center gap-1">
-					<!-- A card, as three options need a line each. -->
-					<div class="dropdown dropdown-hover">
-						<div tabindex="0" role="button" aria-label="About progress" class="btn btn-circle btn-ghost btn-xs text-info">
-							@icon("info", templ.Attributes{"class": "w-4 h-4"})
-						</div>
-						<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow">
-							<div tabindex="0" class="card-body">
-								<h2 class="card-title text-sm">Progress</h2>
-								<p>How players see their progress while they play.</p>
-								<p><span class="font-semibold">Out of total:</span> shows something like "3 of 5", so they know how much is left.</p>
-								<p><span class="font-semibold">Count only:</span> shows how many they have done, without saying how many there are.</p>
-								<p><span class="font-semibold">None:</span> shows nothing.</p>
-							</div>
+		<!-- One box, not two: how the quest scores and how it shows progress are
+		both what players see while they play. Centred, since these change the
+		whole game rather than any part of it. -->
+		<div id="quest-scoring" class="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 min-h-11 px-4 rounded-2xl border border-base-content/15 bg-base-100">
+			<div class="flex items-center gap-1">
+				<div class="dropdown dropdown-hover">
+					<div tabindex="0" role="button" aria-label="About these settings" class="btn btn-circle btn-ghost btn-xs text-info">
+						@icon("info", templ.Attributes{"class": "w-4 h-4"})
+					</div>
+					<div tabindex="0" class="card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow">
+						<div tabindex="0" class="card-body">
+							<h2 class="card-title">What players see</h2>
+							<p>These settings change what players see while they play.</p>
+							<p><span class="font-semibold">Points:</span> teams earn points for checking in and completing activities.</p>
+							<p><span class="font-semibold">Leaderboard:</span> players see how their team compares. Ranked by points when Points is on, otherwise by how much each team has done.</p>
+							<p><span class="font-semibold">Progress:</span> how players see their own progress, as a count out of the total, a count alone, or nothing.</p>
 						</div>
 					</div>
-					<label for="progress-feedback" class="text-xs font-semibold uppercase tracking-wide text-base-content/60">Progress</label>
 				</div>
-				<select
-					id="progress-feedback"
-					name="progressFeedback"
-					class="select select-ghost select-xs font-medium progress-feedback-select"
-				>
-					<option value="fraction" selected?={ settings.ProgressFeedback.Normalised() == game.ProgressFeedbackFraction }>Out of total</option>
-					<option value="count" selected?={ settings.ProgressFeedback.Normalised() == game.ProgressFeedbackCount }>Count only</option>
-					<option value="none" selected?={ settings.ProgressFeedback.Normalised() == game.ProgressFeedbackNone }>None</option>
-				</select>
+				<span class="kicker">Progress</span>
 			</div>
+			<!-- Here because it controls whether this tree's badges render. -->
+			<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-bottom" data-tip="Teams earn points for checking into locations and completing activities">
+				<input
+					type="checkbox"
+					name="enablePoints"
+					class="toggle toggle-primary points-toggle"
+					checked?={ settings.EnablePoints }
+				/>
+				<span class="text-[15px] font-bold">Points</span>
+			</label>
+			<!-- Beside points because it reads off them: with points on the
+			board ranks by score, and with them off by how much of the quest
+			each team has done. -->
+			<label class="flex items-center gap-2 cursor-pointer tooltip tooltip-bottom" data-tip="Players can see how their team compares to the others. Ranked by points when Points is on, otherwise by how much each team has done">
+				<input
+					type="checkbox"
+					name="showLeaderboard"
+					class="toggle toggle-primary leaderboard-toggle"
+					checked?={ settings.ShowLeaderboard }
+				/>
+				<span class="text-[15px] font-bold">Leaderboard</span>
+			</label>
+			<!-- A hidden input holds the value and fires change, which the save
+			script reads, so the menu is only the way of choosing it. The trigger
+			is a real button so the quest lock disables it with the rest. -->
+			<input
+				type="hidden"
+				id="progress-feedback"
+				name="progressFeedback"
+				class="progress-feedback-select"
+				value={ string(settings.ProgressFeedback.Normalised()) }
+			/>
+			<div class="dropdown dropdown-bottom dropdown-end">
+				<button type="button" tabindex="0" aria-label="How players see their progress" class="btn btn-ghost btn-sm gap-2 font-bold">
+					<span id="progress-feedback-label">{ progressFeedbackLabel(settings.ProgressFeedback.Normalised()) }</span>
+					@icon("chevron-down", templ.Attributes{"class": "w-4 h-4"})
+				</button>
+				<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-80 p-2 shadow top-full mt-2">
+					for _, option := range progressFeedbackOptions() {
+						<li>
+							<button
+								type="button"
+								class={ "progress-option items-start", templ.KV("menu-active", option.Value == settings.ProgressFeedback.Normalised()) }
+								data-value={ string(option.Value) }
+								data-label={ option.Label }
+								_="on click
+									set #progress-feedback.value to @data-value
+									set #progress-feedback-label.innerText to @data-label
+									remove .menu-active from <.progress-option/>
+									add .menu-active to me
+									send change to #progress-feedback
+									call document.activeElement.blur()"
+							>
+								<span class="flex flex-col text-left">
+									<span class="font-bold">{ option.Label }</span>
+									<span class="text-xs font-normal opacity-70 whitespace-normal">{ option.Description }</span>
+								</span>
+							</button>
+						</li>
+					}
+				</ul>
+			</div>
+		</div>
+		<div class="md:justify-self-end">
 			@objectiveNewButton(nodes)
 		</div>
 	</div>
@@ -407,7 +455,7 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 		first and rule last, so the quest's rule sits where every section's
 		does; the search, which filters the whole tree, is centred between.
 		No overflow clipping, so the rule's menu can open past its edge. -->
-		<section class="quest-plane mx-6 rounded-2xl bg-base-100 border border-primary/40" data-routing={ string(root.Routing) }>
+		<section class="quest-plane mx-6 rounded-2xl bg-base-100 shadow-[var(--soft-shadow)] border border-primary/40" data-routing={ string(root.Routing) }>
 			<div
 				id="quest-root-settings"
 				class="flex flex-wrap items-center gap-3 px-6 py-3 md:grid md:grid-cols-[1fr_auto_1fr] rounded-t-2xl bg-primary/10 border-b border-primary/25"
@@ -415,7 +463,7 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 				data-child-count={ fmt.Sprint(rootPublished) }
 				data-routing={ string(root.Routing) }
 			>
-				<span class="text-sm text-base-content/70">Top level</span>
+				<span class="text-xl font-extrabold tracking-tight">The quest</span>
 				<!-- hx-preserve keeps this element across the swap, so a search
 				term, and the rows it filters, survive every edit. On a narrow
 				screen it takes a row of its own under the name and rule. -->
@@ -549,7 +597,7 @@ func sectionChoicePad(depth int) string {
 // means an objective waiting on a variable.
 templ objectiveSystemPageLink(label, href string) {
 	<div class="px-6 py-3">
-		<div class="objective-outside relative pl-7">
+		<div class="objective-outside relative pl-10">
 			<span class="objective-outside-mark tooltip tooltip-right" data-tip="System page: always shown, never routed">
 				@icon("pin", templ.Attributes{"class": "w-3.5 h-3.5"})
 			</span>
@@ -558,12 +606,12 @@ templ objectiveSystemPageLink(label, href string) {
 			and outlined, it read as a text field waiting to be typed in. -->
 			<a
 				href={ templ.URL(href) }
-				class="group/system flex items-center gap-2 rounded-xl bg-base-content/5 hover:bg-base-content/10 px-3 py-2 text-sm transition-colors"
+				class="group/system flex items-center gap-2 rounded-xl border-[1.5px] border-base-content/15 bg-base-100 hover:bg-base-200 px-3 py-2.5 min-h-[2.625rem] text-[15px] transition-colors"
 				hx-boost="true"
 			>
 				<span class="font-medium group-hover/system:underline">{ label }</span>
 				<div class="flex-grow"></div>
-				<span class="text-xs text-base-content/60">System page</span>
+				<span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-base-content/70">System page</span>
 				@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 shrink-0 text-base-content/50"})
 			</a>
 		</div>
@@ -607,9 +655,9 @@ templ objectiveSecretToggle(node *ObjectiveTreeNode) {
 		data-secret={ fmt.Sprint(node.Objective.Secret) }
 	>
 		if node.Objective.Secret {
-			@icon("gem", templ.Attributes{"class": "w-4 h-4 text-primary"})
+			@icon("hat-glasses", templ.Attributes{"class": "w-4 h-4 text-primary"})
 		} else {
-			@icon("gem", templ.Attributes{"class": "w-4 h-4 text-base-content/60 " + rowRevealClass})
+			@icon("hat-glasses", templ.Attributes{"class": "w-4 h-4 text-base-content/60 " + rowRevealClass})
 		}
 	</button>
 }
@@ -618,11 +666,17 @@ templ objectiveSecretToggle(node *ObjectiveTreeNode) {
 // take no turn in the order, so they sit outside the rail.
 templ objectiveSecretFooter(parentID string, secrets []*ObjectiveTreeNode, enablePoints bool, depth int) {
 	if len(secrets) > 0 {
-		<div class="objective-secret-footer mt-2 pt-2 border-t border-dashed border-base-content/15">
-			<p class="flex items-center gap-1.5 px-1 pb-1 text-xs font-medium text-base-content/60">
-				@icon("gem", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"})
-				Secrets: unlisted until a player scans one, then counted with the rest
-			</p>
+		<div class="objective-secret-footer">
+			<!-- The tooltip sits on the label: the divider's own ::before and
+			::after draw its two lines. -->
+			<div class="divider objective-secret-divider">
+				<span class="tooltip tooltip-top" data-tip="Unlisted until a player scans one, then counted with the rest">
+					<span class="objective-secret-chip">
+						@icon("hat-glasses", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"})
+						Secret
+					</span>
+				</span>
+			</div>
 			<ul class="objective-children flex flex-col w-full" data-parent-id={ parentID } data-secret-footer="true">
 				for _, node := range secrets {
 					@objectiveNode(node, enablePoints, depth)
@@ -641,7 +695,7 @@ const rowRevealClass = "opacity-0 group-hover/row:opacity-100 group-focus-within
 // dragHandleClass keeps the grip faint until its row is hovered. Hidden, it
 // would leave nothing saying a row can be dragged; at full strength on every
 // row it is a column of noise.
-const dragHandleClass = "w-4 h-4 text-base-content/40 group-hover/row:text-base-content " +
+const dragHandleClass = "w-4 h-4 text-base-content/60 group-hover/row:text-base-content " +
 	"group-hover/header:text-base-content transition-colors cursor-move objective-drag-handle shrink-0"
 
 	// It sits in the pill because its switch is in the pill's menu. The tooltip is
@@ -1035,6 +1089,8 @@ templ objectiveRailMark(node *ObjectiveTreeNode) {
 	<span class="objective-mark" data-mark={ string(node.Mark) }>
 		if node.Mark == RailStep {
 			{ fmt.Sprint(node.Step) }
+		} else if node.Mark == RailSecret {
+			@icon("hat-glasses", templ.Attributes{"class": "w-[18px] h-[18px]"})
 		}
 	</span>
 }
@@ -1043,12 +1099,22 @@ templ objectiveRailMark(node *ObjectiveTreeNode) {
 // imply. A row under a drafted parent gets none: the parent carries it.
 templ objectiveDraftTag(node *ObjectiveTreeNode) {
 	if node.Draft {
-		<span class="badge badge-warning badge-xs shrink-0">Draft</span>
+		<span class="badge badge-xs shrink-0 objective-draft-tag">Draft</span>
 	}
 }
 
 // objectivePointsBadge sums this objective's own blocks; never a rollup of
 // children.
+// One fixed column, so points line up down the whole tree and the actions
+// after them do too. Absent when scoring is off, so nothing reserves the gap.
+templ objectivePointsColumn(points int, enablePoints bool) {
+	if enablePoints {
+		<span class="objective-points">
+			@objectivePointsBadge(points, enablePoints)
+		</span>
+	}
+}
+
 templ objectivePointsBadge(points int, enablePoints bool) {
 	if enablePoints && points != 0 {
 		<span class="badge badge-ghost badge-sm shrink-0">{ fmt.Sprintf("%d pts", points) }</span>
@@ -1104,12 +1170,10 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 							{ node.Objective.Title }
 						</a>
 						@objectiveDraftTag(node)
-						<!-- Marks sit against the title they describe: at the far edge
-						they would be a screen's width from their name. -->
-						@objectivePointsBadge(node.Points, enablePoints)
 						@objectiveVarsBadges(node)
 						@objectiveLintBadge(node.Lint)
 						<div class="flex-grow"></div>
+						@objectivePointsColumn(node.Points, enablePoints)
 						<!-- The rule sits past the title: the title is what you scan a
 						tree for, and a control before it pushes every name out of line
 						with the one above. -->
@@ -1138,7 +1202,7 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 			{ objectiveVarAttrs(node)... }
 		>
 			@objectiveRailMark(node)
-			<div class={ "objective-row group/row flex items-center gap-2 rounded-xl bg-base-100/60 hover:bg-base-200/60 border border-base-content/10 px-3 py-1.5 text-sm", templ.KV("objective-parked", node.OutOfPlay) }>
+			<div class={ "objective-row group/row flex items-center gap-2 rounded-xl border border-transparent px-3 py-1.5 text-sm", templ.KV("objective-parked", node.OutOfPlay) }>
 				<span class="tooltip tooltip-right" data-tip="Drag to move">
 					@icon("grip-vertical", templ.Attributes{"class": dragHandleClass})
 				</span>
@@ -1146,10 +1210,10 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 					{ node.Objective.Title }
 				</a>
 				@objectiveDraftTag(node)
-				@objectivePointsBadge(node.Points, enablePoints)
 				@objectiveVarsBadges(node)
 				@objectiveLintBadge(node.Lint)
 				<div class="flex-grow"></div>
+				@objectivePointsColumn(node.Points, enablePoints)
 				@objectiveSecretToggle(node)
 				@objectiveVisibilityToggle(node)
 			</div>
@@ -1547,64 +1611,6 @@ templ objectiveSortableScript() {
 		});
 	}
 
-	// pipsLocked asks the quest lock directly: the pips are spans, which its
-	// sweep over buttons and inputs never disables.
-	function pipsLocked() {
-		return document.body.dataset.questLocked === 'true';
-	}
-
-	// pipChange is what a press or a drag on the pips asks for. A press sets how
-	// many players need and keeps whether they can carry on; a drag sets a
-	// range, which is carrying on up to where it ended.
-	function pipChange(from, to) {
-		return function(state, n) {
-			var lo = Math.min(from, to);
-			var hi = Math.max(from, to);
-			state.count = lo;
-			if (lo === hi) {
-				if (state.cap && state.cap <= lo) state.cap = null;
-				return;
-			}
-			state.carry = true;
-			state.cap = hi < n ? hi : null;
-		};
-	}
-
-	// previewPips paints the band the pointer is offering, and says it in the
-	// tooltip, before anything is saved.
-	function previewPips(pips, from, to) {
-		var rule = pips.closest('.settings-rule');
-		var min = rule.querySelector('.settings-min');
-		var max = rule.querySelector('.settings-max');
-		var n = parseInt(pips.dataset.count, 10) || 0;
-		var state = bandState(n, min.value, max.value);
-		pipChange(from, to)(state, n);
-		var next = bandFieldsOf(n, state);
-		var range = bandRangeOf(n, next[0], next[1]);
-		pips.closest('.band-glance').dataset.tip = bandSentence(n, bandState(n, next[0], next[1]), finishLabelOf(rule));
-		paintPips(pips, range[0], range[1]);
-	}
-
-	// restorePips repaints the band as stored once a preview ends.
-	function restorePips(pips) {
-		var scope = settingsScope(pips);
-		if (scope) syncSettings(scope);
-	}
-
-	// commitPips saves the band a press or a drag chose, through the same path
-	// as the menu, so the menu, the pips and the post read one value.
-	function commitPips(pips, from, to) {
-		editBand(pips.closest('.settings-rule'), pipChange(from, to));
-	}
-
-	// pipUnder finds the pip under the pointer within one row. elementFromPoint,
-	// because a touch keeps sending its events to the pip it started on.
-	function pipUnder(evt, pips) {
-		var el = document.elementFromPoint(evt.clientX, evt.clientY);
-		var pip = el && el.closest('.band-pip');
-		return pip && pips.contains(pip) ? parseInt(pip.dataset.pip, 10) : null;
-	}
-
 	// trackVarBadge runs on every pointer move and focus change, so it only
 	// repaints when the badge under the pointer changes.
 	function trackVarBadge(evt) {
@@ -1718,56 +1724,6 @@ templ objectiveSortableScript() {
 		document.body.addEventListener('focusin', trackVarBadge);
 		document.body.addEventListener('focusout', function(evt) {
 			if (evt.target === window.__varBadge && !evt.relatedTarget) trackVarBadge({ target: document.body });
-		});
-
-		// Pips: hovering one previews asking for exactly that many, a press and
-		// release on one asks for it, and a drag between two sets the range.
-		document.body.addEventListener('pointerover', function(evt) {
-			if (window.__pipDrag) return;
-			var pip = evt.target.closest && evt.target.closest('.band-pip');
-			if (!pip || pipsLocked()) return;
-			var k = parseInt(pip.dataset.pip, 10);
-			previewPips(pip.closest('.band-pips'), k, k);
-		});
-		document.body.addEventListener('pointerout', function(evt) {
-			if (window.__pipDrag) return;
-			var pips = evt.target.closest && evt.target.closest('.band-pips');
-			if (!pips || (evt.relatedTarget && pips.contains(evt.relatedTarget))) return;
-			restorePips(pips);
-		});
-		// The pips sit inside the menu's trigger; a click on them sets the band
-		// and must not open the menu as well.
-		document.body.addEventListener('click', function(evt) {
-			if (evt.target.closest && evt.target.closest('.band-pips')) evt.preventDefault();
-		});
-		document.body.addEventListener('pointerdown', function(evt) {
-			var pip = evt.target.closest && evt.target.closest('.band-pip');
-			if (!pip || pipsLocked()) return;
-			// Not a focus or a text selection: the press is the start of a drag.
-			evt.preventDefault();
-			var k = parseInt(pip.dataset.pip, 10);
-			window.__pipDrag = { pips: pip.closest('.band-pips'), from: k, to: k };
-			previewPips(window.__pipDrag.pips, k, k);
-		});
-		document.body.addEventListener('pointermove', function(evt) {
-			var drag = window.__pipDrag;
-			if (!drag) return;
-			var k = pipUnder(evt, drag.pips);
-			if (k === null || k === drag.to) return;
-			drag.to = k;
-			previewPips(drag.pips, Math.min(drag.from, k), Math.max(drag.from, k));
-		});
-		document.body.addEventListener('pointerup', function() {
-			var drag = window.__pipDrag;
-			if (!drag) return;
-			window.__pipDrag = null;
-			commitPips(drag.pips, Math.min(drag.from, drag.to), Math.max(drag.from, drag.to));
-		});
-		document.body.addEventListener('pointercancel', function() {
-			var drag = window.__pipDrag;
-			if (!drag) return;
-			window.__pipDrag = null;
-			restorePips(drag.pips);
 		});
 
 		document.body.addEventListener('quest-lock-change', function(evt) {

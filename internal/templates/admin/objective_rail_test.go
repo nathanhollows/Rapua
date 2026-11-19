@@ -144,16 +144,17 @@ func TestSystemPageLink_HangsItsPinInTheGutter(t *testing.T) {
 		"but it is not on the rail: these pages are outside the quest on purpose")
 }
 
-// Boxed in white and outlined, a system page read as a text field. It is a
-// filled row, a page to open rather than a value to type.
+// A system page is a white row with a hairline and an arrow out, labelled as a
+// page: it reads as something to open, not a value to type.
 func TestSystemPageLink_IsARowNotAField(t *testing.T) {
 	var out strings.Builder
 	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start").
 		Render(context.Background(), &out))
 
 	link := classContaining(t, out.String(), "rounded-xl")
-	assert.NotContains(t, link, "border")
-	assert.NotContains(t, link, "bg-base-100")
+	assert.Contains(t, link, "border-[1.5px]")
+	assert.Contains(t, out.String(), "System page")
+	assert.Contains(t, out.String(), "w-4 h-4 shrink-0 text-base-content/50", "the arrow out says it is a link")
 }
 
 // Without it the top level keeps the theme's primary whatever the root's routing.

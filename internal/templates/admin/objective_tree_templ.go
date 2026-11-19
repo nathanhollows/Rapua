@@ -108,7 +108,7 @@ const (
 	RailWindow RailMark = "window"
 	RailPool   RailMark = "pool"
 	RailParked RailMark = "parked"
-	// RailSecret draws nothing: a secret takes no turn in its parent's routing.
+	// RailSecret has no step or line: a secret takes no turn in its parent's routing.
 	RailSecret RailMark = "secret"
 )
 
@@ -327,6 +327,29 @@ func bandSummary(min, max *int, childCount int) string {
 	}
 }
 
+type progressFeedbackOption struct {
+	Value       game.ProgressFeedback
+	Label       string
+	Description string
+}
+
+func progressFeedbackOptions() []progressFeedbackOption {
+	return []progressFeedbackOption{
+		{game.ProgressFeedbackFraction, "Out of total", "Players see something like \"3 of 5\", so they know how much is left."},
+		{game.ProgressFeedbackCount, "Count only", "Players see how many they have done, without being told how many there are."},
+		{game.ProgressFeedbackNone, "None", "Players are shown no progress at all."},
+	}
+}
+
+func progressFeedbackLabel(f game.ProgressFeedback) string {
+	for _, option := range progressFeedbackOptions() {
+		if option.Value == f {
+			return option.Label
+		}
+	}
+	return "Out of total"
+}
+
 // ObjectiveTree renders the quest builder tree. A drop posts to
 // /admin/objective/reposition and the tree is re-fetched, since a refused
 // move must be shown as it actually landed.
@@ -355,27 +378,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		}
 		ctx = templ.ClearChildren(ctx)
 		rootPublished := publishedCount(nodes)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col gap-3 md:flex-row justify-between items-center w-full px-6 py-5\" hx-boost=\"true\"><div id=\"quest-title-group\" class=\"flex items-center gap-3\"><h1 class=\"text-2xl font-bold\">Quest</h1></div><div class=\"flex flex-wrap items-center justify-end gap-3\"><!-- Beside the quest's title rather than over the tree: these change\n\t\t\thow the whole game scores, not how any part of it is played. Boxed\n\t\t\tand named apart from New objective, and as tall as it, so the two\n\t\t\tread as one row. --><div id=\"quest-scoring\" class=\"flex items-center gap-4 h-10 px-4 rounded-full border border-base-content/15 bg-base-100\"><span class=\"text-xs font-semibold uppercase tracking-wide text-base-content/60\">Scoring</span><!-- Here because it controls whether this tree's badges render. --><label class=\"flex items-center gap-2 cursor-pointer tooltip tooltip-bottom\" data-tip=\"Teams earn points for checking into locations and completing activities\"><input type=\"checkbox\" name=\"enablePoints\" class=\"toggle toggle-sm toggle-primary points-toggle\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if settings.EnablePoints {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "> <span class=\"text-xs font-medium\">Points</span></label><!-- Beside points because it reads off them: with points on the\n\t\t\t\tboard ranks by score, and with them off by how much of the quest\n\t\t\t\teach team has done. --><label class=\"flex items-center gap-2 cursor-pointer tooltip tooltip-bottom\" data-tip=\"Players can see how their team compares to the others. Ranked by points when Points is on, otherwise by how much each team has done\"><input type=\"checkbox\" name=\"showLeaderboard\" class=\"toggle toggle-sm toggle-primary leaderboard-toggle\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if settings.ShowLeaderboard {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "> <span class=\"text-xs font-medium\">Leaderboard</span></label></div><!-- Not a third toggle in Scoring: it is not about score and has three answers. --><div id=\"quest-progress-feedback\" class=\"flex items-center gap-3 h-10 px-4 rounded-full border border-base-content/15 bg-base-100\"><div class=\"flex items-center gap-1\"><!-- A card, as three options need a line each. --><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" aria-label=\"About progress\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"flex flex-col gap-3 md:grid md:grid-cols-[1fr_auto_1fr] items-center w-full px-6 py-5\" hx-boost=\"true\"><div id=\"quest-title-group\" class=\"flex items-center gap-3 md:justify-self-start\"><h1 class=\"text-4xl font-black\">Quest</h1></div><!-- One box, not two: how the quest scores and how it shows progress are\n\t\tboth what players see while they play. Centred, since these change the\n\t\twhole game rather than any part of it. --><div id=\"quest-scoring\" class=\"flex flex-wrap items-center justify-center gap-x-5 gap-y-2 min-h-11 px-4 rounded-2xl border border-base-content/15 bg-base-100\"><div class=\"flex items-center gap-1\"><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" aria-label=\"About these settings\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -383,37 +386,145 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title text-sm\">Progress</h2><p>How players see their progress while they play.</p><p><span class=\"font-semibold\">Out of total:</span> shows something like \"3 of 5\", so they know how much is left.</p><p><span class=\"font-semibold\">Count only:</span> shows how many they have done, without saying how many there are.</p><p><span class=\"font-semibold\">None:</span> shows nothing.</p></div></div></div><label for=\"progress-feedback\" class=\"text-xs font-semibold uppercase tracking-wide text-base-content/60\">Progress</label></div><select id=\"progress-feedback\" name=\"progressFeedback\" class=\"select select-ghost select-xs font-medium progress-feedback-select\"><option value=\"fraction\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div tabindex=\"0\" class=\"card compact dropdown-content bg-base-200 rounded-box z-[1] w-80 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">What players see</h2><p>These settings change what players see while they play.</p><p><span class=\"font-semibold\">Points:</span> teams earn points for checking in and completing activities.</p><p><span class=\"font-semibold\">Leaderboard:</span> players see how their team compares. Ranked by points when Points is on, otherwise by how much each team has done.</p><p><span class=\"font-semibold\">Progress:</span> how players see their own progress, as a count out of the total, a count alone, or nothing.</p></div></div></div><span class=\"kicker\">Progress</span></div><!-- Here because it controls whether this tree's badges render. --><label class=\"flex items-center gap-2 cursor-pointer tooltip tooltip-bottom\" data-tip=\"Teams earn points for checking into locations and completing activities\"><input type=\"checkbox\" name=\"enablePoints\" class=\"toggle toggle-primary points-toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.ProgressFeedback.Normalised() == game.ProgressFeedbackFraction {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, " selected")
+		if settings.EnablePoints {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, ">Out of total</option> <option value=\"count\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "> <span class=\"text-[15px] font-bold\">Points</span></label><!-- Beside points because it reads off them: with points on the\n\t\t\tboard ranks by score, and with them off by how much of the quest\n\t\t\teach team has done. --><label class=\"flex items-center gap-2 cursor-pointer tooltip tooltip-bottom\" data-tip=\"Players can see how their team compares to the others. Ranked by points when Points is on, otherwise by how much each team has done\"><input type=\"checkbox\" name=\"showLeaderboard\" class=\"toggle toggle-primary leaderboard-toggle\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.ProgressFeedback.Normalised() == game.ProgressFeedbackCount {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, " selected")
+		if settings.ShowLeaderboard {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ">Count only</option> <option value=\"none\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "> <span class=\"text-[15px] font-bold\">Leaderboard</span></label><!-- A hidden input holds the value and fires change, which the save\n\t\t\tscript reads, so the menu is only the way of choosing it. The trigger\n\t\t\tis a real button so the quest lock disables it with the rest. --><input type=\"hidden\" id=\"progress-feedback\" name=\"progressFeedback\" class=\"progress-feedback-select\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.ProgressFeedback.Normalised() == game.ProgressFeedbackNone {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, " selected")
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(settings.ProgressFeedback.Normalised()))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 408, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"><div class=\"dropdown dropdown-bottom dropdown-end\"><button type=\"button\" tabindex=\"0\" aria-label=\"How players see their progress\" class=\"btn btn-ghost btn-sm gap-2 font-bold\"><span id=\"progress-feedback-label\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(progressFeedbackLabel(settings.ProgressFeedback.Normalised()))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 412, Col: 103}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</span>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = icon("chevron-down", templ.Attributes{"class": "w-4 h-4"}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</button><ul tabindex=\"0\" class=\"dropdown-content menu bg-base-100 rounded-box z-[1] w-80 p-2 shadow top-full mt-2\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, option := range progressFeedbackOptions() {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<li>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var4 = []any{"progress-option items-start", templ.KV("menu-active", option.Value == settings.ProgressFeedback.Normalised())}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var4...)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<button type=\"button\" class=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var4).String())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" data-value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var6 string
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(option.Value))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 421, Col: 41}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" data-label=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Label)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 422, Col: 33}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" _=\"on click\n\t\t\t\t\t\t\t\t\tset #progress-feedback.value to @data-value\n\t\t\t\t\t\t\t\t\tset #progress-feedback-label.innerText to @data-label\n\t\t\t\t\t\t\t\t\tremove .menu-active from <.progress-option/>\n\t\t\t\t\t\t\t\t\tadd .menu-active to me\n\t\t\t\t\t\t\t\t\tsend change to #progress-feedback\n\t\t\t\t\t\t\t\t\tcall document.activeElement.blur()\"><span class=\"flex flex-col text-left\"><span class=\"font-bold\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 432, Col: 47}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span> <span class=\"text-xs font-normal opacity-70 whitespace-normal\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var9 string
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(option.Description)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 433, Col: 92}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</span></span></button></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, ">None</option></select></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</ul></div></div><div class=\"md:justify-self-end\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -421,7 +532,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div></div><!-- Swapped as one after every edit: the panel and the rows it describes\n\tare answers to the same question, and the page render already computes\n\tboth. --><div id=\"quest-builder\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div><!-- Swapped as one after every edit: the panel and the rows it describes\n\tare answers to the same question, and the page render already computes\n\tboth. --><div id=\"quest-builder\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -429,59 +540,59 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<!-- The quest's own plane, apart from the page header above it: the\n\t\tcontrols for the page sit on the page, and the quest sits on this. It\n\t\tis framed as a section is, outline and header band in the routing hue\n\t\tof its top level, so its header reads as a frame like theirs; a\n\t\tneutral one read as a gap. Its header is laid out as theirs is, name\n\t\tfirst and rule last, so the quest's rule sits where every section's\n\t\tdoes; the search, which filters the whole tree, is centred between.\n\t\tNo overflow clipping, so the rule's menu can open past its edge. --><section class=\"quest-plane mx-6 rounded-2xl bg-base-100 border border-primary/40\" data-routing=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<!-- The quest's own plane, apart from the page header above it: the\n\t\tcontrols for the page sit on the page, and the quest sits on this. It\n\t\tis framed as a section is, outline and header band in the routing hue\n\t\tof its top level, so its header reads as a frame like theirs; a\n\t\tneutral one read as a gap. Its header is laid out as theirs is, name\n\t\tfirst and rule last, so the quest's rule sits where every section's\n\t\tdoes; the search, which filters the whole tree, is centred between.\n\t\tNo overflow clipping, so the rule's menu can open past its edge. --><section class=\"quest-plane mx-6 rounded-2xl bg-base-100 shadow-[var(--soft-shadow)] border border-primary/40\" data-routing=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(root.Routing))
+		var templ_7745c5c3_Var10 string
+		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(root.Routing))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 410, Col: 120}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 458, Col: 148}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"><div id=\"quest-root-settings\" class=\"flex flex-wrap items-center gap-3 px-6 py-3 md:grid md:grid-cols-[1fr_auto_1fr] rounded-t-2xl bg-primary/10 border-b border-primary/25\" data-objective-slug=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(root.Slug)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 414, Col: 35}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"><div id=\"quest-root-settings\" class=\"flex flex-wrap items-center gap-3 px-6 py-3 md:grid md:grid-cols-[1fr_auto_1fr] rounded-t-2xl bg-primary/10 border-b border-primary/25\" data-objective-slug=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" data-child-count=\"")
+		var templ_7745c5c3_Var11 string
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(root.Slug)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 462, Col: 35}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(rootPublished))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 415, Col: 48}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" data-child-count=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" data-routing=\"")
+		var templ_7745c5c3_Var12 string
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(rootPublished))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 463, Col: 48}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(root.Routing))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 416, Col: 39}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" data-routing=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\"><span class=\"text-sm text-base-content/70\">Top level</span><!-- hx-preserve keeps this element across the swap, so a search\n\t\t\t\tterm, and the rows it filters, survive every edit. On a narrow\n\t\t\t\tscreen it takes a row of its own under the name and rule. --><label id=\"quest-search\" hx-preserve=\"true\" class=\"input input-sm flex items-center gap-2 order-last w-full md:order-none md:w-60\">")
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(root.Routing))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 464, Col: 39}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"><span class=\"text-xl font-extrabold tracking-tight\">The quest</span><!-- hx-preserve keeps this element across the swap, so a search\n\t\t\t\tterm, and the rows it filters, survive every edit. On a narrow\n\t\t\t\tscreen it takes a row of its own under the name and rule. --><label id=\"quest-search\" hx-preserve=\"true\" class=\"input input-sm flex items-center gap-2 order-last w-full md:order-none md:w-60\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -489,7 +600,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<input id=\"search-objectives\" type=\"text\" class=\"grow\" placeholder=\"Search objectives\" autocomplete=\"off\" data-ignore-lock> <button id=\"clear-search-objectives\" type=\"button\" class=\"btn btn-xs btn-circle invisible -mr-2\" data-ignore-lock>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<input id=\"search-objectives\" type=\"text\" class=\"grow\" placeholder=\"Search objectives\" autocomplete=\"off\" data-ignore-lock> <button id=\"clear-search-objectives\" type=\"button\" class=\"btn btn-xs btn-circle invisible -mr-2\" data-ignore-lock>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -497,7 +608,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</button></label><div class=\"ml-auto md:ml-0 md:justify-self-end\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</button></label><div class=\"ml-auto md:ml-0 md:justify-self-end\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -505,7 +616,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</div></div><div class=\"py-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div></div><div class=\"py-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -513,12 +624,12 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div id=\"objective-tree\" class=\"px-6\" hx-boost=\"true\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div id=\"objective-tree\" class=\"px-6\" hx-boost=\"true\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(nodes) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div role=\"alert\" class=\"alert\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<div role=\"alert\" class=\"alert\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -526,38 +637,38 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span>This quest has no objectives yet.</span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<span>This quest has no objectives yet.</span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<ul class=\"objective-children flex flex-col w-full\" data-parent-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<ul class=\"objective-children flex flex-col w-full\" data-parent-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(root.ID)
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(root.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 454, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 502, Col: 82}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" data-routing=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(root.Routing))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 454, Col: 120}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-routing=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\">")
+			var templ_7745c5c3_Var15 string
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(root.Routing))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 502, Col: 120}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -567,7 +678,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -576,7 +687,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -584,7 +695,7 @@ func ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obje
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div></section></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</div></section></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -616,35 +727,35 @@ func objectiveNewButton(nodes []*ObjectiveTreeNode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var8 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var8 == nil {
-			templ_7745c5c3_Var8 = templ.NopComponent
+		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var16 == nil {
+			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		sections := sectionChoices(nodes, 0)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"flex items-stretch\" data-lock-hide>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "<div class=\"flex items-stretch\" data-lock-hide>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var9 = []any{"btn btn-primary", templ.KV("rounded-r-none", len(sections) > 0)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var9...)
+		var templ_7745c5c3_Var17 = []any{"btn btn-primary", templ.KV("rounded-r-none", len(sections) > 0)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var17...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<button type=\"button\" hx-post=\"/admin/objective/new\" hx-swap=\"none\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<button type=\"button\" hx-post=\"/admin/objective/new\" hx-swap=\"none\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var9).String())
+		var templ_7745c5c3_Var18 string
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var17).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -652,12 +763,12 @@ func objectiveNewButton(nodes []*ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "New objective</button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "New objective</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(sections) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<details class=\"settings-picker relative\"><summary class=\"btn btn-primary btn-square rounded-l-none border-l border-l-primary-content/20\" aria-label=\"Add inside a section\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<details class=\"settings-picker relative\"><summary class=\"btn btn-primary btn-square rounded-l-none border-l border-l-primary-content/20\" aria-label=\"Add inside a section\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -665,70 +776,70 @@ func objectiveNewButton(nodes []*ObjectiveTreeNode) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</summary><div class=\"absolute right-0 top-full mt-1 z-30 bg-base-100 rounded-box shadow-lg w-72 max-h-96 overflow-y-auto\"><p class=\"settings-menu-heading\">Add inside</p><ul class=\"menu px-2 pt-0 pb-2 w-full\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</summary><div class=\"absolute right-0 top-full mt-1 z-30 bg-base-100 rounded-box shadow-lg w-72 max-h-96 overflow-y-auto\"><p class=\"settings-menu-heading\">Add inside</p><ul class=\"menu px-2 pt-0 pb-2 w-full\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for _, section := range sections {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "<li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var11 = []any{sectionChoicePad(section.Depth)}
-				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var11...)
+				var templ_7745c5c3_Var19 = []any{sectionChoicePad(section.Depth)}
+				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var19...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<button type=\"button\" hx-post=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "<button type=\"button\" hx-post=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var12 string
-				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/admin/objective/new?parentId=%s", section.ID))
+				var templ_7745c5c3_Var20 string
+				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/admin/objective/new?parentId=%s", section.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 497, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 545, Col: 78}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\" hx-swap=\"none\" class=\"")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var13 string
-				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var11).String())
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "\" hx-swap=\"none\" class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var21 string
+				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var19).String())
 				if templ_7745c5c3_Err != nil {
 					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var14 string
-				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(section.Title)
+				var templ_7745c5c3_Var22 string
+				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(section.Title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 501, Col: 24}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 549, Col: 24}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</button></li>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</button></li>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "</ul></div></details>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</ul></div></details>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -790,12 +901,12 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var15 == nil {
-			templ_7745c5c3_Var15 = templ.NopComponent
+		templ_7745c5c3_Var23 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var23 == nil {
+			templ_7745c5c3_Var23 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<div class=\"px-6 py-3\"><div class=\"objective-outside relative pl-7\"><span class=\"objective-outside-mark tooltip tooltip-right\" data-tip=\"System page: always shown, never routed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<div class=\"px-6 py-3\"><div class=\"objective-outside relative pl-10\"><span class=\"objective-outside-mark tooltip tooltip-right\" data-tip=\"System page: always shown, never routed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -803,33 +914,33 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</span><!-- Untinted: every hue here belongs to a routing strategy. A filled\n\t\t\trow with an arrow out, because it is a page to open: boxed in white\n\t\t\tand outlined, it read as a text field waiting to be typed in. --><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</span><!-- Untinted: every hue here belongs to a routing strategy. A filled\n\t\t\trow with an arrow out, because it is a page to open: boxed in white\n\t\t\tand outlined, it read as a text field waiting to be typed in. --><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var16 templ.SafeURL
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(href))
+		var templ_7745c5c3_Var24 templ.SafeURL
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(href))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 560, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 608, Col: 26}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" class=\"group/system flex items-center gap-2 rounded-xl bg-base-content/5 hover:bg-base-content/10 px-3 py-2 text-sm transition-colors\" hx-boost=\"true\"><span class=\"font-medium group-hover/system:underline\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(label)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 564, Col: 66}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\" class=\"group/system flex items-center gap-2 rounded-xl border-[1.5px] border-base-content/15 bg-base-100 hover:bg-base-200 px-3 py-2.5 min-h-[2.625rem] text-[15px] transition-colors\" hx-boost=\"true\"><span class=\"font-medium group-hover/system:underline\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "</span><div class=\"flex-grow\"></div><span class=\"text-xs text-base-content/60\">System page</span>")
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(label)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 612, Col: 66}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</span><div class=\"flex-grow\"></div><span class=\"rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-base-content/70\">System page</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -837,7 +948,7 @@ func objectiveSystemPageLink(label, href string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</a></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</a></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -868,61 +979,61 @@ func objectiveVisibilityToggle(node *ObjectiveTreeNode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "<button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle tooltip objective-visibility-toggle shrink-0\" data-tip=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "<button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle tooltip objective-visibility-toggle shrink-0\" data-tip=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(visibilityTip(node))
+		var templ_7745c5c3_Var27 string
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(visibilityTip(node))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 584, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 632, Col: 32}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "\" data-objective-slug=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 585, Col: 43}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "\" data-objective-slug=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "\" data-published=\"")
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 633, Col: 43}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(!node.Draft))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 586, Col: 42}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\" data-published=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "\"")
+		var templ_7745c5c3_Var29 string
+		templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(!node.Draft))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 634, Col: 42}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if node.OutOfPlay && !node.Draft {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, " disabled")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, " disabled")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -942,7 +1053,7 @@ func objectiveVisibilityToggle(node *ObjectiveTreeNode) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -968,66 +1079,66 @@ func objectiveSecretToggle(node *ObjectiveTreeNode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var22 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var22 == nil {
-			templ_7745c5c3_Var22 = templ.NopComponent
+		templ_7745c5c3_Var30 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var30 == nil {
+			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle tooltip objective-secret-toggle shrink-0\" data-tip=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<button type=\"button\" class=\"btn btn-xs btn-ghost btn-circle tooltip objective-secret-toggle shrink-0\" data-tip=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(secretTip(node))
+		var templ_7745c5c3_Var31 string
+		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(secretTip(node))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 605, Col: 28}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 653, Col: 28}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" data-objective-slug=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var24 string
-		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 606, Col: 43}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" data-objective-slug=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "\" data-secret=\"")
+		var templ_7745c5c3_Var32 string
+		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 654, Col: 43}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var25 string
-		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.Secret))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 607, Col: 49}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" data-secret=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\">")
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.Secret))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 655, Col: 49}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if node.Objective.Secret {
-			templ_7745c5c3_Err = icon("gem", templ.Attributes{"class": "w-4 h-4 text-primary"}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = icon("hat-glasses", templ.Attributes{"class": "w-4 h-4 text-primary"}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = icon("gem", templ.Attributes{"class": "w-4 h-4 text-base-content/60 " + rowRevealClass}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = icon("hat-glasses", templ.Attributes{"class": "w-4 h-4 text-base-content/60 " + rowRevealClass}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "</button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1053,34 +1164,34 @@ func objectiveSecretFooter(parentID string, secrets []*ObjectiveTreeNode, enable
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var26 == nil {
-			templ_7745c5c3_Var26 = templ.NopComponent
+		templ_7745c5c3_Var34 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var34 == nil {
+			templ_7745c5c3_Var34 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(secrets) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<div class=\"objective-secret-footer mt-2 pt-2 border-t border-dashed border-base-content/15\"><p class=\"flex items-center gap-1.5 px-1 pb-1 text-xs font-medium text-base-content/60\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "<div class=\"objective-secret-footer\"><!-- The tooltip sits on the label: the divider's own ::before and\n\t\t\t::after draw its two lines. --><div class=\"divider objective-secret-divider\"><span class=\"tooltip tooltip-top\" data-tip=\"Unlisted until a player scans one, then counted with the rest\"><span class=\"objective-secret-chip\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = icon("gem", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"}).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = icon("hat-glasses", templ.Attributes{"class": "w-3.5 h-3.5 shrink-0"}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "Secrets: unlisted until a player scans one, then counted with the rest</p><ul class=\"objective-children flex flex-col w-full\" data-parent-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "Secret</span></span></div><ul class=\"objective-children flex flex-col w-full\" data-parent-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var27 string
-			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(parentID)
+			var templ_7745c5c3_Var35 string
+			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(parentID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 626, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 680, Col: 80}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "\" data-secret-footer=\"true\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, "\" data-secret-footer=\"true\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1090,7 +1201,7 @@ func objectiveSecretFooter(parentID string, secrets []*ObjectiveTreeNode, enable
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</ul></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "</ul></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1108,7 +1219,7 @@ const rowRevealClass = "opacity-0 group-hover/row:opacity-100 group-focus-within
 // dragHandleClass keeps the grip faint until its row is hovered. Hidden, it
 // would leave nothing saying a row can be dragged; at full strength on every
 // row it is a column of noise.
-const dragHandleClass = "w-4 h-4 text-base-content/40 group-hover/row:text-base-content " +
+const dragHandleClass = "w-4 h-4 text-base-content/60 group-hover/row:text-base-content " +
 	"group-hover/header:text-base-content transition-colors cursor-move objective-drag-handle shrink-0"
 
 	// It sits in the pill because its switch is in the pill's menu. The tooltip is
@@ -1130,26 +1241,26 @@ func objectivePassThroughMark(node *ObjectiveTreeNode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var28 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var28 == nil {
-			templ_7745c5c3_Var28 = templ.NopComponent
+		templ_7745c5c3_Var36 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var36 == nil {
+			templ_7745c5c3_Var36 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if passThroughShown(node) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<span class=\"objective-passthrough-mark\"><span class=\"tooltip tooltip-top inline-flex\" data-tip=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<span class=\"objective-passthrough-mark\"><span class=\"tooltip tooltip-top inline-flex\" data-tip=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var29 string
-			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(passThroughTip(node))
+			var templ_7745c5c3_Var37 string
+			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.ResolveAttributeValue(passThroughTip(node))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 653, Col: 80}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 707, Col: 80}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var37)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" aria-hidden=\"true\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" aria-hidden=\"true\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1157,20 +1268,20 @@ func objectivePassThroughMark(node *ObjectiveTreeNode) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "</span> <span class=\"sr-only\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</span> <span class=\"sr-only\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var30 string
-			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(passThroughTip(node))
+			var templ_7745c5c3_Var38 string
+			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(passThroughTip(node))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 656, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 710, Col: 47}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, ".</span></span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, ".</span></span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1207,48 +1318,48 @@ func objectivePassThroughSwitch(node *ObjectiveTreeNode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var31 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var31 == nil {
-			templ_7745c5c3_Var31 = templ.NopComponent
+		templ_7745c5c3_Var39 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var39 == nil {
+			templ_7745c5c3_Var39 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<label class=\"group/pass flex items-start gap-3 px-4 py-3 cursor-pointer\"><input type=\"checkbox\" class=\"toggle toggle-sm toggle-primary objective-passthrough-toggle mt-0.5 shrink-0\" data-objective-slug=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<label class=\"group/pass flex items-start gap-3 px-4 py-3 cursor-pointer\"><input type=\"checkbox\" class=\"toggle toggle-sm toggle-primary objective-passthrough-toggle mt-0.5 shrink-0\" data-objective-slug=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var32 string
-		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
+		var templ_7745c5c3_Var40 string
+		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 678, Col: 44}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 732, Col: 44}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\" data-pass-through=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var40)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var33 string
-		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.PassThrough))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 679, Col: 61}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "\" data-pass-through=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\"")
+		var templ_7745c5c3_Var41 string
+		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.PassThrough))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 733, Col: 61}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var41)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if node.Objective.PassThrough {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, " checked")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, " checked")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "> <span class=\"flex flex-col gap-0.5\"><!-- The ghost the pill shows, so the switch is recognisably what\n\t\t\tputs it there. Lit with the switch, before the refresh arrives. --><span class=\"flex items-center gap-2 text-sm font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "> <span class=\"flex flex-col gap-0.5\"><!-- The ghost the pill shows, so the switch is recognisably what\n\t\t\tputs it there. Lit with the switch, before the refresh arrives. --><span class=\"flex items-center gap-2 text-sm font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1256,20 +1367,20 @@ func objectivePassThroughSwitch(node *ObjectiveTreeNode) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "Pass through</span> <span class=\"text-xs text-base-content/60 text-pretty\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "Pass through</span> <span class=\"text-xs text-base-content/60 text-pretty\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var34 string
-		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(passThroughNote(node))
+		var templ_7745c5c3_Var42 string
+		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(passThroughNote(node))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 689, Col: 81}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 743, Col: 81}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</span></span></label>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</span></span></label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1323,16 +1434,16 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var35 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var35 == nil {
-			templ_7745c5c3_Var35 = templ.NopComponent
+		templ_7745c5c3_Var43 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var43 == nil {
+			templ_7745c5c3_Var43 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		guided := node.Objective.Routing == models.RouteStrategyOrdered
 		lo, hi := bandRange(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren)
 		summary := bandSummary(node.Objective.ChildrenMin, node.Objective.ChildrenMax, node.PublishedChildren)
 		pips := node.PublishedChildren > 0 && node.PublishedChildren <= maxBandPips
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "<details class=\"settings-picker settings-rule relative shrink-0\"><summary class=\"settings-rule-pill\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<details class=\"settings-picker settings-rule relative shrink-0\"><summary class=\"settings-rule-pill\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1342,72 +1453,16 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "<span class=\"settings-routing-trigger\" data-routing=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "<span class=\"settings-routing-trigger\" data-routing=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var36 string
-		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Objective.Routing))
+		var templ_7745c5c3_Var44 string
+		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Objective.Routing))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 734, Col: 87}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 788, Col: 87}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "settings-routing-icon w-3.5 h-3.5"}).Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<span class=\"settings-routing-label\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var37 string
-		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(routingLabel(node.Objective.Routing, node.Objective.MaxNext))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 736, Col: 103}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</span></span> ")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var38 = []any{"settings-band-picker", templ.KV("hidden", guided)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var38...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<span class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var39 string
-		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var38).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "\"><!-- One tooltip over the whole band, so pips, words and button all\n\t\t\t\tanswer a hover with the sentence the menu ends on. --><span class=\"band-glance tooltip tooltip-top\" data-tip=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var40 string
-		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.ResolveAttributeValue(summary)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 741, Col: 68}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var40)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var44)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1415,230 +1470,158 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if pips {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<span class=\"band-pips\" data-count=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var41 string
-			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.PublishedChildren))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 743, Col: 77}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var41)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\" aria-hidden=\"true\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			for k := 1; k <= node.PublishedChildren; k++ {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<span class=\"band-pip\" data-pip=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var42 string
-				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(k))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 745, Col: 55}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var42)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\" data-state=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var43 string
-				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.ResolveAttributeValue(pipState(k, lo, hi))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 745, Col: 90}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var43)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "\"></span>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</span> ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		var templ_7745c5c3_Var44 = []any{"settings-band-summary", templ.KV("sr-only", pips)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var44...)
+		templ_7745c5c3_Err = icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "settings-routing-icon w-3.5 h-3.5"}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "<span class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "<span class=\"settings-routing-label\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var45 string
-		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var44).String())
+		templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(routingLabel(node.Objective.Routing, node.Objective.MaxNext))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 790, Col: 103}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</span></span> ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var46 = []any{"settings-band-picker", templ.KV("hidden", guided)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var46...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "<span class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var47 string
+		templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var46).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var45)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var46 string
-		templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(summary)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 749, Col: 81}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</span><!-- A small copy of the button players get, label and all: with it\n\t\t\t\t\tthey choose when they are done, and without it the section\n\t\t\t\t\tfinishes by itself. An icon for that said nothing at a glance. -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var47 = []any{"band-finish-chip", templ.KV("hidden", lo >= hi)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var47...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "<span class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\"><!-- One tooltip over the whole band, so pips, words and button all\n\t\t\t\tanswer a hover with the sentence the menu ends on. --><span class=\"band-glance tooltip tooltip-top\" data-tip=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var48 string
-		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var47).String())
+		templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.ResolveAttributeValue(summary)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 795, Col: 68}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var48)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "\" aria-hidden=\"true\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var49 string
-		templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(finishButtonLabel(node.Objective))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 753, Col: 124}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</span></span></span></summary><!-- One wide panel, a column per question, rather than one long list:\n\t\thow players meet what is inside, and how much of it is enough. Columns\n\t\tstack on a narrow screen. Every rule ends its header, so the panel is\n\t\tanchored on the right and opens back over the card, not past its edge. --><div class=\"absolute top-full right-0 mt-1 z-20 w-[42rem] max-w-[calc(100vw-2rem)] bg-base-100 rounded-box shadow-lg overflow-hidden\"><!-- The band gets the wider column: its answers are sentences, and\n\t\t\tsqueezed they wrapped into two lines each. --><div class=\"grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] divide-y md:divide-y-0 md:divide-x divide-base-300\"><div class=\"flex flex-col\"><p class=\"settings-menu-heading\">Routing</p><ul class=\"menu gap-2 px-2 pt-0 pb-2 w-full\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, rs := range models.GetRouteStrategies() {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<li><!-- aria-current marks the live choice: the menu changes the\n\t\t\t\t\t\t\t\tsection the moment an option is picked, so it has to show\n\t\t\t\t\t\t\t\twhich one is in force. --><a class=\"settings-routing-option items-start\" data-value=\"")
+		if pips {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<span class=\"band-pips\" data-count=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var50 string
-			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(rs))
+			var templ_7745c5c3_Var49 string
+			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.PublishedChildren))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 775, Col: 32}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 797, Col: 77}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var50)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "\" data-routing=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var49)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var51 string
-			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(rs))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 776, Col: 34}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "\" aria-hidden=\"true\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "\" data-focus=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var52 string
-			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.ResolveAttributeValue("route-" + string(rs))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 777, Col: 43}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var52)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			if rs == node.Objective.Routing {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, " aria-current=\"true\"")
+			for k := 1; k <= node.PublishedChildren; k++ {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<span class=\"band-pip\" data-pip=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var50 string
+				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(k))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 799, Col: 55}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var50)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "\" data-state=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var51 string
+				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue(pipState(k, lo, hi))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 799, Col: 90}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "\"></span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, ">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = icon(routingIcon(rs), templ.Attributes{"class": "w-4 h-4 opacity-70 mt-0.5 shrink-0"}).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<span class=\"flex flex-col grow\"><span class=\"text-sm font-medium settings-routing-option-label\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var53 string
-			templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(routingOptionLabel(rs, node.Objective))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 784, Col: 114}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</span><!-- Balanced: each note runs to two short lines, which then\n\t\t\t\t\t\t\t\t\t\tsplit evenly instead of leaving one word on the second. --><span class=\"text-xs text-base-content/60 text-balance\">")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var54 string
-			templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(routingNote(rs))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 787, Col: 83}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "</span></span></a></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</span> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "</ul><!-- Straight under the option it belongs to and in line with its\n\t\t\t\t\twords; at the foot of the column it read as a setting of its own. -->")
+		var templ_7745c5c3_Var52 = []any{"settings-band-summary", templ.KV("sr-only", pips)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var52...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var55 = []any{"settings-maxnext flex items-center gap-2 pl-11 pr-4 pb-4", templ.KV("hidden", node.Objective.Routing != models.RouteStrategyRandomised)}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<span class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var53 string
+		templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var52).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var54 string
+		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(summary)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 803, Col: 81}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "</span><!-- A small copy of the button players get, label and all: with it\n\t\t\t\t\tthey choose when they are done, and without it the section\n\t\t\t\t\tfinishes by itself. An icon for that said nothing at a glance. -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var55 = []any{"band-finish-chip", templ.KV("hidden", lo >= hi)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var55...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<div class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<span class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1651,33 +1634,161 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "\"><span class=\"text-sm whitespace-nowrap text-base-content/70\">Show at once</span> <input type=\"number\" min=\"0\" class=\"input input-sm w-16 settings-maxnext-input no-spinner\" data-focus=\"maxnext\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\" aria-hidden=\"true\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var57 string
-		templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.ResolveAttributeValue(maxNextValue(node.Objective.MaxNext))
+		templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(finishButtonLabel(node.Objective))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 802, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 807, Col: 124}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var57)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "\" data-default=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var58 string
-		templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(defaultMaxNext))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 803, Col: 48}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var58)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</span></span></span></summary><!-- One wide panel, a column per question, rather than one long list:\n\t\thow players meet what is inside, and how much of it is enough. Columns\n\t\tstack on a narrow screen. Every rule ends its header, so the panel is\n\t\tanchored on the right and opens back over the card, not past its edge. --><div class=\"absolute top-full right-0 mt-1 z-20 w-[42rem] max-w-[calc(100vw-2rem)] bg-base-100 rounded-box shadow-lg overflow-hidden\"><!-- The band gets the wider column: its answers are sentences, and\n\t\t\tsqueezed they wrapped into two lines each. --><div class=\"grid grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] divide-y md:divide-y-0 md:divide-x divide-base-300\"><div class=\"flex flex-col\"><p class=\"settings-menu-heading\">Routing</p><ul class=\"menu gap-2 px-2 pt-0 pb-2 w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "\" placeholder=\"All\"></div></div>")
+		for _, rs := range models.GetRouteStrategies() {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "<li><!-- aria-current marks the live choice: the menu changes the\n\t\t\t\t\t\t\t\tsection the moment an option is picked, so it has to show\n\t\t\t\t\t\t\t\twhich one is in force. --><a class=\"settings-routing-option items-start\" data-value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var58 string
+			templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(rs))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 829, Col: 32}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var58)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "\" data-routing=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var59 string
+			templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(rs))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 830, Col: 34}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var59)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "\" data-focus=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var60 string
+			templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.ResolveAttributeValue("route-" + string(rs))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 831, Col: 43}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var60)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if rs == node.Objective.Routing {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, " aria-current=\"true\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, ">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = icon(routingIcon(rs), templ.Attributes{"class": "w-4 h-4 opacity-70 mt-0.5 shrink-0"}).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<span class=\"flex flex-col grow\"><span class=\"text-sm font-medium settings-routing-option-label\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var61 string
+			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(routingOptionLabel(rs, node.Objective))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 838, Col: 114}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "</span><!-- Balanced: each note runs to two short lines, which then\n\t\t\t\t\t\t\t\t\t\tsplit evenly instead of leaving one word on the second. --><span class=\"text-xs text-base-content/60 text-balance\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var62 string
+			templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(routingNote(rs))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 841, Col: 83}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "</span></span></a></li>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</ul><!-- Straight under the option it belongs to and in line with its\n\t\t\t\t\twords; at the foot of the column it read as a setting of its own. -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var63 = []any{"settings-maxnext flex items-center gap-2 pl-11 pr-4 pb-4", templ.KV("hidden", node.Objective.Routing != models.RouteStrategyRandomised)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var63...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var64 string
+		templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var63).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var64)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "\"><span class=\"text-sm whitespace-nowrap text-base-content/70\">Show at once</span> <input type=\"number\" min=\"0\" class=\"input input-sm w-16 settings-maxnext-input no-spinner\" data-focus=\"maxnext\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var65 string
+		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.ResolveAttributeValue(maxNextValue(node.Objective.MaxNext))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 856, Col: 51}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var65)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "\" data-default=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var66 string
+		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(defaultMaxNext))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 857, Col: 48}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var66)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "\" placeholder=\"All\"></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1685,12 +1796,12 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if section {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "<!-- A footer, not a column: it is one switch, rarely used, and as a\n\t\t\t\tcolumn of its own it left a third of the menu empty. --> <div class=\"border-t border-base-300\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "<!-- A footer, not a column: it is one switch, rarely used, and as a\n\t\t\t\tcolumn of its own it left a third of the menu empty. --> <div class=\"border-t border-base-300\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1698,12 +1809,12 @@ func objectiveRulePicker(node *ObjectiveTreeNode, section bool) templ.Component 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</div></details>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "</div></details>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1743,9 +1854,9 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var59 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var59 == nil {
-			templ_7745c5c3_Var59 = templ.NopComponent
+		templ_7745c5c3_Var67 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var67 == nil {
+			templ_7745c5c3_Var67 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		n := node.PublishedChildren
@@ -1753,33 +1864,33 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		if guided {
 			count, carry, capAt = n, false, 0
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 114, "<div class=\"flex flex-col\"><p class=\"settings-menu-heading\">How much is enough</p><div class=\"settings-band-fields px-4 pb-4 flex flex-col gap-4\"><input type=\"hidden\" class=\"settings-min\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "<div class=\"flex flex-col\"><p class=\"settings-menu-heading\">How much is enough</p><div class=\"settings-band-fields px-4 pb-4 flex flex-col gap-4\"><input type=\"hidden\" class=\"settings-min\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var60 string
-		templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.ResolveAttributeValue(guidedBandValue(node.Objective.ChildrenMin, guided))
+		var templ_7745c5c3_Var68 string
+		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.ResolveAttributeValue(guidedBandValue(node.Objective.ChildrenMin, guided))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 846, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 900, Col: 104}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var60)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "\"> <input type=\"hidden\" class=\"settings-max\" value=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var68)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var61 string
-		templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.ResolveAttributeValue(guidedBandValue(node.Objective.ChildrenMax, guided))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 847, Col: 104}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var61)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "\"> <input type=\"hidden\" class=\"settings-max\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "\"><div class=\"flex flex-wrap items-center gap-x-3 gap-y-2\"><span class=\"text-sm\">Players need to complete</span>")
+		var templ_7745c5c3_Var69 string
+		templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.ResolveAttributeValue(guidedBandValue(node.Objective.ChildrenMax, guided))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 901, Col: 104}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var69)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "\"><div class=\"flex flex-wrap items-center gap-x-3 gap-y-2\"><span class=\"text-sm\">Players need to complete</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1787,132 +1898,16 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 117, "</div><!-- Asked only when there is a choice: with every one required nothing\n\t\t\tis left to close, and with none required only a button can finish it. -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "</div><!-- Asked only when there is a choice: with every one required nothing\n\t\t\tis left to close, and with none required only a button can finish it. -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var62 = []any{"band-then flex flex-col gap-2", templ.KV("hidden", count <= 0 || count >= n)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var62...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 118, "<fieldset class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var63 string
-		templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var62).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var63)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 119, "\"><legend class=\"band-then-lead text-sm mb-2\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var64 string
-		templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(bandThenLead(count))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 855, Col: 69}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 120, "</legend> <label class=\"flex items-start gap-2 text-sm cursor-pointer\"><input type=\"radio\" class=\"radio radio-sm radio-primary mt-0.5 shrink-0\" name=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var65 string
-		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.ResolveAttributeValue("band-then-" + node.Objective.Slug)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 860, Col: 47}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var65)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 121, "\" value=\"closes\" data-focus=\"closes\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if !carry {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "> <span>the section finishes, and <span class=\"band-rest\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var66 string
-		templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.JoinStringErrs(bandRestWords(n - count))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 865, Col: 87}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var66))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "</span></span></label> <label class=\"flex items-start gap-2 text-sm cursor-pointer\"><input type=\"radio\" class=\"radio radio-sm radio-primary mt-0.5 shrink-0\" name=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var67 string
-		templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.ResolveAttributeValue("band-then-" + node.Objective.Slug)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 871, Col: 47}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var67)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "\" value=\"carry\" data-focus=\"carry\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if carry {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, "> <span>they can keep going, or finish with a button</span></label></fieldset><!-- Indented under the answer it continues; with none required there\n\t\t\tis no answer above it, so it stands on its own line. -->")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var68 = []any{"settings-finish-label band-carry flex flex-col gap-3", templ.KV("pl-7", count > 0), templ.KV("hidden", !carry || count >= n)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var68...)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "<div class=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var69 string
-		templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var68).String())
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var69)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var70 = []any{"band-carry-lead text-sm", templ.KV("hidden", count > 0)}
+		var templ_7745c5c3_Var70 = []any{"band-then flex flex-col gap-2", templ.KV("hidden", count <= 0 || count >= n)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var70...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "<p class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 123, "<fieldset class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1925,25 +1920,84 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, "\">They can finish the section with a button at any time.</p><label class=\"flex items-center gap-3\"><span class=\"text-sm whitespace-nowrap\">The button says</span> <input type=\"text\" class=\"input input-sm grow min-w-0 settings-finish-label-input\" data-focus=\"finish\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 124, "\"><legend class=\"band-then-lead text-sm mb-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var72 string
-		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.FinishLabel)
+		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(bandThenLead(count))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 889, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 909, Col: 69}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var72)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "\" placeholder=\"Finish\"></label>")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var73 = []any{"band-cap-row flex flex-wrap items-center gap-x-3 gap-y-2", templ.KV("hidden", count >= n-1)}
-		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var73...)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</legend> <label class=\"flex items-start gap-2 text-sm cursor-pointer\"><input type=\"radio\" class=\"radio radio-sm radio-primary mt-0.5 shrink-0\" name=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var73 string
+		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.ResolveAttributeValue("band-then-" + node.Objective.Slug)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 914, Col: 47}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var73)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 126, "\" value=\"closes\" data-focus=\"closes\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if !carry {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 127, " checked")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "> <span>the section finishes, and <span class=\"band-rest\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var74 string
+		templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(bandRestWords(n - count))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 919, Col: 87}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 129, "</span></span></label> <label class=\"flex items-start gap-2 text-sm cursor-pointer\"><input type=\"radio\" class=\"radio radio-sm radio-primary mt-0.5 shrink-0\" name=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var75 string
+		templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.ResolveAttributeValue("band-then-" + node.Objective.Slug)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 925, Col: 47}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var75)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 130, "\" value=\"carry\" data-focus=\"carry\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		if carry {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 131, " checked")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "> <span>they can keep going, or finish with a button</span></label></fieldset><!-- Indented under the answer it continues; with none required there\n\t\t\tis no answer above it, so it stands on its own line. -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var76 = []any{"settings-finish-label band-carry flex flex-col gap-3", templ.KV("pl-7", count > 0), templ.KV("hidden", !carry || count >= n)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var76...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1951,16 +2005,73 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var74 string
-		templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var73).String())
+		var templ_7745c5c3_Var77 string
+		templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var76).String())
 		if templ_7745c5c3_Err != nil {
 			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var74)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var77)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "\"><span class=\"text-sm\">They can complete up to</span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 134, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var78 = []any{"band-carry-lead text-sm", templ.KV("hidden", count > 0)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var78...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "<p class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var79 string
+		templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var78).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var79)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "\">They can finish the section with a button at any time.</p><label class=\"flex items-center gap-3\"><span class=\"text-sm whitespace-nowrap\">The button says</span> <input type=\"text\" class=\"input input-sm grow min-w-0 settings-finish-label-input\" data-focus=\"finish\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var80 string
+		templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.FinishLabel)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 943, Col: 40}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var80)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "\" placeholder=\"Finish\"></label>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var81 = []any{"band-cap-row flex flex-wrap items-center gap-x-3 gap-y-2", templ.KV("hidden", count >= n-1)}
+		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var81...)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "<div class=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var82 string
+		templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var81).String())
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var82)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "\"><span class=\"text-sm\">They can complete up to</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1968,7 +2079,7 @@ func objectiveBandColumn(node *ObjectiveTreeNode, guided bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "</div></div><!-- Ruled off from the questions so it reads as their sum, not one\n\t\t\tmore option. --><p class=\"settings-band-explainer pt-3 border-t border-base-300 text-xs text-base-content/70 text-pretty\"></p></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, "</div></div><!-- Ruled off from the questions so it reads as their sum, not one\n\t\t\tmore option. --><p class=\"settings-band-explainer pt-3 border-t border-base-300 text-xs text-base-content/70 text-pretty\"></p></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1995,61 +2106,61 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var75 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var75 == nil {
-			templ_7745c5c3_Var75 = templ.NopComponent
+		templ_7745c5c3_Var83 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var83 == nil {
+			templ_7745c5c3_Var83 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 136, "<div class=\"join\"><button type=\"button\" class=\"btn btn-sm join-item band-step\" data-kind=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, "<div class=\"join\"><button type=\"button\" class=\"btn btn-sm join-item band-step\" data-kind=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var76 string
-		templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
+		var templ_7745c5c3_Var84 string
+		templ_7745c5c3_Var84, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 913, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 967, Col: 19}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var76)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "\" data-step=\"-1\" data-focus=\"")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var84)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var77 string
-		templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind + "-fewer")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 915, Col: 31}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var77)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, "\" data-step=\"-1\" data-focus=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 138, "\" aria-label=\"")
+		var templ_7745c5c3_Var85 string
+		templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind + "-fewer")
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 969, Col: 31}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var85)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var78 string
-		templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandStepLabel(kind, -1))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 916, Col: 39}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var78)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, "\" aria-label=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 139, "\"")
+		var templ_7745c5c3_Var86 string
+		templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandStepLabel(kind, -1))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 970, Col: 39}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var86)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if atLeast {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 140, " disabled")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 145, " disabled")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 141, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2057,82 +2168,82 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 142, "</button> <span class=\"join-item band-value\" data-kind=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "</button> <span class=\"join-item band-value\" data-kind=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var79 string
-		templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
+		var templ_7745c5c3_Var87 string
+		templ_7745c5c3_Var87, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 921, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 975, Col: 53}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var79)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 143, "\" aria-live=\"polite\">")
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var87)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var80 string
-		templ_7745c5c3_Var80, templ_7745c5c3_Err = templ.JoinStringErrs(value)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 921, Col: 82}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var80))
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 148, "\" aria-live=\"polite\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 144, "</span> <button type=\"button\" class=\"btn btn-sm join-item band-step\" data-kind=\"")
+		var templ_7745c5c3_Var88 string
+		templ_7745c5c3_Var88, templ_7745c5c3_Err = templ.JoinStringErrs(value)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 975, Col: 82}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var88))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var81 string
-		templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 925, Col: 19}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var81)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 149, "</span> <button type=\"button\" class=\"btn btn-sm join-item band-step\" data-kind=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 145, "\" data-step=\"1\" data-focus=\"")
+		var templ_7745c5c3_Var89 string
+		templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 979, Col: 19}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var89)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var82 string
-		templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind + "-more")
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 927, Col: 30}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var82)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 150, "\" data-step=\"1\" data-focus=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 146, "\" aria-label=\"")
+		var templ_7745c5c3_Var90 string
+		templ_7745c5c3_Var90, templ_7745c5c3_Err = templ.ResolveAttributeValue(kind + "-more")
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 981, Col: 30}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var90)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var83 string
-		templ_7745c5c3_Var83, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandStepLabel(kind, 1))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 928, Col: 38}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var83)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 151, "\" aria-label=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "\"")
+		var templ_7745c5c3_Var91 string
+		templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.ResolveAttributeValue(bandStepLabel(kind, 1))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 982, Col: 38}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var91)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 152, "\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if atMost {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 148, " disabled")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 153, " disabled")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 149, ">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 154, ">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2140,7 +2251,7 @@ func bandStepper(kind, value string, atLeast, atMost bool) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 150, "</button></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 155, "</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2262,40 +2373,45 @@ func objectiveRailMark(node *ObjectiveTreeNode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var84 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var84 == nil {
-			templ_7745c5c3_Var84 = templ.NopComponent
+		templ_7745c5c3_Var92 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var92 == nil {
+			templ_7745c5c3_Var92 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 151, "<span class=\"objective-mark\" data-mark=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 156, "<span class=\"objective-mark\" data-mark=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var85 string
-		templ_7745c5c3_Var85, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
+		var templ_7745c5c3_Var93 string
+		templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1035, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1089, Col: 59}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var85)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var93)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 152, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 157, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if node.Mark == RailStep {
-			var templ_7745c5c3_Var86 string
-			templ_7745c5c3_Var86, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(node.Step))
+			var templ_7745c5c3_Var94 string
+			templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(node.Step))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1037, Col: 26}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1091, Col: 26}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var86))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var94))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else if node.Mark == RailSecret {
+			templ_7745c5c3_Err = icon("hat-glasses", templ.Attributes{"class": "w-[18px] h-[18px]"}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 153, "</span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 158, "</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2321,13 +2437,13 @@ func objectiveDraftTag(node *ObjectiveTreeNode) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var87 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var87 == nil {
-			templ_7745c5c3_Var87 = templ.NopComponent
+		templ_7745c5c3_Var95 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var95 == nil {
+			templ_7745c5c3_Var95 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if node.Draft {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 154, "<span class=\"badge badge-warning badge-xs shrink-0\">Draft</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 159, "<span class=\"badge badge-xs shrink-0 objective-draft-tag\">Draft</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2338,6 +2454,47 @@ func objectiveDraftTag(node *ObjectiveTreeNode) templ.Component {
 
 // objectivePointsBadge sums this objective's own blocks; never a rollup of
 // children.
+// One fixed column, so points line up down the whole tree and the actions
+// after them do too. Absent when scoring is off, so nothing reserves the gap.
+func objectivePointsColumn(points int, enablePoints bool) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var96 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var96 == nil {
+			templ_7745c5c3_Var96 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		if enablePoints {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 160, "<span class=\"objective-points\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = objectivePointsBadge(points, enablePoints).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 161, "</span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		return nil
+	})
+}
+
 func objectivePointsBadge(points int, enablePoints bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -2354,26 +2511,26 @@ func objectivePointsBadge(points int, enablePoints bool) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var88 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var88 == nil {
-			templ_7745c5c3_Var88 = templ.NopComponent
+		templ_7745c5c3_Var97 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var97 == nil {
+			templ_7745c5c3_Var97 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if enablePoints && points != 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 155, "<span class=\"badge badge-ghost badge-sm shrink-0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 162, "<span class=\"badge badge-ghost badge-sm shrink-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var89 string
-			templ_7745c5c3_Var89, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d pts", points))
+			var templ_7745c5c3_Var98 string
+			templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d pts", points))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1054, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1120, Col: 83}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var89))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var98))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 156, "</span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 163, "</span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2400,13 +2557,13 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var90 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var90 == nil {
-			templ_7745c5c3_Var90 = templ.NopComponent
+		templ_7745c5c3_Var99 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var99 == nil {
+			templ_7745c5c3_Var99 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		if depth > maxRenderDepth {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 157, "<!-- Named and linked rather than dropped: this depth is reachable by\n\t\tdragging, since lint warns past four levels but does not refuse, and an\n\t\tauthor who nested too far needs to find the row to drag it back out. --> <li class=\"list-none rounded-xl bg-base-100/60 border border-base-content/10 p-4 text-sm\"><div class=\"flex items-center gap-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 164, "<!-- Named and linked rather than dropped: this depth is reachable by\n\t\tdragging, since lint warns past four levels but does not refuse, and an\n\t\tauthor who nested too far needs to find the row to drag it back out. --> <li class=\"list-none rounded-xl bg-base-100/60 border border-base-content/10 p-4 text-sm\"><div class=\"flex items-center gap-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2414,116 +2571,116 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 158, "<a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 165, "<a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var91 templ.SafeURL
-			templ_7745c5c3_Var91, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
+			var templ_7745c5c3_Var100 templ.SafeURL
+			templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1068, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1134, Col: 66}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var91))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 159, "\" class=\"link link-hover font-medium\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var100))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var92 string
-			templ_7745c5c3_Var92, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1069, Col: 27}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var92))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 166, "\" class=\"link link-hover font-medium\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 160, "</a> <span class=\"text-xs opacity-70\">")
+			var templ_7745c5c3_Var101 string
+			templ_7745c5c3_Var101, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1135, Col: 27}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var101))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var93 string
-			templ_7745c5c3_Var93, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("nested %d levels deep, past what this view draws", depth))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1072, Col: 77}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var93))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 167, "</a> <span class=\"text-xs opacity-70\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 161, "</span></div></li>")
+			var templ_7745c5c3_Var102 string
+			templ_7745c5c3_Var102, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("nested %d levels deep, past what this view draws", depth))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1138, Col: 77}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var102))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 168, "</span></div></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else if len(node.Children) > 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 162, "<li class=\"list-none objective-rail-item\" data-objective-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 169, "<li class=\"list-none objective-rail-item\" data-objective-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var94 string
-			templ_7745c5c3_Var94, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
+			var templ_7745c5c3_Var103 string
+			templ_7745c5c3_Var103, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1079, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1145, Col: 40}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var94)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 163, "\" data-objective-slug=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var103)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var95 string
-			templ_7745c5c3_Var95, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1080, Col: 44}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var95)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 170, "\" data-objective-slug=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 164, "\" data-child-count=\"")
+			var templ_7745c5c3_Var104 string
+			templ_7745c5c3_Var104, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Slug)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1146, Col: 44}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var104)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var96 string
-			templ_7745c5c3_Var96, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.PublishedChildren))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1081, Col: 56}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var96)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 171, "\" data-child-count=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 165, "\" data-mark=\"")
+			var templ_7745c5c3_Var105 string
+			templ_7745c5c3_Var105, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.PublishedChildren))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1147, Col: 56}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var105)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var97 string
-			templ_7745c5c3_Var97, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1082, Col: 32}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var97)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 172, "\" data-mark=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 166, "\" data-secret=\"")
+			var templ_7745c5c3_Var106 string
+			templ_7745c5c3_Var106, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1148, Col: 32}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var106)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var98 string
-			templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.Secret))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1083, Col: 50}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var98)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 173, "\" data-secret=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 167, "\"")
+			var templ_7745c5c3_Var107 string
+			templ_7745c5c3_Var107, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.Secret))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1149, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var107)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 174, "\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2531,7 +2688,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 168, ">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 175, ">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2539,42 +2696,42 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 169, "<!-- The hue is on the outline, the header band, the rail and the\n\t\t\trouting label, not the fill: three washes deep, nested cards read as\n\t\t\tfills rather than as the sections they are. An outline in the hue\n\t\t\tkeeps each card's routing visible down its whole length without\n\t\t\tthat. -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 176, "<!-- The hue is on the outline, the header band, the rail and the\n\t\t\trouting label, not the fill: three washes deep, nested cards read as\n\t\t\tfills rather than as the sections they are. An outline in the hue\n\t\t\tkeeps each card's routing visible down its whole length without\n\t\t\tthat. -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var99 = []any{"objective-group card rounded-2xl bg-base-100 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("objective-parked", node.OutOfPlay), templ.KV("objective-passthrough", passThroughShown(node) && !node.OutOfPlay)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var99...)
+			var templ_7745c5c3_Var108 = []any{"objective-group card rounded-2xl bg-base-100 border border-primary/40 hover:border-primary/60 transition-colors", templ.KV("objective-parked", node.OutOfPlay), templ.KV("objective-passthrough", passThroughShown(node) && !node.OutOfPlay)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var108...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 170, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 177, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var100 string
-			templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var99).String())
+			var templ_7745c5c3_Var109 string
+			templ_7745c5c3_Var109, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var108).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var100)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var109)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 171, "\" data-routing=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 178, "\" data-routing=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var101 string
-			templ_7745c5c3_Var101, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Objective.Routing))
+			var templ_7745c5c3_Var110 string
+			templ_7745c5c3_Var110, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Objective.Routing))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1094, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1160, Col: 49}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var101)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var110)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 172, "\"><div class=\"card-body p-0 gap-0\"><!-- Taller than a leaf's row, so a section reads as the head of\n\t\t\t\t\twhat follows rather than one more row in the list. --><div class=\"objective-group-header group/header flex items-center gap-2 px-3 py-2 rounded-t-2xl bg-primary/10 border-b border-primary/25\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 179, "\"><div class=\"card-body p-0 gap-0\"><!-- Taller than a leaf's row, so a section reads as the head of\n\t\t\t\t\twhat follows rather than one more row in the list. --><div class=\"objective-group-header group/header flex items-center gap-2 px-3 py-2 rounded-t-2xl bg-primary/10 border-b border-primary/25\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2582,45 +2739,37 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 173, "</span> <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 180, "</span> <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var102 templ.SafeURL
-			templ_7745c5c3_Var102, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
+			var templ_7745c5c3_Var111 templ.SafeURL
+			templ_7745c5c3_Var111, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1103, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1169, Col: 68}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var102))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 174, "\" class=\"link link-hover font-bold\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var111))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var103 string
-			templ_7745c5c3_Var103, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1104, Col: 29}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var103))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 181, "\" class=\"link link-hover font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 175, "</a>")
+			var templ_7745c5c3_Var112 string
+			templ_7745c5c3_Var112, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1170, Col: 29}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var112))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 182, "</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = objectiveDraftTag(node).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 176, "<!-- Marks sit against the title they describe: at the far edge\n\t\t\t\t\t\tthey would be a screen's width from their name. -->")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = objectivePointsBadge(node.Points, enablePoints).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2632,7 +2781,15 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 177, "<div class=\"flex-grow\"></div><!-- The rule sits past the title: the title is what you scan a\n\t\t\t\t\t\ttree for, and a control before it pushes every name out of line\n\t\t\t\t\t\twith the one above. -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 183, "<div class=\"flex-grow\"></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = objectivePointsColumn(node.Points, enablePoints).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "<!-- The rule sits past the title: the title is what you scan a\n\t\t\t\t\t\ttree for, and a control before it pushes every name out of line\n\t\t\t\t\t\twith the one above. -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2648,20 +2805,20 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 178, "</div><div class=\"p-3 objective-group-body\"><ul class=\"objective-children flex flex-col w-full min-h-8\" data-parent-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 185, "</div><div class=\"p-3 objective-group-body\"><ul class=\"objective-children flex flex-col w-full min-h-8\" data-parent-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var104 string
-			templ_7745c5c3_Var104, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
+			var templ_7745c5c3_Var113 string
+			templ_7745c5c3_Var113, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1121, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1185, Col: 100}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var104)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var113)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 179, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 186, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2671,7 +2828,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 180, "</ul>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 187, "</ul>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2679,64 +2836,64 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 181, "</div></div></div></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 188, "</div></div></div></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 182, "<li class=\"list-none objective-searchable objective-rail-item\" data-objective-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 189, "<li class=\"list-none objective-searchable objective-rail-item\" data-objective-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var105 string
-			templ_7745c5c3_Var105, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
+			var templ_7745c5c3_Var114 string
+			templ_7745c5c3_Var114, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1134, Col: 40}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1198, Col: 40}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var105)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 183, "\" data-search-text=\"")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var114)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var106 string
-			templ_7745c5c3_Var106, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Title)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1135, Col: 42}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var106)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 190, "\" data-search-text=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "\" data-mark=\"")
+			var templ_7745c5c3_Var115 string
+			templ_7745c5c3_Var115, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.Title)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1199, Col: 42}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var115)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var107 string
-			templ_7745c5c3_Var107, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1136, Col: 32}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var107)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 191, "\" data-mark=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 185, "\" data-secret=\"")
+			var templ_7745c5c3_Var116 string
+			templ_7745c5c3_Var116, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(node.Mark))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1200, Col: 32}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var116)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var108 string
-			templ_7745c5c3_Var108, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.Secret))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1137, Col: 50}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var108)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 192, "\" data-secret=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 186, "\"")
+			var templ_7745c5c3_Var117 string
+			templ_7745c5c3_Var117, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(node.Objective.Secret))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1201, Col: 50}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var117)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 193, "\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2744,7 +2901,7 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 187, ">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 194, ">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2752,25 +2909,25 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var109 = []any{"objective-row group/row flex items-center gap-2 rounded-xl bg-base-100/60 hover:bg-base-200/60 border border-base-content/10 px-3 py-1.5 text-sm", templ.KV("objective-parked", node.OutOfPlay)}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var109...)
+			var templ_7745c5c3_Var118 = []any{"objective-row group/row flex items-center gap-2 rounded-xl border border-transparent px-3 py-1.5 text-sm", templ.KV("objective-parked", node.OutOfPlay)}
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var118...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 188, "<div class=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 195, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var110 string
-			templ_7745c5c3_Var110, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var109).String())
+			var templ_7745c5c3_Var119 string
+			templ_7745c5c3_Var119, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var118).String())
 			if templ_7745c5c3_Err != nil {
 				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var110)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var119)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 189, "\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 196, "\"><span class=\"tooltip tooltip-right\" data-tip=\"Drag to move\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2778,41 +2935,37 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 190, "</span> <a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 197, "</span> <a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var111 templ.SafeURL
-			templ_7745c5c3_Var111, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
+			var templ_7745c5c3_Var120 templ.SafeURL
+			templ_7745c5c3_Var120, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/admin/objective/" + node.Objective.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1145, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1209, Col: 66}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var111))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 191, "\" class=\"link link-hover font-medium\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var120))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var112 string
-			templ_7745c5c3_Var112, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1146, Col: 27}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var112))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 198, "\" class=\"link link-hover font-medium\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 192, "</a>")
+			var templ_7745c5c3_Var121 string
+			templ_7745c5c3_Var121, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1210, Col: 27}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var121))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 199, "</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			templ_7745c5c3_Err = objectiveDraftTag(node).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = objectivePointsBadge(node.Points, enablePoints).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2824,7 +2977,11 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 193, "<div class=\"flex-grow\"></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 200, "<div class=\"flex-grow\"></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = objectivePointsColumn(node.Points, enablePoints).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2836,20 +2993,20 @@ func objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 194, "</div><!-- Plain flow, not absolute: lets Sortable grow this to show the\n\t\t\t     incoming item on hover. emptyInsertThreshold below makes a\n\t\t\t     target this thin reachable. --><ul class=\"objective-children\" data-parent-id=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 201, "</div><!-- Plain flow, not absolute: lets Sortable grow this to show the\n\t\t\t     incoming item on hover. emptyInsertThreshold below makes a\n\t\t\t     target this thin reachable. --><ul class=\"objective-children\" data-parent-id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var113 string
-			templ_7745c5c3_Var113, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
+			var templ_7745c5c3_Var122 string
+			templ_7745c5c3_Var122, templ_7745c5c3_Err = templ.ResolveAttributeValue(node.Objective.ID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1159, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_tree.templ`, Line: 1223, Col: 68}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var113)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var122)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 195, "\"></ul></li>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 202, "\"></ul></li>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -2881,12 +3038,12 @@ func objectiveSortableScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var114 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var114 == nil {
-			templ_7745c5c3_Var114 = templ.NopComponent
+		templ_7745c5c3_Var123 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var123 == nil {
+			templ_7745c5c3_Var123 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 196, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t// postObjectiveUpdate posts, then always re-fetches the tree: a refused\n\t// move must show as it landed, and htmx.ajax (not fetch) is what\n\t// delivers the response's out-of-band toast.\n\t//\n\t// One request: the page render already computes lint.\n\tfunction postObjectiveUpdate(url, values) {\n\t\treturn htmx.ajax('POST', url, { values: values, swap: 'none' }).finally(function() {\n\t\t\thtmx.ajax('GET', '/admin/quest', {\n\t\t\t\tselect: '#quest-builder',\n\t\t\t\ttarget: '#quest-builder',\n\t\t\t\tswap: 'outerHTML',\n\t\t\t}).finally(initObjectiveTree);\n\t\t});\n\t}\n\n\tfunction bandSummaryText(n, minRaw, maxRaw) {\n\t\tvar minV = minRaw === '' ? null : parseInt(minRaw, 10);\n\t\tvar maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);\n\t\tif (minV === null && maxV === null) return 'Complete all';\n\t\tvar lo = minV === null ? 0 : minV;\n\t\tvar hi = maxV === null ? n : maxV;\n\t\tif (lo >= hi) return hi === n ? 'Complete all' : ('Complete ' + hi + ' of ' + n);\n\t\tif (lo === 0 && hi === n) return 'Complete any';\n\t\tif (lo === 0) return 'Complete up to ' + hi;\n\t\tif (hi === n) return 'Complete ' + lo + '+';\n\t\treturn 'Complete ' + lo + '–' + hi;\n\t}\n\n\t// bandState mirrors bandChoice: the two bounds read as the menu's questions.\n\tfunction bandState(n, minRaw, maxRaw) {\n\t\tvar range = bandRangeOf(n, minRaw, maxRaw);\n\t\tif (range[0] >= range[1]) return { count: Math.min(range[1], n), carry: false, cap: null };\n\t\treturn { count: range[0], carry: true, cap: range[1] < n ? range[1] : null };\n\t}\n\n\t// bandFieldsOf writes the menu's answers back as the two bounds the server\n\t// reads. Every one required is the blank band, so it keeps meaning all when\n\t// another child is added; with none required, only the players can finish\n\t// the section, so it carries on whatever was picked.\n\tfunction bandFieldsOf(n, state) {\n\t\tvar count = Math.max(0, Math.min(n, state.count));\n\t\tif (count >= n) return ['', ''];\n\t\tif (!state.carry && count > 0) return [String(count), String(count)];\n\t\tvar cap = state.cap && state.cap > count && state.cap < n ? state.cap : null;\n\t\treturn [String(count), cap ? String(cap) : ''];\n\t}\n\n\t// bandCountWords, bandThenLead, bandRestWords and bandCapWords mirror\n\t// their Go namesakes.\n\tfunction bandCountWords(n, count) {\n\t\tif (count >= n) return n === 1 ? 'all' : 'all ' + n;\n\t\tif (count === 0) return 'none';\n\t\treturn count + ' of ' + n;\n\t}\n\n\tfunction bandThenLead(count) {\n\t\treturn 'Once they have completed ' + count + ',';\n\t}\n\n\tfunction bandCapWords(n, cap) {\n\t\treturn cap ? String(cap) : 'all ' + n;\n\t}\n\n\tfunction bandRestWords(rest) {\n\t\treturn rest === 1 ? 'the other one closes' : 'the other ' + rest + ' close';\n\t}\n\n\t// bandSentence is the whole band in one sentence, for the menu and for the\n\t// pips' tooltip: what players have to do, and how the section ends.\n\tfunction bandSentence(n, state, label) {\n\t\tvar finish = '“' + (label || 'Finish') + '”';\n\t\tif (state.count >= n) {\n\t\t\treturn n === 1 ? 'Players complete it, and the section finishes.'\n\t\t\t\t: 'Players complete all ' + n + ', and the section finishes with the last.';\n\t\t}\n\t\tif (!state.carry) {\n\t\t\treturn 'Players complete ' + state.count + ' of ' + n + '. The section then finishes, and ' +\n\t\t\t\tbandRestWords(n - state.count) + '.';\n\t\t}\n\t\tvar end = state.cap ? 'It finishes on its own after ' + state.cap + '.'\n\t\t\t: 'It finishes on its own once all ' + n + ' are done.';\n\t\tif (state.count === 0) return 'Nothing is required: players see ' + finish + ' from the start. ' + end;\n\t\treturn 'Players complete at least ' + state.count + ', then see ' + finish + ' and can keep going. ' + end;\n\t}\n\n\t// finishLabelOf is the label the finish button will show, as typed so far.\n\tfunction finishLabelOf(rule) {\n\t\tvar input = rule && rule.querySelector('.settings-finish-label-input');\n\t\treturn input ? input.value.trim() : '';\n\t}\n\n\t// syncBandMenu redraws the band's column from the hidden bounds and returns\n\t// the state it drew. Under guided routing the count is locked at all, and\n\t// the sum says why. Buttons stay disabled while the quest is locked,\n\t// whatever the band would allow.\n\tfunction syncBandMenu(rule, n) {\n\t\tvar min = rule.querySelector('.settings-min');\n\t\tvar max = rule.querySelector('.settings-max');\n\t\tvar fields = rule.querySelector('.settings-band-fields');\n\t\tif (!min || !max || !fields) return null;\n\t\tvar trigger = rule.querySelector('.settings-routing-trigger');\n\t\tvar guided = trigger && trigger.dataset.routing === 'ordered';\n\t\tvar locked = document.body.dataset.questLocked === 'true';\n\t\tvar state = bandState(n, min.value, max.value);\n\t\tvar all = state.count >= n;\n\t\tvar capAt = state.cap || n;\n\t\tvar step = function(kind, dir) {\n\t\t\treturn fields.querySelector('.band-step[data-kind=\"' + kind + '\"][data-step=\"' + dir + '\"]');\n\t\t};\n\t\tfields.querySelector('.band-value[data-kind=\"need\"]').textContent = bandCountWords(n, state.count);\n\t\tstep('need', -1).disabled = locked || guided || state.count <= 0;\n\t\tstep('need', 1).disabled = locked || guided || all;\n\t\tfields.querySelector('.band-then').classList.toggle('hidden', all || state.count === 0);\n\t\tfields.querySelector('.band-then-lead').textContent = bandThenLead(state.count);\n\t\tfields.querySelector('.band-rest').textContent = bandRestWords(n - state.count);\n\t\tfields.querySelector('.band-then input[value=\"closes\"]').checked = !state.carry;\n\t\tfields.querySelector('.band-then input[value=\"carry\"]').checked = state.carry;\n\t\tvar carry = fields.querySelector('.band-carry');\n\t\tcarry.classList.toggle('hidden', all || !state.carry);\n\t\tcarry.classList.toggle('pl-7', state.count > 0);\n\t\tfields.querySelector('.band-carry-lead').classList.toggle('hidden', state.count > 0);\n\t\tfields.querySelector('.band-cap-row').classList.toggle('hidden', state.count >= n - 1);\n\t\tfields.querySelector('.band-value[data-kind=\"cap\"]').textContent = bandCapWords(n, state.cap);\n\t\tstep('cap', -1).disabled = locked || capAt <= state.count + 1;\n\t\tstep('cap', 1).disabled = locked || !state.cap;\n\t\tfields.querySelector('.settings-band-explainer').textContent = guided\n\t\t\t? 'A guided path takes every step, in order, and the section finishes with the last.'\n\t\t\t: bandSentence(n, state, finishLabelOf(rule));\n\t\treturn state;\n\t}\n\n\t// editBand applies one answer to the band's questions, redraws at once, and\n\t// saves once the edits stop.\n\tfunction editBand(rule, change) {\n\t\tvar scope = settingsScope(rule);\n\t\tvar min = rule.querySelector('.settings-min');\n\t\tvar max = rule.querySelector('.settings-max');\n\t\tif (!scope || !min || !max) return;\n\t\tvar n = parseInt(scope.dataset.childCount, 10) || 0;\n\t\tvar state = bandState(n, min.value, max.value);\n\t\tchange(state, n);\n\t\tvar next = bandFieldsOf(n, state);\n\t\tif (next[0] === min.value && next[1] === max.value) {\n\t\t\tsyncSettings(scope);\n\t\t\treturn;\n\t\t}\n\t\tmin.value = next[0];\n\t\tmax.value = next[1];\n\t\tsyncSettings(scope);\n\t\tscheduleSettings(scope);\n\t}\n\n\t// scheduleSettings saves a burst of edits as one post: each click redraws at\n\t// once, and the save waits until the clicking stops, so a run of presses on\n\t// the stepper is not a run of refreshes racing each other.\n\tfunction scheduleSettings(scope) {\n\t\tvar timers = window.__settingsTimers || (window.__settingsTimers = {});\n\t\tvar slug = scope.dataset.objectiveSlug;\n\t\tclearTimeout(timers[slug]);\n\t\ttimers[slug] = setTimeout(function() {\n\t\t\tdelete timers[slug];\n\t\t\tsubmitSettings(scope);\n\t\t}, 400);\n\t}\n\n\t// settingsScope finds the nearest element carrying the objective's\n\t// slug/child-count; not restricted to li, since root's picker sits in a\n\t// plain div.\n\tfunction settingsScope(el) {\n\t\treturn el.closest('[data-objective-slug]');\n\t}\n\n\t// bandRangeOf mirrors bandRange: both blank is every one, not \"from none\".\n\tfunction bandRangeOf(n, minRaw, maxRaw) {\n\t\tif (minRaw === '' && maxRaw === '') return [n, n];\n\t\treturn [minRaw === '' ? 0 : parseInt(minRaw, 10), maxRaw === '' ? n : parseInt(maxRaw, 10)];\n\t}\n\n\t// paintPips mirrors pipState.\n\tfunction paintPips(pips, lo, hi) {\n\t\tpips.querySelectorAll('.band-pip').forEach(function(pip) {\n\t\t\tvar k = parseInt(pip.dataset.pip, 10);\n\t\t\tpip.dataset.state = k <= lo ? 'required' : (k <= hi ? 'optional' : 'closed');\n\t\t});\n\t}\n\n\t// syncSettings keeps the picker's summary and the randomised-window field\n\t// honest after any edit, without a round trip.\n\tfunction syncSettings(scope) {\n\t\tvar n = parseInt(scope.dataset.childCount, 10) || 0;\n\t\tvar min = scope.querySelector('.settings-min');\n\t\tvar max = scope.querySelector('.settings-max');\n\t\t// The scope's own rule only: a section's scope also holds every rule\n\t\t// nested inside it.\n\t\tvar rule = scope.querySelector('.settings-rule');\n\t\tif (min && max) {\n\t\t\tvar band = bandRangeOf(n, min.value, max.value);\n\t\t\tvar state = (rule && syncBandMenu(rule, n)) || bandState(n, min.value, max.value);\n\t\t\tvar summary = scope.querySelector('.settings-band-summary');\n\t\t\tif (summary) summary.textContent = bandSummaryText(n, min.value, max.value);\n\t\t\tvar glance = scope.querySelector('.band-glance');\n\t\t\tif (glance) glance.dataset.tip = bandSentence(n, state, finishLabelOf(rule));\n\t\t\tvar pips = scope.querySelector('.band-pips');\n\t\t\tif (pips) paintPips(pips, band[0], band[1]);\n\t\t\tvar chip = scope.querySelector('.band-finish-chip');\n\t\t\tif (chip) {\n\t\t\t\tchip.classList.toggle('hidden', !(band[0] < band[1]));\n\t\t\t\tchip.textContent = finishLabelOf(rule) || 'Finish';\n\t\t\t}\n\t\t}\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tif (!routingTrigger) return;\n\t\tvar routing = routingTrigger.dataset.routing;\n\t\tif (rule) {\n\t\t\trule.querySelectorAll('.settings-routing-option').forEach(function(option) {\n\t\t\t\tif (option.dataset.value === routing) option.setAttribute('aria-current', 'true');\n\t\t\t\telse option.removeAttribute('aria-current');\n\t\t\t});\n\t\t}\n\t\tvar maxNextField = scope.querySelector('.settings-maxnext');\n\t\tif (maxNextField) {\n\t\t\tmaxNextField.classList.toggle('hidden', routing !== 'randomised');\n\t\t}\n\t\t// Guided play fixes order and count, so the pill has no band to show.\n\t\tif (rule) {\n\t\t\tvar bandPicker = rule.querySelector('.settings-band-picker');\n\t\t\tif (bandPicker) bandPicker.classList.toggle('hidden', routing === 'ordered');\n\t\t}\n\t\t// The card (or the quest's settings group) carries the hue, never the\n\t\t// row: a row's rail answers to its parent's routing.\n\t\tvar hueTarget = scope.querySelector('.objective-group') || scope;\n\t\tif (hueTarget.dataset.routing !== undefined) hueTarget.dataset.routing = routing;\n\t\t// The quest's plane is framed in its top level's hue, but sits outside\n\t\t// the header that scopes the quest's settings.\n\t\tvar plane = scope.id === 'quest-root-settings' && scope.closest('.quest-plane');\n\t\tif (plane) plane.dataset.routing = routing;\n\t\trepaintRoutingTrigger(scope, routing);\n\t}\n\n\t// labelRandomisedOption updates the option, not the trigger, so the window\n\t// wording lives in one place and the trigger copies it. Skipped unless\n\t// randomised: otherwise the option advertises the default window, not what\n\t// the field holds.\n\tfunction labelRandomisedOption(scope, routing) {\n\t\tif (routing !== 'randomised') return;\n\t\tvar label = scope.querySelector('.settings-routing-option[data-value=\"randomised\"] .settings-routing-option-label');\n\t\tvar windowInput = scope.querySelector('.settings-maxnext-input');\n\t\tif (!label || !windowInput) return;\n\t\tvar n = parseInt(windowInput.value, 10);\n\t\tlabel.textContent = n > 0 ? 'Random ' + n : 'Random order';\n\t}\n\n\t// repaintRoutingTrigger shows a pick at once rather than when the refresh\n\t// lands. Copying from the matching option avoids a second list of\n\t// strategies in the script.\n\tfunction repaintRoutingTrigger(scope, routing) {\n\t\tlabelRandomisedOption(scope, routing);\n\t\tvar option = scope.querySelector('.settings-routing-option[data-value=\"' + routing + '\"]');\n\t\tvar label = scope.querySelector('.settings-routing-label');\n\t\tif (!option || !label) return;\n\t\tvar wanted = option.querySelector('.settings-routing-option-label');\n\t\tif (!wanted || label.textContent === wanted.textContent) return;\n\t\tlabel.textContent = wanted.textContent;\n\t\tvar from = option.querySelector('svg');\n\t\tvar to = scope.querySelector('.settings-routing-icon');\n\t\tif (!from || !to) return;\n\t\t// The trigger's class list carries the size difference.\n\t\tvar replacement = from.cloneNode(true);\n\t\treplacement.setAttribute('class', to.getAttribute('class'));\n\t\tto.replaceWith(replacement);\n\t}\n\n\t// currentSettingsValues reads routing from its trigger's data attribute\n\t// rather than a <select>.\n\t//\n\t// A control this scope lacks contributes no key: the server reads a\n\t// present key as \"on screen\", so a blank would wipe the setting.\n\t//\n\t// A hidden control still counts, so the band survives a switch to guided\n\t// routing and back.\n\tfunction currentSettingsValues(scope) {\n\t\tvar values = {};\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tvar maxNextInput = scope.querySelector('.settings-maxnext-input');\n\t\tvar minInput = scope.querySelector('.settings-min');\n\t\tvar maxInput = scope.querySelector('.settings-max');\n\t\tif (routingTrigger) values.routing = routingTrigger.dataset.routing;\n\t\tif (maxNextInput) values.max_next = maxNextInput.value;\n\t\t// Both bounds or neither: the band is one setting, and half of it is\n\t\t// not a state the server can act on.\n\t\tif (minInput && maxInput) {\n\t\t\tvalues.children_min = minInput.value;\n\t\t\tvalues.children_max = maxInput.value;\n\t\t}\n\t\tvar finishLabel = scope.querySelector('.settings-finish-label-input');\n\t\tif (finishLabel) values.finish_label = finishLabel.value;\n\t\treturn values;\n\t}\n\n\t// submitSettings posts every field together; overrides lets a click pass\n\t// its value before it's written to the DOM.\n\tfunction submitSettings(scope, overrides) {\n\t\tvar values = currentSettingsValues(scope);\n\t\tif (overrides) {\n\t\t\tfor (var key in overrides) values[key] = overrides[key];\n\t\t}\n\t\trememberOpenRule(scope.querySelector('details.settings-rule'));\n\t\tpostObjectiveUpdate('/admin/objective/' + scope.dataset.objectiveSlug + '/settings', values);\n\t}\n\n\t// rememberOpenRule notes which menu was open, and which control in it had\n\t// focus, so the refresh after a save can put both back. The menu is a live\n\t// panel: closing it on every change made each edit a reopen.\n\tfunction rememberOpenRule(details) {\n\t\tif (!details || !details.open) return;\n\t\tvar scope = settingsScope(details);\n\t\tvar active = document.activeElement;\n\t\twindow.__reopenRule = {\n\t\t\tslug: scope.dataset.objectiveSlug,\n\t\t\tfocus: active && details.contains(active) ? active.dataset.focus : null,\n\t\t};\n\t}\n\n\t// reopenRule puts back the menu rememberOpenRule noted, once the refresh has\n\t// replaced it, the quest's own included.\n\tfunction reopenRule() {\n\t\tvar want = window.__reopenRule;\n\t\tif (!want) return;\n\t\twindow.__reopenRule = null;\n\t\tvar scope = document.querySelector('[data-objective-slug=\"' + want.slug + '\"]');\n\t\tvar details = scope && scope.querySelector('details.settings-rule');\n\t\tif (!details) return;\n\t\tdetails.open = true;\n\t\tvar target = want.focus && details.querySelector('[data-focus=\"' + want.focus + '\"]');\n\t\tif (target && !target.disabled) target.focus();\n\t}\n\n\t// normalizeSearchText strips diacritics so accented and unaccented\n\t// spellings both match.\n\tfunction normalizeSearchText(str) {\n\t\treturn str.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n\t}\n\n\t// applyObjectiveSearch hides non-matching leaves only: hiding a section\n\t// could bury a matching leaf nested inside it.\n\tfunction applyObjectiveSearch() {\n\t\tvar input = document.getElementById('search-objectives');\n\t\tif (!input) return;\n\t\tvar term = normalizeSearchText(input.value);\n\t\tdocument.querySelectorAll('#objective-tree .objective-searchable').forEach(function(row) {\n\t\t\tvar text = normalizeSearchText(row.dataset.searchText || '');\n\t\t\trow.classList.toggle('hidden', term !== '' && text.indexOf(term) === -1);\n\t\t});\n\t\tvar clearBtn = document.getElementById('clear-search-objectives');\n\t\tif (clearBtn) clearBtn.classList.toggle('invisible', input.value.length === 0);\n\t}\n\n\t// highlightVarPartners marks the rows on the other end of a lock or key:\n\t// what sets the variables a lock waits on, or what waits on those a key\n\t// sets. The tooltip names them; this shows where they are in the tree.\n\tfunction highlightVarPartners(badge) {\n\t\tdocument.querySelectorAll('#objective-tree .objective-var-match').forEach(function(row) {\n\t\t\trow.classList.remove('objective-var-match');\n\t\t});\n\t\tif (!badge) return;\n\t\tvar isLock = badge.dataset.varLock !== undefined;\n\t\tvar names = (isLock ? badge.dataset.varLock : badge.dataset.varKey).split(/\\s+/).filter(Boolean);\n\t\tvar held = isLock ? 'varSets' : 'varWaits';\n\t\tdocument.querySelectorAll('#objective-tree li[data-var-' + (isLock ? 'sets' : 'waits') + ']').forEach(function(row) {\n\t\t\tvar rowNames = row.dataset[held].split(/\\s+/);\n\t\t\tif (names.some(function(name) { return rowNames.indexOf(name) !== -1; })) {\n\t\t\t\trow.classList.add('objective-var-match');\n\t\t\t}\n\t\t});\n\t}\n\n\t// pipsLocked asks the quest lock directly: the pips are spans, which its\n\t// sweep over buttons and inputs never disables.\n\tfunction pipsLocked() {\n\t\treturn document.body.dataset.questLocked === 'true';\n\t}\n\n\t// pipChange is what a press or a drag on the pips asks for. A press sets how\n\t// many players need and keeps whether they can carry on; a drag sets a\n\t// range, which is carrying on up to where it ended.\n\tfunction pipChange(from, to) {\n\t\treturn function(state, n) {\n\t\t\tvar lo = Math.min(from, to);\n\t\t\tvar hi = Math.max(from, to);\n\t\t\tstate.count = lo;\n\t\t\tif (lo === hi) {\n\t\t\t\tif (state.cap && state.cap <= lo) state.cap = null;\n\t\t\t\treturn;\n\t\t\t}\n\t\t\tstate.carry = true;\n\t\t\tstate.cap = hi < n ? hi : null;\n\t\t};\n\t}\n\n\t// previewPips paints the band the pointer is offering, and says it in the\n\t// tooltip, before anything is saved.\n\tfunction previewPips(pips, from, to) {\n\t\tvar rule = pips.closest('.settings-rule');\n\t\tvar min = rule.querySelector('.settings-min');\n\t\tvar max = rule.querySelector('.settings-max');\n\t\tvar n = parseInt(pips.dataset.count, 10) || 0;\n\t\tvar state = bandState(n, min.value, max.value);\n\t\tpipChange(from, to)(state, n);\n\t\tvar next = bandFieldsOf(n, state);\n\t\tvar range = bandRangeOf(n, next[0], next[1]);\n\t\tpips.closest('.band-glance').dataset.tip = bandSentence(n, bandState(n, next[0], next[1]), finishLabelOf(rule));\n\t\tpaintPips(pips, range[0], range[1]);\n\t}\n\n\t// restorePips repaints the band as stored once a preview ends.\n\tfunction restorePips(pips) {\n\t\tvar scope = settingsScope(pips);\n\t\tif (scope) syncSettings(scope);\n\t}\n\n\t// commitPips saves the band a press or a drag chose, through the same path\n\t// as the menu, so the menu, the pips and the post read one value.\n\tfunction commitPips(pips, from, to) {\n\t\teditBand(pips.closest('.settings-rule'), pipChange(from, to));\n\t}\n\n\t// pipUnder finds the pip under the pointer within one row. elementFromPoint,\n\t// because a touch keeps sending its events to the pip it started on.\n\tfunction pipUnder(evt, pips) {\n\t\tvar el = document.elementFromPoint(evt.clientX, evt.clientY);\n\t\tvar pip = el && el.closest('.band-pip');\n\t\treturn pip && pips.contains(pip) ? parseInt(pip.dataset.pip, 10) : null;\n\t}\n\n\t// trackVarBadge runs on every pointer move and focus change, so it only\n\t// repaints when the badge under the pointer changes.\n\tfunction trackVarBadge(evt) {\n\t\tvar badge = evt.target.closest ? evt.target.closest('[data-var-lock], [data-var-key]') : null;\n\t\tif (badge === window.__varBadge) return;\n\t\twindow.__varBadge = badge;\n\t\thighlightVarPartners(badge);\n\t}\n\n\t// The shuffle shows that a randomised window is a sample, not a fixed set.\n\t// Only the marker's data-mark moves; the row's stays as stored.\n\tvar RAIL_SHUFFLE_MIN_MS = 3000;\n\tvar RAIL_SHUFFLE_MAX_MS = 6000;\n\n\t// railWindows returns lists with both a window and a pool, the only ones\n\t// with anything to swap. Direct children only, so a nested randomised group\n\t// is not shuffled by its ancestor too.\n\tfunction railWindows() {\n\t\tvar lists = [];\n\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\tvar windows = [];\n\t\t\tvar pool = [];\n\t\t\tlist.querySelectorAll(':scope > li > .objective-mark').forEach(function(mark) {\n\t\t\t\tif (mark.dataset.mark === 'window') windows.push(mark);\n\t\t\t\telse if (mark.dataset.mark === 'pool') pool.push(mark);\n\t\t\t});\n\t\t\tif (windows.length && pool.length) lists.push({ windows: windows, pool: pool });\n\t\t});\n\t\treturn lists;\n\t}\n\n\tfunction pickOne(items) {\n\t\treturn items[Math.floor(Math.random() * items.length)];\n\t}\n\n\tfunction shuffleRailWindows() {\n\t\t// Read fresh: a refresh replaces every row, detaching held nodes.\n\t\trailWindows().forEach(function(list) {\n\t\t\tvar leaving = pickOne(list.windows);\n\t\t\tvar entering = pickOne(list.pool);\n\t\t\tleaving.dataset.mark = 'pool';\n\t\t\tentering.dataset.mark = 'window';\n\t\t});\n\t}\n\n\tfunction scheduleRailShuffle() {\n\t\tclearTimeout(window.__railShuffle);\n\t\tif (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;\n\t\tvar wait = RAIL_SHUFFLE_MIN_MS + Math.random() * (RAIL_SHUFFLE_MAX_MS - RAIL_SHUFFLE_MIN_MS);\n\t\twindow.__railShuffle = setTimeout(function() {\n\t\t\t// Hidden tabs still fire timers; animating them is wasted work.\n\t\t\tif (!document.hidden) shuffleRailWindows();\n\t\t\tscheduleRailShuffle();\n\t\t}, wait);\n\t}\n\n\tfunction initObjectiveTree() {\n\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\tif (list._objectiveSortable) {\n\t\t\t\tlist._objectiveSortable.destroy();\n\t\t\t}\n\t\t\tlist._objectiveSortable = new Sortable(list, {\n\t\t\t\t// Read at creation: these instances are rebuilt after every\n\t\t\t\t// tree refresh, so a lock applied earlier would otherwise be\n\t\t\t\t// undone by the rebuild.\n\t\t\t\tdisabled: document.body.dataset.questLocked === 'true',\n\t\t\t\t// A visible row dropped in a footer would only be sent back up:\n\t\t\t\t// the footer holds secrets, and secrecy is the gem's job.\n\t\t\t\tgroup: {\n\t\t\t\t\tname: 'objectives',\n\t\t\t\t\tput: function(to, from, dragEl) {\n\t\t\t\t\t\treturn to.el.dataset.secretFooter !== 'true' || dragEl.dataset.secret === 'true';\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t\thandle: '.objective-drag-handle',\n\t\t\t\tanimation: 150,\n\t\t\t\tfallbackOnBody: true,\n\t\t\t\tswapThreshold: 0.65,\n\t\t\t\t// Default 5px; 56 lets a leaf's own empty nested list be\n\t\t\t\t// reached from anywhere in that leaf's row.\n\t\t\t\temptyInsertThreshold: 56,\n\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\tdragClass: 'sortable-drag-preview',\n\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\tpostObjectiveUpdate('/admin/objective/reposition', {\n\t\t\t\t\t\tobjective_id: evt.item.dataset.objectiveId,\n\t\t\t\t\t\tparent_id: evt.to.dataset.parentId,\n\t\t\t\t\t\tposition: evt.newIndex,\n\t\t\t\t\t});\n\t\t\t\t},\n\t\t\t});\n\t\t});\n\t\t// The quest's settings are outside #objective-tree, so they are named\n\t\t// explicitly.\n\t\tdocument.querySelectorAll('#objective-tree [data-objective-slug], #quest-root-settings')\n\t\t\t.forEach(syncSettings);\n\t\treopenRule();\n\t\tscheduleRailShuffle();\n\t\t// Re-applied here since #objective-tree's rows are replaced on every\n\t\t// refresh, but the search box outside it isn't.\n\t\tapplyObjectiveSearch();\n\t}\n\t// Bound once: the script re-runs on every hx-boost navigation back into\n\t// this page, and a second registration would stack a second POST on\n\t// every click.\n\tif (!window.__objectiveTreeDelegationBound) {\n\t\twindow.__objectiveTreeDelegationBound = true;\n\n\t\tdocument.body.addEventListener('mouseover', trackVarBadge);\n\t\tdocument.body.addEventListener('focusin', trackVarBadge);\n\t\tdocument.body.addEventListener('focusout', function(evt) {\n\t\t\tif (evt.target === window.__varBadge && !evt.relatedTarget) trackVarBadge({ target: document.body });\n\t\t});\n\n\t\t// Pips: hovering one previews asking for exactly that many, a press and\n\t\t// release on one asks for it, and a drag between two sets the range.\n\t\tdocument.body.addEventListener('pointerover', function(evt) {\n\t\t\tif (window.__pipDrag) return;\n\t\t\tvar pip = evt.target.closest && evt.target.closest('.band-pip');\n\t\t\tif (!pip || pipsLocked()) return;\n\t\t\tvar k = parseInt(pip.dataset.pip, 10);\n\t\t\tpreviewPips(pip.closest('.band-pips'), k, k);\n\t\t});\n\t\tdocument.body.addEventListener('pointerout', function(evt) {\n\t\t\tif (window.__pipDrag) return;\n\t\t\tvar pips = evt.target.closest && evt.target.closest('.band-pips');\n\t\t\tif (!pips || (evt.relatedTarget && pips.contains(evt.relatedTarget))) return;\n\t\t\trestorePips(pips);\n\t\t});\n\t\t// The pips sit inside the menu's trigger; a click on them sets the band\n\t\t// and must not open the menu as well.\n\t\tdocument.body.addEventListener('click', function(evt) {\n\t\t\tif (evt.target.closest && evt.target.closest('.band-pips')) evt.preventDefault();\n\t\t});\n\t\tdocument.body.addEventListener('pointerdown', function(evt) {\n\t\t\tvar pip = evt.target.closest && evt.target.closest('.band-pip');\n\t\t\tif (!pip || pipsLocked()) return;\n\t\t\t// Not a focus or a text selection: the press is the start of a drag.\n\t\t\tevt.preventDefault();\n\t\t\tvar k = parseInt(pip.dataset.pip, 10);\n\t\t\twindow.__pipDrag = { pips: pip.closest('.band-pips'), from: k, to: k };\n\t\t\tpreviewPips(window.__pipDrag.pips, k, k);\n\t\t});\n\t\tdocument.body.addEventListener('pointermove', function(evt) {\n\t\t\tvar drag = window.__pipDrag;\n\t\t\tif (!drag) return;\n\t\t\tvar k = pipUnder(evt, drag.pips);\n\t\t\tif (k === null || k === drag.to) return;\n\t\t\tdrag.to = k;\n\t\t\tpreviewPips(drag.pips, Math.min(drag.from, k), Math.max(drag.from, k));\n\t\t});\n\t\tdocument.body.addEventListener('pointerup', function() {\n\t\t\tvar drag = window.__pipDrag;\n\t\t\tif (!drag) return;\n\t\t\twindow.__pipDrag = null;\n\t\t\tcommitPips(drag.pips, Math.min(drag.from, drag.to), Math.max(drag.from, drag.to));\n\t\t});\n\t\tdocument.body.addEventListener('pointercancel', function() {\n\t\t\tvar drag = window.__pipDrag;\n\t\t\tif (!drag) return;\n\t\t\twindow.__pipDrag = null;\n\t\t\trestorePips(drag.pips);\n\t\t});\n\n\t\tdocument.body.addEventListener('quest-lock-change', function(evt) {\n\t\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\t\tif (list._objectiveSortable) list._objectiveSortable.option('disabled', evt.detail.locked);\n\t\t\t});\n\t\t});\n\n\t\t// Capture phase, before the handler below: closes any open picker\n\t\t// the click landed outside of. Unscoped so the toolbar's pickers close.\n\t\tdocument.addEventListener('click', function(evt) {\n\t\t\tdocument.querySelectorAll('details.settings-picker[open]').forEach(function(details) {\n\t\t\t\tif (!details.contains(evt.target)) details.open = false;\n\t\t\t});\n\t\t}, true);\n\n\t\t// Delegated on body: #objective-tree itself is replaced on every\n\t\t// refresh.\n\t\tdocument.body.addEventListener('click', function(evt) {\n\t\tif (evt.target.closest('#clear-search-objectives')) {\n\t\t\tvar searchInput = document.getElementById('search-objectives');\n\t\t\tif (searchInput) {\n\t\t\t\tsearchInput.value = '';\n\t\t\t\tapplyObjectiveSearch();\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t\tvar passThrough = evt.target.closest('.objective-passthrough-toggle');\n\t\tif (passThrough) {\n\t\t\trememberOpenRule(passThrough.closest('details.settings-rule'));\n\t\t\tpostObjectiveUpdate('/admin/objective/' + passThrough.dataset.objectiveSlug + '/pass-through', {\n\t\t\t\tpass_through: passThrough.dataset.passThrough !== 'true' ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar secretToggle = evt.target.closest('.objective-secret-toggle');\n\t\tif (secretToggle) {\n\t\t\tpostObjectiveUpdate('/admin/objective/' + secretToggle.dataset.objectiveSlug + '/secret', {\n\t\t\t\tsecret: secretToggle.dataset.secret !== 'true' ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar toggle = evt.target.closest('.objective-visibility-toggle');\n\t\tif (toggle) {\n\t\t\tif (toggle.disabled) return;\n\t\t\tvar nowPublished = toggle.dataset.published !== 'true';\n\t\t\tpostObjectiveUpdate('/admin/objective/' + toggle.dataset.objectiveSlug + '/draft', {\n\t\t\t\tpublished: nowPublished ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar routingOption = evt.target.closest('.settings-routing-option');\n\t\tif (routingOption) {\n\t\t\tevt.preventDefault();\n\t\t\tvar routingScope = settingsScope(routingOption);\n\t\t\tif (!routingScope) return;\n\t\t\tvar chosen = routingOption.dataset.value;\n\t\t\tvar routingTrigger = routingScope.querySelector('.settings-routing-trigger');\n\t\t\tif (routingTrigger) routingTrigger.dataset.routing = chosen;\n\t\t\tvar windowInput = routingScope.querySelector('.settings-maxnext-input');\n\t\t\t// An empty window is open exploration, so the pick would do nothing.\n\t\t\tif (chosen === 'randomised' && windowInput && !(parseInt(windowInput.value, 10) > 0)) {\n\t\t\t\twindowInput.value = windowInput.dataset.default;\n\t\t\t}\n\t\t\t// A guided path takes every step, so it stores the band that says\n\t\t\t// so: a band left over from another routing would still end the\n\t\t\t// section early.\n\t\t\tif (chosen === 'ordered') {\n\t\t\t\troutingScope.querySelector('.settings-min').value = '';\n\t\t\t\troutingScope.querySelector('.settings-max').value = '';\n\t\t\t}\n\t\t\tsyncSettings(routingScope);\n\t\t\t// The window field is the next thing a randomised pick needs.\n\t\t\tif (chosen === 'randomised' && windowInput) windowInput.focus();\n\t\t\tsubmitSettings(routingScope, { routing: chosen });\n\t\t\treturn;\n\t\t}\n\t\t// A step on either count: how many players need, or how many they\n\t\t// can complete at most, where the top step is every one.\n\t\tvar bandStep = evt.target.closest('.band-step');\n\t\tif (bandStep && !bandStep.disabled) {\n\t\t\tvar dir = parseInt(bandStep.dataset.step, 10);\n\t\t\teditBand(bandStep.closest('.settings-rule'), function(state, n) {\n\t\t\t\tif (bandStep.dataset.kind === 'cap') {\n\t\t\t\t\tvar cap = Math.max(state.count + 1, Math.min(n, (state.cap || n) + dir));\n\t\t\t\t\tstate.cap = cap < n ? cap : null;\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar was = state.count;\n\t\t\t\tstate.count = Math.max(0, Math.min(n, was + dir));\n\t\t\t\t// Down from every one, the section closes by default: that is\n\t\t\t\t// what \"1 of 3\" has always meant here.\n\t\t\t\tif (was >= n) state.carry = false;\n\t\t\t});\n\t\t}\n\t});\n\n\tdocument.body.addEventListener('input', function(evt) {\n\t\tif (evt.target.id === 'search-objectives') {\n\t\t\tapplyObjectiveSearch();\n\t\t\treturn;\n\t\t}\n\t\tif (!evt.target.matches('.settings-maxnext-input, .settings-finish-label-input')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (scope) syncSettings(scope);\n\t});\n\n\tdocument.body.addEventListener('change', function(evt) {\n\t\tif (evt.target.matches('.points-toggle, .leaderboard-toggle, .progress-feedback-select')) {\n\t\t\t// Both are sent every time: an unchecked checkbox is absent from a\n\t\t\t// form rather than false, and the server reads an absent key as\n\t\t\t// \"off\", so sending one alone would switch the other off.\n\t\t\tvar toggles = document.querySelector('#quest-scoring');\n\t\t\tpostObjectiveUpdate('/admin/quest/settings', {\n\t\t\t\tenablePoints: toggles.querySelector('.points-toggle').checked ? 'on' : '',\n\t\t\t\tshowLeaderboard: toggles.querySelector('.leaderboard-toggle').checked ? 'on' : '',\n\t\t\t\tprogressFeedback: document.querySelector('.progress-feedback-select').value,\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar bandRule = evt.target.closest('.settings-band-fields') && evt.target.closest('.settings-rule');\n\t\tif (bandRule && evt.target.matches('.band-then input')) {\n\t\t\teditBand(bandRule, function(state) {\n\t\t\t\tstate.carry = evt.target.value === 'carry';\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\t// The finish label saves on its own change, or a renamed button would\n\t\t// only be sent along with some other setting.\n\t\tif (!evt.target.matches('.settings-maxnext-input, .settings-finish-label-input')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (!scope) return;\n\t\tsyncSettings(scope);\n\t\tsubmitSettings(scope);\n\t});\n\t}\n\n\tinitObjectiveTree();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 203, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t// postObjectiveUpdate posts, then always re-fetches the tree: a refused\n\t// move must show as it landed, and htmx.ajax (not fetch) is what\n\t// delivers the response's out-of-band toast.\n\t//\n\t// One request: the page render already computes lint.\n\tfunction postObjectiveUpdate(url, values) {\n\t\treturn htmx.ajax('POST', url, { values: values, swap: 'none' }).finally(function() {\n\t\t\thtmx.ajax('GET', '/admin/quest', {\n\t\t\t\tselect: '#quest-builder',\n\t\t\t\ttarget: '#quest-builder',\n\t\t\t\tswap: 'outerHTML',\n\t\t\t}).finally(initObjectiveTree);\n\t\t});\n\t}\n\n\tfunction bandSummaryText(n, minRaw, maxRaw) {\n\t\tvar minV = minRaw === '' ? null : parseInt(minRaw, 10);\n\t\tvar maxV = maxRaw === '' ? null : parseInt(maxRaw, 10);\n\t\tif (minV === null && maxV === null) return 'Complete all';\n\t\tvar lo = minV === null ? 0 : minV;\n\t\tvar hi = maxV === null ? n : maxV;\n\t\tif (lo >= hi) return hi === n ? 'Complete all' : ('Complete ' + hi + ' of ' + n);\n\t\tif (lo === 0 && hi === n) return 'Complete any';\n\t\tif (lo === 0) return 'Complete up to ' + hi;\n\t\tif (hi === n) return 'Complete ' + lo + '+';\n\t\treturn 'Complete ' + lo + '–' + hi;\n\t}\n\n\t// bandState mirrors bandChoice: the two bounds read as the menu's questions.\n\tfunction bandState(n, minRaw, maxRaw) {\n\t\tvar range = bandRangeOf(n, minRaw, maxRaw);\n\t\tif (range[0] >= range[1]) return { count: Math.min(range[1], n), carry: false, cap: null };\n\t\treturn { count: range[0], carry: true, cap: range[1] < n ? range[1] : null };\n\t}\n\n\t// bandFieldsOf writes the menu's answers back as the two bounds the server\n\t// reads. Every one required is the blank band, so it keeps meaning all when\n\t// another child is added; with none required, only the players can finish\n\t// the section, so it carries on whatever was picked.\n\tfunction bandFieldsOf(n, state) {\n\t\tvar count = Math.max(0, Math.min(n, state.count));\n\t\tif (count >= n) return ['', ''];\n\t\tif (!state.carry && count > 0) return [String(count), String(count)];\n\t\tvar cap = state.cap && state.cap > count && state.cap < n ? state.cap : null;\n\t\treturn [String(count), cap ? String(cap) : ''];\n\t}\n\n\t// bandCountWords, bandThenLead, bandRestWords and bandCapWords mirror\n\t// their Go namesakes.\n\tfunction bandCountWords(n, count) {\n\t\tif (count >= n) return n === 1 ? 'all' : 'all ' + n;\n\t\tif (count === 0) return 'none';\n\t\treturn count + ' of ' + n;\n\t}\n\n\tfunction bandThenLead(count) {\n\t\treturn 'Once they have completed ' + count + ',';\n\t}\n\n\tfunction bandCapWords(n, cap) {\n\t\treturn cap ? String(cap) : 'all ' + n;\n\t}\n\n\tfunction bandRestWords(rest) {\n\t\treturn rest === 1 ? 'the other one closes' : 'the other ' + rest + ' close';\n\t}\n\n\t// bandSentence is the whole band in one sentence, for the menu and for the\n\t// pips' tooltip: what players have to do, and how the section ends.\n\tfunction bandSentence(n, state, label) {\n\t\tvar finish = '“' + (label || 'Finish') + '”';\n\t\tif (state.count >= n) {\n\t\t\treturn n === 1 ? 'Players complete it, and the section finishes.'\n\t\t\t\t: 'Players complete all ' + n + ', and the section finishes with the last.';\n\t\t}\n\t\tif (!state.carry) {\n\t\t\treturn 'Players complete ' + state.count + ' of ' + n + '. The section then finishes, and ' +\n\t\t\t\tbandRestWords(n - state.count) + '.';\n\t\t}\n\t\tvar end = state.cap ? 'It finishes on its own after ' + state.cap + '.'\n\t\t\t: 'It finishes on its own once all ' + n + ' are done.';\n\t\tif (state.count === 0) return 'Nothing is required: players see ' + finish + ' from the start. ' + end;\n\t\treturn 'Players complete at least ' + state.count + ', then see ' + finish + ' and can keep going. ' + end;\n\t}\n\n\t// finishLabelOf is the label the finish button will show, as typed so far.\n\tfunction finishLabelOf(rule) {\n\t\tvar input = rule && rule.querySelector('.settings-finish-label-input');\n\t\treturn input ? input.value.trim() : '';\n\t}\n\n\t// syncBandMenu redraws the band's column from the hidden bounds and returns\n\t// the state it drew. Under guided routing the count is locked at all, and\n\t// the sum says why. Buttons stay disabled while the quest is locked,\n\t// whatever the band would allow.\n\tfunction syncBandMenu(rule, n) {\n\t\tvar min = rule.querySelector('.settings-min');\n\t\tvar max = rule.querySelector('.settings-max');\n\t\tvar fields = rule.querySelector('.settings-band-fields');\n\t\tif (!min || !max || !fields) return null;\n\t\tvar trigger = rule.querySelector('.settings-routing-trigger');\n\t\tvar guided = trigger && trigger.dataset.routing === 'ordered';\n\t\tvar locked = document.body.dataset.questLocked === 'true';\n\t\tvar state = bandState(n, min.value, max.value);\n\t\tvar all = state.count >= n;\n\t\tvar capAt = state.cap || n;\n\t\tvar step = function(kind, dir) {\n\t\t\treturn fields.querySelector('.band-step[data-kind=\"' + kind + '\"][data-step=\"' + dir + '\"]');\n\t\t};\n\t\tfields.querySelector('.band-value[data-kind=\"need\"]').textContent = bandCountWords(n, state.count);\n\t\tstep('need', -1).disabled = locked || guided || state.count <= 0;\n\t\tstep('need', 1).disabled = locked || guided || all;\n\t\tfields.querySelector('.band-then').classList.toggle('hidden', all || state.count === 0);\n\t\tfields.querySelector('.band-then-lead').textContent = bandThenLead(state.count);\n\t\tfields.querySelector('.band-rest').textContent = bandRestWords(n - state.count);\n\t\tfields.querySelector('.band-then input[value=\"closes\"]').checked = !state.carry;\n\t\tfields.querySelector('.band-then input[value=\"carry\"]').checked = state.carry;\n\t\tvar carry = fields.querySelector('.band-carry');\n\t\tcarry.classList.toggle('hidden', all || !state.carry);\n\t\tcarry.classList.toggle('pl-7', state.count > 0);\n\t\tfields.querySelector('.band-carry-lead').classList.toggle('hidden', state.count > 0);\n\t\tfields.querySelector('.band-cap-row').classList.toggle('hidden', state.count >= n - 1);\n\t\tfields.querySelector('.band-value[data-kind=\"cap\"]').textContent = bandCapWords(n, state.cap);\n\t\tstep('cap', -1).disabled = locked || capAt <= state.count + 1;\n\t\tstep('cap', 1).disabled = locked || !state.cap;\n\t\tfields.querySelector('.settings-band-explainer').textContent = guided\n\t\t\t? 'A guided path takes every step, in order, and the section finishes with the last.'\n\t\t\t: bandSentence(n, state, finishLabelOf(rule));\n\t\treturn state;\n\t}\n\n\t// editBand applies one answer to the band's questions, redraws at once, and\n\t// saves once the edits stop.\n\tfunction editBand(rule, change) {\n\t\tvar scope = settingsScope(rule);\n\t\tvar min = rule.querySelector('.settings-min');\n\t\tvar max = rule.querySelector('.settings-max');\n\t\tif (!scope || !min || !max) return;\n\t\tvar n = parseInt(scope.dataset.childCount, 10) || 0;\n\t\tvar state = bandState(n, min.value, max.value);\n\t\tchange(state, n);\n\t\tvar next = bandFieldsOf(n, state);\n\t\tif (next[0] === min.value && next[1] === max.value) {\n\t\t\tsyncSettings(scope);\n\t\t\treturn;\n\t\t}\n\t\tmin.value = next[0];\n\t\tmax.value = next[1];\n\t\tsyncSettings(scope);\n\t\tscheduleSettings(scope);\n\t}\n\n\t// scheduleSettings saves a burst of edits as one post: each click redraws at\n\t// once, and the save waits until the clicking stops, so a run of presses on\n\t// the stepper is not a run of refreshes racing each other.\n\tfunction scheduleSettings(scope) {\n\t\tvar timers = window.__settingsTimers || (window.__settingsTimers = {});\n\t\tvar slug = scope.dataset.objectiveSlug;\n\t\tclearTimeout(timers[slug]);\n\t\ttimers[slug] = setTimeout(function() {\n\t\t\tdelete timers[slug];\n\t\t\tsubmitSettings(scope);\n\t\t}, 400);\n\t}\n\n\t// settingsScope finds the nearest element carrying the objective's\n\t// slug/child-count; not restricted to li, since root's picker sits in a\n\t// plain div.\n\tfunction settingsScope(el) {\n\t\treturn el.closest('[data-objective-slug]');\n\t}\n\n\t// bandRangeOf mirrors bandRange: both blank is every one, not \"from none\".\n\tfunction bandRangeOf(n, minRaw, maxRaw) {\n\t\tif (minRaw === '' && maxRaw === '') return [n, n];\n\t\treturn [minRaw === '' ? 0 : parseInt(minRaw, 10), maxRaw === '' ? n : parseInt(maxRaw, 10)];\n\t}\n\n\t// paintPips mirrors pipState.\n\tfunction paintPips(pips, lo, hi) {\n\t\tpips.querySelectorAll('.band-pip').forEach(function(pip) {\n\t\t\tvar k = parseInt(pip.dataset.pip, 10);\n\t\t\tpip.dataset.state = k <= lo ? 'required' : (k <= hi ? 'optional' : 'closed');\n\t\t});\n\t}\n\n\t// syncSettings keeps the picker's summary and the randomised-window field\n\t// honest after any edit, without a round trip.\n\tfunction syncSettings(scope) {\n\t\tvar n = parseInt(scope.dataset.childCount, 10) || 0;\n\t\tvar min = scope.querySelector('.settings-min');\n\t\tvar max = scope.querySelector('.settings-max');\n\t\t// The scope's own rule only: a section's scope also holds every rule\n\t\t// nested inside it.\n\t\tvar rule = scope.querySelector('.settings-rule');\n\t\tif (min && max) {\n\t\t\tvar band = bandRangeOf(n, min.value, max.value);\n\t\t\tvar state = (rule && syncBandMenu(rule, n)) || bandState(n, min.value, max.value);\n\t\t\tvar summary = scope.querySelector('.settings-band-summary');\n\t\t\tif (summary) summary.textContent = bandSummaryText(n, min.value, max.value);\n\t\t\tvar glance = scope.querySelector('.band-glance');\n\t\t\tif (glance) glance.dataset.tip = bandSentence(n, state, finishLabelOf(rule));\n\t\t\tvar pips = scope.querySelector('.band-pips');\n\t\t\tif (pips) paintPips(pips, band[0], band[1]);\n\t\t\tvar chip = scope.querySelector('.band-finish-chip');\n\t\t\tif (chip) {\n\t\t\t\tchip.classList.toggle('hidden', !(band[0] < band[1]));\n\t\t\t\tchip.textContent = finishLabelOf(rule) || 'Finish';\n\t\t\t}\n\t\t}\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tif (!routingTrigger) return;\n\t\tvar routing = routingTrigger.dataset.routing;\n\t\tif (rule) {\n\t\t\trule.querySelectorAll('.settings-routing-option').forEach(function(option) {\n\t\t\t\tif (option.dataset.value === routing) option.setAttribute('aria-current', 'true');\n\t\t\t\telse option.removeAttribute('aria-current');\n\t\t\t});\n\t\t}\n\t\tvar maxNextField = scope.querySelector('.settings-maxnext');\n\t\tif (maxNextField) {\n\t\t\tmaxNextField.classList.toggle('hidden', routing !== 'randomised');\n\t\t}\n\t\t// Guided play fixes order and count, so the pill has no band to show.\n\t\tif (rule) {\n\t\t\tvar bandPicker = rule.querySelector('.settings-band-picker');\n\t\t\tif (bandPicker) bandPicker.classList.toggle('hidden', routing === 'ordered');\n\t\t}\n\t\t// The card (or the quest's settings group) carries the hue, never the\n\t\t// row: a row's rail answers to its parent's routing.\n\t\tvar hueTarget = scope.querySelector('.objective-group') || scope;\n\t\tif (hueTarget.dataset.routing !== undefined) hueTarget.dataset.routing = routing;\n\t\t// The quest's plane is framed in its top level's hue, but sits outside\n\t\t// the header that scopes the quest's settings.\n\t\tvar plane = scope.id === 'quest-root-settings' && scope.closest('.quest-plane');\n\t\tif (plane) plane.dataset.routing = routing;\n\t\trepaintRoutingTrigger(scope, routing);\n\t}\n\n\t// labelRandomisedOption updates the option, not the trigger, so the window\n\t// wording lives in one place and the trigger copies it. Skipped unless\n\t// randomised: otherwise the option advertises the default window, not what\n\t// the field holds.\n\tfunction labelRandomisedOption(scope, routing) {\n\t\tif (routing !== 'randomised') return;\n\t\tvar label = scope.querySelector('.settings-routing-option[data-value=\"randomised\"] .settings-routing-option-label');\n\t\tvar windowInput = scope.querySelector('.settings-maxnext-input');\n\t\tif (!label || !windowInput) return;\n\t\tvar n = parseInt(windowInput.value, 10);\n\t\tlabel.textContent = n > 0 ? 'Random ' + n : 'Random order';\n\t}\n\n\t// repaintRoutingTrigger shows a pick at once rather than when the refresh\n\t// lands. Copying from the matching option avoids a second list of\n\t// strategies in the script.\n\tfunction repaintRoutingTrigger(scope, routing) {\n\t\tlabelRandomisedOption(scope, routing);\n\t\tvar option = scope.querySelector('.settings-routing-option[data-value=\"' + routing + '\"]');\n\t\tvar label = scope.querySelector('.settings-routing-label');\n\t\tif (!option || !label) return;\n\t\tvar wanted = option.querySelector('.settings-routing-option-label');\n\t\tif (!wanted || label.textContent === wanted.textContent) return;\n\t\tlabel.textContent = wanted.textContent;\n\t\tvar from = option.querySelector('svg');\n\t\tvar to = scope.querySelector('.settings-routing-icon');\n\t\tif (!from || !to) return;\n\t\t// The trigger's class list carries the size difference.\n\t\tvar replacement = from.cloneNode(true);\n\t\treplacement.setAttribute('class', to.getAttribute('class'));\n\t\tto.replaceWith(replacement);\n\t}\n\n\t// currentSettingsValues reads routing from its trigger's data attribute\n\t// rather than a <select>.\n\t//\n\t// A control this scope lacks contributes no key: the server reads a\n\t// present key as \"on screen\", so a blank would wipe the setting.\n\t//\n\t// A hidden control still counts, so the band survives a switch to guided\n\t// routing and back.\n\tfunction currentSettingsValues(scope) {\n\t\tvar values = {};\n\t\tvar routingTrigger = scope.querySelector('.settings-routing-trigger');\n\t\tvar maxNextInput = scope.querySelector('.settings-maxnext-input');\n\t\tvar minInput = scope.querySelector('.settings-min');\n\t\tvar maxInput = scope.querySelector('.settings-max');\n\t\tif (routingTrigger) values.routing = routingTrigger.dataset.routing;\n\t\tif (maxNextInput) values.max_next = maxNextInput.value;\n\t\t// Both bounds or neither: the band is one setting, and half of it is\n\t\t// not a state the server can act on.\n\t\tif (minInput && maxInput) {\n\t\t\tvalues.children_min = minInput.value;\n\t\t\tvalues.children_max = maxInput.value;\n\t\t}\n\t\tvar finishLabel = scope.querySelector('.settings-finish-label-input');\n\t\tif (finishLabel) values.finish_label = finishLabel.value;\n\t\treturn values;\n\t}\n\n\t// submitSettings posts every field together; overrides lets a click pass\n\t// its value before it's written to the DOM.\n\tfunction submitSettings(scope, overrides) {\n\t\tvar values = currentSettingsValues(scope);\n\t\tif (overrides) {\n\t\t\tfor (var key in overrides) values[key] = overrides[key];\n\t\t}\n\t\trememberOpenRule(scope.querySelector('details.settings-rule'));\n\t\tpostObjectiveUpdate('/admin/objective/' + scope.dataset.objectiveSlug + '/settings', values);\n\t}\n\n\t// rememberOpenRule notes which menu was open, and which control in it had\n\t// focus, so the refresh after a save can put both back. The menu is a live\n\t// panel: closing it on every change made each edit a reopen.\n\tfunction rememberOpenRule(details) {\n\t\tif (!details || !details.open) return;\n\t\tvar scope = settingsScope(details);\n\t\tvar active = document.activeElement;\n\t\twindow.__reopenRule = {\n\t\t\tslug: scope.dataset.objectiveSlug,\n\t\t\tfocus: active && details.contains(active) ? active.dataset.focus : null,\n\t\t};\n\t}\n\n\t// reopenRule puts back the menu rememberOpenRule noted, once the refresh has\n\t// replaced it, the quest's own included.\n\tfunction reopenRule() {\n\t\tvar want = window.__reopenRule;\n\t\tif (!want) return;\n\t\twindow.__reopenRule = null;\n\t\tvar scope = document.querySelector('[data-objective-slug=\"' + want.slug + '\"]');\n\t\tvar details = scope && scope.querySelector('details.settings-rule');\n\t\tif (!details) return;\n\t\tdetails.open = true;\n\t\tvar target = want.focus && details.querySelector('[data-focus=\"' + want.focus + '\"]');\n\t\tif (target && !target.disabled) target.focus();\n\t}\n\n\t// normalizeSearchText strips diacritics so accented and unaccented\n\t// spellings both match.\n\tfunction normalizeSearchText(str) {\n\t\treturn str.toLowerCase().normalize('NFD').replace(/[\\u0300-\\u036f]/g, '');\n\t}\n\n\t// applyObjectiveSearch hides non-matching leaves only: hiding a section\n\t// could bury a matching leaf nested inside it.\n\tfunction applyObjectiveSearch() {\n\t\tvar input = document.getElementById('search-objectives');\n\t\tif (!input) return;\n\t\tvar term = normalizeSearchText(input.value);\n\t\tdocument.querySelectorAll('#objective-tree .objective-searchable').forEach(function(row) {\n\t\t\tvar text = normalizeSearchText(row.dataset.searchText || '');\n\t\t\trow.classList.toggle('hidden', term !== '' && text.indexOf(term) === -1);\n\t\t});\n\t\tvar clearBtn = document.getElementById('clear-search-objectives');\n\t\tif (clearBtn) clearBtn.classList.toggle('invisible', input.value.length === 0);\n\t}\n\n\t// highlightVarPartners marks the rows on the other end of a lock or key:\n\t// what sets the variables a lock waits on, or what waits on those a key\n\t// sets. The tooltip names them; this shows where they are in the tree.\n\tfunction highlightVarPartners(badge) {\n\t\tdocument.querySelectorAll('#objective-tree .objective-var-match').forEach(function(row) {\n\t\t\trow.classList.remove('objective-var-match');\n\t\t});\n\t\tif (!badge) return;\n\t\tvar isLock = badge.dataset.varLock !== undefined;\n\t\tvar names = (isLock ? badge.dataset.varLock : badge.dataset.varKey).split(/\\s+/).filter(Boolean);\n\t\tvar held = isLock ? 'varSets' : 'varWaits';\n\t\tdocument.querySelectorAll('#objective-tree li[data-var-' + (isLock ? 'sets' : 'waits') + ']').forEach(function(row) {\n\t\t\tvar rowNames = row.dataset[held].split(/\\s+/);\n\t\t\tif (names.some(function(name) { return rowNames.indexOf(name) !== -1; })) {\n\t\t\t\trow.classList.add('objective-var-match');\n\t\t\t}\n\t\t});\n\t}\n\n\t// trackVarBadge runs on every pointer move and focus change, so it only\n\t// repaints when the badge under the pointer changes.\n\tfunction trackVarBadge(evt) {\n\t\tvar badge = evt.target.closest ? evt.target.closest('[data-var-lock], [data-var-key]') : null;\n\t\tif (badge === window.__varBadge) return;\n\t\twindow.__varBadge = badge;\n\t\thighlightVarPartners(badge);\n\t}\n\n\t// The shuffle shows that a randomised window is a sample, not a fixed set.\n\t// Only the marker's data-mark moves; the row's stays as stored.\n\tvar RAIL_SHUFFLE_MIN_MS = 3000;\n\tvar RAIL_SHUFFLE_MAX_MS = 6000;\n\n\t// railWindows returns lists with both a window and a pool, the only ones\n\t// with anything to swap. Direct children only, so a nested randomised group\n\t// is not shuffled by its ancestor too.\n\tfunction railWindows() {\n\t\tvar lists = [];\n\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\tvar windows = [];\n\t\t\tvar pool = [];\n\t\t\tlist.querySelectorAll(':scope > li > .objective-mark').forEach(function(mark) {\n\t\t\t\tif (mark.dataset.mark === 'window') windows.push(mark);\n\t\t\t\telse if (mark.dataset.mark === 'pool') pool.push(mark);\n\t\t\t});\n\t\t\tif (windows.length && pool.length) lists.push({ windows: windows, pool: pool });\n\t\t});\n\t\treturn lists;\n\t}\n\n\tfunction pickOne(items) {\n\t\treturn items[Math.floor(Math.random() * items.length)];\n\t}\n\n\tfunction shuffleRailWindows() {\n\t\t// Read fresh: a refresh replaces every row, detaching held nodes.\n\t\trailWindows().forEach(function(list) {\n\t\t\tvar leaving = pickOne(list.windows);\n\t\t\tvar entering = pickOne(list.pool);\n\t\t\tleaving.dataset.mark = 'pool';\n\t\t\tentering.dataset.mark = 'window';\n\t\t});\n\t}\n\n\tfunction scheduleRailShuffle() {\n\t\tclearTimeout(window.__railShuffle);\n\t\tif (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;\n\t\tvar wait = RAIL_SHUFFLE_MIN_MS + Math.random() * (RAIL_SHUFFLE_MAX_MS - RAIL_SHUFFLE_MIN_MS);\n\t\twindow.__railShuffle = setTimeout(function() {\n\t\t\t// Hidden tabs still fire timers; animating them is wasted work.\n\t\t\tif (!document.hidden) shuffleRailWindows();\n\t\t\tscheduleRailShuffle();\n\t\t}, wait);\n\t}\n\n\tfunction initObjectiveTree() {\n\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\tif (list._objectiveSortable) {\n\t\t\t\tlist._objectiveSortable.destroy();\n\t\t\t}\n\t\t\tlist._objectiveSortable = new Sortable(list, {\n\t\t\t\t// Read at creation: these instances are rebuilt after every\n\t\t\t\t// tree refresh, so a lock applied earlier would otherwise be\n\t\t\t\t// undone by the rebuild.\n\t\t\t\tdisabled: document.body.dataset.questLocked === 'true',\n\t\t\t\t// A visible row dropped in a footer would only be sent back up:\n\t\t\t\t// the footer holds secrets, and secrecy is the gem's job.\n\t\t\t\tgroup: {\n\t\t\t\t\tname: 'objectives',\n\t\t\t\t\tput: function(to, from, dragEl) {\n\t\t\t\t\t\treturn to.el.dataset.secretFooter !== 'true' || dragEl.dataset.secret === 'true';\n\t\t\t\t\t},\n\t\t\t\t},\n\t\t\t\thandle: '.objective-drag-handle',\n\t\t\t\tanimation: 150,\n\t\t\t\tfallbackOnBody: true,\n\t\t\t\tswapThreshold: 0.65,\n\t\t\t\t// Default 5px; 56 lets a leaf's own empty nested list be\n\t\t\t\t// reached from anywhere in that leaf's row.\n\t\t\t\temptyInsertThreshold: 56,\n\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\tdragClass: 'sortable-drag-preview',\n\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\tpostObjectiveUpdate('/admin/objective/reposition', {\n\t\t\t\t\t\tobjective_id: evt.item.dataset.objectiveId,\n\t\t\t\t\t\tparent_id: evt.to.dataset.parentId,\n\t\t\t\t\t\tposition: evt.newIndex,\n\t\t\t\t\t});\n\t\t\t\t},\n\t\t\t});\n\t\t});\n\t\t// The quest's settings are outside #objective-tree, so they are named\n\t\t// explicitly.\n\t\tdocument.querySelectorAll('#objective-tree [data-objective-slug], #quest-root-settings')\n\t\t\t.forEach(syncSettings);\n\t\treopenRule();\n\t\tscheduleRailShuffle();\n\t\t// Re-applied here since #objective-tree's rows are replaced on every\n\t\t// refresh, but the search box outside it isn't.\n\t\tapplyObjectiveSearch();\n\t}\n\t// Bound once: the script re-runs on every hx-boost navigation back into\n\t// this page, and a second registration would stack a second POST on\n\t// every click.\n\tif (!window.__objectiveTreeDelegationBound) {\n\t\twindow.__objectiveTreeDelegationBound = true;\n\n\t\tdocument.body.addEventListener('mouseover', trackVarBadge);\n\t\tdocument.body.addEventListener('focusin', trackVarBadge);\n\t\tdocument.body.addEventListener('focusout', function(evt) {\n\t\t\tif (evt.target === window.__varBadge && !evt.relatedTarget) trackVarBadge({ target: document.body });\n\t\t});\n\n\t\tdocument.body.addEventListener('quest-lock-change', function(evt) {\n\t\t\tdocument.querySelectorAll('#objective-tree .objective-children').forEach(function(list) {\n\t\t\t\tif (list._objectiveSortable) list._objectiveSortable.option('disabled', evt.detail.locked);\n\t\t\t});\n\t\t});\n\n\t\t// Capture phase, before the handler below: closes any open picker\n\t\t// the click landed outside of. Unscoped so the toolbar's pickers close.\n\t\tdocument.addEventListener('click', function(evt) {\n\t\t\tdocument.querySelectorAll('details.settings-picker[open]').forEach(function(details) {\n\t\t\t\tif (!details.contains(evt.target)) details.open = false;\n\t\t\t});\n\t\t}, true);\n\n\t\t// Delegated on body: #objective-tree itself is replaced on every\n\t\t// refresh.\n\t\tdocument.body.addEventListener('click', function(evt) {\n\t\tif (evt.target.closest('#clear-search-objectives')) {\n\t\t\tvar searchInput = document.getElementById('search-objectives');\n\t\t\tif (searchInput) {\n\t\t\t\tsearchInput.value = '';\n\t\t\t\tapplyObjectiveSearch();\n\t\t\t}\n\t\t\treturn;\n\t\t}\n\t\tvar passThrough = evt.target.closest('.objective-passthrough-toggle');\n\t\tif (passThrough) {\n\t\t\trememberOpenRule(passThrough.closest('details.settings-rule'));\n\t\t\tpostObjectiveUpdate('/admin/objective/' + passThrough.dataset.objectiveSlug + '/pass-through', {\n\t\t\t\tpass_through: passThrough.dataset.passThrough !== 'true' ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar secretToggle = evt.target.closest('.objective-secret-toggle');\n\t\tif (secretToggle) {\n\t\t\tpostObjectiveUpdate('/admin/objective/' + secretToggle.dataset.objectiveSlug + '/secret', {\n\t\t\t\tsecret: secretToggle.dataset.secret !== 'true' ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar toggle = evt.target.closest('.objective-visibility-toggle');\n\t\tif (toggle) {\n\t\t\tif (toggle.disabled) return;\n\t\t\tvar nowPublished = toggle.dataset.published !== 'true';\n\t\t\tpostObjectiveUpdate('/admin/objective/' + toggle.dataset.objectiveSlug + '/draft', {\n\t\t\t\tpublished: nowPublished ? 'true' : 'false',\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar routingOption = evt.target.closest('.settings-routing-option');\n\t\tif (routingOption) {\n\t\t\tevt.preventDefault();\n\t\t\tvar routingScope = settingsScope(routingOption);\n\t\t\tif (!routingScope) return;\n\t\t\tvar chosen = routingOption.dataset.value;\n\t\t\tvar routingTrigger = routingScope.querySelector('.settings-routing-trigger');\n\t\t\tif (routingTrigger) routingTrigger.dataset.routing = chosen;\n\t\t\tvar windowInput = routingScope.querySelector('.settings-maxnext-input');\n\t\t\t// An empty window is open exploration, so the pick would do nothing.\n\t\t\tif (chosen === 'randomised' && windowInput && !(parseInt(windowInput.value, 10) > 0)) {\n\t\t\t\twindowInput.value = windowInput.dataset.default;\n\t\t\t}\n\t\t\t// A guided path takes every step, so it stores the band that says\n\t\t\t// so: a band left over from another routing would still end the\n\t\t\t// section early.\n\t\t\tif (chosen === 'ordered') {\n\t\t\t\troutingScope.querySelector('.settings-min').value = '';\n\t\t\t\troutingScope.querySelector('.settings-max').value = '';\n\t\t\t}\n\t\t\tsyncSettings(routingScope);\n\t\t\t// The window field is the next thing a randomised pick needs.\n\t\t\tif (chosen === 'randomised' && windowInput) windowInput.focus();\n\t\t\tsubmitSettings(routingScope, { routing: chosen });\n\t\t\treturn;\n\t\t}\n\t\t// A step on either count: how many players need, or how many they\n\t\t// can complete at most, where the top step is every one.\n\t\tvar bandStep = evt.target.closest('.band-step');\n\t\tif (bandStep && !bandStep.disabled) {\n\t\t\tvar dir = parseInt(bandStep.dataset.step, 10);\n\t\t\teditBand(bandStep.closest('.settings-rule'), function(state, n) {\n\t\t\t\tif (bandStep.dataset.kind === 'cap') {\n\t\t\t\t\tvar cap = Math.max(state.count + 1, Math.min(n, (state.cap || n) + dir));\n\t\t\t\t\tstate.cap = cap < n ? cap : null;\n\t\t\t\t\treturn;\n\t\t\t\t}\n\t\t\t\tvar was = state.count;\n\t\t\t\tstate.count = Math.max(0, Math.min(n, was + dir));\n\t\t\t\t// Down from every one, the section closes by default: that is\n\t\t\t\t// what \"1 of 3\" has always meant here.\n\t\t\t\tif (was >= n) state.carry = false;\n\t\t\t});\n\t\t}\n\t});\n\n\tdocument.body.addEventListener('input', function(evt) {\n\t\tif (evt.target.id === 'search-objectives') {\n\t\t\tapplyObjectiveSearch();\n\t\t\treturn;\n\t\t}\n\t\tif (!evt.target.matches('.settings-maxnext-input, .settings-finish-label-input')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (scope) syncSettings(scope);\n\t});\n\n\tdocument.body.addEventListener('change', function(evt) {\n\t\tif (evt.target.matches('.points-toggle, .leaderboard-toggle, .progress-feedback-select')) {\n\t\t\t// Both are sent every time: an unchecked checkbox is absent from a\n\t\t\t// form rather than false, and the server reads an absent key as\n\t\t\t// \"off\", so sending one alone would switch the other off.\n\t\t\tvar toggles = document.querySelector('#quest-scoring');\n\t\t\tpostObjectiveUpdate('/admin/quest/settings', {\n\t\t\t\tenablePoints: toggles.querySelector('.points-toggle').checked ? 'on' : '',\n\t\t\t\tshowLeaderboard: toggles.querySelector('.leaderboard-toggle').checked ? 'on' : '',\n\t\t\t\tprogressFeedback: document.querySelector('.progress-feedback-select').value,\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\tvar bandRule = evt.target.closest('.settings-band-fields') && evt.target.closest('.settings-rule');\n\t\tif (bandRule && evt.target.matches('.band-then input')) {\n\t\t\teditBand(bandRule, function(state) {\n\t\t\t\tstate.carry = evt.target.value === 'carry';\n\t\t\t});\n\t\t\treturn;\n\t\t}\n\t\t// The finish label saves on its own change, or a renamed button would\n\t\t// only be sent along with some other setting.\n\t\tif (!evt.target.matches('.settings-maxnext-input, .settings-finish-label-input')) return;\n\t\tvar scope = settingsScope(evt.target);\n\t\tif (!scope) return;\n\t\tsyncSettings(scope);\n\t\tsubmitSettings(scope);\n\t});\n\t}\n\n\tinitObjectiveTree();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

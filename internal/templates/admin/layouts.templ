@@ -14,7 +14,7 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 	<html lang="en" class="h-full">
 		@header(title)
 		<body class="h-lvh flex flex-col" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
-			<div id="app" data-v-app="" class={ "flex-1", templ.KV("bg-base-200", shadedSection(section)) }>
+			<div id="app" data-v-app="" class={ "flex-1", templ.KV("bg-base-200", shadedSection(section, title)) }>
 				@nav(user, section)
 				<div class="toast toast-center z-50" id="alerts"></div>
 				<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
@@ -33,8 +33,10 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 
 // Migrated sections sit on base-200 so base-100 cards lift off it; the rest keep base-100, where their
 // bg-base-200 cards would vanish. Applied on #app because hx-boost never swaps body attributes.
-func shadedSection(section string) bool {
-	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Quests"
+// The Quest section also holds the objective editor and system pages, so only the tree page is shaded.
+func shadedSection(section, title string) bool {
+	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Quests" ||
+		(section == "Quest" && title == "Quest")
 }
 
 templ header(title string) {

@@ -1139,12 +1139,12 @@ func objectiveSecretControl(objective models.Objective) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if objective.Secret {
-				templ_7745c5c3_Err = icon("gem", templ.Attributes{"class": "w-4 h-4 text-primary"}).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = icon("hat-glasses", templ.Attributes{"class": "w-4 h-4 text-primary"}).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = icon("gem", templ.Attributes{"class": "w-4 h-4"}).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = icon("hat-glasses", templ.Attributes{"class": "w-4 h-4"}).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

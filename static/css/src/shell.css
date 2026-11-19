@@ -211,3 +211,12 @@
 .row-table tbody td { padding: 10px 14px; border: 0; background: var(--color-base-200); }
 .row-table tbody td:first-child { border-radius: 16px 0 0 16px; }
 .row-table tbody td:last-child { border-radius: 0 16px 16px 0; }
+
+/* A tooltip takes its text from the element it sits on, so a bold or spaced
+   label would otherwise make its tip bold and spaced too. */
+:root .tooltip::before {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}
