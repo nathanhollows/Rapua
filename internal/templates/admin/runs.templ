@@ -8,221 +8,98 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
+// Fixed, so the filter does not reorder between visits.
+var statusOrder = []services.TeamStatus{
+	services.StatusPlaying, services.StatusIdle, services.StatusStalled,
+	services.StatusAbandoned, services.StatusFinished, services.StatusStarted,
+}
+
+func statusLabel(status services.TeamStatus) string {
+	switch status {
+	case services.StatusFinished:
+		return "Complete"
+	case services.StatusPlaying:
+		return "Playing"
+	case services.StatusIdle:
+		return "Idle"
+	case services.StatusStalled:
+		return "Stalled"
+	case services.StatusAbandoned:
+		return "Abandoned"
+	}
+	return "Started"
+}
+
+// With no summary yet a run reads as started, not as a pace.
+func listStatus(team models.Run, summaries map[string]services.RunSummary) services.TeamStatus {
+	status := summaries[team.Code].Status
+	if status == "" && team.HasStarted {
+		return services.StatusStarted
+	}
+	return status
+}
+
+func presentStatuses(runs []models.Run, summaries map[string]services.RunSummary) []services.TeamStatus {
+	seen := map[services.TeamStatus]bool{}
+	for _, run := range runs {
+		seen[listStatus(run, summaries)] = true
+	}
+	var present []services.TeamStatus
+	for _, status := range statusOrder {
+		if seen[status] {
+			present = append(present, status)
+		}
+	}
+	return present
+}
+
 templ TeamsTable(teams []models.Run, summaries map[string]services.RunSummary) {
-	<div class="card bg-base-200 border border-base-300 mx-5">
-		<ul
-			id="teams-ul"
-			class="list"
-			hx-boost="true"
-			_="on htmx:afterSwap or htmx:afterSettle
-			js(me)
-				// Count checked checkboxes
-				var checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;
-				var allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');
-
-				// Update all selection count elements (including in modals)
-				document.querySelectorAll('span').forEach(function(span) {
-					var prev = span.previousSibling;
-					if (prev && prev.textContent && prev.textContent.includes('Selected:')) {
-						span.textContent = checkedCount;
-					}
-					// Also update counts in modal dialogs
-					var parent = span.parentElement;
-					if (parent && parent.innerHTML &&
-						(parent.innerHTML.includes('reset') || parent.innerHTML.includes('delete'))) {
-						var text = span.textContent;
-						if (text && !isNaN(text.trim())) {
-							span.textContent = checkedCount;
-						}
-					}
-				});
-
-				// Update select-all checkbox state
-				var selectAll = document.getElementById('select-all');
-				if (selectAll) {
-					if (checkedCount === 0) {
-						selectAll.checked = false;
-						selectAll.indeterminate = false;
-					} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
-						selectAll.checked = true;
-						selectAll.indeterminate = false;
-					} else {
-						selectAll.checked = false;
-						selectAll.indeterminate = true;
-					}
-				}
-
-				// Show/hide actions and filters bars
-				var actions = document.getElementById('team-actions');
-				var filters = document.getElementById('team-filters');
-				if (checkedCount > 0) {
-					if (actions) actions.classList.remove('hidden');
-					if (filters) filters.classList.add('hidden');
-				} else {
-					if (actions) actions.classList.add('hidden');
-					if (filters) filters.classList.remove('hidden');
-				}
-			end
-		end"
-		>
-			<div class="flex flex-row items-center gap-3 px-6 py-4 border-b border-base-300">
-				<!-- Select all -->
-				<input
-					id="select-all"
-					type="checkbox"
-					class="checkbox checkbox-sm checkbox-primary"
-					_="on change or load
-						set <.team-item:not(.hidden) input[name='team-checkbox']/>'s checked to my checked
-						if my checked or my indeterminate
-							add .hidden to #team-filters
-							remove .hidden from #team-actions
-						else
-							add .hidden to #team-actions
-							remove .hidden from #team-filters
-						end
-					end
-					on change from <input[name='team-checkbox']/>
-						if <input[name='team-checkbox']:checked/>'s length is not <input[name='team-checkbox']/>'s length
-							set my indeterminate to true
-						end
-						if <input[name='team-checkbox']:checked/>'s length is 0
-							set my indeterminate to false
-							set my checked to false
-						end
-						if <input[name='team-checkbox']:checked/>'s length is <input[name='team-checkbox']/>'s length
-							set my indeterminate to false
-							set my checked to true
-						end
-						if my checked or my indeterminate
-							add .hidden to #team-filters
-							remove .hidden from #team-actions
-						else
-							add .hidden to #team-actions
-							remove .hidden from #team-filters
-						end
-					end
-					on htmx:afterRequest from #delete-confirm
-						wait 0.5s
-						if me.checked
-							set me.checked to false
-							set me.indeterminate to false
-							remove .hidden from #team-filters
-							add .hidden to #team-actions
-						end
-					end
-					"
-				/>
-				<div id="team-actions" class="hidden flex flex-row flex-grow gap-3 items-center justify-between">
-					<span class="font-bold text-base-content text-sm">
-						Selected: 
-						<span
-							class="font-bold text-base-content/60"
-							_="on change from <input[type='checkbox']/> or load
-							set my textContent to <input[name='team-checkbox']:checked/>'s length"
-						></span>
-					</span>
-					<div class="flex flex-row gap-2">
-						<button
-							class="btn btn-sm btn-outline"
-							_="on click
-						set list to []
-						repeat for x in <input[name='team-checkbox']:checked/>
-							append x's value to list
-						end
-						writeText(list.join('\n')) on navigator.clipboard
-						set copyText to my innerHTML
-						set my textContent to 'Copied!'
-						wait 1.5s
-						set my innerHTML to copyText
-					"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-copy w-4 h-4"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path><path d="M16 4h2a2 2 0 0 1 2 2v4"></path><path d="M21 14H11"></path><path d="m15 10-4 4 4 4"></path></svg>
-							Copy Codes
-						</button>
-					</div>
-				</div>
-				<div id="team-filters" class="flex flex-grow flex-row justify-between">
-					<!-- Active/Inactive count -->
+	{{ started := filter(teams, func(team models.Run) bool { return team.HasStarted }) }}
+	{{ unused := filter(teams, func(team models.Run) bool { return !team.HasStarted }) }}
+	<div class="grid gap-6 mx-5">
+		<section class="card panel">
+			<div class="flex flex-row flex-wrap items-center gap-3 px-5 pt-5 pb-2">
+				<h2 class="text-2xl font-extrabold mr-auto">Started</h2>
+				if len(presentStatuses(started, summaries)) > 1 {
 					<div class="filter">
 						<input
 							class="btn btn-sm filter-reset"
 							type="radio"
-							name="activefilter"
+							name="statusfilter"
 							aria-label="All"
-							_="
-							on click remove .hidden from <.team-item/>
-						"
+							_="on click remove .hidden from <#teams-ul > li/>"
 						/>
-						<input
-							class="btn btn-sm"
-							type="radio"
-							name="activefilter"
-							aria-label="Active Only"
-							_="
-						on change
-							if my checked
-								remove .hidden from <.team-item/>
-								add .hidden to <.team-item.inactive/>
-							end
-						"
-						/>
-						<input
-							class="btn btn-sm"
-							type="radio"
-							name="activefilter"
-							aria-label="Inactive Only"
-							_="
-						on change
-							if my checked
-								remove .hidden from <.team-item/>
-								add .hidden to <.team-item.active/>
-							end
-						"
-						/>
+						for _, status := range presentStatuses(started, summaries) {
+							<input
+								class="btn btn-sm"
+								type="radio"
+								name="statusfilter"
+								aria-label={ statusLabel(status) }
+								_={ fmt.Sprintf("on change if my checked remove .hidden from <#teams-ul > li/> then add .hidden to <#teams-ul > li:not([data-status='%s'])/> end", status) }
+							/>
+						}
 					</div>
-					<div class="flex flex-row gap-2">
-						<button
-							class="btn btn-sm btn-outline"
-							_="on click
-						set list to []
-						repeat for x in <input[name='team-checkbox']/>
-							if x's offsetParent is not null
-								append x's value to list
-							end
-						end
-						writeText(list.join('\n')) on navigator.clipboard
-						set copyText to my innerHTML
-						set my textContent to 'Copied!'
-						wait 1.5s
-						set my innerHTML to copyText
-					"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-copy w-4 h-4"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path><path d="M16 4h2a2 2 0 0 1 2 2v4"></path><path d="M21 14H11"></path><path d="m15 10-4 4 4 4"></path></svg>
-							Copy Codes
-						</button>
-					</div>
-				</div>
-				<!-- Search -->
-				<label class="input input-sm flex items-center gap-2 w-60">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-5 h-5"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+				}
+				<label class="input flex items-center gap-2 w-60">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 					<input
 						id="search-teams"
 						type="text"
 						class="grow"
 						placeholder="Search"
 						_="
-					init send input to me
-					on input
-						show .team-item
-							when its textContent.toLowerCase().normalize('NFD')
-							contains my value.toLowerCase().normalize('NFD')
-						if my value's length > 0 then
-							remove .invisible from #clear-search
-						else
-							add .invisible to #clear-search
-						end
-					end
-					"
+				init send input to me
+				on input
+				show .team-item
+				when its textContent.toLowerCase().normalize('NFD')
+				contains my value.toLowerCase().normalize('NFD')
+				if my value's length > 0 then
+				remove .invisible from #clear-search
+				else
+				add .invisible to #clear-search
+				end
+				end
+				"
 					/>
 					<button
 						id="clear-search"
@@ -230,54 +107,59 @@ templ TeamsTable(teams []models.Run, summaries map[string]services.RunSummary) {
 						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
 						type="reset"
 						_="
-						init if #search-teams's value's length > 0 then
-							remove .invisible from me
-						end
-						on click
-							set #search-teams's value to ''
-							add .invisible to me
-							send input to #search-teams
-						end
-					"
+				init if #search-teams's value's length > 0 then
+				remove .invisible from me
+				end
+				on click
+				set #search-teams's value to ''
+				add .invisible to me
+				send input to #search-teams
+				end
+				"
 					>
 						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
 					</button>
 				</label>
 			</div>
-			for _, team := range filter(teams, func(team models.Run) bool { return team.HasStarted }) {
-				@teamItem(team, "active", summaries)
-			}
-			for _, team := range filter(teams, func(team models.Run) bool { return !team.HasStarted }) {
-				@teamItem(team, "inactive", summaries)
-			}
-		</ul>
-		<div id="teams-list">
-			<div
-				if len(teams) == 0 {
-					class="no-teams px-6 py-8 text-center border-t border-base-300 rounded-b-box"
-				} else {
-					class="no-teams px-6 py-8 text-center border-t border-base-300 rounded-b-box hidden"
+			<ul id="teams-ul" class="runs" hx-boost="true">
+				for _, team := range started {
+					@startedRun(team, "active", summaries)
 				}
-				_="on htmx:afterSettle from body
-				if <.team-item/>'s length == 0
-					remove .hidden from me
-				else
-					add .hidden to me
-				end
-				on htmx:afterRequest from body
-					wait 0.5s
-					if <.team-item/>'s length == 0
-						remove .hidden from me
-					else
-						add .hidden to me
-					end
-				"
-			>
-				<p class="text-sm opacity-60">
-					No runs yet. Do you want to <a href="#" class="link" onclick="add_teams_modal.showModal()">add some</a>?
-				</p>
+				<li class="when-empty">No one has started playing yet. Share a code to get going.</li>
+			</ul>
+		</section>
+		<section class="card panel unused-card">
+			<div class="flex flex-row flex-wrap items-center gap-3 px-5 pt-5 pb-2">
+				<div class="mr-auto">
+					<h2 class="text-2xl font-extrabold">Unused codes</h2>
+					<p class="text-sm text-base-content/70">Codes nobody has played with yet.</p>
+				</div>
+				<button
+					type="button"
+					class="btn btn-sm copy-all"
+					_="on click
+						set list to []
+						repeat for x in <#unused-ul .code-chip/>
+							append x's textContent to list
+						end
+						writeText(list.join('\n')) on navigator.clipboard
+						set copyText to my innerHTML
+						set my textContent to 'Copied!'
+						wait 1.5s
+						set my innerHTML to copyText
+					"
+				>
+					@icon("clipboard-copy", templ.Attributes{"class": "w-4 h-4"})
+					Copy all codes
+				</button>
 			</div>
-		</div>
+			<ul id="unused-ul" class="runs">
+				for _, team := range unused {
+					@teamItem(team, "inactive", summaries)
+				}
+				<li class="when-empty">No unused codes. Use Add runs to make more.</li>
+			</ul>
+		</section>
 	</div>
 }
 
@@ -287,96 +169,54 @@ templ TeamsList(teams []models.Run, summaries map[string]services.RunSummary) {
 	}
 }
 
+templ teamCode(code string) {
+	<div
+		class="tooltip cursor-pointer"
+		data-tip="Click to copy"
+		_="on click 
+			writeText(my textContent) on navigator.clipboard
+			set @data-tip to 'Copied!'
+			wait 2s
+			set @data-tip to 'Click to copy'
+			"
+	>
+		<span class="team-code code-chip">{ code }</span>
+	</div>
+}
+
 templ teamItem(team models.Run, classes string, summaries map[string]services.RunSummary) {
-	<li class={ fmt.Sprint("team-item border-t border-base-300 transition-colors last:rounded-b-box hover:bg-base-300 has-[:checked]:bg-primary/10 has-[:checked]:hover:bg-primary/20 ", classes) }>
-		<div class="flex flex-row items-center gap-3 px-6 py-3">
-			<input
-				name="team-checkbox"
-				type="checkbox"
-				class="team-checkbox checkbox checkbox-sm checkbox-primary"
-				value={ team.Code }
-				_="on htmx:afterRequest from #delete-confirm
-					if me.checked
-						add .bg-danger .text-danger-content to closest .team-item
-						transition opacity to 0 then
-						remove the closest .team-item
-					end
-				end
-				on change
-					js(me)
-						var checkedCount = document.querySelectorAll('input[name=team-checkbox]:checked').length;
-						var allCheckboxes = document.querySelectorAll('input[name=team-checkbox]');
-						var selectAll = document.getElementById('select-all');
+	if !team.HasStarted {
+		<li class="run-unused">
+			@teamCode(team.Code)
+		</li>
+	} else {
+		@startedRun(team, classes, summaries)
+	}
+}
 
-						// Update selection counts
-						document.querySelectorAll('span').forEach(function(span) {
-							var prev = span.previousSibling;
-							if (prev && prev.textContent && prev.textContent.includes('Selected:')) {
-								span.textContent = checkedCount;
-							}
-						});
-
-						// Update select-all state
-						if (selectAll) {
-							if (checkedCount === 0) {
-								selectAll.checked = false;
-								selectAll.indeterminate = false;
-							} else if (checkedCount === allCheckboxes.length && allCheckboxes.length > 0) {
-								selectAll.checked = true;
-								selectAll.indeterminate = false;
-							} else {
-								selectAll.checked = false;
-								selectAll.indeterminate = true;
-							}
-						}
-
-						// Show/hide actions and filters
-						var actions = document.getElementById('team-actions');
-						var filters = document.getElementById('team-filters');
-						if (checkedCount > 0) {
-							if (actions) actions.classList.remove('hidden');
-							if (filters) filters.classList.add('hidden');
-						} else {
-							if (actions) actions.classList.add('hidden');
-							if (filters) filters.classList.remove('hidden');
-						}
-					end
-				end
-				"
-			/>
-			<div
-				class="tooltip cursor-pointer"
-				data-tip="Click to copy"
-				_="on click 
-					writeText(my textContent) on navigator.clipboard
-					set @data-tip to 'Copied!'
-					wait 2s
-					set @data-tip to 'Click to copy'
-					"
-			>
-				if team.HasStarted {
-					<span class="team-code badge badge-success badge-outline font-mono tracking-wider">{ team.Code }</span>
-				} else {
-					<span class="team-code badge font-mono tracking-wider">{ team.Code }</span>
+templ startedRun(team models.Run, classes string, summaries map[string]services.RunSummary) {
+	{{ summary := summaries[team.Code] }}
+	{{ status := listStatus(team, summaries) }}
+	<li data-status={ string(status) } class={ "team-item run-row", classes, templ.KV("run-row-live", status == services.StatusPlaying || status == services.StatusStarted || status == services.StatusFinished), templ.KV("run-row-stalled", status == services.StatusStalled) }>
+		<div class="flex flex-row items-center gap-3 px-4 py-2.5">
+			@teamCode(team.Code)
+			<a
+				href={ templ.URL(fmt.Sprintf("/admin/runs/%s", team.Code)) }
+				class="run-link truncate grow"
+				if team.Name == "" {
+					aria-label={ fmt.Sprintf("Open run %s", team.Code) }
 				}
-			</div>
-			<!-- Run name -->
-			if team.Name == "" {
-				<em class="opacity-50 truncate grow">No name set</em>
-			} else {
-				<span class="truncate grow">{ team.Name }</span>
-			}
-			// A run the stream cannot place reads as started rather than as
-			// playing: it has begun, and nothing has been read of its pace.
-			{{ summary := summaries[team.Code] }}
-			{{ status := summary.Status }}
-			if status == "" && team.HasStarted {
-				{{ status = services.StatusStarted }}
-			}
+			>
+				if team.Name == "" {
+					<em class="opacity-50">No name set</em>
+				} else {
+					{ team.Name }
+				}
+			</a>
 			// Each trailing part keeps its width whether or not it has anything to
 			// show, so they line up as columns down the list. Sized by their
 			// contents, the bars and badges wandered with every "1 year ago" and
-			// every run without a button.
+			// every run without a progress bar.
 			<span class="hidden md:flex w-36 shrink-0">
 				if summary.Total > 0 {
 					@runProgressBar(summary.Done, summary.Total)
@@ -396,25 +236,83 @@ templ teamItem(team models.Run, classes string, summaries map[string]services.Ru
 					</span>
 				}
 			</span>
-			<span class="flex justify-end w-24 shrink-0">
-				if team.HasStarted {
-					<a
-						href={ templ.URL(fmt.Sprintf("/admin/runs/%s", team.Code)) }
-						class="btn btn-xs"
-					>
-						See activity
-					</a>
-				}
+			<span class="w-5 shrink-0 text-base-content/50" aria-hidden="true">
+				@icon("chevron-right", templ.Attributes{"class": "w-5 h-5"})
 			</span>
 		</div>
 	</li>
 }
 
+const lowCredits = 5
+
+func creditsLow(credits int) bool { return credits > 0 && credits < lowCredits }
+
+func creditsLabel(credits int) string {
+	switch {
+	case credits <= 0:
+		return "No credits"
+	case credits < lowCredits:
+		return fmt.Sprintf("%d credits left", credits)
+	}
+	return fmt.Sprintf("%d credits", credits)
+}
+
+func creditPrice() string { return fmt.Sprintf("$%.2f", float64(config.CreditPriceCents())/100) }
+
+// Only low or none earns the extra button.
+templ CreditsControl(credits int) {
+	<div class="flex items-center gap-2">
+		if credits < lowCredits {
+			<a href="/admin/settings/credits#topup" class="btn btn-secondary">
+				@icon("coins", templ.Attributes{"class": "w-5 h-5"})
+				Get more credits
+			</a>
+		}
+		<div class="dropdown dropdown-end dropdown-bottom">
+			<button
+				type="button"
+				tabindex="0"
+				class={ "btn", templ.KV("credits-low", creditsLow(credits)), templ.KV("credits-none", credits <= 0) }
+				aria-label="Credits"
+			>
+				@icon("coins", templ.Attributes{"class": "w-5 h-5"})
+				<span class="tabular-nums">{ creditsLabel(credits) }</span>
+				@icon("chevron-down", templ.Attributes{"class": "w-4 h-4"})
+			</button>
+			<div tabindex="0" class="dropdown-content panel credits-pop z-10 top-full mt-2">
+				<b class="credits-big">
+					{ fmt.Sprint(max(credits, 0)) }
+					<span>
+						if credits == 1 {
+							credit left
+						} else {
+							credits left
+						}
+					</span>
+				</b>
+				if credits <= 0 {
+					<p class="alert alert-warning">No credits left. New teams cannot start until you add more.</p>
+				} else if creditsLow(credits) {
+					<p class="alert alert-warning">You are running low. Teams can still start for now.</p>
+				}
+				<p>Each team that starts playing uses one credit. Making run codes is free, and credits never expire.</p>
+				<div class="credits-foot">
+					<a href="/admin/settings/credits#topup" class="btn btn-primary">Get more credits</a>
+					<div class="credits-side">
+						<b>{ creditPrice() } each</b>
+						<a href="/admin/settings/credits" class="link text-sm">Usage history</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
 templ Teams(teams []models.Run, credits int, summaries map[string]services.RunSummary) {
 	<span class="hidden bg-danger text-danger-content border-error border-warning"></span>
 	<div class="flex gap-3 flex-row justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">
-			Runs
+		<div class="flex items-center gap-1">
+			<h1 class="text-4xl font-black">Runs</h1>
 			<div class="dropdown dropdown-hover">
 				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="m12 16v-4"></path><path d="m12 8h.01"></path></svg></div>
 				<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
@@ -432,28 +330,11 @@ templ Teams(teams []models.Run, credits int, summaries map[string]services.RunSu
 					</div>
 				</div>
 			</div>
-		</h1>
-		<a
-			href="/admin/settings/credits"
-			if credits <= 0 {
-				class="badge badge-error tooltip tooltip-bottom"
-				data-tip="No credits remaining! New runs won't be able to start."
-			}
-			else
-			if credits >= 5 {
-				class="badge badge-info tooltip tooltip-bottom"
-				data-tip="Each run start costs one credit. Credits do not affect how many run codes you can generate."
-			} else {
-				class="badge badge-warning tooltip tooltip-bottom"
-				data-tip="Low on credits! Each run start costs one credit. Credits do not affect how many run codes you can generate."
-			}
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-info-icon lucide-info w-4"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
-			{ fmt.Sprint(credits) } credits remaining
-		</a>
-		<div class="flex gap-3">
+		</div>
+		<div class="flex items-center gap-3">
+			@CreditsControl(credits)
 			<button
-				class="btn btn-secondary"
+				class="btn btn-primary"
 				onclick="add_teams_modal.showModal()"
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>
@@ -474,7 +355,7 @@ templ Teams(teams []models.Run, credits int, summaries map[string]services.RunSu
 			<p class="py-4">How many runs would you like to add?</p>
 			<form
 				hx-post="/admin/runs/add"
-				hx-target="#teams-ul"
+				hx-target="#unused-ul"
 				hx-swap="beforeend swap:0.5s"
 				class="join flex flex-row w-full"
 			>
@@ -1133,7 +1014,9 @@ templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
 			data-t1={ fmt.Sprint(t1) }
 		>
 			<div class={ "px-6 py-3 flex gap-4", templ.KV("items-start", multiline), templ.KV("items-center", !multiline) }>
-				<span class={ templ.KV("mt-0.5", multiline) }>@runLogIcon(entry)</span>
+				<span class={ templ.KV("mt-0.5", multiline) }>
+					@runLogIcon(entry)
+				</span>
 				@runLogBody(entry)
 				<span class="text-xs text-base-content/70 ml-auto whitespace-nowrap">{ runLogWait(entry.Gap) }</span>
 				<span class="text-xs text-base-content/60 text-right shrink-0 whitespace-nowrap tabular-nums">{ runLogTime(entry.Time, log) }</span>
@@ -1145,31 +1028,55 @@ templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
 templ runLogIcon(entry services.RunLogEntry) {
 	switch entry.Kind {
 		case services.RunLogStart:
-			<span class="text-base-content/60 shrink-0">@icon("play", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-base-content/60 shrink-0">
+				@icon("play", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogNamed:
-			<span class="text-base-content/60 shrink-0">@icon("pen-line", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-base-content/60 shrink-0">
+				@icon("pen-line", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogListed:
-			<span class="text-base-content/60 shrink-0">@icon("list", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-base-content/60 shrink-0">
+				@icon("list", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogViewed:
-			<span class="text-base-content/60 shrink-0">@icon("eye", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-base-content/60 shrink-0">
+				@icon("eye", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogAnswer:
 			if entry.Completed {
-				<span class="text-success shrink-0">@icon("check", templ.Attributes{"class": "w-4 h-4"})</span>
+				<span class="text-success shrink-0">
+					@icon("check", templ.Attributes{"class": "w-4 h-4"})
+				</span>
 			} else {
-				<span class="text-warning shrink-0">@icon("circle-x", templ.Attributes{"class": "w-4 h-4"})</span>
+				<span class="text-warning shrink-0">
+					@icon("circle-x", templ.Attributes{"class": "w-4 h-4"})
+				</span>
 			}
 		case services.RunLogComplete:
-			<span class="text-success shrink-0">@icon("circle-check", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-success shrink-0">
+				@icon("circle-check", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogSection:
-			<span class="text-success shrink-0">@icon("flag", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-success shrink-0">
+				@icon("flag", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogUpload:
-			<span class="text-base-content/60 shrink-0">@icon("image", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-base-content/60 shrink-0">
+				@icon("image", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogMessage:
-			<span class="text-info shrink-0">@icon("megaphone", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-info shrink-0">
+				@icon("megaphone", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogRead:
-			<span class="text-base-content/60 shrink-0">@icon("check-check", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-base-content/60 shrink-0">
+				@icon("check-check", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogFinish:
-			<span class="text-success shrink-0">@icon("trophy", templ.Attributes{"class": "w-4 h-4"})</span>
+			<span class="text-success shrink-0">
+				@icon("trophy", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 	}
 }
 
@@ -1226,7 +1133,7 @@ templ runLogAnswer(entry services.RunLogEntry) {
 		<span class="text-sm truncate block">
 			{ entry.BlockName }
 			if entry.Title != "" {
-				<span class="text-base-content/70"> on </span>
+				<span class="text-base-content/70">on </span>
 				if entry.Slug != "" {
 					<a href={ templ.URL("/admin/objective/" + entry.Slug) } class="link">{ entry.Title }</a>
 				} else {

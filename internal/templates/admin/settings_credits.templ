@@ -188,6 +188,9 @@ templ CreditTopupModal() {
 			</form>
 		</div>
 	</dialog>
+	<script>
+		if (location.hash === '#topup') document.getElementById('topup_modal').showModal();
+	</script>
 }
 
 templ CreditUsageWeek(usage []services.RunStartSummary, period string) {

@@ -57,7 +57,12 @@ func TestTeamsTable_ShowsSummary(t *testing.T) {
 	assert.Contains(t, rendered, "Stalled")
 	assert.Contains(t, rendered, "100%")
 	assert.Contains(t, rendered, "Complete")
-	assert.Contains(t, rendered, "Not started")
+	assert.Contains(t, rendered, "Unused codes")
+	assert.Contains(t, rendered, "Copy all codes")
+	assert.Contains(t, rendered, `class="team-code code-chip">P003<`)
+	assert.Contains(t, rendered, `data-status="stalled"`)
+	assert.NotContains(t, rendered, "Not started")
+	assert.NotContains(t, rendered, `name="team-checkbox"`, "players already have their codes, so nothing is selectable")
 }
 
 // A summary is built from the stream, so a run that has begun but has nothing
@@ -70,13 +75,15 @@ func TestTeamsTable_StartedRunWithoutASummary(t *testing.T) {
 	assert.NotContains(t, rendered, "progress")
 }
 
-// Tests read the page without a database, so summaries are absent more often
-// than they are empty; a run that never started still reads not started.
-func TestTeamsTable_UnstartedRunWithoutASummary(t *testing.T) {
+// A code nobody has used has no name, pace or status to show, so it is only the code.
+func TestTeamsTable_UnusedCodeIsOnlyAChip(t *testing.T) {
 	rendered := render(t, templates.TeamsList([]models.Run{listRun("P001", false)}, nil))
 
-	assert.Contains(t, rendered, "Not started")
-	assert.NotContains(t, rendered, "progress")
+	assert.Contains(t, rendered, "run-unused")
+	assert.Contains(t, rendered, "P001")
+	for _, absent := range []string{"Not started", "progress", "No name set", "See activity", "checkbox"} {
+		assert.NotContains(t, rendered, absent)
+	}
 }
 
 // TestTeamsPreview writes a browsable copy of the list when RAPUA_PREVIEW

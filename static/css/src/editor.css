@@ -585,16 +585,6 @@
   height: var(--mark-size);
   color: color-mix(in oklch, var(--color-base-content) 75%, transparent);
 }
-/* Stripes on the runs list, counting only the rows on show: the filters hide
-   rows with .hidden and the search with an inline display, and counting the
-   hidden ones put two stripes side by side. In the components layer, so a
-   row's hover and selected fills, which are utilities, still win over it. */
-@layer components {
-  .team-item:nth-child(even of .team-item:not(.hidden, [style*="display: none"])) {
-    background-color: color-mix(in oklch, var(--color-base-content) 3%, transparent);
-  }
-}
-
 /* Location insert zones */
 .loc-insert-zone {
   @apply pointer-events-none;

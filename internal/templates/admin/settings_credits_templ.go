@@ -246,7 +246,7 @@ func CreditTopupModal() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " per credit</span></p></fieldset><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn\">Cancel</button></form><button class=\"btn btn-primary\" id=\"purchase_button\" hx-post=\"/admin/credits/purchase/create-session\" hx-vals='js:{credits: document.getElementById(\"credit_amount\").value}' hx-swap=\"none\" _=\"on htmx:afterRequest\n\t\t\t\t\t\tif detail.xhr.status == 200\n\t\t\t\t\t\t\tset response to JSON.parse(detail.xhr.responseText)\n\t\t\t\t\t\t\tif response.url\n\t\t\t\t\t\t\t\tset window.location.href to response.url\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tcall alert('Failed to create checkout session. Please try again.')\n\t\t\t\t\t\tend\n\t\t\t\t\t\">Purchase Credits</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " per credit</span></p></fieldset><div class=\"modal-action\"><form method=\"dialog\"><button class=\"btn\">Cancel</button></form><button class=\"btn btn-primary\" id=\"purchase_button\" hx-post=\"/admin/credits/purchase/create-session\" hx-vals='js:{credits: document.getElementById(\"credit_amount\").value}' hx-swap=\"none\" _=\"on htmx:afterRequest\n\t\t\t\t\t\tif detail.xhr.status == 200\n\t\t\t\t\t\t\tset response to JSON.parse(detail.xhr.responseText)\n\t\t\t\t\t\t\tif response.url\n\t\t\t\t\t\t\t\tset window.location.href to response.url\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\telse\n\t\t\t\t\t\t\tcall alert('Failed to create checkout session. Please try again.')\n\t\t\t\t\t\tend\n\t\t\t\t\t\">Purchase Credits</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\n\t\tif (location.hash === '#topup') document.getElementById('topup_modal').showModal();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -293,7 +293,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 209, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 212, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -306,7 +306,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var16 string
 				templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon 2"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 212, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 215, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 				if templ_7745c5c3_Err != nil {
@@ -324,7 +324,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("02/01"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 216, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 219, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -342,7 +342,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 220, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 223, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -355,7 +355,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon 2"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 223, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 226, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -373,7 +373,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var20 string
 				templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 227, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 230, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 				if templ_7745c5c3_Err != nil {
@@ -386,7 +386,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon 2"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 230, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 233, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("--size: ", row.Ratio, ";"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 235, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 238, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 			if templ_7745c5c3_Err != nil {
@@ -422,7 +422,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 				var templ_7745c5c3_Var23 string
 				templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(row.Count))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 242, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 245, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 				if templ_7745c5c3_Err != nil {
@@ -440,7 +440,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(row.Count))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 246, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 249, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -453,7 +453,7 @@ func CreditUsageWeek(usage []services.RunStartSummary, period string) templ.Comp
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("2006-01-02"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 248, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 251, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -511,7 +511,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 273, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 276, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -524,7 +524,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon 2"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 276, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 279, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -543,7 +543,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("02 Jan"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 281, Col: 37}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 284, Col: 37}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
@@ -562,7 +562,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Jan"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 286, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 289, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 				if templ_7745c5c3_Err != nil {
@@ -580,7 +580,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 				var templ_7745c5c3_Var31 string
 				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 290, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 293, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 				if templ_7745c5c3_Err != nil {
@@ -593,7 +593,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 				var templ_7745c5c3_Var32 string
 				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Mon 2"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 293, Col: 35}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 296, Col: 35}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 				if templ_7745c5c3_Err != nil {
@@ -611,7 +611,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("--size: ", row.Ratio, ";"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 298, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 301, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 			if templ_7745c5c3_Err != nil {
@@ -629,7 +629,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(row.Count))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 305, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 308, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {
@@ -647,7 +647,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(row.Count))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 309, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 312, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -660,7 +660,7 @@ func CreditUsageChart(usage []services.RunStartSummary, period string) templ.Com
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("2006-01-02"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 311, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 314, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -712,7 +712,7 @@ func CreditUsageYear(usage []services.RunStartSummary) templ.Component {
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("Jan"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 333, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 336, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -725,7 +725,7 @@ func CreditUsageYear(usage []services.RunStartSummary) templ.Component {
 			var templ_7745c5c3_Var39 string
 			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("--size: ", row.Ratio, ";"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 336, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 339, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 			if templ_7745c5c3_Err != nil {
@@ -743,7 +743,7 @@ func CreditUsageYear(usage []services.RunStartSummary) templ.Component {
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(row.Count))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 343, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 346, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -761,7 +761,7 @@ func CreditUsageYear(usage []services.RunStartSummary) templ.Component {
 			var templ_7745c5c3_Var41 string
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(row.Count))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 347, Col: 30}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 350, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -774,7 +774,7 @@ func CreditUsageYear(usage []services.RunStartSummary) templ.Component {
 			var templ_7745c5c3_Var42 string
 			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(row.Date.Format("2006-01-02"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 349, Col: 38}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/settings_credits.templ`, Line: 352, Col: 38}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 			if templ_7745c5c3_Err != nil {
