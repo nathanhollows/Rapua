@@ -399,31 +399,26 @@ type TeamOverviewData struct {
 }
 
 templ TeamOverview(data TeamOverviewData) {
-	<main class="max-w-7xl m-auto pb-8">
-		<!-- The header is the run itself: the page is about this run, and the
-		     nav already says where in the admin you are. -->
+	<div>
 		<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-			<div class="mr-auto">
-				<h1 class="text-2xl font-bold flex flex-wrap items-center gap-x-2">
-					<span class="font-mono tracking-wider">{ data.Run.Code }</span>
-					if data.Run.Name != "" {
-						<span class="text-base-content/50">∕</span>
-						{ data.Run.Name }
-					}
-				</h1>
-			</div>
-			<div class="flex gap-3">
-				<button
-					class="btn btn-error"
-					_="on click
-							confirm_delete_modal.showModal()
-						end
-					"
-				>
-					@icon("trash-2", templ.Attributes{"class": "w-5 h-5"})
-					Delete
-				</button>
-			</div>
+			<h1 class="text-4xl font-black mr-auto flex flex-wrap items-baseline gap-x-3">
+				<span>Run</span>
+				<span class="text-base-content/40 font-medium">›</span>
+				if data.Run.Name != "" {
+					<span class="font-medium">{ data.Run.Name }</span>
+				}
+				<span class="code-chip">{ data.Run.Code }</span>
+			</h1>
+			<button
+				class="btn btn-error"
+				_="on click
+						confirm_delete_modal.showModal()
+					end
+				"
+			>
+				@icon("trash-2", templ.Attributes{"class": "w-5 h-5"})
+				Delete
+			</button>
 		</div>
 		<div class="px-5 mb-5">
 			@RunStatsCard(data.Quest.Settings, data.Run, data.RunLog, data.Progress)
@@ -431,8 +426,8 @@ templ TeamOverview(data TeamOverviewData) {
 		<div class="relative flex flex-col-reverse lg:flex-row px-5 gap-5">
 			<!-- Sidebar -->
 			<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
-				@QuestMapCard(data.Progress)
 				@MessagesCard(data.Run, data.Notifications)
+				@QuestMapCard(data.Progress)
 			</div>
 			<!-- Main -->
 			<div class="w-full flex-1 min-w-0 space-y-5">
@@ -442,7 +437,7 @@ templ TeamOverview(data TeamOverviewData) {
 				}
 			</div>
 		</div>
-	</main>
+	</div>
 	@TeamPageModals(data.Run.Code)
 	@cadenceScript()
 }
@@ -475,61 +470,61 @@ templ TeamPageModals(teamCode string) {
 }
 
 templ RunStatsCard(settings models.QuestSettings, run models.Run, log services.RunLog, progress services.RunProgress) {
-	<div class="grid grid-cols-2 md:grid-cols-5 gap-0 shadow rounded-box w-full bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors overflow-hidden">
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Status</div>
-			<div class="stat-value">
+	<div class="panel stat-strip stat-strip-5">
+		<div class="stat-cell">
+			<span class="kicker">Status</span>
+			<span class="stat-badge">
 				@TeamStatusBadge(runStatus(run, log), false, "lg")
-			</div>
-			<div class="stat-desc">{ runLogQuiet(log) }</div>
+			</span>
+			<small>{ runLogQuiet(log) }</small>
 		</div>
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Objectives</div>
-			<div class="stat-value">
-				{ fmt.Sprint(progress.Done) }<span class="text-base text-base-content/50">∕{ fmt.Sprint(progress.Total) }</span>
-			</div>
-			<div class="stat-desc">Completed</div>
+		<div class="stat-cell">
+			<span class="kicker">Objectives</span>
+			<b class="stat-num">
+				{ fmt.Sprint(progress.Done) }<span class="text-xl text-base-content/50">∕{ fmt.Sprint(progress.Total) }</span>
+			</b>
+			<small>Completed</small>
 		</div>
 		if settings.EnablePoints {
-			<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-				<div class="stat-title">Points</div>
-				<div class="stat-value">{ fmt.Sprint(run.Points) }</div>
-				<div class="stat-desc">Across all objectives</div>
+			<div class="stat-cell">
+				<span class="kicker">Points</span>
+				<b class="stat-num">{ fmt.Sprint(run.Points) }</b>
+				<small>Across all objectives</small>
 			</div>
 		} else {
-			<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-				<div class="stat-title">Progress</div>
-				<div class="stat-value">
+			<div class="stat-cell">
+				<span class="kicker">Progress</span>
+				<b class="stat-num">
 					if progress.Total > 0 {
 						{ fmt.Sprintf("%.0f%%", float64(progress.Done)/float64(progress.Total)*100) }
 					} else {
 						0%
 					}
-				</div>
-				<div class="stat-desc">Towards completion</div>
+				</b>
+				<small>Towards completion</small>
 			</div>
 		}
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Pace</div>
-			<div class="stat-value">{ runLogPace(log) }</div>
-			<div class="stat-desc">{ runLogPaceNote(log) }</div>
+		<div class="stat-cell">
+			<span class="kicker">Pace</span>
+			<b class="stat-num">{ runLogPace(log) }</b>
+			<small>{ runLogPaceNote(log) }</small>
 		</div>
-		<div class="stat place-items-center">
-			<div class="stat-title">Elapsed</div>
-			<div class="stat-value">
+		<div class="stat-cell">
+			<span class="kicker">Elapsed</span>
+			<b class="stat-num">
 				if elapsed := runElapsed(run); elapsed != "" {
 					{ elapsed }
 				} else {
 					—
 				}
-			</div>
-			<div class="stat-desc">
+			</b>
+			<small>
 				if !run.StartedAt.IsZero() {
 					Started { run.StartedAt.Local().Format("3:04 PM") }
 				} else {
 					Not started
 				}
-			</div>
+			</small>
 		</div>
 	</div>
 }
@@ -538,19 +533,19 @@ templ RunStatsCard(settings models.QuestSettings, run models.Run, log services.R
 // marked by what the run did to it. Drafts are absent rather than greyed:
 // players never meet them, so a run neither owes them nor skipped them.
 templ QuestMapCard(progress services.RunProgress) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
-		<div class="card-body p-6 pb-4">
-			<div class="flex items-center justify-between mb-1">
-				<h2 class="card-title text-lg">The quest</h2>
+	<div class="panel">
+		<div class="px-5 pt-5 pb-3">
+			<div class="flex items-center justify-between gap-2">
+				<h2 class="text-2xl font-extrabold">The quest</h2>
 				<span class="badge badge-ghost badge-sm">{ fmt.Sprintf("%d ∕ %d", progress.Done, progress.Total) }</span>
 			</div>
-			<p class="text-xs text-base-content/60">Drafts are not shown: players never meet them.</p>
+			<p class="text-sm text-base-content/70 mt-1">Drafts are not shown: players never meet them.</p>
 			if progress.Finished {
-				<p class="text-xs text-success">The run is complete.</p>
+				<p class="text-sm text-success">The run is complete.</p>
 			}
 		</div>
 		if len(progress.Nodes) > 0 {
-			<div class="map px-4 pb-5">
+			<div class="map px-3 pb-4">
 				for _, node := range progress.Nodes {
 					<div
 						class="maprow"
@@ -572,8 +567,8 @@ templ QuestMapCard(progress services.RunProgress) {
 				}
 			</div>
 		} else {
-			<div class="px-6 pb-6">
-				<div class="alert">
+			<div class="px-5 pb-5">
+				<div class="alert alert-info">
 					@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
 					<span>This quest has no objectives yet.</span>
 				</div>
@@ -611,11 +606,12 @@ templ questMapState(node services.RunProgressNode) {
 }
 
 templ UploadedMediaCard(uploads []*models.Upload, teamCode string) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
-		<div class="card-body p-6">
-			<h2 class="card-title text-lg flex items-center gap-2">
+	<div class="panel">
+		<div class="p-5">
+			<h2 class="text-2xl font-extrabold flex items-center gap-2">
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-images-icon lucide-images w-5 h-5"><path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"></path><path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"></path><circle cx="13" cy="7" r="1" fill="currentColor"></circle><rect x="8" y="2" width="14" height="14" rx="2"></rect></svg>
-				Uploaded media ({ fmt.Sprint(len(uploads)) })
+				Uploaded media
+				<span class="badge badge-ghost badge-sm">{ fmt.Sprint(len(uploads)) }</span>
 			</h2>
 			<div class="mt-2 columns-1 sm:columns-2 lg:columns-3 gap-3 space-y-3">
 				for _, upload := range uploads {
@@ -654,61 +650,71 @@ templ UploadedMediaCard(uploads []*models.Upload, teamCode string) {
 }
 
 templ MessagesCard(run models.Run, notifications []models.Notification) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
-		<div class="card-body p-6 pb-4">
-			<div class="flex items-center justify-between mb-2">
-				<h2 class="card-title text-lg flex items-center gap-2">
-					@icon("megaphone", templ.Attributes{"class": "w-5 h-5"})
-					Messages
-				</h2>
-				if unread := countUnread(notifications); unread > 0 {
-					<span class="badge badge-warning badge-soft badge-sm">{ fmt.Sprint(unread) } unread</span>
+	<div class="panel overflow-hidden">
+		<div class="px-5 pt-5 pb-3">
+			<div class="flex items-center justify-between gap-2">
+				<h2 class="text-2xl font-extrabold">Messages</h2>
+				if showing := countUnread(notifications); showing > 0 {
+					<span class="badge badge-info badge-soft badge-sm">{ fmt.Sprint(showing) } showing</span>
 				}
 			</div>
-		</div>
-		<div id="alerts-list" class="px-6 max-h-80 overflow-y-auto">
-			@AlertsList(notifications)
-		</div>
-		<div class="card-body p-6 pt-4">
-			<form hx-post="/admin/notify/team" hx-target="#alerts-list" hx-swap="innerHTML" hx-on::after-request="if(event.detail.successful) this.reset()">
-				<input type="hidden" name="teamCode" value={ run.Code }/>
-				<div class="join w-full">
-					<input class="input join-item w-full" name="content" placeholder="Message this run" autocomplete="off" required/>
-					<button type="submit" class="btn btn-primary join-item">
-						@icon("send-horizontal", templ.Attributes{"class": "w-5 h-5"})
-					</button>
-				</div>
-			</form>
-			<p class="text-xs opacity-50">
-				Read-only — runs can't reply. To reach every run, announce from
-				<a href="/admin/" class="link link-hover">Activity</a>.
+			<p class="text-sm text-base-content/70 mt-1">
+				Players see these as alerts at the top of every page until they dismiss them. They cannot reply.
 			</p>
+		</div>
+		<form
+			class="px-5 pb-4 grid gap-2"
+			hx-post="/admin/notify/team"
+			hx-target="#alerts-list"
+			hx-swap="innerHTML"
+			hx-on::after-request="if(event.detail.successful) this.reset()"
+		>
+			<input type="hidden" name="runCode" value={ run.Code }/>
+			<textarea
+				class="textarea w-full"
+				name="content"
+				rows="2"
+				maxlength="255"
+				placeholder="Message this run"
+				required
+				_="on keydown[key == 'Enter' and not shiftKey] halt the event then call closest <form/>.requestSubmit()"
+			></textarea>
+			<div class="flex items-center gap-3">
+				<span class="text-xs text-base-content/60 mr-auto">
+					To reach every run, announce from
+					<a href="/admin/" class="link">Activity</a>.
+				</span>
+				<button type="submit" class="btn btn-primary btn-sm">
+					@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
+					Send
+				</button>
+			</div>
+		</form>
+		<div id="alerts-list" class="px-5 pb-5 grid gap-2 max-h-80 overflow-y-auto">
+			@AlertsList(notifications)
 		</div>
 	</div>
 }
 
+// Newest first, so a sent message lands beside its form.
 templ AlertsList(notifications []models.Notification) {
 	if len(notifications) > 0 {
-		for _, notification := range notifications {
-			<div class="chat chat-end">
-				<div class="chat-header opacity-70">
-					<time class="text-xs opacity-70">
-						{ notification.CreatedAt.Local().Format("02 Jan 3:04 PM") }
-					</time>
-				</div>
-				<div class="chat-bubble chat-bubble-info">{ notification.Content }</div>
-				<div class="chat-footer text-xs opacity-50 flex items-center gap-2">
-					if notification.Dismissed {
-						Read
+		for i := len(notifications) - 1; i >= 0; i-- {
+			<div class={ "message", templ.KV("message-done", notifications[i].Dismissed) }>
+				<p>{ notifications[i].Content }</p>
+				<small>
+					{ notifications[i].CreatedAt.Local().Format("02 Jan 3:04 PM") }
+					·
+					if notifications[i].Dismissed {
+						Dismissed
 					} else {
-						<span class="status status-warning"></span>
-						Unread
+						Not dismissed yet
 					}
-				</div>
+				</small>
 			</div>
 		}
 	} else {
-		<p class="text-sm text-base-content/60 text-center py-4">No messages sent yet</p>
+		<p class="text-sm text-base-content/60 text-center py-2">No messages sent yet</p>
 	}
 }
 
@@ -883,10 +889,10 @@ templ cadenceScript() {
 
 templ RunLogCard(log services.RunLog, show, runCode string) {
 	{{ shown := runLogFilter(log.Entries, show) }}
-	<div id={ RunLogCardTarget } class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
-		<div class="card-body p-6 pb-4">
-			<div class="flex flex-wrap items-center justify-between gap-3 mb-1">
-				<h2 class="card-title text-lg">Timeline</h2>
+	<div id={ RunLogCardTarget } class="panel overflow-hidden">
+		<div class="px-5 pt-5 pb-3">
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<h2 class="text-2xl font-extrabold">Timeline</h2>
 				<div class="join">
 					<a
 						href={ templ.URL(runLogHref(runCode, "")) }
@@ -894,7 +900,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
-						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "") }
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "") }
 					>All</a>
 					<a
 						href={ templ.URL(runLogHref(runCode, "progress")) }
@@ -902,7 +908,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
-						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "progress") }
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "progress") }
 					>Progress</a>
 					<a
 						href={ templ.URL(runLogHref(runCode, "messages")) }
@@ -910,7 +916,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
-						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "messages") }
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "messages") }
 					>Messages</a>
 					<a
 						href={ templ.URL(runLogHref(runCode, "navigation")) }
@@ -918,16 +924,16 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 						hx-target={ "#" + RunLogCardTarget }
 						hx-swap="outerHTML"
 						hx-push-url="false"
-						class={ "btn btn-xs join-item", templ.KV("btn-active", show == "navigation") }
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "navigation") }
 					>Navigation</a>
 				</div>
 			</div>
-			<p class="text-xs text-base-content/60">
+			<p class="text-sm text-base-content/70 mt-1">
 				Newest first. The right-hand figure is the wait before that entry.
 			</p>
 		</div>
 		if len(log.Segments) > 0 {
-			<div class="px-6 pb-4">
+			<div class="px-5 pb-4">
 				<div class="flex flex-wrap items-center gap-3 text-xs text-base-content/70 mb-2">
 					<span class="flex items-center gap-1.5">
 						<span class="inline-block w-3 h-2 rounded-sm h-playing"></span>Playing
@@ -965,15 +971,15 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 		}
 		if len(shown) > 0 {
 			<div class="runlog" id="run-log">
-				<ul class="list">
+				<ul class="grid gap-1 px-3 pb-3">
 					for i, entry := range shown {
 						@runLogRow(entry, i, log)
 					}
 				</ul>
 			</div>
 		} else {
-			<div class="px-6 pb-6">
-				<div class="alert">
+			<div class="px-5 pb-5">
+				<div class="alert alert-info">
 					@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
 					<span>
 						if len(log.Entries) == 0 {
@@ -985,9 +991,7 @@ templ RunLogCard(log services.RunLog, show, runCode string) {
 				</div>
 			</div>
 		}
-		<div class="card-body p-6 pt-3 border-t border-base-content/10">
-			<p class="text-xs text-base-content/60">{ runLogFooter(len(shown), len(log.Entries)) }</p>
-		</div>
+		<p class="px-5 py-3 border-t border-base-content/10 text-sm text-base-content/70">{ runLogFooter(len(shown), len(log.Entries)) }</p>
 	</div>
 }
 
@@ -997,7 +1001,7 @@ templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
 	if entry.Kind == services.RunLogQuiet {
 		{{ t0, t1 := runLogSpan(entry, log) }}
 		<li
-			class="flex items-center gap-3 px-6 py-2 text-xs"
+			class="run-entry flex items-center gap-3 px-3 py-1.5 text-xs"
 			data-t0={ fmt.Sprint(t0) }
 			data-t1={ fmt.Sprint(t1) }
 		>
@@ -1009,14 +1013,12 @@ templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
 		{{ t0, t1 := runLogSpan(entry, log) }}
 		{{ multiline := entry.Kind == services.RunLogMessage || entry.Kind == services.RunLogUpload || entry.Submitted != "" }}
 		<li
-			class={ templ.KV("bg-base-200", index%2 == 0), templ.KV("bg-base-100", index%2 != 0) }
+			class={ "run-entry", templ.KV("run-entry-ok", runEntryTone(entry) == "ok"), templ.KV("run-entry-info", runEntryTone(entry) == "info") }
 			data-t0={ fmt.Sprint(t0) }
 			data-t1={ fmt.Sprint(t1) }
 		>
-			<div class={ "px-6 py-3 flex gap-4", templ.KV("items-start", multiline), templ.KV("items-center", !multiline) }>
-				<span class={ templ.KV("mt-0.5", multiline) }>
-					@runLogIcon(entry)
-				</span>
+			<div class={ "px-3 py-2.5 flex gap-3", templ.KV("items-start", multiline), templ.KV("items-center", !multiline) }>
+				@runLogIcon(entry)
 				@runLogBody(entry)
 				<span class="text-xs text-base-content/70 ml-auto whitespace-nowrap">{ runLogWait(entry.Gap) }</span>
 				<span class="text-xs text-base-content/60 text-right shrink-0 whitespace-nowrap tabular-nums">{ runLogTime(entry.Time, log) }</span>
@@ -1028,53 +1030,53 @@ templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
 templ runLogIcon(entry services.RunLogEntry) {
 	switch entry.Kind {
 		case services.RunLogStart:
-			<span class="text-base-content/60 shrink-0">
+			<span class="run-ico">
 				@icon("play", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogNamed:
-			<span class="text-base-content/60 shrink-0">
+			<span class="run-ico">
 				@icon("pen-line", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogListed:
-			<span class="text-base-content/60 shrink-0">
+			<span class="run-ico">
 				@icon("list", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogViewed:
-			<span class="text-base-content/60 shrink-0">
+			<span class="run-ico">
 				@icon("eye", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogAnswer:
 			if entry.Completed {
-				<span class="text-success shrink-0">
+				<span class="run-ico run-ico-ok">
 					@icon("check", templ.Attributes{"class": "w-4 h-4"})
 				</span>
 			} else {
-				<span class="text-warning shrink-0">
+				<span class="run-ico run-ico-warn">
 					@icon("circle-x", templ.Attributes{"class": "w-4 h-4"})
 				</span>
 			}
 		case services.RunLogComplete:
-			<span class="text-success shrink-0">
+			<span class="run-ico run-ico-ok">
 				@icon("circle-check", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogSection:
-			<span class="text-success shrink-0">
+			<span class="run-ico run-ico-ok">
 				@icon("flag", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogUpload:
-			<span class="text-base-content/60 shrink-0">
+			<span class="run-ico">
 				@icon("image", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogMessage:
-			<span class="text-info shrink-0">
+			<span class="run-ico run-ico-info">
 				@icon("megaphone", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogRead:
-			<span class="text-base-content/60 shrink-0">
+			<span class="run-ico">
 				@icon("check-check", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 		case services.RunLogFinish:
-			<span class="text-success shrink-0">
+			<span class="run-ico run-ico-ok">
 				@icon("trophy", templ.Attributes{"class": "w-4 h-4"})
 			</span>
 	}

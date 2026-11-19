@@ -234,3 +234,18 @@ func runLogUploadLabel(mediaType string) string {
 func runLogIsImage(mediaType string) bool {
 	return mediaType == string(models.MediaTypeImage)
 }
+
+// Wins read green and admin messages blue, so they stand out of a long log.
+func runEntryTone(entry services.RunLogEntry) string {
+	switch entry.Kind {
+	case services.RunLogComplete, services.RunLogSection, services.RunLogFinish:
+		return "ok"
+	case services.RunLogAnswer:
+		if entry.Completed {
+			return "ok"
+		}
+	case services.RunLogMessage:
+		return "info"
+	}
+	return ""
+}

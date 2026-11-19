@@ -5,6 +5,7 @@
 @import './map.css';
 @import './editor.css';
 @import './shell.css';
+@import './run.css';
 @import './player.css';
 
 @source "../../../internal/templates/admin";

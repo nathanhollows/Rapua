@@ -726,7 +726,7 @@ templ RunActivity(settings models.QuestSettings, team models.Run, notifications 
 	}
 	<label class="form-control w-full mt-3">
 		<form hx-post="/admin/notify/team/" hx-swap="none">
-			<input type="hidden" name="teamCode" value={ team.Code }/>
+			<input type="hidden" name="runCode" value={ team.Code }/>
 			<div class="join w-full">
 				<input class="input join-item w-full" name="content" placeholder="Message" autocomplete="off" autofocus="off" required/>
 				<button type="submit" class="btn btn-primary join-item rounded-r-full" onclick="announcement_modal.close()">

@@ -2,6 +2,7 @@
    theme_colours_test.go guards. Buttons set daisyUI's variables, not its
    properties, so a utility on one element still wins. */
 :root {
+  --hover-dim: color-mix(in oklab, black 6%, transparent);
   --line: color-mix(in oklab, var(--color-base-content) 13%, transparent);
   --line-strong: color-mix(in oklab, var(--color-base-content) 24%, transparent);
   --soft: color-mix(in oklab, var(--color-base-content) 66%, var(--color-base-100));
@@ -23,6 +24,7 @@
   font-weight: 500;
 }
 :root[data-theme="dracula"] {
+  --hover-dim: color-mix(in oklab, black 14%, transparent);
   --act: var(--color-primary); --act-on: var(--color-primary-content);
   --act-secondary: var(--color-secondary);
   --live: oklch(78% .17 148);
@@ -157,7 +159,6 @@
 
 .feed-list { display: grid; gap: .5rem; margin-top: .5rem; }
 .event { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .6rem .75rem; border-radius: 16px; background: var(--color-base-200); }
-.event:hover { background: var(--color-base-300); }
 .event-ok { background: color-mix(in oklab, var(--live) 10%, var(--color-base-100)); }
 .event-gold { background: color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100)); }
 .event-ico { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 11px; background: color-mix(in oklab, var(--color-base-100) 70%, transparent); color: var(--soft); }
@@ -166,8 +167,8 @@
 .empty { margin-top: .75rem; padding: 1.25rem; border: 1.5px dashed var(--line-strong); border-radius: 14px; text-align: center; color: var(--soft); }
 
 .runs { display: flex; flex-wrap: wrap; gap: .5rem; padding: .75rem; }
-.run-row { position: relative; flex: 1 1 100%; border-radius: 16px; background: var(--color-base-200); transition: background-color .15s; }
-.run-row:hover { background: var(--color-base-300); }
+.event:hover, .run-row:hover, .run-entry:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.run-row { position: relative; isolation: isolate; flex: 1 1 100%; border-radius: 16px; background: var(--color-base-200); transition: box-shadow .15s; }
 .run-link::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
 .run-link:focus-visible { outline: none; }
 .run-link:focus-visible::after { outline: 2px solid var(--color-base-content); outline-offset: -2px; }
@@ -181,7 +182,7 @@
 .unused-card:not(:has(.run-unused)) .copy-all { display: none; }
 .code-chip { padding: 0; background: none; }
 .code-chip { padding: .15rem .6rem; border-radius: 10px; background: var(--color-base-100); font: 700 .875rem ui-monospace, monospace; letter-spacing: .06em; }
-:root .filter .btn:checked { --btn-bg: var(--color-base-content); --btn-fg: var(--color-base-100); --btn-border: var(--color-base-content); --btn-shadow: 0 0 0 transparent; }
+:root .join .btn.btn-active, :root .filter .btn:checked { --btn-bg: var(--color-base-content); --btn-fg: var(--color-base-100); --btn-border: var(--color-base-content); --btn-shadow: 0 0 0 transparent; }
 
 :root .btn.credits-low { --btn-bg: color-mix(in oklab, var(--color-warning) 14%, var(--color-base-100)); }
 :root .btn.credits-none { --btn-bg: color-mix(in oklab, var(--color-error) 12%, var(--color-base-100)); }

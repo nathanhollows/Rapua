@@ -1,0 +1,153 @@
+/* ---- The run page's cadence strip ----------------------------------------
+   Time along the axis, cadence state as the colour. It says nothing about
+   what the run was doing, which is the point: under a free-roam frontier a
+   team may be on three objectives at once, and any strip built from "what
+   were they on" is inventing a serial story the log does not contain.
+   Width is real time, so the shape of one run compares with another's. */
+.heat {
+  display: flex;
+  height: 3rem;
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid var(--line-strong);
+  position: relative;
+}
+.hseg {
+  min-width: 3px;
+}
+.h-playing {
+  background: color-mix(in oklab, var(--live) 70%, var(--color-base-100));
+}
+.h-idle {
+  background: color-mix(in oklab, var(--color-info) 70%, var(--color-base-100));
+}
+.h-stalled {
+  background: color-mix(in oklab, var(--color-warning) 70%, var(--color-base-100));
+}
+.h-abandoned {
+  background: color-mix(in oklab, var(--color-error) 70%, var(--color-base-100));
+}
+
+/* The window marks the span of time the visible entries cover. Both edges
+   animate: left drives the left edge and width the right, since right is
+   left plus width. Short and ease-out, so it reads as sliding rather than
+   snapping, and still keeps up with a fast scroll. */
+.strip-window {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border: 2px solid var(--color-base-content);
+  border-radius: 10px;
+  box-shadow: 0 0 0 100vmax color-mix(in oklch, var(--color-base-100) 55%, transparent);
+  pointer-events: auto;
+  cursor: grab;
+  touch-action: none;
+  transition: left 150ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    width 150ms cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+.strip-window.dragging {
+  cursor: grabbing;
+}
+
+/* ---- The quest map on a run page -----------------------------------------
+   State carries the colour, because on a run page the question is "how far
+   have they got", not "how is this quest routed". Routing is a fact about the
+   parent and is drawn only where it governs something: on a section. */
+.map {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  font-size: 0.76rem;
+  max-height: 24rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+.maprow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.32rem 0.4rem;
+  border-radius: 0.4rem;
+}
+.maprow:hover {
+  background: color-mix(in oklch, var(--color-base-content) 5%, transparent);
+}
+
+/* Three states, told apart by shape first and colour second, so they survive
+   greyscale and a colour-blind reader. */
+.mapstate {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1rem;
+}
+.mapstate[data-state="done"] {
+  color: var(--color-success);
+}
+.mapstate[data-state="started"] {
+  color: var(--color-warning);
+}
+.mapstate[data-state="todo"] {
+  color: color-mix(in oklch, var(--color-base-content) 45%, transparent);
+}
+.mapstate[data-state="locked"] {
+  color: color-mix(in oklch, var(--color-base-content) 45%, transparent);
+}
+
+/* Muting is a colour, never opacity: faded text is just harder to read, and
+   the state already has its shape. */
+.mapname {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mapname.todo {
+  color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+}
+
+/* An excluded objective is not a dimmer todo: it is struck from the run, and
+   the strike is what shows a choice, or the finish, left it behind. */
+.mapname.excluded {
+  color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
+  text-decoration: line-through;
+}
+.maprole {
+  margin-left: auto;
+  flex: none;
+  font-size: 0.68rem;
+  color: color-mix(in oklch, var(--color-base-content) 80%, transparent);
+  font-variant-numeric: tabular-nums;
+}
+.maproute {
+  flex: none;
+  color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+}
+
+/* The log scrolls inside its own box rather than the page, which is what
+   keeps the strip above it in view while the entries move. */
+.runlog {
+  position: relative;
+  max-height: 34rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.stat-strip-5 { grid-template-columns: repeat(5, 1fr); }
+.stat-badge { display: flex; align-items: center; min-height: 3rem; }
+@media (max-width: 760px) {
+  .stat-strip-5 { grid-template-columns: 1fr 1fr; }
+  .stat-strip-5 .stat-cell:nth-child(5) { border-left: 0; }
+}
+
+.message { display: grid; gap: .25rem; padding: .7rem .9rem; border-radius: 16px; background: var(--tint-info); }
+.message small { color: var(--soft); }
+.message-done { background: var(--color-base-200); }
+
+.run-entry { border-radius: 14px; transition: box-shadow .15s; }
+.run-entry-ok { background: color-mix(in oklab, var(--live) 10%, var(--color-base-100)); }
+.run-entry-info { background: var(--tint-info); }
+.run-ico { display: grid; place-items: center; flex: none; width: 2rem; height: 2rem; border-radius: 11px; background: var(--color-base-200); color: var(--soft); }
+.run-entry-ok .run-ico, .run-entry-info .run-ico { background: color-mix(in oklab, var(--color-base-100) 70%, transparent); }
+.run-ico-ok { color: var(--live); }
+.run-ico-warn { color: var(--ico-warning); }
+.run-ico-info { color: var(--ico-info); }
