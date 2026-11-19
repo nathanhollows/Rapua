@@ -80,7 +80,7 @@ func Templates(templates []models.Quest) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"templates\" class=\"px-5\"><!-- Header --><div class=\"flex flex-row justify-between items-center w-full py-5 mt-6\"><h1 class=\"text-4xl font-black\">Templates<div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div id=\"templates\" class=\"px-5\"><!-- Header --><div class=\"flex flex-row justify-between items-center w-full py-5 mt-6\"><div class=\"flex items-center gap-1\"><h1 class=\"text-4xl font-black\">Templates</h1><div class=\"dropdown dropdown-hover\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle btn-ghost btn-xs text-info\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -88,7 +88,7 @@ func Templates(templates []models.Quest) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Templates</h2><p>Templates are blueprints that you can use to launch new quests quickly.</p><p>They contain all the settings, locations, and content of a quest, but do not include any teams or history.</p><p>Templates may not be edited once created, but you can create a new template from an existing quest at any time.</p></div></div></div></h1></div><div class=\"flex items-center gap-2 mb-3\"><span class=\"text-sm opacity-50\"><span id=\"template-count\" _=\"on htmx:afterSettle from body or keyup from #search-templates\n\t\t\t\t\tset my textContent to <.template-item:not( [style*='display: none'] )/>'s length\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div><div tabindex=\"0\" class=\"card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow\"><div tabindex=\"0\" class=\"card-body\"><h2 class=\"card-title\">Templates</h2><p>Templates are blueprints that you can use to launch new quests quickly.</p><p>They contain all the settings, locations, and content of a quest, but do not include any teams or history.</p><p>Templates may not be edited once created, but you can create a new template from an existing quest at any time.</p></div></div></div></div></div><div class=\"flex items-center gap-2 mb-3\"><span class=\"text-sm opacity-50\"><span id=\"template-count\" _=\"on htmx:afterSettle from body or keyup from #search-templates\n\t\t\t\t\tset my textContent to <.template-item:not( [style*='display: none'] )/>'s length\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

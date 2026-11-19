@@ -34,7 +34,7 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 // Migrated sections sit on base-200 so base-100 cards lift off it; the rest keep base-100, where their
 // bg-base-200 cards would vanish. Applied on #app because hx-boost never swaps body attributes.
 func shadedSection(section string) bool {
-	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Games and Templates"
+	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Quests"
 }
 
 templ header(title string) {
@@ -456,7 +456,7 @@ templ nav(user models.User, section string) {
 templ questSwitchButton(quest models.Quest, section string) {
 	<button
 		tabindex="0"
-		class={ "btn tooltip tooltip-bottom flex-nowrap min-w-0 max-w-full rounded-full", templ.KV("btn-active", section == "Games and Templates") }
+		class={ "btn tooltip tooltip-bottom flex-nowrap min-w-0 max-w-full rounded-full", templ.KV("btn-active", section == "Quests") }
 		if quest.ID != "" {
 			data-tip={ questSwitchTitle(quest) }
 			if quest.GetStatus() == models.Scheduled && !quest.StartTime.IsZero() {

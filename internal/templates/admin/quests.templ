@@ -2,16 +2,17 @@ package templates
 
 import (
 	"fmt"
-	"time"
 	"github.com/nathanhollows/Rapua/v8/models"
+	"time"
 )
 
 templ Instances(quests []models.Quest, currentQuest models.Quest, templates []models.Quest) {
 	<div class="flex flex-row justify-between items-center w-full p-5">
-		<h1 class="text-4xl font-black">
-			Games
+		<div class="flex items-center gap-1">
+			<h1 class="text-4xl font-black">Quests</h1>
 			<div class="dropdown dropdown-hover">
-				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">@icon("info", templ.Attributes{"class": "w-4 h-4"})</div>
+				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">@icon("info", templ.Attributes{"class": "w-4 h-4"})
+</div>
 				<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
 					<div tabindex="0" class="card-body">
 						<h2 class="card-title">Quests</h2>
@@ -21,7 +22,7 @@ templ Instances(quests []models.Quest, currentQuest models.Quest, templates []mo
 					</div>
 				</div>
 			</div>
-		</h1>
+		</div>
 		<span class="flex gap-2">
 			<button
 				class="btn"
@@ -272,28 +273,29 @@ templ InstanceName(quest models.Quest, active bool) {
 				<span class="badge badge-primary badge-sm">selected</span>
 			}
 		</div>
-			<div class="text-xs font-semibold opacity-60">
-				if !quest.StartTime.Time.IsZero() && !quest.EndTime.Time.IsZero() {
-					if quest.StartTime.Time.Year() == quest.EndTime.Time.Year() {
-						{ quest.StartTime.Time.Local().Format("02 Jan") } – { quest.EndTime.Time.Local().Format("02 Jan 2006") }
-					} else {
-						{ quest.StartTime.Time.Local().Format("02 Jan 2006") } – { quest.EndTime.Time.Local().Format("02 Jan 2006") }
-					}
-				} else if !quest.StartTime.Time.IsZero() {
-					if quest.StartTime.Time.After(time.Now()) {
-						Starts { quest.StartTime.Time.Local().Format("02 Jan 2006") }
-					} else {
-						Started { quest.StartTime.Time.Local().Format("02 Jan 2006") }
-					}
-				} else if !quest.EndTime.Time.IsZero() {
-					Ends { quest.EndTime.Time.Local().Format("02 Jan 2006") }
+		<div class="text-xs font-semibold opacity-60">
+			if !quest.StartTime.Time.IsZero() && !quest.EndTime.Time.IsZero() {
+				if quest.StartTime.Time.Year() == quest.EndTime.Time.Year() {
+					{ quest.StartTime.Time.Local().Format("02 Jan") } – { quest.EndTime.Time.Local().Format("02 Jan 2006") }
+				} else {
+					{ quest.StartTime.Time.Local().Format("02 Jan 2006") } – { quest.EndTime.Time.Local().Format("02 Jan 2006") }
 				}
-			</div>
+			} else if !quest.StartTime.Time.IsZero() {
+				if quest.StartTime.Time.After(time.Now()) {
+					Starts { quest.StartTime.Time.Local().Format("02 Jan 2006") }
+				} else {
+					Started { quest.StartTime.Time.Local().Format("02 Jan 2006") }
+				}
+			} else if !quest.EndTime.Time.IsZero() {
+				Ends { quest.EndTime.Time.Local().Format("02 Jan 2006") }
+			}
+		</div>
 	</div>
 }
 
 templ InstanceNameEdit(quest models.Quest) {
-	<form id={ fmt.Sprint("name-", quest.ID) }
+	<form
+		id={ fmt.Sprint("name-", quest.ID) }
 		hx-post={ fmt.Sprint("/admin/quests/", quest.ID, "/edit/name") }
 		hx-target={ fmt.Sprint("#name-", quest.ID) }
 		hx-swap="outerHTML"
@@ -318,7 +320,6 @@ templ InstanceNameEdit(quest models.Quest) {
 				hx-target={ fmt.Sprint("#name-", quest.ID) }
 				hx-swap="outerHTML"
 				class="btn btn-xs btn-circle"
-				
 			>
 				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
 			</button>

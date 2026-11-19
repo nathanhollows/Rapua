@@ -30,7 +30,7 @@ func (h *Handler) Quests(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Instances(user.Quests, user.CurrentQuest, gameTemplates)
-	err = templates.Layout(c, *user, "Games and Templates", "Games and Templates").Render(r.Context(), w)
+	err = templates.Layout(c, *user, "Quests", "Quests").Render(r.Context(), w)
 	if err != nil {
 		h.handleError(
 			w,

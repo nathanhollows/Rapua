@@ -177,7 +177,9 @@
 
 .runs, .row-list { display: flex; flex-wrap: wrap; gap: .5rem; padding: .75rem; }
 .event:hover, .run-row:hover, .list-row:hover, .run-entry:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
-.run-row, .list-row { position: relative; isolation: isolate; flex: 1 1 100%; border-radius: 16px; background: var(--color-base-200); transition: box-shadow .15s; }
+.run-row, .list-row { position: relative; flex: 1 1 100%; border-radius: 16px; background: var(--color-base-200); transition: box-shadow .15s; }
+.run-row { isolation: isolate; }
+.list-row:focus-within { z-index: 2; }
 .run-link::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
 .run-link:focus-visible { outline: none; }
 .run-link:focus-visible::after { outline: 2px solid var(--color-base-content); outline-offset: -2px; }
