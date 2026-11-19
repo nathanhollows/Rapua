@@ -20,7 +20,7 @@ func writePreview(t *testing.T, path, page string) {
 	t.Helper()
 	wd, err := os.Getwd()
 	require.NoError(t, err)
-	css := "file://" + filepath.Join(wd, "..", "..", "..", "static", "css", "tailwind.css")
+	css := "file://" + filepath.Join(wd, "..", "..", "..", "static", "css", "admin.css")
 
 	doc := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en" data-theme="dracula">

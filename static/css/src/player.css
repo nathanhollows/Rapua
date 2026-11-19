@@ -1,0 +1,446 @@
+/* Player shell tokens.
+   A tile's face, edge and icon are one hue at three lightnesses; the hue is set
+   per section (--h) from the palette in internal/templates/players/hues.go.
+   Scoped to .player so the admin, which shares these themes, is untouched.
+   Dark is darker than dracula's own ground so a tile reads as raised. --iol is
+   the icon glyph, dark on a bright tile in both themes (a light glyph on the
+   dark tile measures about 2:1). hues_test.go holds these to contrast floors.
+
+   --tint, --edge and --ico are declared again wherever --h changes (.q-sec): a
+   custom property using var() resolves on the element that holds it, so
+   children setting --h would otherwise see the parent's colours. */
+.player {
+  --tl: 94.5%; --tc: .05;
+  --el: 82%;   --ec: .09;
+  --il: 82%;   --ic: .12;
+  --iol: 22%;
+  --dl: 68%;
+  --al-i-bg: oklch(86% .075 235); --al-w-bg: oklch(90% .13 88);
+  --al-s-bg: oklch(86% .1 150); --al-e-bg: oklch(86% .09 27); --al-on: oklch(22% .03 260);
+  --h: 135;
+  --tint: oklch(var(--tl) var(--tc) var(--h));
+  --edge: oklch(var(--el) var(--ec) var(--h));
+  --ico: oklch(var(--il) var(--ic) var(--h));
+  --ico-on: oklch(var(--iol) .06 var(--h));
+  --soft: color-mix(in oklab, var(--color-base-content) 88%, var(--color-base-100));
+  --hair: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+  --sd: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  .player {
+    --color-base-100: oklch(25% 0.016 277.508);
+    --color-base-200: oklch(21.5% 0.014 277.508);
+    --color-base-300: oklch(18.5% 0.012 277.508);
+    --tl: 36%; --tc: .085;
+    --el: 24%; --ec: .06;
+    --il: 72%; --ic: .15;
+    --iol: 16%;
+    --dl: 78%;
+    --al-i-bg: oklch(36% .09 245); --al-w-bg: oklch(40% .09 80);
+    --al-s-bg: oklch(36% .09 150); --al-e-bg: oklch(38% .1 27); --al-on: oklch(97% .01 100);
+    --sd: oklch(10% 0.012 277.508 / .9);
+  }
+}
+/* The admin picks its theme by attribute, so its preview must follow it. */
+[data-theme="dracula"] .player {
+  --color-base-100: oklch(25% 0.016 277.508);
+  --color-base-200: oklch(21.5% 0.014 277.508);
+  --color-base-300: oklch(18.5% 0.012 277.508);
+  --tl: 36%; --tc: .085;
+  --el: 24%; --ec: .06;
+  --il: 72%; --ic: .15;
+  --iol: 16%;
+  --dl: 78%;
+  --al-i-bg: oklch(36% .09 245); --al-w-bg: oklch(40% .09 80);
+  --al-s-bg: oklch(36% .09 150); --al-e-bg: oklch(38% .1 27); --al-on: oklch(97% .01 100);
+  --sd: oklch(10% 0.012 277.508 / .9);
+}
+[data-theme="cupcake"] .player {
+  --color-base-100: inherit; --color-base-200: inherit; --color-base-300: inherit;
+  --tl: 94.5%; --tc: .05;
+  --el: 82%;   --ec: .09;
+  --il: 82%;   --ic: .12;
+  --iol: 22%;
+  --dl: 68%;
+  --al-i-bg: oklch(86% .075 235); --al-w-bg: oklch(90% .13 88);
+  --al-s-bg: oklch(86% .1 150); --al-e-bg: oklch(86% .09 27); --al-on: oklch(22% .03 260);
+  --sd: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+}
+
+/* One class per hue, so no number passes through the style sanitiser. */
+.q-h15 { --h: 15; } .q-h60 { --h: 60; } .q-h105 { --h: 105; } .q-h150 { --h: 150; }
+.q-h195 { --h: 195; } .q-h240 { --h: 240; } .q-h285 { --h: 285; } .q-h330 { --h: 330; }
+
+.player .q-sec {
+  --tint: oklch(var(--tl) var(--tc) var(--h));
+  --edge: oklch(var(--el) var(--ec) var(--h));
+  --ico: oklch(var(--il) var(--ic) var(--h));
+  --ico-on: oklch(var(--iol) .06 var(--h));
+}
+.player .q-soft { color: var(--soft); }
+
+/* Headings. The group is the loudest type; the section under it is one step
+   down with a dot in its hue, so colour tells sections apart without a box. */
+.player .q-group { margin: 0; font-size: 30px; font-weight: 800; line-height: 1.1; letter-spacing: -.035em; text-wrap: balance; }
+.player .q-head { margin: 0; font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -.03em; text-wrap: balance; }
+.player .q-head-sub { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; letter-spacing: -.025em; }
+.player .q-head-sub::before { content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%; background: oklch(var(--dl) .15 var(--h)); }
+.player .q-pill { padding: 3px 12px; border-radius: 999px; background: oklch(var(--tl) calc(var(--tc) * 1.8) var(--h)); font-size: 15px; font-weight: 800; }
+
+/* A task: raised, and the only raised thing that is a link. Pressing drops the
+   face by its edge height so the bottom stays put. */
+.player .q-tile {
+  --lift: 4px; --pc: var(--edge);
+  position: relative; display: flex; align-items: center; gap: 14px;
+  min-height: 76px; padding: 14px 14px 14px 12px; border-radius: 22px;
+  background: var(--tint); color: var(--color-base-content);
+  box-shadow: 0 var(--lift) 0 var(--pc);
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-tile:active, .player .q-fin:active { transform: translateY(var(--lift)); box-shadow: 0 0 0 var(--pc); }
+.player .q-tile:focus-visible, .player .q-fin:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+.player .q-top { display: flex; align-items: center; gap: 14px; }
+.player .q-ico {
+  flex: none; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 16px;
+  background: var(--ico); color: var(--ico-on); box-shadow: 0 3px 0 var(--edge);
+}
+.player .q-ico svg { width: 26px; height: 26px; }
+.player .q-title { font-size: 20px; font-weight: 700; line-height: 1.2; letter-spacing: -.015em; text-wrap: pretty; }
+.player .q-desc { font-size: 16px; font-weight: 500; line-height: 1.3; text-wrap: pretty; }
+.player .q-hero { --lift: 6px; flex-direction: column; align-items: stretch; gap: 14px; min-height: 196px; padding: 20px 18px 18px; border-radius: 28px; }
+.player .q-hero .q-ico { width: 64px; height: 64px; border-radius: 20px; }
+.player .q-hero .q-ico svg { width: 34px; height: 34px; }
+.player .q-over { font-size: 15px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.player .q-hero .q-title { font-size: 28px; font-weight: 800; letter-spacing: -.025em; }
+.player .q-hero .q-desc { font-size: 17px; }
+.player .q-go { display: flex; align-items: center; gap: 8px; margin-top: auto; font-size: 18px; font-weight: 800; }
+
+/* The way out of a met band: an "or", then one loud button. Green is the
+   finishing colour everywhere, so success and not the section's hue. */
+.player .q-or { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 700; color: var(--soft); }
+.player .q-or::before, .player .q-or::after { content: ""; flex: 1; border-top: 3px dotted var(--hair); }
+.player .q-fin {
+  --lift: 5px; --pc: color-mix(in oklab, var(--color-success) 55%, black);
+  width: 100%; min-height: 64px; padding: 12px 16px; border: 0; border-radius: 20px;
+  background: var(--color-success); color: var(--color-success-content);
+  font: 800 21px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em; text-wrap: balance;
+  box-shadow: 0 var(--lift) 0 var(--pc); cursor: pointer;
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .player .q-tile, .player .q-fin { transition: none; }
+}
+
+/* A task's page: screen height less layout padding (pt-4, pb-24 clearing the
+   dock), so "Back to the quest" sits at the bottom when content is short. */
+.player .q-page { min-height: calc(100dvh - 7rem); }
+
+/* The reveal takes no hue: the group is no help once it is being read.
+   Dropping chroma is enough since tiles are built from it. */
+.player .q-neutral { --tc: 0; --ec: 0; --ic: 0; }
+
+/* An interactive block draws its own card: a raised, tinted face means this
+   wants something from you. Overrides daisyUI's flat fill so it follows the
+   section. */
+.player .block-view .card.shadow-lg {
+  background: var(--tint); color: var(--color-base-content);
+  border-radius: 22px; box-shadow: 0 4px 0 var(--edge);
+}
+
+.player .q-back {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 60px; padding: 10px 16px; border-radius: 20px;
+  background: var(--color-base-100); color: var(--color-base-content);
+  font: 800 19px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em;
+  box-shadow: 0 4px 0 var(--sd);
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-back:active { transform: translateY(4px); box-shadow: 0 0 0 var(--sd); }
+.player .q-back:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+
+/* The notice that the page is about to change: fixed above the dock, a bar
+   draining over the wait, the page behind dimmed. */
+.player .q-toast {
+  position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  width: min(calc(100% - 2rem), 26rem); overflow: hidden;
+  display: flex; align-items: center; gap: 12px; padding: 16px 16px 20px;
+  border: 0; border-radius: 20px; text-align: left;
+  background: var(--color-success); color: var(--color-success-content);
+  font: 800 18px/1.2 ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 5px 0 color-mix(in oklab, var(--color-success) 55%, black), 0 16px 24px -12px rgba(0,0,0,.4);
+  animation: q-toastin .25s cubic-bezier(.3,1.4,.5,1);
+}
+.player .q-toast i {
+  position: absolute; left: 0; bottom: 0; width: 100%; height: 6px;
+  background: color-mix(in oklab, var(--color-success-content) 55%, transparent);
+  transform-origin: left; animation: q-drain 1.7s linear forwards;
+}
+@keyframes q-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes q-toastin { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.player .q-dim { transition: opacity 1.7s linear; }
+.player .q-page:has(.q-toast) .q-dim { opacity: .45; }
+@media (prefers-reduced-motion: reduce) {
+  .player .q-toast { animation: none; }
+  .player .q-dim, .player .q-back { transition: none; }
+}
+
+/* Journal and You. Raised means it does something (a find reopens its page, the
+   pencil renames); everything else is flat so a fact never looks like a button. */
+.player .q-label { font-size: 15px; font-weight: 700; letter-spacing: .02em; color: var(--soft); }
+
+.player .q-chips { display: flex; gap: 8px; overflow-x: auto; margin-inline: -1rem; padding: 4px 1rem 6px; scrollbar-width: none; }
+.player .q-chips::-webkit-scrollbar { display: none; }
+.player .q-chip {
+  flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px;
+  border: 2px solid var(--hair); border-radius: 999px; white-space: nowrap;
+  font: 700 16px/1 ui-rounded, system-ui, sans-serif; color: var(--color-base-content);
+}
+.player .q-chip-on { background: var(--color-base-content); border-color: var(--color-base-content); color: var(--color-base-100); }
+.player .q-chip:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+
+.player .q-flat {
+  display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 14px 16px; border-radius: 22px;
+  background: var(--color-base-100); color: var(--color-base-content);
+}
+.player .q-flat .q-ico { background: var(--color-base-300); color: var(--color-base-content); box-shadow: none; }
+.player .q-flat.q-mile { background: var(--tint); }
+.player .q-flat.q-mile .q-ico { background: var(--ico); color: var(--ico-on); }
+.player .q-flat.q-won { background: var(--color-success); color: var(--color-success-content); min-height: 88px; }
+.player .q-flat.q-won .q-ico { background: var(--color-base-100); color: var(--color-base-content); }
+.player .q-flat.q-won .q-title { font-size: 24px; font-weight: 800; }
+.player .q-flat.q-won .q-desc { color: var(--color-success-content); }
+.player .q-pts {
+  display: inline-block; margin-left: 8px; padding: 1px 10px; border-radius: 999px;
+  background: var(--color-success); color: var(--color-success-content); font-weight: 800; font-variant-numeric: tabular-nums;
+}
+
+.player .q-pencil {
+  flex: none; width: 52px; height: 52px; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: var(--color-base-100); color: var(--color-base-content); box-shadow: 0 3px 0 var(--sd); cursor: pointer;
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-pencil:active { transform: translateY(3px); box-shadow: 0 0 0 var(--sd); }
+.player .q-pencil:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+
+.player .q-rename { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 22px; background: var(--color-base-100); box-shadow: 0 3px 0 var(--sd); }
+.player .q-input {
+  min-height: 56px; padding: 0 16px; border: 2px solid var(--hair); border-radius: 16px;
+  background: var(--color-base-200); color: var(--color-base-content); font: 700 20px ui-rounded, system-ui, sans-serif;
+}
+.player .q-input:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+
+.player .q-char {
+  flex: 1; max-width: 64px; height: 72px; display: grid; place-items: center; border-radius: 18px;
+  background: var(--color-base-100); box-shadow: 0 3px 0 var(--sd);
+  font: 800 32px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.player .q-stat { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px 16px; border-radius: 22px; background: var(--color-base-100); box-shadow: 0 3px 0 var(--sd); }
+.player .q-num { font: 800 32px/1.1 ui-rounded, system-ui, sans-serif; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.player .q-of { font-size: 18px; font-weight: 600; color: var(--soft); letter-spacing: 0; }
+
+.player .q-lb { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 16px; border-radius: 18px; background: var(--color-base-100); font-size: 18px; font-weight: 600; }
+.player .q-lb-me { background: var(--tint); font-weight: 800; }
+.player .q-rk { width: 28px; flex: none; font-variant-numeric: tabular-nums; color: var(--soft); }
+.player .q-sc { font-weight: 800; font-variant-numeric: tabular-nums; }
+.player .q-you { margin-left: 8px; padding: 1px 10px; border-radius: 999px; background: var(--color-base-content); color: var(--color-base-100); font-size: 15px; font-style: normal; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .player .q-pencil { transition: none; } }
+
+/* q-act is the one thing to do, in the action colour; q-alt is the quieter way
+   round it. Both press like a tile. */
+.player .q-act, .player .q-alt {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-height: 60px; padding: 10px 20px; border-radius: 20px;
+  font: 800 20px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em; cursor: pointer;
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-act {
+  --lift: 5px; --pc: color-mix(in oklab, var(--color-primary) 55%, black);
+  border: 0; background: var(--color-primary); color: var(--color-primary-content);
+  box-shadow: 0 var(--lift) 0 var(--pc);
+}
+.player .q-act-fit { width: auto; flex: none; }
+.player .q-alt {
+  --lift: 0px; --pc: transparent;
+  border: 2px solid var(--hair); background: transparent; color: var(--color-base-content);
+  font-size: 18px; font-weight: 700;
+}
+.player .q-act:active { transform: translateY(var(--lift)); box-shadow: 0 0 0 var(--pc); }
+.player .q-act:focus-visible, .player .q-alt:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .player .q-act, .player .q-alt { transition: none; } }
+
+/* The blocks draw daisyUI buttons, fields, options and alerts; this skins them
+   as raised, large, high-contrast like the tiles. Unlayered, so it beats
+   daisyUI's layer whatever the specificity. */
+.player .btn {
+  --pc: var(--sd);
+  min-height: 56px; height: auto; padding: 10px 22px; border-radius: 20px; border: 0;
+  font: 800 19px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em;
+  box-shadow: 0 4px 0 var(--pc);
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .btn:not(.btn-circle):active { transform: translateY(4px); box-shadow: 0 0 0 var(--pc); }
+.player .btn:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+.player .btn-sm { min-height: 48px; font-size: 17px; padding: 8px 18px; }
+.player .btn-primary { --pc: color-mix(in oklab, var(--color-primary) 55%, black); background: var(--color-primary); color: var(--color-primary-content); }
+.player .btn-secondary { --pc: color-mix(in oklab, var(--color-secondary) 55%, black); background: var(--color-secondary); color: var(--color-secondary-content); }
+.player .btn-accent { --pc: color-mix(in oklab, var(--color-accent) 55%, black); background: var(--color-accent); color: var(--color-accent-content); }
+.player .btn-success { --pc: color-mix(in oklab, var(--color-success) 55%, black); background: var(--color-success); color: var(--color-success-content); }
+.player .btn-info { --pc: color-mix(in oklab, var(--color-info) 55%, black); background: var(--color-info); color: var(--color-info-content); }
+.player .btn-warning { --pc: color-mix(in oklab, var(--color-warning) 55%, black); background: var(--color-warning); color: var(--color-warning-content); }
+.player .btn-error { --pc: color-mix(in oklab, var(--color-error) 55%, black); background: var(--color-error); color: var(--color-error-content); }
+.player .btn-ghost, .player .btn-outline, .player .btn-neutral {
+  --pc: transparent; background: transparent; color: var(--color-base-content);
+  border: 2px solid var(--hair); box-shadow: none; font-weight: 700;
+}
+.player .btn-circle { border-radius: 999px; min-height: 0; box-shadow: none; }
+.player .btn[disabled], .player .btn-disabled { opacity: .5; box-shadow: none; }
+
+.player .input, .player .textarea, .player .select {
+  min-height: 56px; border: 2px solid var(--hair); border-radius: 16px;
+  background: var(--color-base-200); color: var(--color-base-content);
+  font-size: 18px; font-weight: 600; box-shadow: none;
+}
+.player .input:focus, .player .input:focus-within, .player .textarea:focus, .player .select:focus {
+  outline: 3px solid var(--color-base-content); outline-offset: 2px; border-color: transparent;
+}
+
+/* Options: a whole row to tap, raised when taken. Written against the label
+   holding the input, so every block that offers a choice gets it. */
+.player .block-view label:has(> input[type="radio"]), .player .block-view label:has(> input[type="checkbox"]) {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 12px 16px;
+  border: 2px solid var(--hair); border-radius: 20px; background: var(--color-base-100);
+  font-size: 19px; font-weight: 700; cursor: pointer; color: var(--color-base-content);
+}
+/* An option's words wrap in the room left, so a long label never pushes the
+   control or a verdict pill out of the row. */
+.player .block-view label:has(> input[type="radio"]) > :not(input), .player .block-view label:has(> input[type="checkbox"]) > :not(input) { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+.player .block-view label:has(> input[type="radio"]) > input, .player .block-view label:has(> input[type="checkbox"]) > input { flex: none; }
+.player .block-view label:has(> input:checked) { border-color: transparent; background: var(--tint); box-shadow: 0 3px 0 var(--edge); font-weight: 800; }
+.player .block-view label:has(> input:focus-visible) { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+.player .radio, .player .checkbox { --size: 1.75rem; }
+
+/* Alerts must be seen: full colour, raised, large type. daisyUI's soft alerts
+   read as a grey bar. */
+.player .alert {
+  border: 0; border-radius: 22px; padding: 16px 18px; gap: 14px;
+  background: var(--al-i-bg); color: var(--al-on); --alert-color: var(--al-on);
+  font-size: 18px; font-weight: 700; line-height: 1.45; box-shadow: 0 4px 0 var(--sd);
+}
+.player .alert-success { background: var(--al-s-bg); }
+.player .alert-warning { background: var(--al-w-bg); }
+.player .alert-error { background: var(--al-e-bg); }
+.player .alert svg { width: 26px; height: 26px; stroke: currentColor; }
+
+.player .prose { --tw-prose-body: var(--color-base-content); --tw-prose-headings: var(--color-base-content); --tw-prose-bold: var(--color-base-content); font-size: 1.125rem; line-height: 1.5; }
+
+/* The dock: three big targets, the current one raised in the tint. */
+.player .dock {
+  height: calc(76px + env(safe-area-inset-bottom, 0px)); gap: 6px;
+  padding: 10px max(12px, calc((100% - 28rem) / 2)) calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--color-base-100); border-top: 0; box-shadow: 0 -8px 20px -14px rgba(0,0,0,.4);
+}
+.player .dock > * { margin-bottom: 0; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 18px; color: var(--soft); }
+.player .dock .dock-label { font-size: 15px; font-weight: 700; }
+.player .dock svg { width: 26px; height: 26px; }
+.player .dock > .dock-active { background: var(--tint); color: var(--color-base-content); }
+.player .dock > .dock-active .dock-label { font-weight: 800; }
+.player .dock > .dock-active::after { display: none; }
+
+/* Static blocks and the remaining pieces of block chrome. */
+.player .block-view header h1 { font-weight: 800; letter-spacing: -.03em; line-height: 1.15; text-wrap: balance; }
+.player .block-view header h1.text-2xl { font-size: 30px; }
+.player .block-view header h1.text-xl { font-size: 26px; }
+.player .block-view header h1.text-lg { font-size: 22px; }
+.player .block-view figure img { border-radius: 24px; box-shadow: none; }
+.player .block-view figcaption { font-size: 15px; font-weight: 600; color: var(--soft); }
+/* A full-width image bleeds past the 1rem gutter; the block assumes 1.5rem and
+   would spill half a rem a side. */
+.player main figure[class*="calc(100%+3rem)"] { width: calc(100% + 2rem); margin-inline: -1rem; }
+.player main figure[class*="calc(100%+3rem)"] img { border-radius: 0; }
+.player .divider { font-size: 15px; font-weight: 700; color: var(--soft); }
+.player .divider::before, .player .divider::after { height: 0; background: none; border-top: 3px dotted var(--hair); }
+.player .collapse { border: 2px solid var(--hair); border-radius: 20px; background: var(--color-base-100); }
+.player .collapse-title { min-height: 56px; font-size: 18px; font-weight: 700; }
+.player .badge { height: 1.75rem; padding: 0 12px; font-size: 14px; font-weight: 800; }
+
+/* A pincode is one box per digit, as large as a thumb. */
+.player .block-view input[name="pincode"].input {
+  flex: 1; min-width: 0; width: auto; height: 72px; padding: 0; border-radius: 20px;
+  font: 800 36px ui-monospace, SFMono-Regular, Menlo, monospace; text-align: center;
+}
+
+/* The finish page's header is flat: the one loud thing on the page is the
+   button, so green is saved for what the player should press. */
+.player .q-finish {
+  display: flex; align-items: center; gap: 16px; padding: 20px 18px;
+  border-radius: 28px; background: var(--color-base-100); color: var(--color-base-content);
+  box-shadow: 0 4px 0 var(--sd);
+}
+.player .q-finish-ico {
+  flex: none; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px;
+  background: var(--ico); color: var(--ico-on); box-shadow: 0 4px 0 var(--edge);
+}
+.player .q-finish-ico svg { width: 34px; height: 34px; }
+.player .q-finish-title { margin: 0; font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -.03em; text-wrap: balance; }
+.player .q-finish-pts { margin: 4px 0 0; font-size: 20px; font-weight: 700; color: var(--soft); font-variant-numeric: tabular-nums; }
+.player a.q-fin { display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
+
+/* Option rows need a margin: the label rule gave each a height and none, and
+   daisyUI's form-control no longer lays them out. */
+.player .block-view :is(label:has(> input[type="radio"]), label:has(> input[type="checkbox"])) + :is(label:has(> input[type="radio"]), label:has(> input[type="checkbox"])) { margin-top: 12px; }
+
+/* A field and its button stack: a daisyUI join would fight for one row at this
+   size. */
+.player .join { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.player .join > .input, .player .join > input, .player .join > .btn { width: 100%; max-width: none; border-radius: 16px; }
+.player .join > .btn { border-radius: 20px; }
+.player .join > .btn-primary { --pc: color-mix(in oklab, var(--color-primary) 55%, black); background: var(--color-primary); color: var(--color-primary-content); border: 0; box-shadow: 0 4px 0 var(--pc); }
+
+/* The pincode's boxes: daisyUI sizes them from the font and a fixed height, so
+   both are raised, with corners squared off from an oval. */
+.player .otp { font-size: 2.5rem; --otp-size: 4.25rem; border-radius: 18px; }
+.player .otp > span { border-radius: 18px; }
+
+/* The small buttons are small on purpose, in a row of controls. */
+.player .btn-xs { min-height: 44px; min-width: 44px; padding: 0 10px; font-size: 16px; border-radius: 14px; }
+.player .sort-container .join { flex-direction: row; width: auto; gap: 8px; }
+.player .sort-container .join > .btn { width: 48px; border-radius: 14px; }
+
+/* The start and link buttons are the call to action, so they fill the width. */
+.player .block-view .text-center > .btn:not(.btn-circle) { width: 100%; }
+.player .otp { margin-inline: auto; }
+
+/* Stars: daisyUI draws unchosen ones at 20% opacity, near invisible on a tinted
+   card. */
+.player .rating * { opacity: .4; }
+.player .rating :checked, .player .rating [aria-checked="true"], .player .rating [aria-current="true"],
+.player .rating :has(~ :checked, ~ [aria-checked="true"], ~ [aria-current="true"]) { opacity: 1; }
+.player .rating-lg { --size: 2.75rem; }
+.player .rating-xl { --size: 3rem; }
+
+/* A form's submit is the thing to press, so it fills the card like the rest. */
+.player .block-view .card button[type="submit"].btn { width: 100%; }
+
+/* An answered quiz shows each option with its verdict in words: colour alone
+   measured about 2.5:1 on a tinted card. The row stays plain instead of taking
+   the chosen-option fill. */
+.player .block-view label:has(> input:disabled) {
+  background: var(--color-base-100); border: 2px solid var(--hair); box-shadow: none;
+  color: var(--color-base-content); font-weight: 700; cursor: default;
+}
+.player .block-view label:has(> input:disabled).text-success,
+.player .block-view label:has(> input:disabled).text-error,
+.player .block-view label:has(> input:disabled) .text-success,
+.player .block-view label:has(> input:disabled) .text-error { color: var(--color-base-content); }
+.player .block-view label:has(> input:disabled).text-success::after,
+.player .block-view label:has(> input:disabled).text-error::after {
+  margin-left: 42px; padding: 2px 12px; border-radius: 999px; font-size: 15px; font-weight: 800;
+  flex: none; white-space: nowrap;
+}
+/* The verdict sits under the words on every row: beside them it would take a
+   third of a narrow row and make short and long labels differ. */
+.player .block-view label:has(> input:disabled) { flex-wrap: wrap; row-gap: 8px; }
+.player .block-view label:has(> input:disabled) > :not(input) { flex-basis: calc(100% - 42px); }
+.player .block-view label:has(> input:disabled).text-success::after { content: "Correct"; background: var(--color-success); color: var(--color-success-content); }
+.player .block-view label:has(> input:disabled).text-error::after { content: "Not this one"; background: var(--color-error); color: var(--color-error-content); }

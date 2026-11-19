@@ -62,7 +62,7 @@ func contrast(a, b [3]float64) float64 {
 // The first .player block is light and the one in the dark media query is dark.
 func playerTokens(t *testing.T) (light, dark map[string]float64) {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "src", "player.css"))
 	require.NoError(t, err)
 	css := string(raw)
 
@@ -83,7 +83,7 @@ func playerTokens(t *testing.T) (light, dark map[string]float64) {
 
 	darkBlock := regexp.MustCompile(`(?s)prefers-color-scheme: dark\) \{\s*\.player \{(.*?)\n\s*\}`)
 	dm := darkBlock.FindStringSubmatch(css)
-	require.NotNil(t, dm, "no dark .player block in main.css")
+	require.NotNil(t, dm, "no dark .player block in player.css")
 	merged := map[string]float64{}
 	for k, v := range light {
 		merged[k] = v
@@ -97,7 +97,7 @@ func playerTokens(t *testing.T) (light, dark map[string]float64) {
 // The admin picks its theme by attribute: a mismatch would preview colours the
 // game never shows.
 func TestPlayerTokens_AttributeBlocksMatchTheirMediaQuery(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "src", "player.css"))
 	require.NoError(t, err)
 	css := string(raw)
 	token := regexp.MustCompile(`--(?:tl|tc|el|ec|il|ic|iol|dl|al-[iwse]-bg|al-on|color-base-[123]):\s*[^;]+;`)
@@ -139,7 +139,7 @@ func TestQuestHues_MeetContrastFloors(t *testing.T) {
 
 // Read from the CSS so it cannot drift from what ships.
 func TestPlayerAlerts_MeetContrastInBothThemes(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "src", "player.css"))
 	require.NoError(t, err)
 	css := string(raw)
 

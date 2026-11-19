@@ -403,7 +403,7 @@ func ActivityTracker(quest models.Quest, summaries map[string]services.RunSummar
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div><div class=\"adm-split px-5\"><div class=\"w-full min-w-0 overflow-x-hidden\"><!-- No padding below the table, and clipped to the card's corners:\n\t\t\tthe rows run edge to edge, so the last one ends the card rather\n\t\t\tthan leaving a strip of padding under it. --><div class=\"card adm-card overflow-hidden\"><div class=\"card-body p-5\"><div class=\"flex items-center justify-between mb-2\"><h2 class=\"card-title text-2xl font-extrabold flex items-center gap-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div><div class=\"split px-5\"><div class=\"w-full min-w-0 overflow-x-hidden\"><!-- No padding below the table, and clipped to the card's corners:\n\t\t\tthe rows run edge to edge, so the last one ends the card rather\n\t\t\tthan leaving a strip of padding under it. --><div class=\"card panel overflow-hidden\"><div class=\"card-body p-5\"><div class=\"flex items-center justify-between mb-2\"><h2 class=\"card-title text-2xl font-extrabold flex items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -418,7 +418,7 @@ func ActivityTracker(quest models.Quest, summaries map[string]services.RunSummar
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</h2><label class=\"input flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams-activity\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\t\ton input or load\n\t\t\t\t\t\t\t\t\tshow .team-activity-row\n\t\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search-activity\n\t\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"> <button id=\"clear-search-activity\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\t\tinit if #search-teams-activity's value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\t\tset #search-teams-activity's value to ''\n\t\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\t\tsend input to #search-teams-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div><div class=\"overflow-x-auto -mx-2 px-2\"><table id=\"team-activity\" class=\"table adm-rows w-full h-auto self-start\" hx-get=\"/admin/activity/runs\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"load\"></table></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</h2><label class=\"input flex items-center gap-2 w-60\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-search w-4 h-4\"><circle cx=\"11\" cy=\"11\" r=\"8\"></circle><path d=\"m21 21-4.3-4.3\"></path></svg> <input id=\"search-teams-activity\" type=\"text\" class=\"grow\" placeholder=\"Search\" _=\"\n\t\t\t\t\t\t\t\tinit send input to me\n\t\t\t\t\t\t\t\ton input or load\n\t\t\t\t\t\t\t\t\tshow .team-activity-row\n\t\t\t\t\t\t\t\t\t\twhen its textContent.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\t\tcontains my value.toLowerCase().normalize('NFD')\n\t\t\t\t\t\t\t\t\tif my value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from #clear-search-activity\n\t\t\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\t\t\tadd .invisible to #clear-search-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"> <button id=\"clear-search-activity\" role=\"button\" class=\"btn btn-ghost btn-xs btn-circle invisible -mr-2\" type=\"reset\" _=\"\n\t\t\t\t\t\t\t\t\tinit if #search-teams-activity's value's length > 0 then\n\t\t\t\t\t\t\t\t\t\tremove .invisible from me\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\ton click\n\t\t\t\t\t\t\t\t\t\tset #search-teams-activity's value to ''\n\t\t\t\t\t\t\t\t\t\tadd .invisible to me\n\t\t\t\t\t\t\t\t\t\tsend input to #search-teams-activity\n\t\t\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100\"><path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path></svg></button></label></div><div class=\"overflow-x-auto -mx-2 px-2\"><table id=\"team-activity\" class=\"table row-table w-full h-auto self-start\" hx-get=\"/admin/activity/runs\" hx-target=\"#team-activity\" hx-swap=\"outerHTML\" hx-trigger=\"load\"></table></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -480,7 +480,7 @@ func JustNowSlot(quest models.Quest, oob bool) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if quest.GetStatus() == models.Active {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<section class=\"card adm-card adm-feed\"><div class=\"card-body p-5\"><h2 class=\"card-title text-2xl font-extrabold\">Just now</h2><div hx-get=\"/admin/activity/recent\" hx-trigger=\"load, every 10s\" hx-swap=\"innerHTML\"></div></div></section>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<section class=\"card panel feed\"><div class=\"card-body p-5\"><h2 class=\"card-title text-2xl font-extrabold\">Just now</h2><div hx-get=\"/admin/activity/recent\" hx-trigger=\"load, every 10s\" hx-swap=\"innerHTML\"></div></div></section>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -520,7 +520,7 @@ func agoScript() templ.Component {
 			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<script>\n\t\t(function () {\n\t\t\tif (window.__admAgo) return;\n\t\t\twindow.__admAgo = true;\n\t\t\tfunction ago(from) {\n\t\t\t\tvar s = Math.max(0, Math.floor((Date.now() - new Date(from)) / 1000));\n\t\t\t\tif (s < 5) return 'just now';\n\t\t\t\tif (s < 60) return s + ' seconds ago';\n\t\t\t\tvar m = Math.floor(s / 60);\n\t\t\t\tif (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');\n\t\t\t\tvar h = Math.floor(m / 60);\n\t\t\t\tif (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');\n\t\t\t\tvar d = Math.floor(h / 24);\n\t\t\t\treturn d + (d === 1 ? ' day ago' : ' days ago');\n\t\t\t}\n\t\t\tsetInterval(function () {\n\t\t\t\tdocument.querySelectorAll('time[data-ago]').forEach(function (el) {\n\t\t\t\t\tvar text = ago(el.getAttribute('datetime'));\n\t\t\t\t\tif (el.textContent !== text) el.textContent = text;\n\t\t\t\t});\n\t\t\t}, 1000);\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "<script>\n\t\t(function () {\n\t\t\tif (window.__tickAgo) return;\n\t\t\twindow.__tickAgo = true;\n\t\t\tfunction ago(from) {\n\t\t\t\tvar s = Math.max(0, Math.floor((Date.now() - new Date(from)) / 1000));\n\t\t\t\tif (s < 5) return 'just now';\n\t\t\t\tif (s < 60) return s + ' seconds ago';\n\t\t\t\tvar m = Math.floor(s / 60);\n\t\t\t\tif (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');\n\t\t\t\tvar h = Math.floor(m / 60);\n\t\t\t\tif (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');\n\t\t\t\tvar d = Math.floor(h / 24);\n\t\t\t\treturn d + (d === 1 ? ' day ago' : ' days ago');\n\t\t\t}\n\t\t\tsetInterval(function () {\n\t\t\t\tdocument.querySelectorAll('time[data-ago]').forEach(function (el) {\n\t\t\t\t\tvar text = ago(el.getAttribute('datetime'));\n\t\t\t\t\tif (el.textContent !== text) el.textContent = text;\n\t\t\t\t});\n\t\t\t}, 1000);\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -548,9 +548,9 @@ func feedIcon(kind services.RunLogKind) string {
 func feedTone(entry services.ActivityEntry) string {
 	switch {
 	case entry.Kind == services.RunLogSection || entry.Kind == services.RunLogFinish:
-		return "adm-ev-gold"
+		return "event-gold"
 	case entry.Kind == services.RunLogAnswer:
-		return "adm-ev-ok"
+		return "event-ok"
 	}
 	return ""
 }
@@ -606,12 +606,12 @@ func RecentActivity(entries []services.ActivityEntry, enablePoints bool) templ.C
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(entries) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<p class=\"adm-empty\">Nothing yet. Teams appear here as they play.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<p class=\"empty\">Nothing yet. Teams appear here as they play.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<ul class=\"adm-feed-list\" hx-boost=\"true\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "<ul class=\"feed-list\" hx-boost=\"true\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -620,7 +620,7 @@ func RecentActivity(entries []services.ActivityEntry, enablePoints bool) templ.C
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var32 = []any{"adm-ev", feedTone(entry)}
+				var templ_7745c5c3_Var32 = []any{"event", feedTone(entry)}
 				templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var32...)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
@@ -651,7 +651,7 @@ func RecentActivity(entries []services.ActivityEntry, enablePoints bool) templ.C
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\"><span class=\"adm-ev-ico\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\"><span class=\"event-ico\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -685,7 +685,7 @@ func RecentActivity(entries []services.ActivityEntry, enablePoints bool) templ.C
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</small></span> <span class=\"adm-ev-r\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</small></span> <span class=\"event-r\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -882,7 +882,7 @@ func ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, leade
 			templ_7745c5c3_Var46 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<div class=\"overflow-x-auto\"><table id=\"team-activity\" class=\"table adm-rows w-full mt-5 md:mt-0 h-auto self-start\" hx-get=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<div class=\"overflow-x-auto\"><table id=\"team-activity\" class=\"table row-table w-full mt-5 md:mt-0 h-auto self-start\" hx-get=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1221,7 +1221,7 @@ func GameControl(quest models.Quest, messages ...flash.Message) templ.Component 
 		iconName, _, _ := questStatusLook(quest)
 		endSet := gameEndScheduled(quest)
 		target, countdownLabel := gameCountdown(quest)
-		var templ_7745c5c3_Var56 = []any{"adm-card adm-gc", templ.KV("adm-gc-open", status == models.Active), templ.KV("adm-gc-scheduled", status == models.Scheduled)}
+		var templ_7745c5c3_Var56 = []any{"panel game", templ.KV("game-open", status == models.Active), templ.KV("game-scheduled", status == models.Scheduled)}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var56...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -1239,7 +1239,7 @@ func GameControl(quest models.Quest, messages ...flash.Message) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\"><div class=\"adm-gc-main\"><span class=\"adm-gc-chipw\"><span class=\"adm-gc-chip\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\"><div class=\"game-main\"><span class=\"game-chipw\"><span class=\"game-chip\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1247,7 +1247,7 @@ func GameControl(quest models.Quest, messages ...flash.Message) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</span></span><div class=\"adm-gc-text\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "</span></span><div class=\"game-text\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1374,27 +1374,27 @@ func GameControl(quest models.Quest, messages ...flash.Message) templ.Component 
 		}
 		if !target.IsZero() {
 			days, hours, minutes, seconds := countdownParts(target)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "<div class=\"adm-gc-cdw\"><span class=\"adm-kick\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 115, "<div class=\"game-cdw\"><span class=\"kicker\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var64 string
 			templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(countdownLabel)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 519, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 519, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "</span><div class=\"adm-cd\" role=\"timer\" data-countdown=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 116, "</span><div class=\"game-cd\" role=\"timer\" data-countdown=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var65 string
 			templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.ResolveAttributeValue(target.UTC().Format(time.RFC3339))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 520, Col: 88}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 520, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var65)
 			if templ_7745c5c3_Err != nil {
@@ -1457,7 +1457,7 @@ func GameControl(quest models.Quest, messages ...flash.Message) templ.Component 
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "<div class=\"adm-gc-act\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 122, "<div class=\"game-act\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1521,7 +1521,7 @@ func GameControl(quest models.Quest, messages ...flash.Message) templ.Component 
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</button></div></div><form id=\"schedule-form\" class=\"adm-gc-sched hidden\" hx-post=\"/admin/schedule/\" hx-target=\"#schedule-status\" hx-swap=\"outerHTML\" data-start=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 132, "</button></div></div><form id=\"schedule-form\" class=\"game-sched hidden\" hx-post=\"/admin/schedule/\" hx-target=\"#schedule-status\" hx-swap=\"outerHTML\" data-start=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1559,7 +1559,7 @@ func GameControl(quest models.Quest, messages ...flash.Message) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "<input type=\"hidden\" name=\"utc_start_date\"> <input type=\"hidden\" name=\"utc_start_time\"> <input type=\"hidden\" name=\"utc_end_date\"> <input type=\"hidden\" name=\"utc_end_time\"><div class=\"adm-gc-foot\"><small>Times are in your time zone.</small> <span class=\"grow\"></span> <button type=\"button\" class=\"btn\" data-schedule-toggle>Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Save</button></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 135, "<input type=\"hidden\" name=\"utc_start_date\"> <input type=\"hidden\" name=\"utc_start_time\"> <input type=\"hidden\" name=\"utc_end_date\"> <input type=\"hidden\" name=\"utc_end_time\"><div class=\"game-foot\"><small>Times are in your time zone.</small> <span class=\"grow\"></span> <button type=\"button\" class=\"btn\" data-schedule-toggle>Cancel</button> <button type=\"submit\" class=\"btn btn-primary\">Save</button></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1596,7 +1596,7 @@ func scheduleRow(key, label, hint string, on bool) templ.Component {
 			templ_7745c5c3_Var72 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "<div class=\"adm-gc-row\"><label class=\"flex items-center gap-3 font-bold\"><input type=\"checkbox\" name=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 137, "<div class=\"game-row\"><label class=\"flex items-center gap-3 font-bold\"><input type=\"checkbox\" name=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1727,7 +1727,7 @@ func gameControlScript() templ.Component {
 			templ_7745c5c3_Var80 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "<script>\n\t\t(function () {\n\t\t\tfunction boot() {\n\t\t\t\tdocument.querySelectorAll('time[data-local]').forEach(function (el) {\n\t\t\t\t\tel.textContent = new Date(el.getAttribute('datetime')).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });\n\t\t\t\t});\n\t\t\t\ttick();\n\t\t\t}\n\t\t\tfunction tick() {\n\t\t\t\tdocument.querySelectorAll('[data-countdown]').forEach(function (box) {\n\t\t\t\t\tvar left = Math.floor((new Date(box.dataset.countdown) - Date.now()) / 1000);\n\t\t\t\t\tif (left <= 0) { window.location.reload(); return; }\n\t\t\t\t\tvar v = { d: Math.floor(left / 86400), h: Math.floor(left % 86400 / 3600), m: Math.floor(left % 3600 / 60), s: left % 60 };\n\t\t\t\t\tObject.keys(v).forEach(function (k) { box.querySelector('[data-u=\"' + k + '\"]').textContent = v[k]; });\n\t\t\t\t});\n\t\t\t}\n\t\t\tif (window.__admGame) { window.__admGame(); return; }\n\t\t\twindow.__admGame = boot;\n\n\t\t\tfunction fromUTC(date, time) {\n\t\t\t\tvar u = new Date(date + 'T' + time + ':00Z');\n\t\t\t\tvar iso = new Date(u.getTime() - u.getTimezoneOffset() * 60000).toISOString();\n\t\t\t\treturn { date: iso.slice(0, 10), time: iso.slice(11, 16) };\n\t\t\t}\n\t\t\tfunction toUTC(date, time) {\n\t\t\t\tvar iso = new Date(date + 'T' + time).toISOString();\n\t\t\t\treturn { date: iso.slice(0, 10), time: iso.slice(11, 16) };\n\t\t\t}\n\t\t\tfunction populate(form) {\n\t\t\t\t['start', 'end'].forEach(function (k) {\n\t\t\t\t\tvar v = (form.dataset[k] || '').split(' ');\n\t\t\t\t\tif (v[0] && v[0] !== '0001-01-01') {\n\t\t\t\t\t\tvar l = fromUTC(v[0], v[1]);\n\t\t\t\t\t\tform.elements[k + '_date'].value = l.date;\n\t\t\t\t\t\tform.elements[k + '_time'].value = l.time;\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t\tfunction sync(form) {\n\t\t\t\t['start', 'end'].forEach(function (k) {\n\t\t\t\t\tvar on = form.elements['set_' + k].checked;\n\t\t\t\t\tvar d = form.elements[k + '_date'], t = form.elements[k + '_time'];\n\t\t\t\t\td.disabled = t.disabled = !on;\n\t\t\t\t\tvar u = on && d.value && t.value ? toUTC(d.value, t.value) : { date: '', time: '' };\n\t\t\t\t\tform.elements['utc_' + k + '_date'].value = u.date;\n\t\t\t\t\tform.elements['utc_' + k + '_time'].value = u.time;\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tdocument.addEventListener('click', function (e) {\n\t\t\t\tif (!e.target.closest('[data-schedule-toggle]')) return;\n\t\t\t\tvar form = document.getElementById('schedule-form');\n\t\t\t\tvar open = !form.classList.toggle('hidden');\n\t\t\t\tdocument.querySelectorAll('[data-schedule-toggle][aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', open); });\n\t\t\t\tif (open) { populate(form); sync(form); }\n\t\t\t});\n\t\t\tdocument.addEventListener('change', function (e) {\n\t\t\t\tvar form = e.target.closest('#schedule-form');\n\t\t\t\tif (form) sync(form);\n\t\t\t});\n\t\t\tdocument.addEventListener('submit', function (e) {\n\t\t\t\tif (e.target.id === 'schedule-form') sync(e.target);\n\t\t\t}, true);\n\t\t\tdocument.addEventListener('htmx:afterSwap', boot);\n\t\t\tsetInterval(tick, 1000);\n\t\t\tboot();\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 147, "<script>\n\t\t(function () {\n\t\t\tfunction boot() {\n\t\t\t\tdocument.querySelectorAll('time[data-local]').forEach(function (el) {\n\t\t\t\t\tel.textContent = new Date(el.getAttribute('datetime')).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });\n\t\t\t\t});\n\t\t\t\ttick();\n\t\t\t}\n\t\t\tfunction tick() {\n\t\t\t\tdocument.querySelectorAll('[data-countdown]').forEach(function (box) {\n\t\t\t\t\tvar left = Math.floor((new Date(box.dataset.countdown) - Date.now()) / 1000);\n\t\t\t\t\tif (left <= 0) { window.location.reload(); return; }\n\t\t\t\t\tvar v = { d: Math.floor(left / 86400), h: Math.floor(left % 86400 / 3600), m: Math.floor(left % 3600 / 60), s: left % 60 };\n\t\t\t\t\tObject.keys(v).forEach(function (k) { box.querySelector('[data-u=\"' + k + '\"]').textContent = v[k]; });\n\t\t\t\t});\n\t\t\t}\n\t\t\tif (window.__gameControl) { window.__gameControl(); return; }\n\t\t\twindow.__gameControl = boot;\n\n\t\t\tfunction fromUTC(date, time) {\n\t\t\t\tvar u = new Date(date + 'T' + time + ':00Z');\n\t\t\t\tvar iso = new Date(u.getTime() - u.getTimezoneOffset() * 60000).toISOString();\n\t\t\t\treturn { date: iso.slice(0, 10), time: iso.slice(11, 16) };\n\t\t\t}\n\t\t\tfunction toUTC(date, time) {\n\t\t\t\tvar iso = new Date(date + 'T' + time).toISOString();\n\t\t\t\treturn { date: iso.slice(0, 10), time: iso.slice(11, 16) };\n\t\t\t}\n\t\t\tfunction populate(form) {\n\t\t\t\t['start', 'end'].forEach(function (k) {\n\t\t\t\t\tvar v = (form.dataset[k] || '').split(' ');\n\t\t\t\t\tif (v[0] && v[0] !== '0001-01-01') {\n\t\t\t\t\t\tvar l = fromUTC(v[0], v[1]);\n\t\t\t\t\t\tform.elements[k + '_date'].value = l.date;\n\t\t\t\t\t\tform.elements[k + '_time'].value = l.time;\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\t\t\tfunction sync(form) {\n\t\t\t\t['start', 'end'].forEach(function (k) {\n\t\t\t\t\tvar on = form.elements['set_' + k].checked;\n\t\t\t\t\tvar d = form.elements[k + '_date'], t = form.elements[k + '_time'];\n\t\t\t\t\td.disabled = t.disabled = !on;\n\t\t\t\t\tvar u = on && d.value && t.value ? toUTC(d.value, t.value) : { date: '', time: '' };\n\t\t\t\t\tform.elements['utc_' + k + '_date'].value = u.date;\n\t\t\t\t\tform.elements['utc_' + k + '_time'].value = u.time;\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tdocument.addEventListener('click', function (e) {\n\t\t\t\tif (!e.target.closest('[data-schedule-toggle]')) return;\n\t\t\t\tvar form = document.getElementById('schedule-form');\n\t\t\t\tvar open = !form.classList.toggle('hidden');\n\t\t\t\tdocument.querySelectorAll('[data-schedule-toggle][aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', open); });\n\t\t\t\tif (open) { populate(form); sync(form); }\n\t\t\t});\n\t\t\tdocument.addEventListener('change', function (e) {\n\t\t\t\tvar form = e.target.closest('#schedule-form');\n\t\t\t\tif (form) sync(form);\n\t\t\t});\n\t\t\tdocument.addEventListener('submit', function (e) {\n\t\t\t\tif (e.target.id === 'schedule-form') sync(e.target);\n\t\t\t}, true);\n\t\t\tdocument.addEventListener('htmx:afterSwap', boot);\n\t\t\tsetInterval(tick, 1000);\n\t\t\tboot();\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -2150,14 +2150,14 @@ func ActivityStats(quest models.Quest, summaries map[string]services.RunSummary)
 			templ_7745c5c3_Var97 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "<div id=\"activity-stats\" hx-get=\"/admin/activity/stats\" hx-target=\"#activity-stats\" hx-swap=\"outerHTML\" hx-trigger=\"every 30s\" class=\"adm-card adm-strip\"><div class=\"adm-cell\"><span class=\"adm-kick\">Running</span> <b class=\"adm-num\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 184, "<div id=\"activity-stats\" hx-get=\"/admin/activity/stats\" hx-target=\"#activity-stats\" hx-swap=\"outerHTML\" hx-trigger=\"every 30s\" class=\"panel stat-strip\"><div class=\"stat-cell\"><span class=\"kicker\">Running</span> <b class=\"stat-num\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var98 string
 		templ_7745c5c3_Var98, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(countRunning(quest.Runs, summaries)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 846, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 846, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var98))
 		if templ_7745c5c3_Err != nil {
@@ -2176,40 +2176,40 @@ func ActivityStats(quest models.Quest, summaries map[string]services.RunSummary)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 186, " runs</small></div><div class=\"adm-cell\"><span class=\"adm-kick\">Not started</span> <b class=\"adm-num\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 186, " runs</small></div><div class=\"stat-cell\"><span class=\"kicker\">Not started</span> <b class=\"stat-num\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var100 string
 		templ_7745c5c3_Var100, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(countNotStarted(quest.Runs)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 851, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 851, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var100))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 187, "</b> <small>Codes not yet used</small></div><div class=\"adm-cell\"><span class=\"adm-kick\">Median progress</span> <b class=\"adm-num\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 187, "</b> <small>Codes not yet used</small></div><div class=\"stat-cell\"><span class=\"kicker\">Median progress</span> <b class=\"stat-num\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var101 string
 		templ_7745c5c3_Var101, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(medianShare(quest.Runs, summaries)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 856, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 856, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var101))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 188, "%</b> <small>Of each run's own objectives</small></div><div class=\"adm-cell\"><span class=\"adm-kick\">Finished</span> <b class=\"adm-num\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 188, "%</b> <small>Of each run's own objectives</small></div><div class=\"stat-cell\"><span class=\"kicker\">Finished</span> <b class=\"stat-num\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var102 string
 		templ_7745c5c3_Var102, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint(countFinished(quest.Runs, summaries)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 861, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 861, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var102))
 		if templ_7745c5c3_Err != nil {

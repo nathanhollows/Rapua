@@ -39,7 +39,7 @@ type theme struct {
 
 func parseThemes(t *testing.T) []theme {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "src", "theme.css"))
 	require.NoError(t, err)
 
 	var themes []theme
@@ -56,7 +56,7 @@ func parseThemes(t *testing.T) []theme {
 		}
 		themes = append(themes, parsed)
 	}
-	require.NotEmpty(t, themes, "no daisyUI theme blocks found in main.css")
+	require.NotEmpty(t, themes, "no daisyUI theme blocks found in theme.css")
 	return themes
 }
 
@@ -123,7 +123,7 @@ func TestSettingsPicker_DisplayIsOwnedByTheStylesheet(t *testing.T) {
 		}
 	}
 
-	css, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "main.css"))
+	css, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "src", "editor.css"))
 	require.NoError(t, err)
 	assert.Contains(t, string(css), ".settings-picker.hidden",
 		"the hidden state has to be compound, or the picker's own rule outranks it")

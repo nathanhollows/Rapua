@@ -88,12 +88,12 @@ templ ActivityTracker(quest models.Quest, summaries map[string]services.RunSumma
 	<div class="px-5 mb-5">
 		@ActivityStats(quest, summaries)
 	</div>
-	<div class="adm-split px-5">
+	<div class="split px-5">
 		<div class="w-full min-w-0 overflow-x-hidden">
 			<!-- No padding below the table, and clipped to the card's corners:
 			the rows run edge to edge, so the last one ends the card rather
 			than leaving a strip of padding under it. -->
-			<div class="card adm-card overflow-hidden">
+			<div class="card panel overflow-hidden">
 				<div class="card-body p-5">
 					<div class="flex items-center justify-between mb-2">
 						<h2 class="card-title text-2xl font-extrabold flex items-center gap-2">
@@ -149,7 +149,7 @@ templ ActivityTracker(quest models.Quest, summaries map[string]services.RunSumma
 					<div class="overflow-x-auto -mx-2 px-2">
 						<table
 							id="team-activity"
-							class="table adm-rows w-full h-auto self-start"
+							class="table row-table w-full h-auto self-start"
 							hx-get="/admin/activity/runs"
 							hx-target="#team-activity"
 							hx-swap="outerHTML"
@@ -176,7 +176,7 @@ templ JustNowSlot(quest models.Quest, oob bool) {
 		}
 	>
 		if quest.GetStatus() == models.Active {
-			<section class="card adm-card adm-feed">
+			<section class="card panel feed">
 				<div class="card-body p-5">
 					<h2 class="card-title text-2xl font-extrabold">Just now</h2>
 					<div
@@ -196,8 +196,8 @@ templ JustNowSlot(quest models.Quest, oob bool) {
 templ agoScript() {
 	<script>
 		(function () {
-			if (window.__admAgo) return;
-			window.__admAgo = true;
+			if (window.__tickAgo) return;
+			window.__tickAgo = true;
 			function ago(from) {
 				var s = Math.max(0, Math.floor((Date.now() - new Date(from)) / 1000));
 				if (s < 5) return 'just now';
@@ -239,9 +239,9 @@ func feedIcon(kind services.RunLogKind) string {
 func feedTone(entry services.ActivityEntry) string {
 	switch {
 	case entry.Kind == services.RunLogSection || entry.Kind == services.RunLogFinish:
-		return "adm-ev-gold"
+		return "event-gold"
 	case entry.Kind == services.RunLogAnswer:
-		return "adm-ev-ok"
+		return "event-ok"
 	}
 	return ""
 }
@@ -277,20 +277,20 @@ func feedWhat(entry services.ActivityEntry) string {
 
 templ RecentActivity(entries []services.ActivityEntry, enablePoints bool) {
 	if len(entries) == 0 {
-		<p class="adm-empty">Nothing yet. Teams appear here as they play.</p>
+		<p class="empty">Nothing yet. Teams appear here as they play.</p>
 	} else {
-		<ul class="adm-feed-list" hx-boost="true">
+		<ul class="feed-list" hx-boost="true">
 			for _, entry := range entries {
 				<li>
-					<a href={ templ.URL("/admin/runs/" + entry.RunCode) } class={ "adm-ev", feedTone(entry) }>
-						<span class="adm-ev-ico">
+					<a href={ templ.URL("/admin/runs/" + entry.RunCode) } class={ "event", feedTone(entry) }>
+						<span class="event-ico">
 							@icon(feedIcon(entry.Kind), templ.Attributes{"class": "w-4 h-4"})
 						</span>
 						<span class="min-w-0">
 							<b class="block truncate">{ feedWho(entry) }</b>
 							<small class="block truncate">{ feedWhat(entry) }</small>
 						</span>
-						<span class="adm-ev-r">
+						<span class="event-r">
 							if enablePoints && entry.Points > 0 {
 								<b>+{ fmt.Sprint(entry.Points) }</b>
 							}
@@ -339,7 +339,7 @@ templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, lead
 	<div class="overflow-x-auto">
 		<table
 			id="team-activity"
-			class="table adm-rows w-full mt-5 md:mt-0 h-auto self-start"
+			class="table row-table w-full mt-5 md:mt-0 h-auto self-start"
 			hx-get={ fmt.Sprintf("/admin/activity/runs?sort=%s&order=%s", currentSortField, currentSortOrder) }
 			hx-target="#team-activity"
 			hx-swap="outerHTML"
@@ -482,15 +482,15 @@ templ GameControl(quest models.Quest, messages ...flash.Message) {
 	{{ target, countdownLabel := gameCountdown(quest) }}
 	<div
 		id="schedule-status"
-		class={ "adm-card adm-gc", templ.KV("adm-gc-open", status == models.Active), templ.KV("adm-gc-scheduled", status == models.Scheduled) }
+		class={ "panel game", templ.KV("game-open", status == models.Active), templ.KV("game-scheduled", status == models.Scheduled) }
 	>
-		<div class="adm-gc-main">
-			<span class="adm-gc-chipw">
-				<span class="adm-gc-chip">
+		<div class="game-main">
+			<span class="game-chipw">
+				<span class="game-chip">
 					@icon(iconName, templ.Attributes{"class": "w-7 h-7"})
 				</span>
 			</span>
-			<div class="adm-gc-text">
+			<div class="game-text">
 				switch status {
 					case models.Active:
 						<h2>The game is open</h2>
@@ -515,9 +515,9 @@ templ GameControl(quest models.Quest, messages ...flash.Message) {
 			</div>
 			if !target.IsZero() {
 				{{ days, hours, minutes, seconds := countdownParts(target) }}
-				<div class="adm-gc-cdw">
-					<span class="adm-kick">{ countdownLabel }</span>
-					<div class="adm-cd" role="timer" data-countdown={ target.UTC().Format(time.RFC3339) }>
+				<div class="game-cdw">
+					<span class="kicker">{ countdownLabel }</span>
+					<div class="game-cd" role="timer" data-countdown={ target.UTC().Format(time.RFC3339) }>
 						<span><b data-u="d">{ fmt.Sprint(days) }</b>days</span>
 						<span><b data-u="h">{ fmt.Sprint(hours) }</b>hrs</span>
 						<span><b data-u="m">{ fmt.Sprint(minutes) }</b>min</span>
@@ -525,7 +525,7 @@ templ GameControl(quest models.Quest, messages ...flash.Message) {
 					</div>
 				</div>
 			}
-			<div class="adm-gc-act">
+			<div class="game-act">
 				switch status {
 					case models.Active:
 						<button type="button" class="btn btn-error" hx-get="/admin/schedule/stop" hx-target="#schedule-status" hx-swap="outerHTML">
@@ -555,7 +555,7 @@ templ GameControl(quest models.Quest, messages ...flash.Message) {
 		</div>
 		<form
 			id="schedule-form"
-			class="adm-gc-sched hidden"
+			class="game-sched hidden"
 			hx-post="/admin/schedule/"
 			hx-target="#schedule-status"
 			hx-swap="outerHTML"
@@ -568,7 +568,7 @@ templ GameControl(quest models.Quest, messages ...flash.Message) {
 			<input type="hidden" name="utc_start_time"/>
 			<input type="hidden" name="utc_end_date"/>
 			<input type="hidden" name="utc_end_time"/>
-			<div class="adm-gc-foot">
+			<div class="game-foot">
 				<small>Times are in your time zone.</small>
 				<span class="grow"></span>
 				<button type="button" class="btn" data-schedule-toggle>Cancel</button>
@@ -580,7 +580,7 @@ templ GameControl(quest models.Quest, messages ...flash.Message) {
 }
 
 templ scheduleRow(key, label, hint string, on bool) {
-	<div class="adm-gc-row">
+	<div class="game-row">
 		<label class="flex items-center gap-3 font-bold">
 			<input type="checkbox" name={ "set_" + key } class="toggle toggle-primary" checked?={ on }/>
 			{ label }
@@ -609,8 +609,8 @@ templ gameControlScript() {
 					Object.keys(v).forEach(function (k) { box.querySelector('[data-u="' + k + '"]').textContent = v[k]; });
 				});
 			}
-			if (window.__admGame) { window.__admGame(); return; }
-			window.__admGame = boot;
+			if (window.__gameControl) { window.__gameControl(); return; }
+			window.__gameControl = boot;
 
 			function fromUTC(date, time) {
 				var u = new Date(date + 'T' + time + ':00Z');
@@ -839,26 +839,26 @@ templ ActivityStats(quest models.Quest, summaries map[string]services.RunSummary
 		hx-target="#activity-stats"
 		hx-swap="outerHTML"
 		hx-trigger="every 30s"
-		class="adm-card adm-strip"
+		class="panel stat-strip"
 	>
-		<div class="adm-cell">
-			<span class="adm-kick">Running</span>
-			<b class="adm-num">{ fmt.Sprint(countRunning(quest.Runs, summaries)) }</b>
+		<div class="stat-cell">
+			<span class="kicker">Running</span>
+			<b class="stat-num">{ fmt.Sprint(countRunning(quest.Runs, summaries)) }</b>
 			<small>of { fmt.Sprint(len(quest.Runs)) } runs</small>
 		</div>
-		<div class="adm-cell">
-			<span class="adm-kick">Not started</span>
-			<b class="adm-num">{ fmt.Sprint(countNotStarted(quest.Runs)) }</b>
+		<div class="stat-cell">
+			<span class="kicker">Not started</span>
+			<b class="stat-num">{ fmt.Sprint(countNotStarted(quest.Runs)) }</b>
 			<small>Codes not yet used</small>
 		</div>
-		<div class="adm-cell">
-			<span class="adm-kick">Median progress</span>
-			<b class="adm-num">{ fmt.Sprint(medianShare(quest.Runs, summaries)) }%</b>
+		<div class="stat-cell">
+			<span class="kicker">Median progress</span>
+			<b class="stat-num">{ fmt.Sprint(medianShare(quest.Runs, summaries)) }%</b>
 			<small>Of each run's own objectives</small>
 		</div>
-		<div class="adm-cell">
-			<span class="adm-kick">Finished</span>
-			<b class="adm-num">{ fmt.Sprint(countFinished(quest.Runs, summaries)) }</b>
+		<div class="stat-cell">
+			<span class="kicker">Finished</span>
+			<b class="stat-num">{ fmt.Sprint(countFinished(quest.Runs, summaries)) }</b>
 			<small>Reached the end</small>
 		</div>
 	</div>

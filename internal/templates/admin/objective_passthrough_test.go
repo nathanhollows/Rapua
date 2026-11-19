@@ -156,7 +156,7 @@ func TestRenderPassThroughPreview(t *testing.T) {
 	page := renderRow(t, trip)
 	wd, err := os.Getwd()
 	require.NoError(t, err)
-	css := "file://" + filepath.Join(wd, "..", "..", "..", "static", "css", "tailwind.css")
+	css := "file://" + filepath.Join(wd, "..", "..", "..", "static", "css", "admin.css")
 	doc := fmt.Sprintf(`<!DOCTYPE html>
 <html lang="en" data-theme="dracula"><head><meta charset="utf-8">
 <link rel="stylesheet" href="%s"></head>

@@ -11,7 +11,7 @@ import (
 // getCSSVersion is read per render so a rebuilt stylesheet busts the year-long
 // cache without a restart.
 func getCSSVersion() string {
-	stat, err := os.Stat("static/css/tailwind.css")
+	stat, err := os.Stat("static/css/admin.css")
 	if err != nil {
 		return ""
 	}

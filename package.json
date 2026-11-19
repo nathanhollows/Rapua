@@ -8,8 +8,12 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "npx @tailwindcss/cli -i ./static/css/main.css -o static/css/tailwind.css --minify",
-    "watch": "npx @tailwindcss/cli -i ./static/css/main.css -o static/css/tailwind.css --watch"
+    "build": "npm run build:site && npm run build:admin",
+    "build:site": "npx @tailwindcss/cli -i ./static/css/src/site.css -o static/css/tailwind.css --minify",
+    "build:admin": "npx @tailwindcss/cli -i ./static/css/src/admin.css -o static/css/admin.css --minify",
+    "watch": "sh -c 'trap \"kill 0\" EXIT; npm run watch:site & npm run watch:admin & wait'",
+    "watch:site": "npx @tailwindcss/cli -i ./static/css/src/site.css -o static/css/tailwind.css --watch",
+    "watch:admin": "npx @tailwindcss/cli -i ./static/css/src/admin.css -o static/css/admin.css --watch"
   },
   "github": "nathanhollows/Rapua",
   "author": "Nathan Hollows",

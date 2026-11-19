@@ -46,7 +46,7 @@ func Layout(contents templ.Component, user models.User, section string, title st
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var2 = []any{"adm h-lvh flex flex-col", templ.KV("bg-base-200", admSurface(section))}
+		var templ_7745c5c3_Var2 = []any{"h-lvh flex flex-col", templ.KV("bg-base-200", shadedSection(section))}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -71,7 +71,7 @@ func Layout(contents templ.Component, user models.User, section string, title st
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 16, Col: 177}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 16, Col: 176}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -132,9 +132,9 @@ func Layout(contents templ.Component, user models.User, section string, title st
 	})
 }
 
-// admSurface lists the sections on the new design. They sit on base-200 so base-100 cards lift off it;
+// shadedSection lists the sections on the new design. They sit on base-200 so base-100 cards lift off it;
 // the rest keep base-100, where their bg-base-200 cards would vanish.
-func admSurface(section string) bool {
+func shadedSection(section string) bool {
 	return section == "Activity"
 }
 
@@ -177,9 +177,9 @@ func header(title string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var8 templ.SafeURL
-		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs("/static/css/tailwind.css" + getCSSVersion())
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs("/static/css/admin.css" + getCSSVersion())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 74, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 74, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -518,7 +518,7 @@ func nav(user models.User, section string) templ.Component {
 			templ_7745c5c3_Var19 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"adm-nav bg-base-200\"><!-- Grid keeps the pages centred; a long game name shrinks its own column. --><div class=\"navbar max-w-7xl m-auto grid gap-2 grid-cols-[auto_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]\" hx-boost=\"true\"><div class=\"flex items-center gap-1\"><div class=\"drawer lg:hidden\"><input id=\"my-drawer\" type=\"checkbox\" class=\"drawer-toggle\"><div class=\"drawer-content\"><!-- Page content here --><label for=\"my-drawer\" class=\"btn btn-ghost drawer-button\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 6h16M4 12h8m-8 6h16\"></path></svg></label></div><div class=\"drawer-side z-50\"><label for=\"my-drawer\" aria-label=\"close sidebar\" class=\"drawer-overlay\"></label><div class=\"bg-base-200 min-h-full overflow-y-scroll text-base-content w-80 p-4 flex flex-col justify-between\"><ul class=\"menu p-0 w-full [&_a]:whitespace-normal\"><li class=\"menu-title text-xl flex flex-row gap-2 pb-6\"><svg class=\"w-6 h-6 stroke-base-content fill-base-content\" viewBox=\"0 0 31.622 38.219\" xml:space=\"preserve\" xmlns=\"http://www.w3.org/2000/svg\"><path style=\"fill:currentColor;stroke-width:2.14931;stroke:none\" d=\"M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z\" transform=\"rotate(-45.247 -203.79 40.662)\"></path></svg> <span class=\"-mt-1\">Rapua</span></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"topnav bg-base-200\"><!-- Grid keeps the pages centred; a long game name shrinks its own column. --><div class=\"navbar max-w-7xl m-auto grid gap-2 grid-cols-[auto_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]\" hx-boost=\"true\"><div class=\"flex items-center gap-1\"><div class=\"drawer lg:hidden\"><input id=\"my-drawer\" type=\"checkbox\" class=\"drawer-toggle\"><div class=\"drawer-content\"><!-- Page content here --><label for=\"my-drawer\" class=\"btn btn-ghost drawer-button\"><svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-5 w-5\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 6h16M4 12h8m-8 6h16\"></path></svg></label></div><div class=\"drawer-side z-50\"><label for=\"my-drawer\" aria-label=\"close sidebar\" class=\"drawer-overlay\"></label><div class=\"bg-base-200 min-h-full overflow-y-scroll text-base-content w-80 p-4 flex flex-col justify-between\"><ul class=\"menu p-0 w-full [&_a]:whitespace-normal\"><li class=\"menu-title text-xl flex flex-row gap-2 pb-6\"><svg class=\"w-6 h-6 stroke-base-content fill-base-content\" viewBox=\"0 0 31.622 38.219\" xml:space=\"preserve\" xmlns=\"http://www.w3.org/2000/svg\"><path style=\"fill:currentColor;stroke-width:2.14931;stroke:none\" d=\"M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z\" transform=\"rotate(-45.247 -203.79 40.662)\"></path></svg> <span class=\"-mt-1\">Rapua</span></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -610,11 +610,11 @@ func nav(user models.User, section string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if user.CurrentQuestID != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<button type=\"button\" class=\"adm-logo hidden sm:inline-flex\" aria-label=\"Rapua\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<button type=\"button\" class=\"logo hidden sm:inline-flex\" aria-label=\"Rapua\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = admLogoMark().Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = logoMark().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -623,11 +623,11 @@ func nav(user models.User, section string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<a href=\"/admin\" class=\"adm-logo hidden sm:inline-flex\" aria-label=\"Rapua\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<a href=\"/admin\" class=\"logo hidden sm:inline-flex\" aria-label=\"Rapua\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = admLogoMark().Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = logoMark().Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -641,7 +641,7 @@ func nav(user models.User, section string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		if user.CurrentQuestID != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<nav class=\"adm-tabs\" aria-label=\"Quest sections\"><a href=\"/admin/\" class=\"adm-tab\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<nav class=\"topnav-tabs\" aria-label=\"Quest sections\"><a href=\"/admin/\" class=\"topnav-tab\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -659,7 +659,7 @@ func nav(user models.User, section string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "Activity</a> <a href=\"/admin/quest\" class=\"adm-tab\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "Activity</a> <a href=\"/admin/quest\" class=\"topnav-tab\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -677,7 +677,7 @@ func nav(user models.User, section string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "Quest</a> <a href=\"/admin/runs\" class=\"adm-tab\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "Quest</a> <a href=\"/admin/runs\" class=\"topnav-tab\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -917,7 +917,7 @@ func logoHop() templ.Component {
 			templ_7745c5c3_Var29 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<script>\n\t\t(function () {\n\t\t\tif (window.__admLogoHop) return;\n\t\t\twindow.__admLogoHop = true;\n\t\t\tdocument.addEventListener('click', function (e) {\n\t\t\t\tvar link = e.target.closest('.adm-logo');\n\t\t\t\tif (!link) return;\n\t\t\t\tvar wrap = link.querySelector('.adm-lmw');\n\t\t\t\tif (!wrap) return;\n\t\t\t\twrap.classList.remove('adm-hop');\n\t\t\t\tvoid wrap.offsetWidth;\n\t\t\t\twrap.classList.add('adm-hop');\n\t\t\t});\n\t\t\tdocument.addEventListener('animationend', function (e) {\n\t\t\t\tif (e.target.classList && e.target.classList.contains('adm-lm')) e.target.parentNode.classList.remove('adm-hop');\n\t\t\t});\n\t\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "<script>\n\t\t(function () {\n\t\t\tif (window.__logoHop) return;\n\t\t\twindow.__logoHop = true;\n\t\t\tdocument.addEventListener('click', function (e) {\n\t\t\t\tvar link = e.target.closest('.logo');\n\t\t\t\tif (!link) return;\n\t\t\t\tvar wrap = link.querySelector('.logo-wrap');\n\t\t\t\tif (!wrap) return;\n\t\t\t\twrap.classList.remove('logo-hop');\n\t\t\t\tvoid wrap.offsetWidth;\n\t\t\t\twrap.classList.add('logo-hop');\n\t\t\t});\n\t\t\tdocument.addEventListener('animationend', function (e) {\n\t\t\t\tif (e.target.classList && e.target.classList.contains('logo-mark')) e.target.parentNode.classList.remove('logo-hop');\n\t\t\t});\n\t\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -926,7 +926,7 @@ func logoHop() templ.Component {
 }
 
 // The logo is a link only when there is no Activity tab: navigating cuts the hop short.
-func admLogoMark() templ.Component {
+func logoMark() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -947,7 +947,7 @@ func admLogoMark() templ.Component {
 			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<span class=\"adm-lmw\"><span class=\"adm-lm\"><svg viewBox=\"0 0 31.622 38.219\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\"><path d=\"M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z\" transform=\"rotate(-45.247 -203.79 40.662)\"></path></svg></span></span> Rapua")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "<span class=\"logo-wrap\"><span class=\"logo-mark\"><svg viewBox=\"0 0 31.622 38.219\" xmlns=\"http://www.w3.org/2000/svg\" aria-hidden=\"true\"><path d=\"M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z\" transform=\"rotate(-45.247 -203.79 40.662)\"></path></svg></span></span> Rapua")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

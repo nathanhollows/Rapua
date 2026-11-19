@@ -13,7 +13,7 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 	<!DOCTYPE html>
 	<html lang="en" class="h-full">
 		@header(title)
-		<body class={ "adm h-lvh flex flex-col", templ.KV("bg-base-200", admSurface(section)) } hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+		<body class={ "h-lvh flex flex-col", templ.KV("bg-base-200", shadedSection(section)) } hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			<div id="app" data-v-app="">
 				@nav(user, section)
 				<div class="toast toast-center z-50" id="alerts"></div>
@@ -31,9 +31,9 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 	</html>
 }
 
-// admSurface lists the sections on the new design. They sit on base-200 so base-100 cards lift off it;
+// shadedSection lists the sections on the new design. They sit on base-200 so base-100 cards lift off it;
 // the rest keep base-100, where their bg-base-200 cards would vanish.
-func admSurface(section string) bool {
+func shadedSection(section string) bool {
 	return section == "Activity"
 }
 
@@ -71,7 +71,7 @@ templ header(title string) {
 		<!-- CSS -->
 		<link
 			rel="stylesheet"
-			href={ "/static/css/tailwind.css" + getCSSVersion() }
+			href={ "/static/css/admin.css" + getCSSVersion() }
 		/>
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
@@ -265,7 +265,7 @@ templ localStartTimes() {
 }
 
 templ nav(user models.User, section string) {
-	<div class="adm-nav bg-base-200">
+	<div class="topnav bg-base-200">
 		<!-- Grid keeps the pages centred; a long game name shrinks its own column. -->
 		<div
 			class="navbar max-w-7xl m-auto grid gap-2 grid-cols-[auto_minmax(0,1fr)] lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]"
@@ -376,21 +376,21 @@ templ nav(user models.User, section string) {
 					</div>
 				</div>
 				if user.CurrentQuestID != "" {
-					<button type="button" class="adm-logo hidden sm:inline-flex" aria-label="Rapua">
-						@admLogoMark()
+					<button type="button" class="logo hidden sm:inline-flex" aria-label="Rapua">
+						@logoMark()
 					</button>
 				} else {
-					<a href="/admin" class="adm-logo hidden sm:inline-flex" aria-label="Rapua">
-						@admLogoMark()
+					<a href="/admin" class="logo hidden sm:inline-flex" aria-label="Rapua">
+						@logoMark()
 					</a>
 				}
 			</div>
 			<div class="hidden lg:flex">
 				if user.CurrentQuestID != "" {
-					<nav class="adm-tabs" aria-label="Quest sections">
+					<nav class="topnav-tabs" aria-label="Quest sections">
 						<a
 							href="/admin/"
-							class="adm-tab"
+							class="topnav-tab"
 							if section == "Activity" {
 								aria-current="page"
 							}
@@ -400,7 +400,7 @@ templ nav(user models.User, section string) {
 						</a>
 						<a
 							href="/admin/quest"
-							class="adm-tab"
+							class="topnav-tab"
 							if section == "Quest" {
 								aria-current="page"
 							}
@@ -410,7 +410,7 @@ templ nav(user models.User, section string) {
 						</a>
 						<a
 							href="/admin/runs"
-							class="adm-tab"
+							class="topnav-tab"
 							if section == "Runs" {
 								aria-current="page"
 							}
@@ -482,28 +482,28 @@ templ questSwitchButton(quest models.Quest, section string) {
 templ logoHop() {
 	<script>
 		(function () {
-			if (window.__admLogoHop) return;
-			window.__admLogoHop = true;
+			if (window.__logoHop) return;
+			window.__logoHop = true;
 			document.addEventListener('click', function (e) {
-				var link = e.target.closest('.adm-logo');
+				var link = e.target.closest('.logo');
 				if (!link) return;
-				var wrap = link.querySelector('.adm-lmw');
+				var wrap = link.querySelector('.logo-wrap');
 				if (!wrap) return;
-				wrap.classList.remove('adm-hop');
+				wrap.classList.remove('logo-hop');
 				void wrap.offsetWidth;
-				wrap.classList.add('adm-hop');
+				wrap.classList.add('logo-hop');
 			});
 			document.addEventListener('animationend', function (e) {
-				if (e.target.classList && e.target.classList.contains('adm-lm')) e.target.parentNode.classList.remove('adm-hop');
+				if (e.target.classList && e.target.classList.contains('logo-mark')) e.target.parentNode.classList.remove('logo-hop');
 			});
 		})();
 	</script>
 }
 
 // The logo is a link only when there is no Activity tab: navigating cuts the hop short.
-templ admLogoMark() {
-	<span class="adm-lmw">
-		<span class="adm-lm">
+templ logoMark() {
+	<span class="logo-wrap">
+		<span class="logo-mark">
 			<svg viewBox="0 0 31.622 38.219" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
 		</span>
 	</span>
