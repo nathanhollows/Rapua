@@ -166,7 +166,8 @@
 
 /* Both sides of a section, so it is not crowded by whatever sits above it. */
 .objective-rail-item:has(> .objective-group),
-.objective-rail-item:has(+ .objective-rail-item > .objective-group) {
+.objective-rail-item:has(+ .objective-rail-item > .objective-group),
+.objective-rail-item:has(+ .sortable-ghost-preview + .objective-rail-item > .objective-group) {
   padding-bottom: var(--group-step);
 }
 
@@ -773,4 +774,139 @@
 .objective-parked .objective-points .badge {
   background: transparent;
   color: var(--soft);
+}
+
+/* Nothing may change size mid-drag or the drop target flips: the placeholder is a
+   line over the list and nesting is a highlight, not a layout change. */
+#objective-tree .objective-rail-item.sortable-ghost-preview {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  opacity: 1;
+  background: none;
+}
+#objective-tree .sortable-chosen-preview { outline: none; }
+#objective-tree .objective-rail-item.sortable-ghost-preview > *:not(.drag-cue) { display: none; }
+#objective-tree .objective-rail-item.sortable-ghost-preview::before { display: none; }
+#objective-tree .objective-rail-item.sortable-ghost-preview::after {
+  content: "";
+  position: absolute;
+  left: 2.5rem;
+  right: 0;
+  top: -2px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-primary);
+}
+
+/* Split at the row's midpoint, where nesting starts: label and gap on the left,
+   dashed on the right. */
+#objective-tree .objective-rail-item.sortable-ghost-preview[style*="--nest-at"]::after {
+  background:
+    linear-gradient(var(--color-primary), var(--color-primary)) 0 0 / calc(var(--nest-at) - 0.5rem) 100% no-repeat,
+    repeating-linear-gradient(to right, color-mix(in oklab, var(--color-primary) 55%, transparent) 0 6px, transparent 6px 12px) calc(var(--nest-at) + 0.5rem) 0 / calc(100% - var(--nest-at) - 0.5rem) 100% no-repeat;
+}
+.drag-cue { display: none; }
+#objective-tree .sortable-ghost-preview[style*="--nest-at"] > .drag-cue {
+  display: block;
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 0 0.625rem;
+  background: var(--color-base-100);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.25rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 2;
+}
+#objective-tree .sortable-ghost-preview > .drag-cue-left {
+  left: calc(2.5rem + (var(--nest-at) - 0.5rem) / 2);
+  color: var(--color-primary);
+}
+#objective-tree .sortable-ghost-preview > .drag-cue-right {
+  left: calc(2.5rem + var(--nest-at) * 1.5 + 0.25rem);
+  color: var(--soft);
+}
+
+/* Nest mode: a line under the target, indented to where its children sit. */
+#objective-tree.nesting .sortable-ghost-preview::after,
+#objective-tree.nesting .sortable-ghost-preview > .drag-cue { display: none; }
+li.nest-target::after {
+  content: "";
+  position: absolute;
+  left: 5rem;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-primary);
+}
+
+/* Nest mode: the row that will become the parent is ringed and named. */
+li.nest-target > .objective-row {
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+li.nest-target > .objective-row::after {
+  content: "Nest inside";
+  position: absolute;
+  right: 10.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  pointer-events: none;
+}
+#objective-tree.tree-dragging::after {
+  content: attr(data-drag-hint);
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: var(--color-base-content);
+  color: var(--color-base-100);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+.tree-dragging .objective-children > .objective-rail-item.sortable-ghost-preview { position: relative; }
+
+/* Drag picture: short, title only, faded right so the placeholder stays readable. */
+.drag-image {
+  position: fixed;
+  top: -1000px;
+  left: 0;
+  width: 220px;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--color-base-100);
+  box-shadow: var(--soft-shadow);
+  color: var(--color-base-content);
+  font-size: 0.96875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to right, #000 45%, transparent);
+  mask-image: linear-gradient(to right, #000 45%, transparent);
+}
+
+/* Next to a group, centre the line in its gap. */
+#objective-tree li.objective-rail-item:has(> .objective-group) + .sortable-ghost-preview::after,
+#objective-tree .sortable-ghost-preview:has(+ li.objective-rail-item > .objective-group)::after {
+  top: calc(var(--group-step) / -2 - 2px);
+}
+#objective-tree li.objective-rail-item:has(> .objective-group) + .sortable-ghost-preview > .drag-cue,
+#objective-tree .sortable-ghost-preview:has(+ li.objective-rail-item > .objective-group) > .drag-cue {
+  top: calc(var(--group-step) / -2);
 }

@@ -1217,9 +1217,6 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 				@objectiveSecretToggle(node)
 				@objectiveVisibilityToggle(node)
 			</div>
-			<!-- Plain flow, not absolute: lets Sortable grow this to show the
-			     incoming item on hover. emptyInsertThreshold below makes a
-			     target this thin reachable. -->
 			<ul class="objective-children" data-parent-id={ node.Objective.ID }></ul>
 		</li>
 	}
@@ -1686,20 +1683,45 @@ templ objectiveSortableScript() {
 					},
 				},
 				handle: '.objective-drag-handle',
+				// Scrolled by dragScrollTick: native drags scroll differently per browser.
+				scroll: false,
+				// The default drag picture is row-wide and hides the placeholder labels.
+				setData: function(dataTransfer, dragEl) {
+					dataTransfer.setData('Text', dragEl.textContent);
+					var link = dragEl.querySelector('.objective-row a, .objective-group-header a');
+					var image = document.createElement('div');
+					image.className = 'drag-image';
+					image.textContent = link ? link.textContent.trim() : '';
+					document.body.appendChild(image);
+					dataTransfer.setDragImage(image, 16, 20);
+					setTimeout(function() { image.remove(); }, 0);
+				},
 				animation: 150,
 				fallbackOnBody: true,
 				swapThreshold: 0.65,
-				// Default 5px; 56 lets a leaf's own empty nested list be
-				// reached from anywhere in that leaf's row.
-				emptyInsertThreshold: 56,
+				// A margin around a leaf's empty list covered every row: overlap flickered.
+				emptyInsertThreshold: 0,
 				ghostClass: 'sortable-ghost-preview',
 				chosenClass: 'sortable-chosen-preview',
 				dragClass: 'sortable-drag-preview',
+				onStart: function(evt) {
+					var tree = document.getElementById('objective-tree');
+					if (!tree) return;
+					evt.item.insertAdjacentHTML('beforeend', '<span class="drag-cue drag-cue-left">Drop here</span><span class="drag-cue drag-cue-right">or nest inside</span>');
+					tree.classList.add('tree-dragging');
+					startDragScroll();
+					tree.dataset.dragHint = 'Reorder here. Move to the right half of a row to nest inside it';
+				},
 				onEnd: function(evt) {
+					var tree = document.getElementById('objective-tree');
+					var target = tree && tree.querySelector('.nest-target');
+					if (tree) tree.classList.remove('tree-dragging', 'nesting');
+					stopDragScroll();
+					evt.item.querySelectorAll('.drag-cue').forEach(function(cue) { cue.remove(); });
 					postObjectiveUpdate('/admin/objective/reposition', {
 						objective_id: evt.item.dataset.objectiveId,
-						parent_id: evt.to.dataset.parentId,
-						position: evt.newIndex,
+						parent_id: target ? target.dataset.objectiveId : evt.to.dataset.parentId,
+						position: target ? 0 : evt.newIndex,
 					});
 				},
 			});
@@ -1724,6 +1746,93 @@ templ objectiveSortableScript() {
 		document.body.addEventListener('focusin', trackVarBadge);
 		document.body.addEventListener('focusout', function(evt) {
 			if (evt.target === window.__varBadge && !evt.relatedTarget) trackVarBadge({ target: document.body });
+		});
+
+		// Left half of a row reorders, right half nests inside it. Only a decision:
+		// Sortable alone moves the placeholder (two movers made it jump), and the
+		// drop posts the target as parent. Nested, the pointer must come a little
+		// back before reordering again, so the edge does not flicker.
+		var NEST_SLACK = 28;
+		var NEST_HINT = 'Reorder here. Move to the right half of a row to nest inside it';
+		function isLeafItem(el) {
+			return !!el && el.matches('li.objective-rail-item') && !el.querySelector(':scope > .objective-group');
+		}
+		function rowMidpoint(item) {
+			var row = item.querySelector(':scope > .objective-row');
+			var box = row && row.getBoundingClientRect();
+			return box && box.width ? box.left + box.width / 2 : null;
+		}
+		// From the neighbouring rows, so the split is stable between rows too.
+		function lineHalf(ghost) {
+			var beside = ghost.nextElementSibling || ghost.previousElementSibling;
+			var shape = beside && beside.querySelector(':scope > .objective-row, :scope > .objective-group');
+			var width = shape ? shape.getBoundingClientRect().width : 0;
+			if (!width && ghost.parentElement) width = ghost.parentElement.getBoundingClientRect().width - 40;
+			return width / 2;
+		}
+		// Own auto-scroll (edge and wheel): native drags scroll differently per browser.
+		var SCROLL_EDGE = 110;
+		var SCROLL_MAX = 26;
+		var dragScrollFrame = 0;
+		function dragScrollTick() {
+			var tree = document.getElementById('objective-tree');
+			if (!tree || !tree.classList.contains('tree-dragging')) { dragScrollFrame = 0; return; }
+			var y = window.__dragPointerY;
+			if (typeof y === 'number') {
+				var height = window.innerHeight;
+				var step = 0;
+				if (y < SCROLL_EDGE) step = -SCROLL_MAX * (1 - Math.max(y, 0) / SCROLL_EDGE);
+				else if (y > height - SCROLL_EDGE) step = SCROLL_MAX * (1 - Math.max(height - y, 0) / SCROLL_EDGE);
+				if (step) window.scrollBy(0, step);
+			}
+			dragScrollFrame = requestAnimationFrame(dragScrollTick);
+		}
+		function startDragScroll() {
+			window.__dragPointerY = undefined;
+			if (!dragScrollFrame) dragScrollFrame = requestAnimationFrame(dragScrollTick);
+		}
+		function stopDragScroll() {
+			window.__dragPointerY = undefined;
+			if (dragScrollFrame) cancelAnimationFrame(dragScrollFrame);
+			dragScrollFrame = 0;
+		}
+		window.addEventListener('wheel', function(evt) {
+			var tree = document.getElementById('objective-tree');
+			if (!tree || !tree.classList.contains('tree-dragging')) return;
+			var before = window.scrollY;
+			requestAnimationFrame(function() {
+				if (window.scrollY === before) window.scrollBy(0, evt.deltaMode === 1 ? evt.deltaY * 40 : evt.deltaY);
+			});
+		}, { passive: true });
+		function steerNesting(evt) {
+			var tree = document.getElementById('objective-tree');
+			if (!tree || !tree.classList.contains('tree-dragging')) return;
+			var ghost = tree.querySelector('.sortable-ghost-preview');
+			if (!ghost) return;
+			window.__dragPointerY = evt.clientY;
+			var current = tree.querySelector('.nest-target');
+			var under = document.elementFromPoint(evt.clientX, evt.clientY);
+			var item = under && under.closest('li.objective-rail-item');
+			var leaf = isLeafItem(item) && !ghost.contains(item) ? item : null;
+			// Between rows the target holds.
+			var ref = item ? leaf : current;
+			var mid = ref ? rowMidpoint(ref) : null;
+			var edge = mid === null ? 0 : mid - (ref === current ? NEST_SLACK : 0);
+			tree.querySelectorAll('.nest-target').forEach(function(el) { el.classList.remove('nest-target'); });
+			if (mid !== null && evt.clientX > edge) {
+				ref.classList.add('nest-target');
+				tree.classList.add('nesting');
+				ghost.style.removeProperty('--nest-at');
+				var title = ref.querySelector(':scope > .objective-row a');
+				tree.dataset.dragHint = 'Nesting inside \u201c' + (title ? title.textContent.trim() : 'this row') + '\u201d. Move to the left half to reorder';
+				return;
+			}
+			tree.classList.remove('nesting');
+			ghost.style.setProperty('--nest-at', lineHalf(ghost) + 'px');
+			tree.dataset.dragHint = NEST_HINT;
+		}
+		['dragover', 'dragenter', 'pointermove'].forEach(function(type) {
+			document.addEventListener(type, steerNesting, true);
 		});
 
 		document.body.addEventListener('quest-lock-change', function(evt) {
