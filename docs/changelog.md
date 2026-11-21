@@ -11,11 +11,13 @@ tag: updated
 
 v8.0.0 replaces Locations with Objectives, which changes how much of the system works. An Objective is a thing to do. It may need proof, and can then reveal bonus content. Objectives can be parents of other objectives, so one recursive type replaces locations, groups, and the old game-structure blob.
 
+The [creators page](/creators) shows most of what's new in action: nesting, pass-through sections, keys and locks, the new blocks, and the run timeline.
+
 - **Nesting:** any objective becomes a section once something sits inside it.
 - **Pass-through:** a pass-through section hides itself and lets its children show in the section above. `A[B[C][D[E,F]]]` with D as pass-through plays as `A[B[C],E,F]`, with D's routing deciding which of E and F appear.
 - **Completion bands:** a section needs at least x and at most y of what's inside it.
 - **Event stream:** every player event is recorded.
-- **Run page:** shows the event log and a timeline.
+- **Run page:** each team gets a timeline of what they opened, answered and uploaded, with a strip showing when they were playing, idle, stalled or gone, and a map of where they are in the quest.
 - **Public UI:** redesigned.
 - **Game spec:** updated for all of the above.
 
@@ -42,6 +44,9 @@ v8.0.0 replaces Locations with Objectives, which changes how much of the system 
 - The You tab replaces Team, and shows the leaderboard and team name form.
 - A quest chooses what players see as progress: out of the total, a count only, or nothing.
 - Redesigned public site and player home, which offers a returning player their game back.
+- Redesigned admin: a new navigation bar, a game control card on Activity, redesigned Runs, Run, Quest and Settings pages, and a rebuilt objective editor with a plain card preview and an optional phone view. The Start and Complete pages are edited in the same block editor.
+- Section templates: add a Scan, Location or Quiz section's blocks in one click, already arranged. Blocks can also be moved between proof and reveal.
+- Facilitator dashboard rebuilt around "do I have to keep waiting?". A facilitator picks the stations they look after, and sees how long the game has left, which teams are still due, which are with them now, and which have stopped.
 - Run code lookups are limited to 10 a minute per client.
 - Adding an objective is one click. Next to a sibling with one navigation block, it copies that block.
 - More lint checks on import and live: missing routing, unreachable bands or finish labels, locks nothing can open, and sections the screen will flatten.
@@ -72,6 +77,7 @@ v8.0.0 replaces Locations with Objectives, which changes how much of the system 
 - A failed upload no longer leaves its file behind.
 - The activity page's "last seen" showed when a run was created, not when the team last played.
 - The Stripe webhook and game import no longer read unbounded request bodies.
+- Scripts and stylesheets on the player and public pages are stamped with their version, so a browser fetches the new ones after an update instead of keeping the old.
 
 ### Removed
 
