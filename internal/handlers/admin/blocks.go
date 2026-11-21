@@ -88,8 +88,12 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 
 	block, err := h.blockService.NewBlockWithOwnerAndContext(r.Context(), ownerID, blockContext, blockType)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		h.handleError(w, r, "BlockCreate: creating block", "Could not create block", "error", err)
+		// A block the page cannot hold is the request's fault, not the server's.
+		status := http.StatusInternalServerError
+		if errors.Is(err, services.ErrBlockNotValidForContext) {
+			status = http.StatusBadRequest
+		}
+		h.handleErrorWithStatus(w, r, status, "BlockCreate: creating block", "Could not create block", "error", err)
 		return
 	}
 

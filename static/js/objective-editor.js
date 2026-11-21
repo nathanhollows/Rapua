@@ -9,6 +9,8 @@
 
 	const state = (window.__objectiveEditor = window.__objectiveEditor || { bound: false, selected: {} });
 	const ORDER_PATH = /\/admin\/blocks\/(reorder|[^/]+\/move)$/;
+	// Every request that changes the list: adding (alone or as a template), then ordering.
+	const LIST_PATH = /^\/admin\/blocks\/(kit|reorder|[^/]+\/move)?$/;
 	// Long enough to read the message before the page resyncs.
 	const RELOAD_DELAY = 1800;
 
@@ -396,7 +398,7 @@
 		// htmx does not swap an error response, and the toast saying why is in it.
 		document.body.addEventListener('htmx:beforeSwap', (evt) => {
 			const info = evt.detail.pathInfo;
-			if (info && ORDER_PATH.test(info.requestPath) && evt.detail.xhr.status >= 400) {
+			if (info && LIST_PATH.test(info.requestPath) && evt.detail.xhr.status >= 400) {
 				evt.detail.shouldSwap = true;
 				evt.detail.isError = false;
 			}
