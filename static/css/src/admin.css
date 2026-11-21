@@ -2,10 +2,12 @@
 @import 'tailwindcss' source(none);
 @import './theme.css';
 @import './shared.css';
+@import './logo.css';
 @import './map.css';
 @import './editor.css';
 @import './shell.css';
 @import './run.css';
+@import './facilitator.css';
 @import './player.css';
 
 @source "../../../internal/templates/admin";

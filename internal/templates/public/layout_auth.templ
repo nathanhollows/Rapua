@@ -2,18 +2,13 @@ package templates
 
 templ AuthLayout(contents templ.Component, title string, authed bool) {
 	@siteDocument(title, publicHeadExtras()) {
-		if title == "Facilitator Dashboard" {
-			@authNav(title, authed)
+		<div class="relative isolate flex-1 flex flex-col">
+			<svg class="site-topo site-topo-full" data-topo aria-hidden="true"></svg>
+			if title != "Verify Email" {
+				@authNav(title, authed)
+			}
 			@contents
-		} else {
-			<div class="relative isolate flex-1 flex flex-col">
-				<svg class="site-topo site-topo-full" data-topo aria-hidden="true"></svg>
-				if title != "Verify Email" {
-					@authNav(title, authed)
-				}
-				@contents
-			</div>
-		}
+		</div>
 	}
 }
 

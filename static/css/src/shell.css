@@ -19,7 +19,6 @@
   --btn-edge: var(--line-strong);
   --nav-ink: color-mix(in oklab, var(--color-base-content) 88%, var(--color-base-100));
   --danger-bg: oklch(95% .045 27); --danger-fg: oklch(42% .18 27); --danger-edge: oklch(80% .08 27);
-  --logo-green: oklch(60% .17 140);
   --tint-info: oklch(95% .035 225); --tint-success: oklch(95% .04 148);
   --tint-warning: oklch(95% .05 80); --tint-error: oklch(95% .045 27);
   --ico-info: oklch(48% .12 225); --ico-success: oklch(45% .14 148);
@@ -35,7 +34,6 @@
   --soft-shadow: 0 1px 1px rgba(0,0,0,.18), 0 4px 10px -8px rgba(0,0,0,.35);
   --btn-edge: oklch(17% .02 277);
   --danger-bg: oklch(31% .045 27); --danger-fg: oklch(84% .13 27); --danger-edge: oklch(30% .06 27);
-  --logo-green: oklch(60% .17 128);
   --tint-info: oklch(31% .04 225); --tint-success: oklch(31% .045 148);
   --tint-warning: oklch(33% .05 80); --tint-error: oklch(31% .05 27);
   --ico-info: var(--color-info); --ico-success: var(--color-success);
@@ -85,28 +83,7 @@
 :root .alert-error { --alert-tint: var(--tint-error); --alert-ico: var(--ico-error); }
 :root .alert > svg:first-child { color: var(--alert-ico); }
 
-/* A sibling of the chip, so it is not tilted and squashed with it. */
 .topnav { border-bottom: 3px dotted var(--line); }
-.logo { display: inline-flex; align-items: center; gap: .65rem; padding: .25rem .5rem; border-radius: 12px; font-size: 1.125rem; font-weight: 800; cursor: pointer; }
-.logo:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 2px; }
-.logo-wrap { position: relative; display: block; isolation: isolate; }
-.logo-mark { position: relative; z-index: 1; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--logo-green); color: #fff; transform: rotate(-5deg); transform-origin: 50% 100%; }
-.logo-mark svg { width: 19px; height: 23px; overflow: visible; fill: currentColor; }
-.logo-wrap::after { content: ""; position: absolute; z-index: 0; left: 50%; bottom: -1px; width: 14px; height: 6px; margin-left: -7px; border: 2px solid var(--logo-green); border-radius: 50%; opacity: 0; pointer-events: none; }
-.logo-wrap.logo-hop .logo-mark { animation: logo-hop .65s linear; }
-.logo-wrap.logo-hop::after { animation: logo-ring .65s linear; }
-/* Contact is the 50% frame in both, so the ripple starts at impact. */
-@keyframes logo-hop {
-  0%   { transform: rotate(-5deg) scale(1, 1); animation-timing-function: ease-out; }
-  10%  { transform: rotate(-5deg) scale(1.08, .88); animation-timing-function: cubic-bezier(.2,.8,.3,1); }
-  30%  { transform: translateY(-13px) rotate(9deg) scale(.96, 1.06); animation-timing-function: cubic-bezier(.55,0,1,.6); }
-  50%  { transform: translateY(0) rotate(-5deg) scale(1.15, .83); animation-timing-function: cubic-bezier(.2,.8,.3,1); }
-  64%  { transform: translateY(-5px) rotate(-6deg) scale(.98, 1.04); animation-timing-function: cubic-bezier(.55,0,1,.6); }
-  78%  { transform: translateY(0) rotate(-5deg) scale(1.05, .95); animation-timing-function: cubic-bezier(.3,1.7,.5,1); }
-  100% { transform: rotate(-5deg) scale(1, 1); }
-}
-@keyframes logo-ring { 0%, 49.9% { opacity: 0; transform: scale(.3); } 50% { opacity: .85; transform: scale(.5); } 100% { opacity: 0; transform: scale(3.4); } }
-@media (prefers-reduced-motion: reduce) { .logo-wrap.logo-hop .logo-mark, .logo-wrap.logo-hop::after { animation: none; } }
 /* Else the tooltip covers the menu it opened. */
 :root .dropdown:focus-within > .tooltip::before, :root .dropdown:focus-within > .tooltip::after { display: none; }
 .topnav-tabs { display: flex; gap: .25rem; font-size: .875rem; font-weight: 700; }
@@ -124,6 +101,7 @@
 .stat-cell { display: grid; align-content: start; gap: .15rem; padding: 1.1rem 1.5rem 1.2rem; }
 .stat-cell + .stat-cell { border-left: 1px solid var(--line); }
 .stat-cell small { color: var(--soft); font-size: .875rem; }
+.stat-strip-2 { grid-template-columns: repeat(2, 1fr); }
 .stat-strip-3 { grid-template-columns: repeat(3, 1fr); }
 @media (max-width: 760px) {
   .stat-strip-3 { grid-template-columns: 1fr; }

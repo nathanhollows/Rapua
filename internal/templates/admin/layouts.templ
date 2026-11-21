@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"github.com/nathanhollows/Rapua/v8/internal/templates/brand"
 	"github.com/nathanhollows/Rapua/v8/internal/assets"
 	"fmt"
 	"math"
@@ -27,7 +28,40 @@ templ Layout(contents templ.Component, user models.User, section string, title s
 				</main>
 			</div>
 			@localStartTimes()
-			@logoHop()
+			@brand.HopScript()
+		</body>
+	</html>
+}
+
+// FacilitatorLayout frames a page for someone who is not an admin: the logo, a way
+// back, and the page. A facilitator has no quest to switch and nothing to navigate,
+// so none of the admin bar is offered.
+templ FacilitatorLayout(contents templ.Component, title string, admin bool) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		@header(title)
+		<body class="h-lvh flex flex-col" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+			<div id="app" class="flex-1 bg-base-200">
+				<div class="topnav bg-base-200">
+					<div class="navbar max-w-3xl m-auto">
+						<!-- A button, as in the admin bar: a link would navigate before the hop finishes. -->
+						<button type="button" class="logo" aria-label="Rapua">
+							@brand.Mark()
+						</button>
+						<span class="grow"></span>
+						if admin {
+							<a href="/admin" class="btn btn-sm btn-primary">Admin</a>
+						} else {
+							<a href="/login" class="btn btn-sm btn-secondary">Admin login</a>
+						}
+					</div>
+				</div>
+				<div class="toast toast-center z-50" id="alerts"></div>
+				<main class="max-w-3xl m-auto pb-8">
+					@contents
+				</main>
+			</div>
+			@brand.HopScript()
 		</body>
 	</html>
 }
@@ -381,11 +415,11 @@ templ nav(user models.User, section string) {
 				</div>
 				if user.CurrentQuestID != "" {
 					<button type="button" class="logo hidden sm:inline-flex" aria-label="Rapua">
-						@logoMark()
+						@brand.Mark()
 					</button>
 				} else {
 					<a href="/admin" class="logo hidden sm:inline-flex" aria-label="Rapua">
-						@logoMark()
+						@brand.Mark()
 					</a>
 				}
 			</div>
@@ -480,38 +514,6 @@ templ questSwitchButton(quest models.Quest, section string) {
 		}
 		@icon("chevron-down", templ.Attributes{"class": "w-5 h-5 shrink-0"})
 	</button>
-}
-
-// Guarded: hx-boost swaps the body without a reload, so listeners would stack.
-templ logoHop() {
-	<script>
-		(function () {
-			if (window.__logoHop) return;
-			window.__logoHop = true;
-			document.addEventListener('click', function (e) {
-				var link = e.target.closest('.logo');
-				if (!link) return;
-				var wrap = link.querySelector('.logo-wrap');
-				if (!wrap) return;
-				wrap.classList.remove('logo-hop');
-				void wrap.offsetWidth;
-				wrap.classList.add('logo-hop');
-			});
-			document.addEventListener('animationend', function (e) {
-				if (e.target.classList && e.target.classList.contains('logo-mark')) e.target.parentNode.classList.remove('logo-hop');
-			});
-		})();
-	</script>
-}
-
-// The logo is a link only when there is no Activity tab: navigating cuts the hop short.
-templ logoMark() {
-	<span class="logo-wrap">
-		<span class="logo-mark">
-			<svg viewBox="0 0 31.622 38.219" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
-		</span>
-	</span>
-	Rapua
 }
 
 templ questSwitcher(user models.User, section string) {
