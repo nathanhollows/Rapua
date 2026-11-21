@@ -18,11 +18,6 @@ func TestBlocks_MethodsExist(t *testing.T) {
 			t.Errorf("Block %s is missing a RenderAdminEdit view", block.GetName())
 		}
 
-		template = templates.RenderAdminBlock(instanceSettings, block, true)
-		if template == nil {
-			t.Errorf("Block %s is missing a RenderAdminBlock view", block.GetName())
-		}
-
 		template = templates.RenderPlayerView(instanceSettings, block, nil)
 		if template == nil {
 			t.Errorf("Block %s is missing a RenderPlayerView view", block.GetName())

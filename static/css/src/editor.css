@@ -1,32 +1,3 @@
-/* Preview Block Drag and Drop Styles */
-#mobile-preview-container .block-view {
-  @apply transition-all duration-100 cursor-grab rounded-xl;
-}
-
-/* Only draggable previews say so. The outline itself is applied by script, so
-   that pointing at a preview block and pointing at its editor block light up
-   together rather than one by CSS and one by class. */
-[data-blocks-target] .block-view:hover {
-  @apply cursor-move;
-}
-
-/* Hover highlighting, in both directions: pointing at a block in the editor
-   lights it in the preview, and pointing at it in the preview lights it in the
-   editor. One shape, so the pairing reads as the same relationship either way. */
-.preview-block-highlighted {
-  @apply outline-2 outline-offset-4 outline-primary rounded-2xl transition-all duration-100;
-}
-
-/* Remove top margin from blocks container when first block is a header */
-#mobile-preview-container .flex.flex-col.gap-8:has(.block-view:first-child header) {
-  @apply mt-0;
-}
-
-/* Also remove header's own top margin */
-#mobile-preview-container .block-view:first-child header {
-  @apply mt-0;
-}
-
 /* Sortable.js drag states */
 .sortable-ghost-preview {
   @apply opacity-40 bg-base-200;
@@ -895,7 +866,7 @@ li.nest-target > .objective-row::after {
 /* Objective editor: a heading row per step above plain panels, the way the
    other pages are built. Blocks are cards of their own whose header never
    changes, open or shut, so the page does not shift as it is used. */
-.obj-page { --side: 390px; padding-inline: 1.5rem; padding-bottom: 3rem; }
+.obj-page { --side: 390px; padding-inline: 1.25rem; padding-bottom: 3rem; }
 
 .obj-strip {
   display: flex;
@@ -978,36 +949,7 @@ li.nest-target > .objective-row::after {
 .obj-link code { color: var(--color-base-content); font: 600 .8rem ui-monospace, monospace; }
 .obj-link small { flex-basis: 100%; font-size: .8rem; }
 
-/* A block is a card. Its header is the same open or shut, hovered or not; only
-   the body comes and goes, under a hairline. The block being worked in gets a
-   ring that sits above its neighbours, so the next form cannot cut it. */
-.blocks { display: flex; flex-direction: column; gap: .9rem; }
-.blocks:empty::after {
-  content: "Nothing here yet. Add the first block.";
-  display: block;
-  padding: 1.5rem .75rem;
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 22px;
-  color: var(--soft);
-  text-align: center;
-}
-.content-block {
-  position: relative;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: var(--color-base-100);
-  box-shadow: var(--soft-shadow);
-}
-.content-block.admin-block-highlighted { z-index: 1; outline: none; box-shadow: 0 0 0 2px var(--color-primary), var(--soft-shadow); }
-.block-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: .4rem .75rem;
-  min-height: 3.75rem;
-  padding: .4rem 3rem .4rem .9rem;
-  font-weight: 700;
-}
+/* The icon tile a block wears in the list, its form and the picker. */
 .block-chip {
   display: grid;
   flex: none;
@@ -1019,51 +961,6 @@ li.nest-target > .objective-row::after {
   color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
 }
 .block-chip svg { width: 1.15rem; height: 1.15rem; }
-.block-name { font-size: 1.0625rem; font-weight: 700; }
-.block-pts {
-  min-width: 3.5rem;
-  padding: .05rem .7rem;
-  border-radius: 999px;
-  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
-  font-size: .8rem;
-  font-weight: 700;
-  text-align: center;
-}
-.block-pts-zero { background: var(--tint-warning); color: var(--ico-warning); }
-.block-tools { position: relative; z-index: 10; display: flex; align-items: center; gap: .5rem; margin-left: auto; }
-.block-actions { display: flex; gap: .15rem; opacity: 0; transition: opacity .12s; }
-.content-block:hover .block-actions,
-.content-block:focus-within .block-actions { opacity: 1; }
-@media (hover: none) {
-  .block-actions { opacity: 1; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .block-actions { transition: none; }
-}
-.block-actions .btn { width: 1.9rem; height: 1.9rem; min-height: 0; padding: 0; border-radius: .6rem; color: var(--soft); }
-.block-actions .btn:hover { color: var(--color-base-content); }
-.block-actions .block-delete:hover { color: var(--ico-error); }
-.block-body { padding-block: 0; }
-.content-block:has(> input:checked) > .block-body {
-  padding: 1rem 1.25rem 1.25rem 1.25rem;
-  border-top: 1px solid var(--line);
-}
-
-.block-pick {
-  z-index: 30;
-  width: 26rem;
-  max-width: calc(100vw - 2.5rem);
-  max-height: min(70vh, 36rem);
-  overflow-y: auto;
-  margin-top: .5rem;
-  padding: .9rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 18px;
-  background: var(--color-base-100);
-  box-shadow: var(--soft-shadow);
-}
-.block-pick .kicker { display: block; margin: .25rem 0 .5rem .15rem; }
-.block-pick .block-pick-grid + .kicker { margin-top: 1rem; }
 .block-pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
 .block-pick-item {
   display: flex;
@@ -1082,15 +979,7 @@ li.nest-target > .objective-row::after {
 .block-pick-item svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: .1rem; }
 .block-pick-item b { display: block; font-size: .9rem; }
 .block-pick-item small { display: block; color: var(--soft); font-size: .78rem; font-weight: 500; line-height: 1.3; }
-.block-actions .btn { width: 1.9rem; height: 1.9rem; min-height: 0; padding: 0; border-radius: .6rem; color: var(--soft); }
-.block-actions .btn:hover { color: var(--color-base-content); }
-.block-actions .block-delete:hover { color: var(--ico-error); }
 
-/* The variable button: a standard button in the editor, quiet again in the
-   accordion header where it sits among the block's other icons. */
-.collapse-title .vars-btn, .block-tools .vars-btn { --btn-bg: transparent; --btn-border: transparent; --btn-shadow: none; }
-.collapse-title .vars-btn:hover, .block-tools .vars-btn:hover { --btn-bg: var(--color-base-200); }
-.collapse-title .vars-label, .block-tools .vars-label { display: none; }
 .vars-label { font-family: var(--font-sans, inherit); font-weight: 700; }
 
 .cs { margin-top: 1.75rem; }
