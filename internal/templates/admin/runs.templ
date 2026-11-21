@@ -226,13 +226,15 @@ templ startedRun(team models.Run, classes string, summaries map[string]services.
 				@TeamStatusBadge(status, true, "sm")
 			</span>
 			<span class="hidden sm:block w-28 shrink-0 text-right">
-				// Relative, not elapsed: a stale run otherwise reads "111d 21h".
-				if team.HasStarted && !team.StartedAt.IsZero() {
+				// Relative, not elapsed: a stale run otherwise reads "111d 21h". When the run
+				// was last seen, as the activity page says it, not when it started.
+				{{ seen := services.LastSeenOrStarted(summary.LastSeen, team) }}
+				if team.HasStarted && !seen.IsZero() {
 					<span
 						class="text-xs whitespace-nowrap tooltip tooltip-left"
-						data-tip={ team.StartedAt.Local().Format("02 Jan 2006, 3:04 PM") }
+						data-tip={ "Last seen " + seen.Local().Format("02 Jan 2006, 3:04 PM") }
 					>
-						<span class="opacity-50">{ timeago.Parse(team.StartedAt) }</span>
+						<span class="opacity-50">{ timeago.Parse(seen) }</span>
 					</span>
 				}
 			</span>

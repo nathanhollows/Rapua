@@ -17,6 +17,29 @@ type RunSummary struct {
 	Done   int
 	Total  int
 	Status TeamStatus
+	// LastSeen is the run's most recent block interaction, the same reading the
+	// activity page uses. Zero until the run has done anything.
+	LastSeen time.Time
+}
+
+// LastSeenFrom lifts each run's last-seen out of its summary, keyed by run code,
+// for the leaderboard's tiebreak. The summaries already carry it, so no caller
+// needs a second query for it.
+func LastSeenFrom(summaries map[string]RunSummary) map[string]time.Time {
+	lastSeen := make(map[string]time.Time, len(summaries))
+	for code, summary := range summaries {
+		lastSeen[code] = summary.LastSeen
+	}
+	return lastSeen
+}
+
+// LastSeenOrStarted is when a run was last known to be about: its latest block
+// interaction, else when it began. Both lists read it, so they cannot disagree.
+func LastSeenOrStarted(lastSeen time.Time, run models.Run) time.Time {
+	if lastSeen.IsZero() {
+		return run.StartedAt
+	}
+	return lastSeen
 }
 
 // GetQuestRunSummaries loads the quest-wide data once: calling GetRunProgress
@@ -57,6 +80,11 @@ func (s *RunService) GetQuestRunSummaries(ctx context.Context, questID string) (
 	}
 	questPace := QuestBaseline(times)
 
+	lastSeen, err := s.LastSeenByRun(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("finding last seen times: %w", err)
+	}
+
 	now := time.Now()
 	summaries := make(map[string]RunSummary, len(runs))
 	// Every run of the quest, stream or no stream: progress is a state
@@ -76,9 +104,10 @@ func (s *RunService) GetQuestRunSummaries(ctx context.Context, questID string) (
 			status = runCadenceStatus(times[run.Code], questPace, finished, now)
 		}
 		summaries[run.Code] = RunSummary{
-			Done:   progress.Done,
-			Total:  progress.Total,
-			Status: status,
+			Done:     progress.Done,
+			Total:    progress.Total,
+			Status:   status,
+			LastSeen: lastSeen[run.Code],
 		}
 	}
 	return summaries, nil

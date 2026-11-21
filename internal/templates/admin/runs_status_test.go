@@ -106,3 +106,31 @@ func TestTeamsPreview(t *testing.T) {
 
 	writePreview(t, path, rows)
 }
+
+// The time on a run's row is when it was last about, the activity page's own
+// reading, and not when it started: a run begun long ago that played a minute
+// ago must not read as long gone.
+func TestTeamsTable_ShowsWhenARunWasLastSeenNotWhenItStarted(t *testing.T) {
+	run := listRun("P001", true)
+	run.StartedAt = time.Now().Add(-2 * 365 * 24 * time.Hour)
+
+	rendered := render(t, templates.TeamsTable([]models.Run{run}, map[string]services.RunSummary{
+		"P001": {Status: services.StatusPlaying, LastSeen: time.Now().Add(-90 * time.Second)},
+	}))
+
+	assert.Contains(t, rendered, "Last seen")
+	assert.NotContains(t, rendered, "years ago", "the start is no longer what the row says")
+	assert.Contains(t, rendered, "minute", "a minute or so, from the last interaction")
+}
+
+// A run that has done nothing yet is last known by when it began.
+func TestTeamsTable_FallsBackToTheStartWhenNothingWasDone(t *testing.T) {
+	run := listRun("P001", true)
+	run.StartedAt = time.Now().Add(-3 * time.Hour)
+
+	rendered := render(t, templates.TeamsTable([]models.Run{run}, map[string]services.RunSummary{
+		"P001": {Status: services.StatusStarted},
+	}))
+
+	assert.Contains(t, rendered, "3 hours ago")
+}

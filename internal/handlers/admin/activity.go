@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
@@ -65,18 +66,8 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lastSeen, err := h.runService.LastSeenByRun(r.Context(), user.CurrentQuestID)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"ActivityRunsOverview: getting last seen times",
-			"Error getting run activity",
-			"Could not load data",
-			err,
-		)
-		return
-	}
+	// The summaries carry when each run was last seen, so it is not asked for again.
+	lastSeen := services.LastSeenFrom(summaries)
 
 	// Get leaderboard data using the new service
 	leaderboardData, err := h.leaderBoardService.GetLeaderBoardData(

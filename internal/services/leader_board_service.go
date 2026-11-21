@@ -58,9 +58,7 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 func (s *LeaderBoardService) convertTeamToLeaderBoardData(
 	team models.Run, lastSeen time.Time, summary RunSummary,
 ) LeaderBoardTeamData {
-	if lastSeen.IsZero() {
-		lastSeen = team.StartedAt
-	}
+	lastSeen = LastSeenOrStarted(lastSeen, team)
 	if summary.Status == "" {
 		// A started run with an empty stream has no summary.
 		summary.Status = StatusStarted
