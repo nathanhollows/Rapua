@@ -89,6 +89,12 @@ type BlockService interface {
 	UpdateBlockVars(ctx context.Context, block blocks.Block, sets *string, depends *[]string) (blocks.Block, error)
 	// ReorderBlocks changes the display/order of blocks at a location
 	ReorderBlocks(ctx context.Context, blockIDs []string) error
+	// MoveBlock puts a block in the other half of its objective and orders the list it joins
+	MoveBlock(ctx context.Context, blockID string, to blocks.BlockContext, order []string) error
+	// CreateKit adds a section template's blocks to the end of a list, all or none
+	CreateKit(
+		ctx context.Context, ownerID string, blockContext blocks.BlockContext, kit services.BlockKit, points int,
+	) ([]blocks.Block, error)
 }
 
 // VariableService answers what a quest's blocks set and wait on.
@@ -381,6 +387,15 @@ func (h *Handler) handleError(
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), logMsg+" - rendering template", "error", err)
 	}
+}
+
+// handleErrorWithStatus is handleError with the status the failure deserves, so
+// a script can tell a refused request from one that worked.
+func (h *Handler) handleErrorWithStatus(
+	w http.ResponseWriter, r *http.Request, status int, logMsg, flashMsg string, params ...any,
+) {
+	w.WriteHeader(status)
+	h.handleError(w, r, logMsg, flashMsg, params...)
 }
 
 // QuestRunningToast reports an edit refused because the game is running, in the

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/nathanhollows/Rapua/v8/game"
@@ -220,6 +221,49 @@ func (s *BlockService) UpdateBlockVars(
 // ReorderBlocks reorders the blocks in a location.
 func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) error {
 	return s.blockRepo.Reorder(ctx, blockIDs)
+}
+
+// MoveBlock puts a block in the other half of its objective, then numbers the
+// list it joined in the order given. Only an objective's proof and reveal trade
+// blocks: the start and finish pages belong to the quest, not an objective.
+func (s *BlockService) MoveBlock(
+	ctx context.Context, blockID string, to blocks.BlockContext, order []string,
+) error {
+	isHalf := func(c blocks.BlockContext) bool {
+		return c == blocks.ContextObjectiveProof || c == blocks.ContextObjectiveReveal
+	}
+	if !isHalf(to) {
+		return fmt.Errorf("%w: %q is not part of an objective", ErrBlockNotMovable, to)
+	}
+	from, err := s.blockRepo.GetContext(ctx, blockID)
+	if err != nil {
+		return fmt.Errorf("finding the block's context: %w", err)
+	}
+	if !isHalf(from) {
+		return fmt.Errorf("%w: it is on a %q page", ErrBlockNotMovable, from)
+	}
+	block, err := s.blockRepo.GetByID(ctx, blockID)
+	if err != nil {
+		return fmt.Errorf("finding the block: %w", err)
+	}
+	if !blocks.CanBlockBeUsedInContext(block.GetType(), to) {
+		return fmt.Errorf("%w: %q in %q", ErrBlockNotValidForContext, block.GetType(), to)
+	}
+	// The order numbers a list, and a list belongs to one objective: an id from
+	// another would renumber blocks that have nothing to do with this move.
+	for _, id := range order {
+		other, getErr := s.blockRepo.GetByID(ctx, id)
+		if getErr != nil {
+			return fmt.Errorf("finding block %s in the order: %w", id, getErr)
+		}
+		if other.GetOwnerID() != block.GetOwnerID() {
+			return fmt.Errorf("%w: block %s belongs to another objective", ErrBlockNotMovable, id)
+		}
+	}
+	if !slices.Contains(order, blockID) {
+		order = append(order, blockID)
+	}
+	return s.blockRepo.Move(ctx, blockID, to, order)
 }
 
 // FindByOwnerIDAndRunCodeWithState fetches blocks and their states by owner and run code.

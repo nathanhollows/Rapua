@@ -129,16 +129,19 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	parentTitle, parentRule := h.containerContext(r, user.CurrentQuestID, *objective)
+	before, after := h.listNeighbours(r, user.CurrentQuestID, *objective)
 
 	data := templates.EditObjectiveData{
-		Settings:     user.CurrentQuest.Settings,
-		ParentTitle:  parentTitle,
-		ParentRule:   parentRule,
-		Objective:    *objective,
-		ProofBlocks:  proofBlocks,
-		RevealBlocks: revealBlocks,
-		ChildCount:   publishedChildCount(children),
-		Lint:         lintResult,
+		Settings:       user.CurrentQuest.Settings,
+		ParentTitle:    parentTitle,
+		ParentRule:     parentRule,
+		SiblingsBefore: before,
+		SiblingsAfter:  after,
+		Objective:      *objective,
+		ProofBlocks:    proofBlocks,
+		RevealBlocks:   revealBlocks,
+		ChildCount:     publishedChildCount(children),
+		Lint:           lintResult,
 	}
 
 	c := templates.LockedEditor(user.CurrentQuest, templates.EditObjective(data))
@@ -197,6 +200,43 @@ func (h *Handler) containerContext(
 		}
 	}
 	return parent.Title, pTemplates.RoutingRule(*parent, offered)
+}
+
+// listNeighbours is the sibling context the preview draws this row among.
+// Drafts and secrets are left out because a player's list does not show them.
+func (h *Handler) listNeighbours(
+	r *http.Request, questID string, objective models.Objective,
+) ([]string, []string) {
+	if objective.ParentID == "" {
+		return nil, nil
+	}
+	siblings, err := h.objectiveService.FindChildren(r.Context(), questID, objective.ParentID)
+	if err != nil {
+		return nil, nil
+	}
+	const maxBefore, maxAfter = 1, 2
+	var before, after []string
+	seenSelf := false
+	for _, sibling := range siblings {
+		if sibling.ID == objective.ID {
+			seenSelf = true
+			continue
+		}
+		if sibling.Draft || sibling.Secret {
+			continue
+		}
+		if seenSelf {
+			if len(after) < maxAfter {
+				after = append(after, sibling.Title)
+			}
+		} else {
+			before = append(before, sibling.Title)
+			if len(before) > maxBefore {
+				before = before[1:]
+			}
+		}
+	}
+	return before, after
 }
 
 func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {

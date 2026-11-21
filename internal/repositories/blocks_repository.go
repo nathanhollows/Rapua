@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -69,6 +70,17 @@ type BlockRepository interface {
 
 	// Reorder reorders the blocks for a specific location
 	Reorder(ctx context.Context, blockIDs []string) error
+
+	// CreateMany adds blocks to the end of a list in one transaction, so a set
+	// that belongs together is all there or not there at all. The blocks come
+	// back in the order given, with their new IDs.
+	CreateMany(
+		ctx context.Context, list []blocks.Block, ownerID string, blockContext blocks.BlockContext,
+	) ([]blocks.Block, error)
+
+	// Move puts a block in another context and orders the list it joins, in one
+	// transaction, so a failure cannot leave it in neither.
+	Move(ctx context.Context, blockID string, blockContext blocks.BlockContext, order []string) error
 
 	// DuplicateBlocksByOwner duplicates all blocks from oldOwnerID to newOwnerID
 	// Preserves all block properties including context, ordering, points, etc.
@@ -488,8 +500,76 @@ func (r *blockRepository) DeleteByOwnerIDPreservingStates(
 	return savedStates, nil
 }
 
+func (r *blockRepository) CreateMany(
+	ctx context.Context, list []blocks.Block, ownerID string, blockContext blocks.BlockContext,
+) ([]blocks.Block, error) {
+	created := make([]blocks.Block, 0, len(list))
+	err := r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		count, err := tx.NewSelect().
+			Model((*models.Block)(nil)).
+			Where("owner_id = ? AND context = ?", ownerID, blockContext).
+			Count(ctx)
+		if err != nil {
+			return err
+		}
+		for i, block := range list {
+			model := models.Block{
+				ID:                 uuid.New().String(),
+				OwnerID:            ownerID,
+				Type:               block.GetType(),
+				Context:            blockContext,
+				Data:               block.GetData(),
+				Ordering:           count + i,
+				Points:             block.GetPoints(),
+				ValidationRequired: block.RequiresValidation(),
+			}
+			if _, err = tx.NewInsert().Model(&model).Exec(ctx); err != nil {
+				return err
+			}
+			made, convErr := convertModelToBlock(&model)
+			if convErr != nil {
+				return convErr
+			}
+			created = append(created, made)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
 // Reorder reorders the blocks.
 func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error {
+	return reorderBlocks(ctx, r.db, blockIDs)
+}
+
+func (r *blockRepository) Move(
+	ctx context.Context, blockID string, blockContext blocks.BlockContext, order []string,
+) error {
+	return r.db.RunInTx(ctx, nil, func(ctx context.Context, tx bun.Tx) error {
+		res, err := tx.NewUpdate().
+			Model((*models.Block)(nil)).
+			Set("context = ?", string(blockContext)).
+			Where("id = ?", blockID).
+			Exec(ctx)
+		if err != nil {
+			return err
+		}
+		if n, rowsErr := res.RowsAffected(); rowsErr == nil && n == 0 {
+			return sql.ErrNoRows
+		}
+		return reorderBlocks(ctx, tx, order)
+	})
+}
+
+// reorderBlocks numbers the blocks in the order given. An empty list has
+// nothing to number, and an empty VALUES clause is not valid SQL.
+func reorderBlocks(ctx context.Context, db bun.IDB, blockIDs []string) error {
+	if len(blockIDs) == 0 {
+		return nil
+	}
 	values := make([]struct {
 		ID       string `bun:"id"`
 		Ordering int    `bun:"ordering"`
@@ -498,8 +578,8 @@ func (r *blockRepository) Reorder(ctx context.Context, blockIDs []string) error 
 		values[i].ID = blockID
 		values[i].Ordering = i
 	}
-	vals := r.db.NewValues(&values)
-	_, err := r.db.NewUpdate().
+	vals := db.NewValues(&values)
+	_, err := db.NewUpdate().
 		With("_data", vals).
 		Model((*models.Block)(nil)).
 		TableExpr("_data").

@@ -796,3 +796,167 @@ func TestBlockService_FindPointsByOwnerIDs(t *testing.T) {
 		assert.Empty(t, points)
 	})
 }
+
+func TestBlockService_MoveBlock(t *testing.T) {
+	svc, _, cleanup := setupBlocksService(t)
+	defer cleanup()
+	ctx := context.Background()
+	owner := gofakeit.UUID()
+
+	newBlock := func(blockContext blocks.BlockContext) string {
+		blk, err := svc.NewBlockWithOwnerAndContext(ctx, owner, blockContext, "checklist")
+		require.NoError(t, err)
+		return blk.GetID()
+	}
+	idsIn := func(blockContext blocks.BlockContext) []string {
+		found, err := svc.FindByOwnerIDAndContext(ctx, owner, blockContext)
+		require.NoError(t, err)
+		out := make([]string, 0, len(found))
+		for _, b := range found {
+			out = append(out, b.GetID())
+		}
+		return out
+	}
+
+	proofA, proofB := newBlock(blocks.ContextObjectiveProof), newBlock(blocks.ContextObjectiveProof)
+	reveal := newBlock(blocks.ContextObjectiveReveal)
+
+	t.Run("moves a block across and orders the list it joins", func(t *testing.T) {
+		// Dropped between the reveal's own block and the end: [reveal, proofA].
+		require.NoError(t, svc.MoveBlock(ctx, proofA, blocks.ContextObjectiveReveal, []string{reveal, proofA}))
+
+		assert.Equal(t, []string{proofB}, idsIn(blocks.ContextObjectiveProof))
+		assert.Equal(t, []string{reveal, proofA}, idsIn(blocks.ContextObjectiveReveal))
+	})
+
+	t.Run("a block missing from the order goes last, not nowhere", func(t *testing.T) {
+		require.NoError(t, svc.MoveBlock(ctx, proofB, blocks.ContextObjectiveReveal, []string{reveal}))
+
+		assert.Empty(t, idsIn(blocks.ContextObjectiveProof))
+		assert.Equal(t, proofB, idsIn(blocks.ContextObjectiveReveal)[len(idsIn(blocks.ContextObjectiveReveal))-1])
+	})
+
+	t.Run("only an objective's two halves trade blocks", func(t *testing.T) {
+		err := svc.MoveBlock(ctx, reveal, blocks.ContextStart, nil)
+		require.ErrorIs(t, err, services.ErrBlockNotMovable)
+
+		sys, createErr := svc.NewBlockWithOwnerAndContext(ctx, gofakeit.UUID(), blocks.ContextStart, "team_name")
+		require.NoError(t, createErr)
+		err = svc.MoveBlock(ctx, sys.GetID(), blocks.ContextObjectiveProof, nil)
+		require.ErrorIs(t, err, services.ErrBlockNotMovable, "a start-page block is not an objective's to move")
+	})
+
+	t.Run("an order naming another objective's block moves nothing", func(t *testing.T) {
+		stranger, createErr := svc.NewBlockWithOwnerAndContext(
+			ctx, gofakeit.UUID(), blocks.ContextObjectiveReveal, "checklist",
+		)
+		require.NoError(t, createErr)
+		mine := newBlock(blocks.ContextObjectiveProof)
+
+		err := svc.MoveBlock(ctx, mine, blocks.ContextObjectiveReveal, []string{stranger.GetID(), mine})
+		require.ErrorIs(t, err, services.ErrBlockNotMovable)
+
+		assert.Contains(t, idsIn(blocks.ContextObjectiveProof), mine, "still where it was")
+		assert.NotContains(t, idsIn(blocks.ContextObjectiveReveal), mine)
+	})
+
+	t.Run("an unknown block is an error", func(t *testing.T) {
+		require.Error(t, svc.MoveBlock(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, nil))
+	})
+}
+
+func TestBlockService_CreateKit(t *testing.T) {
+	svc, _, cleanup := setupBlocksService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	types := func(list []blocks.Block) []string {
+		out := make([]string, 0, len(list))
+		for _, b := range list {
+			out = append(out, b.GetType())
+		}
+		return out
+	}
+
+	t.Run("scan: instructions, then a scan with its QR code already made", func(t *testing.T) {
+		owner := gofakeit.UUID()
+		made, err := svc.CreateKit(ctx, owner, blocks.ContextObjectiveProof, services.KitScan, 10)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"text", "scan"}, types(made))
+
+		text, ok := made[0].(*blocks.MarkdownBlock)
+		require.True(t, ok)
+		assert.NotEmpty(t, text.Content, "the helper text is there to be edited, not blank")
+
+		scan, ok := made[1].(*blocks.ScanBlock)
+		require.True(t, ok)
+		require.Len(t, scan.Codes, 1)
+		assert.Regexp(t, `^[a-hj-km-np-z2-9]{4}-[a-hj-km-np-z2-9]{4}$`, scan.Codes[0].Value,
+			"the form of code the editor's own Mint a QR makes")
+		assert.True(t, scan.Codes[0].Generate, "marked for a printable image")
+		assert.Equal(t, 10, scan.GetPoints())
+		assert.Equal(t, 0, text.GetPoints(), "reading earns nothing")
+
+		stored, err := svc.FindByOwnerIDAndContext(ctx, owner, blocks.ContextObjectiveProof)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"text", "scan"}, types(stored), "saved, in order")
+	})
+
+	t.Run("each scan kit gets its own code", func(t *testing.T) {
+		a, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, services.KitScan, 0)
+		require.NoError(t, err)
+		b, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, services.KitScan, 0)
+		require.NoError(t, err)
+		assert.NotEqual(t, a[1].(*blocks.ScanBlock).Codes[0].Value, b[1].(*blocks.ScanBlock).Codes[0].Value)
+	})
+
+	t.Run("location: one check, ready to place", func(t *testing.T) {
+		made, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, services.KitLocation, 10)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"geofence"}, types(made))
+		assert.Equal(t, 10, made[0].GetPoints())
+	})
+
+	t.Run("quiz: instructions and two quizzes", func(t *testing.T) {
+		made, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, services.KitQuiz, 10)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"text", "quiz", "quiz"}, types(made))
+	})
+
+	t.Run("a game without scoring gets no points", func(t *testing.T) {
+		made, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextObjectiveProof, services.KitQuiz, 0)
+		require.NoError(t, err)
+		for _, b := range made {
+			assert.Equal(t, 0, b.GetPoints())
+		}
+	})
+
+	t.Run("a kit goes after what is already there", func(t *testing.T) {
+		owner := gofakeit.UUID()
+		_, err := svc.NewBlockWithOwnerAndContext(ctx, owner, blocks.ContextObjectiveProof, "checklist")
+		require.NoError(t, err)
+		_, err = svc.CreateKit(ctx, owner, blocks.ContextObjectiveProof, services.KitScan, 0)
+		require.NoError(t, err)
+
+		stored, err := svc.FindByOwnerIDAndContext(ctx, owner, blocks.ContextObjectiveProof)
+		require.NoError(t, err)
+		assert.Equal(t, []string{"checklist", "text", "scan"}, types(stored))
+	})
+
+	t.Run("an unknown kit, or no owner, makes nothing", func(t *testing.T) {
+		owner := gofakeit.UUID()
+		_, err := svc.CreateKit(ctx, owner, blocks.ContextObjectiveProof, "nonsense", 0)
+		require.ErrorIs(t, err, services.ErrUnknownBlockKit)
+		_, err = svc.CreateKit(ctx, "", blocks.ContextObjectiveProof, services.KitScan, 0)
+		require.Error(t, err)
+
+		stored, findErr := svc.FindByOwnerIDAndContext(ctx, owner, blocks.ContextObjectiveProof)
+		require.NoError(t, findErr)
+		assert.Empty(t, stored)
+	})
+
+	t.Run("a kit is refused in a context its blocks cannot be used in", func(t *testing.T) {
+		_, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitScan, 0)
+		require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
+	})
+}

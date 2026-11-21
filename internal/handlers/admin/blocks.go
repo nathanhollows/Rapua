@@ -2,6 +2,7 @@ package admin
 
 import (
 	"encoding/json"
+	"errors"
 	"maps"
 	"net/http"
 	"slices"
@@ -9,6 +10,7 @@ import (
 	"github.com/a-h/templ"
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	adminTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
@@ -91,16 +93,99 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.RenderAdminBlock(user.CurrentQuest.Settings, block, true).Render(r.Context(), w)
+	// The start and finish pages still use the accordion.
+	if blockContext == blocks.ContextObjectiveProof || blockContext == blocks.ContextObjectiveReveal {
+		err = adminTemplates.ObjectiveBlockAdded(user.CurrentQuest.Settings, block, blockContext, true).
+			Render(r.Context(), w)
+	} else {
+		err = templates.RenderAdminBlock(user.CurrentQuest.Settings, block, true).Render(r.Context(), w)
+	}
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "BlockCreate: rendering template", "error", err)
 	}
-
 	// After the block's own markup, since this rides the same response as an
 	// out-of-band swap. Adding the first interactive block or the first start
 	// button is precisely when the block-presence diagnostics clear, so
 	// without this the panel keeps telling the author their fix failed.
 	h.refreshLintPanel(w, r, ownerID, blockContext)
+}
+
+// BlockKit adds a section template's blocks together or not at all.
+// POST /admin/blocks/kit  (owner, context, kit).
+func (h *Handler) BlockKit(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	if err := r.ParseForm(); err != nil {
+		h.handleErrorWithStatus(
+			w, r, http.StatusBadRequest, "BlockKit: parsing form", "Could not add the template", "error", err,
+		)
+		return
+	}
+	ownerID := r.FormValue("owner")
+	blockContext := blocks.BlockContext(r.FormValue("context"))
+	kit := services.BlockKit(r.FormValue("kit"))
+
+	if ownerID == "" || kit == "" {
+		h.handleErrorWithStatus(
+			w, r, http.StatusBadRequest, "BlockKit: missing parameter", "Could not add the template",
+			"owner", ownerID, "kit", kit,
+		)
+		return
+	}
+	if blockContext != blocks.ContextObjectiveProof && blockContext != blocks.ContextObjectiveReveal {
+		h.handleErrorWithStatus(
+			w, r, http.StatusBadRequest, "BlockKit: invalid context", "Could not add the template",
+			"context", blockContext,
+		)
+		return
+	}
+
+	access, err := h.accessService.CanAdminAccessBlockOwner(r.Context(), user.ID, ownerID, blockContext)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		h.handleError(w, r, "BlockKit: checking access", "Could not add the template", "error", err)
+		return
+	}
+	if !access {
+		w.WriteHeader(http.StatusForbidden)
+		h.handleError(w, r, "BlockKit: access denied", "Could not add the template. Access denied", "owner", ownerID)
+		return
+	}
+
+	points := 0
+	if user.CurrentQuest.Settings.EnablePoints {
+		points = services.DefaultKitPoints
+	}
+	made, err := h.blockService.CreateKit(r.Context(), ownerID, blockContext, kit, points)
+	if err != nil {
+		status := http.StatusInternalServerError
+		if errors.Is(err, services.ErrUnknownBlockKit) || errors.Is(err, services.ErrBlockNotValidForContext) {
+			status = http.StatusBadRequest
+		}
+		h.handleErrorWithStatus(w, r, status, "BlockKit: creating blocks", "Could not add the template", "error", err)
+		return
+	}
+
+	selected := firstInteractive(made)
+	for i, block := range made {
+		err = adminTemplates.ObjectiveBlockAdded(
+			user.CurrentQuest.Settings, block, blockContext, i == selected,
+		).Render(r.Context(), w)
+		if err != nil {
+			h.logger.ErrorContext(r.Context(), "BlockKit: rendering template", "error", err)
+		}
+	}
+	h.refreshLintPanel(w, r, ownerID, blockContext)
+}
+
+// firstInteractive is the block worth putting the cursor in after a kit lands.
+func firstInteractive(list []blocks.Block) int {
+	for i, block := range list {
+		if game.CanSetVars(block) || block.RequiresValidation() {
+			return i
+		}
+	}
+	return 0
 }
 
 // BlockGet retrieves a single block by ID.
@@ -298,7 +383,9 @@ func (h *Handler) BlockReorder(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseForm()
 	if err != nil {
-		h.handleError(w, r, "BlockReorder: parsing form", "Could not reorder blocks", "error", err)
+		h.handleErrorWithStatus(
+			w, r, http.StatusBadRequest, "BlockReorder: parsing form", "Could not reorder blocks", "error", err,
+		)
 		return
 	}
 
@@ -307,17 +394,16 @@ func (h *Handler) BlockReorder(w http.ResponseWriter, r *http.Request) {
 	for _, blockID := range blockOrder {
 		access, accessErr := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, blockID)
 		if accessErr != nil {
-			h.handleError(w, r, "BlockReorder: checking access", "Could not reorder blocks", "error", accessErr)
+			h.handleErrorWithStatus(
+				w, r, http.StatusInternalServerError,
+				"BlockReorder: checking access", "Could not reorder blocks", "error", accessErr,
+			)
 			return
 		}
 		if !access {
-			h.handleError(
-				w,
-				r,
-				"BlockReorder: access denied",
-				"Could not reorder blocks. Access denied",
-				"blockID",
-				blockID,
+			h.handleErrorWithStatus(
+				w, r, http.StatusForbidden,
+				"BlockReorder: access denied", "Could not reorder blocks. Access denied", "blockID", blockID,
 			)
 			return
 		}
@@ -325,11 +411,70 @@ func (h *Handler) BlockReorder(w http.ResponseWriter, r *http.Request) {
 
 	err = h.blockService.ReorderBlocks(r.Context(), blockOrder)
 	if err != nil {
-		h.handleError(w, r, "BlockReorder: reordering blocks", "Could not reorder blocks", "error", err)
+		h.handleErrorWithStatus(
+			w, r, http.StatusInternalServerError,
+			"BlockReorder: reordering blocks", "Could not reorder blocks", "error", err,
+		)
 		return
 	}
 
 	h.handleSuccess(w, r, "Blocks reordered")
+}
+
+// BlockMove puts a block in the other half of its objective, and saves the
+// order of the list it joins. The same request carries both, so the block is
+// never in one list with the other's order.
+// POST /admin/blocks/{id}/move  (context, block_id...).
+func (h *Handler) BlockMove(w http.ResponseWriter, r *http.Request) {
+	user := h.UserFromContext(r.Context())
+
+	blockID := chi.URLParam(r, "id")
+	if err := r.ParseForm(); err != nil {
+		h.handleErrorWithStatus(
+			w, r, http.StatusBadRequest, "BlockMove: parsing form", "Could not move block", "error", err,
+		)
+		return
+	}
+	to := blocks.BlockContext(r.FormValue("context"))
+	order := r.Form["block_id"]
+
+	for _, id := range append([]string{blockID}, order...) {
+		access, err := h.accessService.CanAdminAccessBlock(r.Context(), user.ID, id)
+		if err != nil {
+			h.handleErrorWithStatus(
+				w, r, http.StatusInternalServerError,
+				"BlockMove: checking access", "Could not move block", "error", err,
+			)
+			return
+		}
+		if !access {
+			h.handleErrorWithStatus(
+				w, r, http.StatusForbidden,
+				"BlockMove: access denied", "Could not move block. Access denied", "blockID", id,
+			)
+			return
+		}
+	}
+
+	block, err := h.blockService.GetByBlockID(r.Context(), blockID)
+	if err != nil {
+		h.handleErrorWithStatus(
+			w, r, http.StatusInternalServerError, "BlockMove: getting block", "Could not move block", "error", err,
+		)
+		return
+	}
+
+	if err = h.blockService.MoveBlock(r.Context(), blockID, to, order); err != nil {
+		status := http.StatusInternalServerError
+		if errors.Is(err, services.ErrBlockNotMovable) || errors.Is(err, services.ErrBlockNotValidForContext) {
+			status = http.StatusBadRequest
+		}
+		h.handleErrorWithStatus(w, r, status, "BlockMove: moving block", "Could not move block", "error", err)
+		return
+	}
+
+	h.refreshLintPanel(w, r, block.GetOwnerID(), to)
+	h.handleSuccess(w, r, "Block moved")
 }
 
 // contextOfBlock finds which context a block sits in by asking its owner for

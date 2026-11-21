@@ -486,6 +486,8 @@ func setupAdminRoutes(router chi.Router, logger *slog.Logger, adminHandler *admi
 			r.Get("/{id}/vars", adminHandler.BlockVarsEdit)   // GET /admin/blocks/{id}/vars
 			r.Put("/{id}/vars", adminHandler.BlockVarsUpdate) // PUT /admin/blocks/{id}/vars
 			r.Post("/reorder", adminHandler.BlockReorder)     // POST /admin/blocks/reorder
+			r.Post("/kit", adminHandler.BlockKit)             // POST /admin/blocks/kit
+			r.Post("/{id}/move", adminHandler.BlockMove)      // POST /admin/blocks/{id}/move
 		})
 		r.Route("/runs", func(r chi.Router) {
 			r.Get("/", adminHandler.Runs)
