@@ -385,7 +385,6 @@ body.site :focus-visible { outline: 3px solid var(--color-primary); outline-offs
 .cr .wcol > p { margin-top: .35rem; max-width: 30rem; font-size: 1rem; line-height: 1.55; color: color-mix(in oklch, var(--cr-ink) 75%, transparent); }
 .cr .shot { margin-top: 1.25rem; padding: 1.25rem; border-radius: 1.4rem; background: var(--color-base-100); box-shadow: 0 24px 48px -30px #000a; }
 .cr .tl-head { font-size: .875rem; font-weight: 800; }
-.cr .tl-head code { font-family: ui-monospace, monospace; letter-spacing: .08em; }
 .cr [data-c="play"] { --cc: var(--color-success); }
 .cr [data-c="idle"] { --cc: var(--color-info); }
 .cr [data-c="stall"] { --cc: var(--color-warning); }
