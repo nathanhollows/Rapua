@@ -87,7 +87,7 @@ func TestEditObjective_HasNoDuplicateTitle(t *testing.T) {
 	assert.NotContains(t, html, `id="objective-title"`)
 	// The heading names the kind of page, the way every other page here does.
 	// It used to be a copy of the title, kept in step by script.
-	assert.Contains(t, html, `class="text-4xl font-black">Objective</h1>`)
+	assert.Contains(t, html, `class="text-4xl font-black mr-auto">Objective</h1>`)
 	// Twice is right: the field holds the title and the card shows it. The card
 	// has to be correct on load, not only once somebody types.
 	assert.Equal(t, 2, strings.Count(html, "Scan the label"))

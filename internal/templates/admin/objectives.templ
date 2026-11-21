@@ -240,12 +240,7 @@ templ EditObjective(data EditObjectiveData) {
 	></form>
 	<div class="obj-page" data-objective-editor data-points-enabled={ fmt.Sprint(data.Settings.EnablePoints) }>
 		<div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-5 pb-4">
-			<div id="quest-title-group" class="flex items-baseline gap-3 min-w-0 mr-auto">
-				<h1 class="text-4xl font-black">Objective</h1>
-				if data.ParentTitle != "" {
-					<span class="text-lg font-bold text-(--soft) truncate hidden sm:inline">in { data.ParentTitle }</span>
-				}
-			</div>
+			<h1 class="text-4xl font-black mr-auto">Objective</h1>
 			@objectiveSaveState()
 			<!-- In a menu so an irreversible action is not at primary weight. -->
 			<details class="dropdown dropdown-end">

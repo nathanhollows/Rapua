@@ -87,20 +87,20 @@ func EditPage(data EditPageData) templ.Component {
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Header --><div class=\"flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5\"><h1 class=\"text-2xl font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Header --><div class=\"flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5\"><h1 class=\"text-4xl font-black\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.PageTitle)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 30, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/system_pages.templ`, Line: 30, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " Page</h1><div class=\"tooltip\" data-tip=\"System page - cannot be deleted\"><div class=\"badge badge-ghost gap-1\"><svg class=\"w-3 h-3\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg> System Page</div></div></div><div class=\"flex flex-col lg:flex-row w-full gap-8 p-5 pt-0\"><div class=\"flex flex-col flex-grow min-w-0\"><!-- Blocks --><section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, " page</h1><div class=\"tooltip\" data-tip=\"System page - cannot be deleted\"><div class=\"badge badge-ghost gap-1\"><svg class=\"w-3 h-3\" xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect> <path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path></svg> System Page</div></div></div><div class=\"flex flex-col lg:flex-row w-full gap-8 p-5 pt-0\"><div class=\"flex flex-col flex-grow min-w-0\"><!-- Blocks --><section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
