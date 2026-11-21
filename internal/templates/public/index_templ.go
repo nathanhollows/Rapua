@@ -11,6 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"context"
 	"fmt"
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
 	"strings"
 
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -115,7 +116,7 @@ func Home(run *models.Run, codeLength int, authed bool) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(homeState(run))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 66, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 67, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -141,7 +142,20 @@ func Home(run *models.Run, codeLength int, authed bool) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " <script src=\"/static/js/home.js\"></script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, " <script src=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var4 string
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(assets.URL("/static/js/home.js"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 72, Col: 48}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"></script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -171,198 +185,198 @@ func homeHero(run *models.Run, codeLength int) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var4 == nil {
-			templ_7745c5c3_Var4 = templ.NopComponent
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<section class=\"home-hero\" id=\"hero\"><svg class=\"home-map\" id=\"map\" viewBox=\"350 -100 1100 920\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><g><path class=\"home-water\" id=\"m-water\"></path> <path class=\"home-river\" id=\"m-river\"></path> <path class=\"home-coast\" id=\"m-coast\"></path> <path class=\"home-street\" id=\"m-street\"></path> <path class=\"home-major\" id=\"m-major\"></path></g> <g class=\"home-wash\"><ellipse cx=\"900\" cy=\"330\" rx=\"390\" ry=\"265\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"330\" ry=\"220\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"270\" ry=\"180\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"215\" ry=\"140\"></ellipse></g></svg> <svg class=\"home-trail\" id=\"trail\" aria-hidden=\"true\"></svg><div class=\"home-stickers\" id=\"stickers\"></div><div class=\"home-tip\" id=\"tip\" role=\"tooltip\"><strong></strong><span></span></div><div class=\"site-wrap\"><div class=\"relative z-[2] w-full max-w-[25rem] mx-auto\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<section class=\"home-hero\" id=\"hero\"><svg class=\"home-map\" id=\"map\" viewBox=\"350 -100 1100 920\" preserveAspectRatio=\"xMidYMid slice\" aria-hidden=\"true\"><g><path class=\"home-water\" id=\"m-water\"></path> <path class=\"home-river\" id=\"m-river\"></path> <path class=\"home-coast\" id=\"m-coast\"></path> <path class=\"home-street\" id=\"m-street\"></path> <path class=\"home-major\" id=\"m-major\"></path></g> <g class=\"home-wash\"><ellipse cx=\"900\" cy=\"330\" rx=\"390\" ry=\"265\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"330\" ry=\"220\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"270\" ry=\"180\"></ellipse> <ellipse cx=\"900\" cy=\"330\" rx=\"215\" ry=\"140\"></ellipse></g></svg> <svg class=\"home-trail\" id=\"trail\" aria-hidden=\"true\"></svg><div class=\"home-stickers\" id=\"stickers\"></div><div class=\"home-tip\" id=\"tip\" role=\"tooltip\"><strong></strong><span></span></div><div class=\"site-wrap\"><div class=\"relative z-[2] w-full max-w-[25rem] mx-auto\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if run != nil {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<article class=\"home-resume p-5 rounded-[1.25rem] bg-base-200\" aria-labelledby=\"resume-title\"><span class=\"home-kicker text-xs font-bold uppercase tracking-[.08em] text-primary\">You're mid-quest</span><h1 id=\"resume-title\" class=\"mt-1.5 text-2xl leading-tight font-extrabold tracking-[-0.02em]\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<article class=\"home-resume p-5 rounded-[1.25rem] bg-base-200\" aria-labelledby=\"resume-title\"><span class=\"home-kicker text-xs font-bold uppercase tracking-[.08em] text-primary\">You're mid-quest</span><h1 id=\"resume-title\" class=\"mt-1.5 text-2xl leading-tight font-extrabold tracking-[-0.02em]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(run.Quest.Name)
+			var templ_7745c5c3_Var6 string
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(run.Quest.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 100, Col: 116}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 101, Col: 116}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</h1><p class=\"mt-1 text-[.9375rem] text-base-content/70\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</h1><p class=\"mt-1 text-[.9375rem] text-base-content/70\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if run.Name != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "Playing as ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "Playing as ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(run.Name)
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(run.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 103, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 104, Col: 29}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, ", game code ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, ", game code ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "Your game code is ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "Your game code is ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<b class=\"font-mono tracking-[.08em] text-base-content\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<b class=\"font-mono tracking-[.08em] text-base-content\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(prettyCode(run.Code))
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(prettyCode(run.Code))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 107, Col: 85}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</b></p><p class=\"mt-2.5 text-sm text-base-content/70\">Your progress is saved on this phone.</p><a href=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var8 templ.SafeURL
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(resumeHref(run)))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 110, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 108, Col: 85}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"home-btn mt-[1.1rem]\">Carry on <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg></a> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</b></p><p class=\"mt-2.5 text-sm text-base-content/70\">Your progress is saved on this phone.</p><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if run.HasStarted {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<a href=\"/journal\" class=\"block mt-3 text-center text-[.9375rem] font-bold\">Read your journal</a>")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</article><p class=\"home-or mt-9 flex items-center gap-[.8rem] text-sm font-bold text-base-content/75\">Joining a different quest?</p>")
+			var templ_7745c5c3_Var9 templ.SafeURL
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(resumeHref(run)))
 			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<h1 class=\"text-center font-black leading-none tracking-[-0.035em] text-balance text-[clamp(2.6rem,10vw,4rem)]\">Your quest starts <span class=\"text-primary\">here.</span></h1><p class=\"mt-[1.1rem] text-center text-[1.0625rem] font-medium text-base-content/72 text-balance\">Type the ")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(codeWord(codeLength))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 121, Col: 134}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 111, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "-letter game code your facilitator gave you.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" class=\"home-btn mt-[1.1rem]\">Carry on <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg></a> ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if run.HasStarted {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<a href=\"/journal\" class=\"block mt-3 text-center text-[.9375rem] font-bold\">Read your journal</a>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</article><p class=\"home-or mt-9 flex items-center gap-[.8rem] text-sm font-bold text-base-content/75\">Joining a different quest?</p>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		} else {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<h1 class=\"text-center font-black leading-none tracking-[-0.035em] text-balance text-[clamp(2.6rem,10vw,4rem)]\">Your quest starts <span class=\"text-primary\">here.</span></h1><p class=\"mt-[1.1rem] text-center text-[1.0625rem] font-medium text-base-content/72 text-balance\">Type the ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var10 string
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(codeWord(codeLength))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 122, Col: 134}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "-letter game code your facilitator gave you.</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<form class=\"home-form\" id=\"join\" action=\"/play\" method=\"post\" novalidate data-length=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var10 string
-		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(codeLength))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 123, Col: 114}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\"><input type=\"hidden\" name=\"csrf\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<form class=\"home-form\" id=\"join\" action=\"/play\" method=\"post\" novalidate data-length=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrfToken(ctx))
+		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(codeLength))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 124, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 124, Col: 114}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><div class=\"home-tiles\" id=\"tiles\" style=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><input type=\"hidden\" name=\"csrf\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(templ.SafeCSS(tileColumns(codeLength)))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(csrfToken(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 125, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 125, Col: 60}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"><div class=\"home-tiles\" id=\"tiles\" style=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(templ.SafeCSS(tileColumns(codeLength)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 126, Col: 86}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for i := 0; i < codeLength; i++ {
 			if i > 0 && i == codeSplit(codeLength) {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"home-dash\" aria-hidden=\"true\"></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"home-dash\" aria-hidden=\"true\"></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " <div class=\"home-tile\" aria-hidden=\"true\"><span></span></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, " <div class=\"home-tile\" aria-hidden=\"true\"><span></span></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<input class=\"home-input\" id=\"code\" name=\"run\" type=\"text\" maxlength=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(codeLength + 1))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 137, Col: 45}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" inputmode=\"text\" autocapitalize=\"characters\" autocomplete=\"off\" autocorrect=\"off\" spellcheck=\"false\" enterkeyhint=\"go\" aria-label=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<input class=\"home-input\" id=\"code\" name=\"run\" type=\"text\" maxlength=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Game code, %s letters", codeWord(codeLength)))
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(codeLength + 1))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 144, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 138, Col: 45}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" aria-describedby=\"err\"></div><p class=\"mt-3 min-h-[1.4rem] whitespace-nowrap text-center text-[.9375rem] font-semibold text-error\" id=\"err\" role=\"alert\"></p><button class=\"home-btn\" id=\"go\" type=\"submit\" aria-disabled=\"true\">Start playing</button><p class=\"sr-only\" id=\"code-status\" role=\"status\"></p></form></div></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\" inputmode=\"text\" autocapitalize=\"characters\" autocomplete=\"off\" autocorrect=\"off\" spellcheck=\"false\" enterkeyhint=\"go\" aria-label=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("Game code, %s letters", codeWord(codeLength)))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 145, Col: 78}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" aria-describedby=\"err\"></div><p class=\"mt-3 min-h-[1.4rem] whitespace-nowrap text-center text-[.9375rem] font-semibold text-error\" id=\"err\" role=\"alert\"></p><button class=\"home-btn\" id=\"go\" type=\"submit\" aria-disabled=\"true\">Start playing</button><p class=\"sr-only\" id=\"code-status\" role=\"status\"></p></form></div></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -386,12 +400,12 @@ func homeQuest() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var15 == nil {
-			templ_7745c5c3_Var15 = templ.NopComponent
+		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var16 == nil {
+			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<section class=\"home-below\" id=\"below\"><svg class=\"home-trail\" id=\"trail2\" aria-hidden=\"true\"></svg><div class=\"site-wrap\"><div class=\"max-w-[34rem] mx-auto text-center\"><h2 class=\"site-h2\">Rapua puts quests in the real world.</h2><p class=\"mt-4 text-[.8125rem] font-extrabold uppercase tracking-[.08em] text-base-content/75\">Example quest</p></div><ol class=\"home-quest\" aria-label=\"An example quest\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<section class=\"home-below\" id=\"below\"><svg class=\"home-trail\" id=\"trail2\" aria-hidden=\"true\"></svg><div class=\"site-wrap\"><div class=\"max-w-[34rem] mx-auto text-center\"><h2 class=\"site-h2\">Rapua puts quests in the real world.</h2><p class=\"mt-4 text-[.8125rem] font-extrabold uppercase tracking-[.08em] text-base-content/75\">Example quest</p></div><ol class=\"home-quest\" aria-label=\"An example quest\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -411,7 +425,7 @@ func homeQuest() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</ol><div class=\"max-w-[52rem] mx-auto mt-20 pt-10 grid gap-8 sm:grid-cols-2 sm:gap-14 border-t-[3px] border-dotted border-base-content/12 text-center sm:text-left\"><div><h3 class=\"text-xl font-black\">Want to play?</h3><p class=\"mt-1.5 max-w-[30rem] mx-auto sm:mx-0 text-[.9375rem] leading-relaxed text-base-content/80\">All you need is a game code. Nothing to install, one phone per team. No code? Your facilitator has one.</p><a href=\"#hero\" class=\"home-endbtn\" style=\"--c: var(--color-primary); --cc: var(--color-primary-content)\">Enter your game code <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"></path><path d=\"M12 19V5\"></path></svg></a></div><div><h3 class=\"text-xl font-black\">Want to run a quest?</h3><p class=\"mt-1.5 max-w-[30rem] mx-auto sm:mx-0 text-[.9375rem] leading-relaxed text-base-content/80\">Build quests like this for your museum, class or campus. Open source, every feature included, and free credits every month.</p><a href=\"/creators\" class=\"home-endbtn\" style=\"--c: var(--color-accent); --cc: var(--color-accent-content)\">See how it works <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg></a></div></div></div></section>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</ol><div class=\"max-w-[52rem] mx-auto mt-20 pt-10 grid gap-8 sm:grid-cols-2 sm:gap-14 border-t-[3px] border-dotted border-base-content/12 text-center sm:text-left\"><div><h3 class=\"text-xl font-black\">Want to play?</h3><p class=\"mt-1.5 max-w-[30rem] mx-auto sm:mx-0 text-[.9375rem] leading-relaxed text-base-content/80\">All you need is a game code. Nothing to install, one phone per team. No code? Your facilitator has one.</p><a href=\"#hero\" class=\"home-endbtn\" style=\"--c: var(--color-primary); --cc: var(--color-primary-content)\">Enter your game code <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m5 12 7-7 7 7\"></path><path d=\"M12 19V5\"></path></svg></a></div><div><h3 class=\"text-xl font-black\">Want to run a quest?</h3><p class=\"mt-1.5 max-w-[30rem] mx-auto sm:mx-0 text-[.9375rem] leading-relaxed text-base-content/80\">Build quests like this for your museum, class or campus. Open source, every feature included, and free credits every month.</p><a href=\"/creators\" class=\"home-endbtn\" style=\"--c: var(--color-accent); --cc: var(--color-accent-content)\">See how it works <svg viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"></path><path d=\"m12 5 7 7-7 7\"></path></svg></a></div></div></div></section>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -435,90 +449,90 @@ func homeNode(id, ic, color string, tilt int, title, proof, uncover string) temp
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var17 == nil {
+			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<li class=\"home-node\" data-node=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(id)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 194, Col: 37}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\"><span class=\"home-mark\" data-ic=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<li class=\"home-node\" data-node=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(ic)
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(id)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 195, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 195, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" style=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\"><span class=\"home-mark\" data-ic=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(stickerStyle(color, tilt))
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(ic)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 195, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 196, Col: 38}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"></span><h3 class=\"text-lg font-extrabold leading-tight text-balance\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" style=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(stickerStyle(color, tilt))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 196, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 196, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</h3><p class=\"mt-1 text-[.9375rem] leading-snug text-base-content/80 text-balance\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\"></span><h3 class=\"text-lg font-extrabold leading-tight text-balance\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(proof)
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 197, Col: 88}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 197, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</p><p class=\"home-reveal mt-3 pt-3 text-[.9375rem] leading-snug text-base-content/80 text-balance\"><b class=\"block mb-0.5 text-[.6875rem] font-extrabold uppercase tracking-[.08em] text-primary\">Uncover</b>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</h3><p class=\"mt-1 text-[.9375rem] leading-snug text-base-content/80 text-balance\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(uncover)
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(proof)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 198, Col: 213}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 198, Col: 88}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</p></li>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</p><p class=\"home-reveal mt-3 pt-3 text-[.9375rem] leading-snug text-base-content/80 text-balance\"><b class=\"block mb-0.5 text-[.6875rem] font-extrabold uppercase tracking-[.08em] text-primary\">Uncover</b>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(uncover)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/public/index.templ`, Line: 199, Col: 213}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</p></li>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

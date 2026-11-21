@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
 	"fmt"
 
 	"github.com/nathanhollows/Rapua/v8/blocks"
@@ -157,8 +158,7 @@ templ objectiveEditorAssets() {
 	<template id="rl-icon-trash">
 		@icon("trash-2", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
 	</template>
-	<script src={ assetURL("/static/js/Sortable.min.js") }></script>
-	<script src={ assetURL("/static/js/objective-editor.js") }></script>
+	<script src={ assets.URL("/static/js/objective-editor.js") }></script>
 }
 
 templ objectiveRailItem(settings models.QuestSettings, block blocks.Block) {

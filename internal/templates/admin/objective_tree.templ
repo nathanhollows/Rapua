@@ -1230,7 +1230,6 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 // directly rather than on DOMContentLoaded, which only fires once and misses
 // hx-boost navigations back into this page.
 templ objectiveSortableScript() {
-	<script src="/static/js/Sortable.min.js"></script>
 	<script>
 	// postObjectiveUpdate posts, then always re-fetches the tree: a refused
 	// move must show as it landed, and htmx.ajax (not fetch) is what

@@ -1,5 +1,9 @@
 package templates
 
+import (
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
+)
+
 // Off because the editor has no undo to back the card.
 const showEditHistory = false
 
@@ -122,7 +126,7 @@ templ CreatorsPage(authed bool) {
 			</section>
 		</main>
 		@siteFooter(true)
-		<script src="/static/js/creators.js"></script>
+		<script src={ assets.URL("/static/js/creators.js") }></script>
 	}
 }
 

@@ -1,6 +1,9 @@
 package templates
 
-import "os"
+import (
+	"os"
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
+)
 
 templ PublicLayout(contents templ.Component, title string, authed bool) {
 	@publicPage(contents, title, authed, false)
@@ -23,9 +26,9 @@ templ publicHeadExtras() {
 	<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
 	<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
 	<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
-	<script src="/static/js/htmx-response-targets.js"></script>
+	<script src={ assets.URL("/static/js/htmx-response-targets.js") }></script>
 	<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
-	<script src="/static/js/mapbox-satellite-view.js"></script>
+	<script src={ assets.URL("/static/js/mapbox-satellite-view.js") }></script>
 }
 
 // Inline so the theme is set before first paint.

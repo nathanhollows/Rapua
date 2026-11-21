@@ -1,9 +1,7 @@
 package templates
 
 import (
-	"fmt"
 	"html/template"
-	"os"
 	"time"
 
 	"github.com/a-h/templ"
@@ -13,16 +11,6 @@ import (
 
 func icon(name string, attrs templ.Attributes) templ.Component {
 	return templ.Raw(lucide.Icon(name, attrs))
-}
-
-// getCSSVersion is read per render so a rebuilt stylesheet busts the year-long
-// cache without a restart.
-func getCSSVersion() string {
-	stat, err := os.Stat("static/css/tailwind.css")
-	if err != nil {
-		return ""
-	}
-	return fmt.Sprintf("?v=%d", stat.ModTime().Unix())
 }
 
 func currYear() string {

@@ -1,6 +1,7 @@
 package blocks
 
 import (
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
 	"encoding/json"
 	"fmt"
 
@@ -210,7 +211,7 @@ templ geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) {
 			</p>
 		</fieldset>
 	</form>
-	<script src="/static/js/geofence-picker.js" defer></script>
+	<script src={ assets.URL("/static/js/geofence-picker.js") } defer></script>
 }
 
 var geofencePromptTextarea = TextareaParams{

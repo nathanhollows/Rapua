@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
 	"context"
 	"fmt"
 	"strings"
@@ -68,7 +69,7 @@ templ Home(run *models.Run, codeLength int, authed bool) {
 			@homeQuest()
 		</main>
 		@siteFooter(true)
-		<script src="/static/js/home.js"></script>
+		<script src={ assets.URL("/static/js/home.js") }></script>
 	}
 }
 

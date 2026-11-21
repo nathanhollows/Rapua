@@ -1,6 +1,9 @@
 package templates
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
+)
 
 type siteLink struct {
 	Href  string
@@ -39,14 +42,14 @@ templ siteDocument(title string, extraHead templ.Component) {
 			<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
 			<meta name="htmx-config" content={ `{"historyCacheSize":0,"refreshOnHistoryMiss":true,"attributesToSettle":[]}` }/>
 			@themeScript()
-			<link rel="stylesheet" href={ "/static/css/tailwind.css" + getCSSVersion() }/>
+			<link rel="stylesheet" href={ assets.URL("/static/css/tailwind.css") }/>
 			<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 			<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
 			<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
 			<title>{ title } | Rapua</title>
-			<script src="/static/js/htmx.min.js"></script>
-			<script src="/static/js/csrf.js"></script>
-			<script src="/static/js/site.js"></script>
+			<script src={ assets.URL("/static/js/htmx.min.js") }></script>
+			<script src={ assets.URL("/static/js/csrf.js") }></script>
+			<script src={ assets.URL("/static/js/site.js") }></script>
 			if extraHead != nil {
 				@extraHead
 			}

@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
 	"fmt"
 	"math"
 	"os"
@@ -74,7 +75,7 @@ templ header(title string) {
 		<!-- CSS -->
 		<link
 			rel="stylesheet"
-			href={ "/static/css/admin.css" + getCSSVersion() }
+			href={ assets.URL("/static/css/admin.css") }
 		/>
 		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
 		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
@@ -83,16 +84,16 @@ templ header(title string) {
 		<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css" rel="stylesheet"/>
 		<!-- JS -->
 		<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.0.3/mapbox-gl-geocoder.min.js"></script>
-		<script src={ assetURL("/static/js/htmx-response-targets.js") } defer></script>
+		<script src={ assets.URL("/static/js/htmx-response-targets.js") } defer></script>
 		<script src="https://unpkg.com/turndown@latest/dist/turndown.js"></script>
 		<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
 		<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
-		<script src={ assetURL("/static/js/Sortable.min.js") }></script>
-		<script src={ assetURL("/static/js/htmx.min.js") }></script>
-		<script src={ assetURL("/static/js/csrf.js") }></script>
-		<script src={ assetURL("/static/js/app.js") }></script>
-		<script src={ assetURL("/static/js/mapbox-satellite-view.js") }></script>
-		<script src={ assetURL("/static/js/geofence-picker.js") } defer></script>
+		<script src={ assets.URL("/static/js/Sortable.min.js") }></script>
+		<script src={ assets.URL("/static/js/htmx.min.js") }></script>
+		<script src={ assets.URL("/static/js/csrf.js") }></script>
+		<script src={ assets.URL("/static/js/app.js") }></script>
+		<script src={ assets.URL("/static/js/mapbox-satellite-view.js") }></script>
+		<script src={ assets.URL("/static/js/geofence-picker.js") } defer></script>
 		<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
 		if os.Getenv("IS_PROD") != "1" {
 			<script>
