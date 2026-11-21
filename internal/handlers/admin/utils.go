@@ -224,8 +224,9 @@ type RunService interface {
 	RecentActivity(ctx context.Context, quest *models.Quest, within time.Duration, limit int) ([]services.ActivityEntry, error)
 	GetRunProgress(ctx context.Context, questID, runCode string) (services.RunProgress, error)
 	GetQuestRunSummaries(ctx context.Context, questID string) (map[string]services.RunSummary, error)
-	// LastSeenByRun returns each run's most recent block interaction, keyed by run code.
-	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
+	// CachedStations reads every station of a quest for a facilitator's page, which
+	// anyone with a link can load, so the read is shared for a few seconds.
+	CachedStations(ctx context.Context, questID string) (services.StationReport, error)
 }
 
 type UploadService interface {

@@ -42,7 +42,9 @@ type RunService struct {
 	sectionFinishRepo              repositories.SectionFinishRepository
 	runEventRepo                   repositories.RunEventRepository
 	loader                         runStateLoader
-	batchSize                      int
+	// stations is shared by every copy of the service.
+	stations  *stationCache
+	batchSize int
 }
 
 func NewRunService(
@@ -74,6 +76,7 @@ func NewRunService(
 			runVariableRepo:                runVariableRepo,
 		},
 		batchSize: batchSize,
+		stations:  newStationCache(),
 	}
 }
 
