@@ -96,8 +96,6 @@
 		});
 		const worth = q('[data-total-all]');
 		if (worth) worth.textContent = `${all} point${all === 1 ? '' : 's'}`;
-		const badge = q('#objective-card .badge');
-		if (badge) badge.textContent = `${all} pts`;
 	}
 
 	function refreshPointsPill(id) {

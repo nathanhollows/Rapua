@@ -285,8 +285,8 @@ templ objectiveListPreview(data EditObjectiveData) {
 		if data.ParentTitle != "" {
 			<p class="ctx-title">
 				{ data.ParentTitle }
-				if data.ParentRule != "" {
-					<span class="ctx-rule">{ data.ParentRule }</span>
+				if data.ParentPill != "" {
+					<span class="ctx-rule">{ data.ParentPill }</span>
 				}
 			</p>
 		}
@@ -313,6 +313,7 @@ templ objectiveSiblingRow(title string) {
 			<span class="grow min-w-0 flex flex-col gap-1">
 				<span class="q-title">{ title }</span>
 			</span>
+			@icon("chevron-right", templ.Attributes{"class": "w-5 h-5 shrink-0 opacity-60"})
 		</div>
 	</div>
 }

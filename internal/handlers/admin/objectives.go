@@ -128,13 +128,13 @@ func (h *Handler) ObjectiveEdit(w http.ResponseWriter, r *http.Request) {
 		lintResult = services.QuestLint{Unavailable: true}
 	}
 
-	parentTitle, parentRule := h.containerContext(r, user.CurrentQuestID, *objective)
+	parentTitle, parentPill := h.containerContext(r, user.CurrentQuestID, *objective)
 	before, after := h.listNeighbours(r, user.CurrentQuestID, *objective)
 
 	data := templates.EditObjectiveData{
 		Settings:       user.CurrentQuest.Settings,
 		ParentTitle:    parentTitle,
-		ParentRule:     parentRule,
+		ParentPill:     parentPill,
 		SiblingsBefore: before,
 		SiblingsAfter:  after,
 		Objective:      *objective,
@@ -177,8 +177,8 @@ func parseBandBound(raw string) (*int, error) {
 	return &v, nil
 }
 
-// containerContext names the section this objective sits in, and how that
-// section offers its children, so the preview can show the row inside it.
+// containerContext names the section this objective sits in, and the pill a
+// player sees on its heading, so the preview can show the row inside it.
 func (h *Handler) containerContext(
 	r *http.Request, questID string, objective models.Objective,
 ) (string, string) {
@@ -199,7 +199,7 @@ func (h *Handler) containerContext(
 			offered++
 		}
 	}
-	return parent.Title, pTemplates.RoutingRule(*parent, offered)
+	return parent.Title, pTemplates.SectionPill(*parent, offered)
 }
 
 // listNeighbours is the sibling context the preview draws this row among.

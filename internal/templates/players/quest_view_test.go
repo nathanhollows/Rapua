@@ -446,6 +446,12 @@ func TestQuestPill_NeverSaysInAnyOrder(t *testing.T) {
 	assert.NotContains(t, questPill(models.Objective{Routing: models.RouteStrategyFreeRoam}, game.FillBand(nil, nil, 1), 1, 0), "any order")
 }
 
+func TestSectionPill_IsWhatAPlayerSeesBeforeDoingAnything(t *testing.T) {
+	assert.Equal(t, "0 of 4 done", SectionPill(models.Objective{Routing: models.RouteStrategyFreeRoam}, 4),
+		"the count, never in any order")
+	assert.Equal(t, "Next up", SectionPill(models.Objective{Routing: models.RouteStrategyOrdered}, 4))
+}
+
 func TestQuestPill_OrderedIsNextUp(t *testing.T) {
 	section := models.Objective{Routing: models.RouteStrategyOrdered}
 

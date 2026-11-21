@@ -9136,9 +9136,7 @@ li.nest-target > .objective-row::after {
   align-items: stretch;
 }
 .ct-card {
-  padding: 1rem;
-  border-radius: 20px;
-  background: var(--color-base-200);
+  padding: 0;
 }
 .ctx-title {
   margin: 0 0 .6rem .25rem;

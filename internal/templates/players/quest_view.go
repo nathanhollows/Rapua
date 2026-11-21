@@ -232,6 +232,13 @@ func questPill(objective models.Objective, band game.Band, childCount, found int
 	return text
 }
 
+// SectionPill is the heading pill a player meets before doing anything in a
+// section, so an editor can show a row in the words it will really have.
+func SectionPill(section models.Objective, childCount int) string {
+	band := game.FillBand(section.ChildrenMin, section.ChildrenMax, childCount)
+	return questPill(section, band, childCount, 0)
+}
+
 // The band decides the button appears, so a blank label must not render an
 // empty one.
 func finishLabel(objective models.Objective) string {

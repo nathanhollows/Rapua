@@ -17,10 +17,10 @@ type EditObjectiveData struct {
 	// ChildCount: routing/band/max_next mean nothing without children, but a
 	// leaf can gain them later, so they're shown regardless.
 	ChildCount int
-	// ParentTitle and ParentRule describe the containing section, drawn around
+	// ParentTitle and ParentPill describe the containing section, drawn around
 	// the preview row. Empty when the parent is the root.
 	ParentTitle string
-	ParentRule  string
+	ParentPill  string
 	// SiblingsBefore and SiblingsAfter are the titles beside this objective in
 	// its list, so its own row can be judged among them. A few, not all.
 	SiblingsBefore []string
@@ -151,9 +151,7 @@ templ objectiveCardRow(data EditObjectiveData) {
 				{ data.Objective.Description }
 			</span>
 		</span>
-		if data.Settings.EnablePoints && data.TotalPoints() != 0 {
-			<span class="badge badge-ghost badge-sm shrink-0">{ fmt.Sprintf("%d pts", data.TotalPoints()) }</span>
-		}
+		@icon("chevron-right", templ.Attributes{"class": "w-5 h-5 shrink-0 opacity-60"})
 	</div>
 }
 

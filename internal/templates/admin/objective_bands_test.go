@@ -168,7 +168,7 @@ func TestEditObjective_PreviewShowsTheContainer(t *testing.T) {
 	require.NoError(t, EditObjective(EditObjectiveData{
 		Objective:   models.Objective{ID: "obj", Slug: "rose", Title: "Rose"},
 		ParentTitle: "Choose your heart note",
-		ParentRule:  "Any one of three",
+		ParentPill:  "Any one of three",
 	}).Render(context.Background(), &out))
 
 	html := out.String()
