@@ -33,6 +33,16 @@ func varKindOf(block blocks.Block) blockVarKind {
 
 func blockVarsButtonID(block blocks.Block) string { return "block-vars-btn-" + block.GetID() }
 
+func blockVarsState(block blocks.Block) string {
+	switch {
+	case varKindOf(block) == blockVarSets && block.GetSets() != "":
+		return "sets"
+	case varKindOf(block) == blockVarDepends && len(block.GetDepends()) > 0:
+		return "depends"
+	}
+	return ""
+}
+
 func blockVarsEditID(block blocks.Block) string { return "block-vars-edit-" + block.GetID() }
 
 func blockVarsTip(block blocks.Block) string {
@@ -69,10 +79,11 @@ templ blockVarsButton(block blocks.Block, oob bool) {
 		<button
 			type="button"
 			id={ blockVarsButtonID(block) }
+			data-var-state={ blockVarsState(block) }
 			if oob {
 				hx-swap-oob="true"
 			}
-			class="btn btn-sm btn-ghost gap-1 font-mono font-normal tooltip tooltip-bottom"
+			class="btn btn-sm gap-1 font-mono font-normal tooltip tooltip-bottom vars-btn"
 			data-tip={ blockVarsTip(block) }
 			aria-label={ blockVarsTip(block) }
 			hx-get={ "/admin/blocks/" + block.GetID() + "/vars" }
@@ -82,15 +93,19 @@ templ blockVarsButton(block blocks.Block, oob bool) {
 			if kind == blockVarSets {
 				if block.GetSets() == "" {
 					@icon("key-round", templ.Attributes{"class": "w-3 h-3 opacity-40"})
+					<span class="vars-label">Set a variable</span>
 				} else {
 					@icon("key-round", templ.Attributes{"class": "w-3 h-3 text-primary"})
+					<span class="vars-label">Sets</span>
 					<span class="text-xs">{ block.GetSets() }</span>
 				}
 			} else {
 				if len(block.GetDepends()) == 0 {
 					@icon("lock-open", templ.Attributes{"class": "w-3 h-3 opacity-40"})
+					<span class="vars-label">Lock this block</span>
 				} else {
 					@icon("lock", templ.Attributes{"class": "w-3 h-3 text-primary"})
+					<span class="vars-label">Locked until</span>
 					<span class="text-xs">{ strings.Join(block.GetDepends(), ", ") }</span>
 				}
 			}

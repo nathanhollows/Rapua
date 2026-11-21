@@ -47,7 +47,9 @@ func blockAddButton(ownerID string, context blocks.BlockContext, targetSelector,
 	})
 }
 
-// blockAddDropdownForContext renders the dropdown options for adding blocks based on context
+// blockAddDropdownForContext is the add control for pages that list their
+// blocks after it, aimed at the next list. The objective editor has its own
+// chooser, in the place of a form: see objectiveChooser.
 func blockAddDropdownForContext(ownerID string, context blocks.BlockContext, targetSelector, label string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -69,7 +71,7 @@ func blockAddDropdownForContext(ownerID string, context blocks.BlockContext, tar
 			templ_7745c5c3_Var2 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"divider my-10\"><div class=\"dropdown dropdown-center\"><div class=\"block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm btn-outline\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"divider my-10\"><div class=\"dropdown dropdown-center\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -80,178 +82,164 @@ func blockAddDropdownForContext(ownerID string, context blocks.BlockContext, tar
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 24, Col: 12}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 25, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div><div tabindex=\"0\" class=\"dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50\"><div class=\"card-body pt-3\"><div class=\"divider\"><span class=\"badge badge-ghost\">Static content</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = blockPickerMenu(ownerID, context, fmt.Sprintf("next %s", targetSelector)).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+// blockPickerMenu is the choice of block, static content first because it is
+// the common one. Each choice says what it does, since a name alone does not.
+func blockPickerMenu(ownerID string, context blocks.BlockContext, target string) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var4 == nil {
+			templ_7745c5c3_Var4 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div tabindex=\"0\" class=\"dropdown-content block-pick\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = blockPickerGroup(ownerID, context, target, "Static content", false).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = blockPickerGroup(ownerID, context, target, "Interactive", true).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		return nil
+	})
+}
+
+func blockPickerGroup(ownerID string, context blocks.BlockContext, target, title string, interactive bool) templ.Component {
+	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
+			return templ_7745c5c3_CtxErr
+		}
+		templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+		if !templ_7745c5c3_IsBuffer {
+			defer func() {
+				templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+				if templ_7745c5c3_Err == nil {
+					templ_7745c5c3_Err = templ_7745c5c3_BufErr
+				}
+			}()
+		}
+		ctx = templ.InitializeContext(ctx)
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
+		}
+		ctx = templ.ClearChildren(ctx)
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<span class=\"kicker\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(title)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 42, Col: 29}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span><div class=\"block-pick-grid\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, block := range blocks.GetBlocksForContext(context) {
-			if !block.RequiresValidation() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<form class=\"indicator w-full\" hx-post=\"/admin/blocks/\" hx-target=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("next %s", targetSelector))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 38, Col: 59}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var5 string
-				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(ownerID)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 41, Col: 58}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\"> <input type=\"hidden\" name=\"context\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var6 string
-				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(context))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 42, Col: 68}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"> <input type=\"hidden\" name=\"type\" value=\"")
+			if block.RequiresValidation() == interactive {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<form hx-post=\"/admin/blocks/\" hx-target=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetType())
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(target)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 43, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 46, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\"> <button type=\"submit\" class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetDescription())
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(ownerID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 47, Col: 43}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 47, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templ.Raw(block.GetIconSVG()).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"> <input type=\"hidden\" name=\"context\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(context))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 50, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 48, Col: 64}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</button></form>")
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div><div class=\"divider\"><span class=\"badge badge-ghost\">Interactive</span></div><div class=\"grid grid-cols-3 grid-flow-row gap-5\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		for _, block := range blocks.GetBlocksForContext(context) {
-			if block.RequiresValidation() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<form class=\"indicator w-full\" hx-post=\"/admin/blocks/\" hx-target=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\"> <input type=\"hidden\" name=\"type\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var10 string
-				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("next %s", targetSelector))
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetType())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 65, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 49, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" hx-swap=\"beforeend\"><input type=\"hidden\" name=\"owner\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var11 string
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(ownerID)
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 68, Col: 58}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\"> <input type=\"hidden\" name=\"context\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var12 string
-				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(context))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 69, Col: 68}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\"> <input type=\"hidden\" name=\"type\" value=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var13 string
-				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetType())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 70, Col: 65}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"> <button type=\"submit\" class=\"btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full\" data-tip=\"")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var14 string
-				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetDescription())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 74, Col: 43}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\"> <button type=\"submit\" class=\"block-pick-item\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -259,22 +247,39 @@ func blockAddDropdownForContext(ownerID string, context blocks.BlockContext, tar
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var15 string
-				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 77, Col: 27}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span><b>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</button></form>")
+				var templ_7745c5c3_Var11 string
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 53, Col: 27}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</b> <small>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var12 string
+				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/components.templ`, Line: 54, Col: 38}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</small></span></button></form>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -299,12 +304,12 @@ func deleteBlockModal() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var16 == nil {
-			templ_7745c5c3_Var16 = templ.NopComponent
+		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var13 == nil {
+			templ_7745c5c3_Var13 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<dialog id=\"confirm_delete_block\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this block?</h3><p class=\"pt-4\">You are about to delete this block. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_block.close()\">Nevermind</button> <button id=\"delete-block-btn\" type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_block.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\nfunction attachDeleteBlockHandlers() {\n  // Delete block confirmation dialog\n  function confirmDeleteBlock(event) {\n    const modal = document.getElementById(\"confirm_delete_block\");\n    const url = \"/admin/blocks/\" + event.currentTarget.dataset.block;\n    const btn = modal.querySelector(\"button.btn-error\");\n    btn.setAttribute(\"hx-delete\", url);\n    btn.setAttribute(\"hx-swap\", \"outerHTML\");\n    btn.setAttribute(\"hx-target\", \"#\" + event.target.closest(\".content-block\").id);\n    modal.showModal();\n    htmx.process(modal);\n  }\n\n  // Attach click handlers to delete buttons\n  document.querySelectorAll('.block-delete').forEach(el => {\n    // Avoid double binding\n    if (!el.dataset.listenerAttached) {\n      el.addEventListener('click', confirmDeleteBlock);\n      el.dataset.listenerAttached = \"true\";\n    }\n  });\n}\n\n// Run after page load\ndocument.addEventListener(\"DOMContentLoaded\", attachDeleteBlockHandlers);\n\n// Run after any HTMX content load or swap\ndocument.body.addEventListener('htmx:load', attachDeleteBlockHandlers);\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<dialog id=\"confirm_delete_block\" class=\"modal modal-bottom sm:modal-middle\"><div class=\"modal-box prose outline-2 outline-offset-1 outline-error\"><h3 class=\"text-lg font-bold\">Delete this block?</h3><p class=\"pt-4\">You are about to delete this block. Are you sure?</p><div class=\"modal-action\"><button type=\"button\" class=\"btn\" onclick=\"confirm_delete_block.close()\">Nevermind</button> <button id=\"delete-block-btn\" type=\"button\" class=\"btn btn-error\" onclick=\"confirm_delete_block.close()\">Delete</button></div><form method=\"dialog\"><button class=\"btn btn-sm btn-circle btn-ghost absolute right-2 top-2\">✕</button></form></div></dialog><script>\nfunction attachDeleteBlockHandlers() {\n  // Delete block confirmation dialog\n  function confirmDeleteBlock(event) {\n    const modal = document.getElementById(\"confirm_delete_block\");\n    const url = \"/admin/blocks/\" + event.currentTarget.dataset.block;\n    const btn = modal.querySelector(\"button.btn-error\");\n    btn.setAttribute(\"hx-delete\", url);\n    btn.setAttribute(\"hx-swap\", \"outerHTML\");\n    btn.setAttribute(\"hx-target\", \"#\" + event.target.closest(\".content-block\").id);\n    modal.showModal();\n    htmx.process(modal);\n  }\n\n  // Attach click handlers to delete buttons\n  document.querySelectorAll('.block-delete').forEach(el => {\n    // Avoid double binding\n    if (!el.dataset.listenerAttached) {\n      el.addEventListener('click', confirmDeleteBlock);\n      el.dataset.listenerAttached = \"true\";\n    }\n  });\n}\n\n// Run after page load\ndocument.addEventListener(\"DOMContentLoaded\", attachDeleteBlockHandlers);\n\n// Run after any HTMX content load or swap\ndocument.body.addEventListener('htmx:load', attachDeleteBlockHandlers);\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -329,12 +334,12 @@ func blockReorderForm() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var17 == nil {
-			templ_7745c5c3_Var17 = templ.NopComponent
+		templ_7745c5c3_Var14 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var14 == nil {
+			templ_7745c5c3_Var14 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<form id=\"block-reorder-form\" hx-post=\"/admin/blocks/reorder\" hx-swap=\"none\" style=\"display: none;\"><div id=\"block-order-inputs\"></div></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<form id=\"block-reorder-form\" hx-post=\"/admin/blocks/reorder\" hx-swap=\"none\" style=\"display: none;\"><div id=\"block-order-inputs\"></div></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -372,12 +377,12 @@ func previewHoverScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var18 == nil {
-			templ_7745c5c3_Var18 = templ.NopComponent
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<script>\n\t(function() {\n\t\t// Both preview shapes: the system pages mirror one list and carry\n\t\t// data-blocks-target; the objective editor has a pane per zone and\n\t\t// carries data-preview. Hovering works the same in either.\n\t\tconst PREVIEW_PANES = '[data-blocks-target], [data-preview]';\n\n\t\t// The editor half of the pairing. Both pages that host a preview\n\t\t// render their blocks through this shape.\n\t\tconst ADMIN_BLOCKS = '.content-block[data-block-id]';\n\n\t\t// A sweep across either list crosses several blocks; only the one\n\t\t// settled on is worth a scroll, so leaving clears what entering set.\n\t\tlet dwell = null;\n\t\tconst reduced = window.matchMedia('(prefers-reduced-motion: reduce)');\n\t\tconst scrollBehavior = () => (reduced.matches ? 'auto' : 'smooth');\n\n\t\t// Pointing at a block in the preview brings its fields to you. The\n\t\t// preview is pinned, so moving the page underneath it does not move the\n\t\t// thing being pointed at: the mouse stays where it was.\n\t\tfunction revealInEditor(adminBlock) {\n\t\t\tclearTimeout(dwell);\n\t\t\tdwell = setTimeout(function() {\n\t\t\t\tconst box = adminBlock.getBoundingClientRect();\n\t\t\t\tconst visible = box.top >= 0 && box.bottom <= window.innerHeight;\n\t\t\t\t// Already readable, so moving the page would be motion for its\n\t\t\t\t// own sake.\n\t\t\t\tif (visible) return;\n\t\t\t\tadminBlock.scrollIntoView({\n\t\t\t\t\tbehavior: scrollBehavior(),\n\t\t\t\t\tblock: 'center',\n\t\t\t\t});\n\t\t\t}, 150);\n\t\t}\n\n\t\t// The element the preview block scrolls within: the objective editor's\n\t\t// panes scroll themselves, and the system pages scroll the phone's\n\t\t// display. An element only counts if it has overflow to scroll: on the\n\t\t// system pages the inner container says overflow but grows to fit its\n\t\t// content, and the display above it is the one that moves.\n\t\tfunction scrollerFor(block) {\n\t\t\tfor (let node = block.parentElement; node; node = node.parentElement) {\n\t\t\t\tconst overflow = getComputedStyle(node).overflowY;\n\t\t\t\tconst scrolls = overflow === 'auto' || overflow === 'scroll';\n\t\t\t\tif (scrolls && node.scrollHeight > node.clientHeight) return node;\n\t\t\t}\n\t\t\treturn null;\n\t\t}\n\n\t\t// The mirror of revealInEditor, contained to the pane: bringing the\n\t\t// preview block into view must not move the page around the preview.\n\t\tfunction revealInPreview(previewBlock) {\n\t\t\tclearTimeout(dwell);\n\t\t\tdwell = setTimeout(function() {\n\t\t\t\tconst scroller = scrollerFor(previewBlock);\n\t\t\t\tif (!scroller) return;\n\t\t\t\tconst box = previewBlock.getBoundingClientRect();\n\t\t\t\tconst view = scroller.getBoundingClientRect();\n\t\t\t\t// Already readable inside the pane, so nothing needs to move.\n\t\t\t\tif (box.top >= view.top && box.bottom <= view.bottom) return;\n\t\t\t\tconst centered =\n\t\t\t\t\tscroller.scrollTop + (box.top - view.top) - (view.height - box.height) / 2;\n\t\t\t\tscroller.scrollTo({ top: Math.max(0, centered), behavior: scrollBehavior() });\n\t\t\t}, 150);\n\t\t}\n\n\t\tfunction previewBlockFor(blockId) {\n\t\t\treturn document.getElementById('preview-block-' + blockId);\n\t\t}\n\n\t\tfunction attachHoverTo(previewContainer) {\n\t\t\tpreviewContainer.querySelectorAll('.block-view').forEach(previewBlock => {\n\t\t\t\tif (previewBlock._hoverBound) return;\n\n\t\t\t\t// Extract UUID from preview-block-{uuid}.\n\t\t\t\tconst blockId = previewBlock.id.replace('preview-block-', '');\n\t\t\t\tif (!blockId) return;\n\n\t\t\t\t// Find corresponding admin block.\n\t\t\t\tconst adminBlock = document.getElementById('block-' + blockId) ||\n\t\t\t\t\tdocument.querySelector(`[data-block-id=\"${blockId}\"]`);\n\t\t\t\tif (!adminBlock) return;\n\t\t\t\tpreviewBlock._hoverBound = true;\n\n\t\t\t\tpreviewBlock.addEventListener('mouseenter', function() {\n\t\t\t\t\tpreviewBlock.classList.add('preview-block-highlighted');\n\t\t\t\t\tadminBlock.classList.add('admin-block-highlighted');\n\t\t\t\t\trevealInEditor(adminBlock);\n\t\t\t\t});\n\n\t\t\t\tpreviewBlock.addEventListener('mouseleave', function() {\n\t\t\t\t\tpreviewBlock.classList.remove('preview-block-highlighted');\n\t\t\t\t\tadminBlock.classList.remove('admin-block-highlighted');\n\t\t\t\t\t// Leaving before the dwell elapses cancels the scroll,\n\t\t\t\t\t// so passing over a block never moves the page.\n\t\t\t\t\tclearTimeout(dwell);\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\n\t\tfunction attachHoverToAdmin(adminBlock) {\n\t\t\tif (adminBlock._hoverBound) return;\n\t\t\tconst blockId = adminBlock.dataset.blockId;\n\t\t\tif (!blockId) return;\n\t\t\tadminBlock._hoverBound = true;\n\n\t\t\tadminBlock.addEventListener('mouseenter', function() {\n\t\t\t\tadminBlock.classList.add('admin-block-highlighted');\n\t\t\t\tconst previewBlock = previewBlockFor(blockId);\n\t\t\t\tif (!previewBlock) return;\n\t\t\t\tpreviewBlock.classList.add('preview-block-highlighted');\n\t\t\t\trevealInPreview(previewBlock);\n\t\t\t});\n\n\t\t\tadminBlock.addEventListener('mouseleave', function() {\n\t\t\t\tadminBlock.classList.remove('admin-block-highlighted');\n\t\t\t\tconst previewBlock = previewBlockFor(blockId);\n\t\t\t\tif (previewBlock) previewBlock.classList.remove('preview-block-highlighted');\n\t\t\t\tclearTimeout(dwell);\n\t\t\t});\n\t\t}\n\n\t\tfunction attachHoverHandlers() {\n\t\t\tdocument.querySelectorAll(PREVIEW_PANES).forEach(attachHoverTo);\n\t\t\tdocument.querySelectorAll(ADMIN_BLOCKS).forEach(attachHoverToAdmin);\n\t\t}\n\n\t\t// Previews fetch their blocks into the panes after the page renders,\n\t\t// and adding a block appends to the editor's list, so both sides are\n\t\t// re-scanned after every swap. The per-element guards keep the\n\t\t// listeners from stacking.\n\t\tattachHoverHandlers();\n\t\tdocument.addEventListener('htmx:afterSwap', attachHoverHandlers);\n\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<script>\n\t(function() {\n\t\t// Both preview shapes: the system pages mirror one list and carry\n\t\t// data-blocks-target; the objective editor has a pane per zone and\n\t\t// carries data-preview. Hovering works the same in either.\n\t\tconst PREVIEW_PANES = '[data-blocks-target], [data-preview]';\n\n\t\t// The editor half of the pairing. Both pages that host a preview\n\t\t// render their blocks through this shape.\n\t\tconst ADMIN_BLOCKS = '.content-block[data-block-id]';\n\n\t\t// A sweep across either list crosses several blocks; only the one\n\t\t// settled on is worth a scroll, so leaving clears what entering set.\n\t\tlet dwell = null;\n\t\tconst reduced = window.matchMedia('(prefers-reduced-motion: reduce)');\n\t\tconst scrollBehavior = () => (reduced.matches ? 'auto' : 'smooth');\n\n\t\t// Pointing at a block in the preview brings its fields to you. The\n\t\t// preview is pinned, so moving the page underneath it does not move the\n\t\t// thing being pointed at: the mouse stays where it was.\n\t\tfunction revealInEditor(adminBlock) {\n\t\t\tclearTimeout(dwell);\n\t\t\tdwell = setTimeout(function() {\n\t\t\t\tconst box = adminBlock.getBoundingClientRect();\n\t\t\t\tconst visible = box.top >= 0 && box.bottom <= window.innerHeight;\n\t\t\t\t// Already readable, so moving the page would be motion for its\n\t\t\t\t// own sake.\n\t\t\t\tif (visible) return;\n\t\t\t\tadminBlock.scrollIntoView({\n\t\t\t\t\tbehavior: scrollBehavior(),\n\t\t\t\t\tblock: 'center',\n\t\t\t\t});\n\t\t\t}, 150);\n\t\t}\n\n\t\t// The element the preview block scrolls within: the objective editor's\n\t\t// panes scroll themselves, and the system pages scroll the phone's\n\t\t// display. An element only counts if it has overflow to scroll: on the\n\t\t// system pages the inner container says overflow but grows to fit its\n\t\t// content, and the display above it is the one that moves.\n\t\tfunction scrollerFor(block) {\n\t\t\tfor (let node = block.parentElement; node; node = node.parentElement) {\n\t\t\t\tconst overflow = getComputedStyle(node).overflowY;\n\t\t\t\tconst scrolls = overflow === 'auto' || overflow === 'scroll';\n\t\t\t\tif (scrolls && node.scrollHeight > node.clientHeight) return node;\n\t\t\t}\n\t\t\treturn null;\n\t\t}\n\n\t\t// The mirror of revealInEditor, contained to the pane: bringing the\n\t\t// preview block into view must not move the page around the preview.\n\t\tfunction revealInPreview(previewBlock) {\n\t\t\tclearTimeout(dwell);\n\t\t\tdwell = setTimeout(function() {\n\t\t\t\tconst scroller = scrollerFor(previewBlock);\n\t\t\t\tif (!scroller) return;\n\t\t\t\tconst box = previewBlock.getBoundingClientRect();\n\t\t\t\tconst view = scroller.getBoundingClientRect();\n\t\t\t\t// Already readable inside the pane, so nothing needs to move.\n\t\t\t\tif (box.top >= view.top && box.bottom <= view.bottom) return;\n\t\t\t\tconst centered =\n\t\t\t\t\tscroller.scrollTop + (box.top - view.top) - (view.height - box.height) / 2;\n\t\t\t\tscroller.scrollTo({ top: Math.max(0, centered), behavior: scrollBehavior() });\n\t\t\t}, 150);\n\t\t}\n\n\t\tfunction previewBlockFor(blockId) {\n\t\t\treturn document.getElementById('preview-block-' + blockId);\n\t\t}\n\n\t\tfunction attachHoverTo(previewContainer) {\n\t\t\tpreviewContainer.querySelectorAll('.block-view').forEach(previewBlock => {\n\t\t\t\tif (previewBlock._hoverBound) return;\n\n\t\t\t\t// Extract UUID from preview-block-{uuid}.\n\t\t\t\tconst blockId = previewBlock.id.replace('preview-block-', '');\n\t\t\t\tif (!blockId) return;\n\n\t\t\t\t// Find corresponding admin block.\n\t\t\t\tconst adminBlock = document.getElementById('block-' + blockId) ||\n\t\t\t\t\tdocument.querySelector(`[data-block-id=\"${blockId}\"]`);\n\t\t\t\tif (!adminBlock) return;\n\t\t\t\tpreviewBlock._hoverBound = true;\n\n\t\t\t\tpreviewBlock.addEventListener('mouseenter', function() {\n\t\t\t\t\tsetLinked(adminBlock, true);\n\t\t\t\t\trevealInEditor(adminBlock);\n\t\t\t\t});\n\n\t\t\t\t// Clicking a preview block opens its form and puts the cursor in\n\t\t\t\t// it. Anything interactive inside the preview keeps its own click.\n\t\t\t\tpreviewBlock.addEventListener('click', function(evt) {\n\t\t\t\t\tif (evt.target.closest('a, button, input, select, textarea, label')) return;\n\t\t\t\t\tconst toggle = adminBlock.querySelector(':scope > input[type=\"checkbox\"]');\n\t\t\t\t\tif (toggle && !toggle.checked) {\n\t\t\t\t\t\ttoggle.checked = true;\n\t\t\t\t\t\ttoggle.dispatchEvent(new Event('change', { bubbles: true }));\n\t\t\t\t\t}\n\t\t\t\t\tadminBlock.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });\n\t\t\t\t\tconst field = adminBlock.querySelector('.collapse-content input:not([type=\"hidden\"]):not([type=\"checkbox\"]), .collapse-content textarea, .collapse-content select');\n\t\t\t\t\tif (field) field.focus({ preventScroll: true });\n\t\t\t\t});\n\n\t\t\t\tpreviewBlock.addEventListener('mouseleave', function() {\n\t\t\t\t\tif (!adminBlock.contains(document.activeElement)) setLinked(adminBlock, false);\n\t\t\t\t\t// Leaving before the dwell elapses cancels the scroll,\n\t\t\t\t\t// so passing over a block never moves the page.\n\t\t\t\t\tclearTimeout(dwell);\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\n\t\t// An editor block is \"linked\" while it is pointed at or has the cursor in\n\t\t// it, and its phone block is lit with it. Focus counts, not only the\n\t\t// pointer: while typing the pointer is somewhere else, and the block\n\t\t// being edited is the one whose result matters.\n\t\tfunction setLinked(adminBlock, on) {\n\t\t\tconst previewBlock = previewBlockFor(adminBlock.dataset.blockId);\n\t\t\tadminBlock.classList.toggle('admin-block-highlighted', on);\n\t\t\tif (previewBlock) previewBlock.classList.toggle('preview-block-highlighted', on);\n\t\t\treturn previewBlock;\n\t\t}\n\n\t\tfunction attachHoverToAdmin(adminBlock) {\n\t\t\tif (adminBlock._hoverBound) return;\n\t\t\tconst blockId = adminBlock.dataset.blockId;\n\t\t\tif (!blockId) return;\n\t\t\tadminBlock._hoverBound = true;\n\n\t\t\tconst refresh = function() {\n\t\t\t\tconst on = adminBlock.matches(':hover') || adminBlock.contains(document.activeElement);\n\t\t\t\tconst previewBlock = setLinked(adminBlock, on);\n\t\t\t\tif (!on) {\n\t\t\t\t\tclearTimeout(dwell);\n\t\t\t\t} else if (previewBlock) {\n\t\t\t\t\trevealInPreview(previewBlock);\n\t\t\t\t}\n\t\t\t};\n\t\t\tadminBlock.addEventListener('mouseenter', refresh);\n\t\t\tadminBlock.addEventListener('mouseleave', refresh);\n\t\t\tadminBlock.addEventListener('focusin', refresh);\n\t\t\t// The next element has the focus only after this event ends.\n\t\t\tadminBlock.addEventListener('focusout', function() { requestAnimationFrame(refresh); });\n\t\t}\n\n\t\tfunction attachHoverHandlers() {\n\t\t\tdocument.querySelectorAll(PREVIEW_PANES).forEach(attachHoverTo);\n\t\t\tdocument.querySelectorAll(ADMIN_BLOCKS).forEach(attachHoverToAdmin);\n\t\t}\n\n\t\t// Previews fetch their blocks into the panes after the page renders,\n\t\t// and adding a block appends to the editor's list, so both sides are\n\t\t// re-scanned after every swap. The per-element guards keep the\n\t\t// listeners from stacking.\n\t\tattachHoverHandlers();\n\t\tdocument.addEventListener('htmx:afterSwap', attachHoverHandlers);\n\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -401,12 +406,12 @@ func previewSortableScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var19 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var19 == nil {
-			templ_7745c5c3_Var19 = templ.NopComponent
+		templ_7745c5c3_Var16 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var16 == nil {
+			templ_7745c5c3_Var16 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t(function() {\n\t\tfunction initializePreviewSortable() {\n\t\t\t// A preview per zone, each naming the admin list its reordering\n\t\t\t// belongs to. This used to be one preview reading the active tab;\n\t\t\t// there are no tabs now, and a preview that owns one zone cannot\n\t\t\t// write into the wrong list.\n\t\t\tdocument.querySelectorAll('[data-blocks-target]').forEach(initPreviewPane);\n\t\t}\n\n\t\tfunction initPreviewPane(previewContainer) {\n\t\t\tif (previewContainer._sortableBound) return;\n\t\t\tpreviewContainer._sortableBound = true;\n\n\t\t\t// Wait for HTMX to load preview content\n\t\t\tconst observer = new MutationObserver((mutations, obs) => {\n\t\t\t\tconst blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');\n\n\t\t\t\tif (blocksContainer && !previewContainer._sortable) {\n\n\t\t\t\t\t// Initialize sortable.js\n\t\t\t\t\t// This instance is destroyed and rebuilt on its own\n\t\t\t\t\t// schedule, so the lock cannot hold a reference to it.\n\t\t\t\t\t// It reads the lock's published state instead, and the\n\t\t\t\t\t// listener below catches a change that arrives later.\n\t\t\t\t\tpreviewContainer._sortable = new Sortable(blocksContainer, {\n\t\t\t\t\t\tdisabled: document.body.dataset.questLocked === 'true',\n\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\tdraggable: '.block-view',\n\t\t\t\t\t\thandle: '.block-view',\n\t\t\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\t\t\tdragClass: 'sortable-drag-preview',\n\n\t\t\t\t\t\t// Allow clicking interactive elements\n\t\t\t\t\t\tfilter: 'a, button, input, select, textarea, [contenteditable]',\n\t\t\t\t\t\tpreventOnFilter: false,\n\n\t\t\t\t\t\t// Handle reordering\n\t\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t\t// Collect block IDs in new order from preview\n\t\t\t\t\t\t\t// Extract block ID from id attribute: \"preview-block-{uuid}\"\n\t\t\t\t\t\t\tconst blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))\n\t\t\t\t\t\t\t\t.map(block => block.id.replace('preview-block-', ''))\n\t\t\t\t\t\t\t\t.filter(id => id); // Remove any nulls\n\n\t\t\t\t\t\t\t// First, visually reorder admin blocks to match preview\n\t\t\t\t\t\t\t// Determine which admin container to update based on active tab\n\t\t\t\t\t\t\tconst adminBlocksContainer = document.getElementById(\n\t\t\t\t\t\t\t\tpreviewContainer.dataset.blocksTarget\n\t\t\t\t\t\t\t);\n\n\t\t\t\t\t\t\tif (adminBlocksContainer) {\n\t\t\t\t\t\t\t\t// Get all admin block elements\n\t\t\t\t\t\t\t\tconst adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));\n\n\t\t\t\t\t\t\t\t// Create a map of block ID to element\n\t\t\t\t\t\t\t\tconst blockMap = new Map();\n\t\t\t\t\t\t\t\tadminBlocks.forEach(block => {\n\t\t\t\t\t\t\t\t\tconst hiddenInput = block.querySelector('input[name=\"block_id\"]');\n\t\t\t\t\t\t\t\t\tif (hiddenInput) {\n\t\t\t\t\t\t\t\t\t\tblockMap.set(hiddenInput.value, block);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t\t// Reorder admin blocks to match preview order\n\t\t\t\t\t\t\t\tblockOrder.forEach(blockId => {\n\t\t\t\t\t\t\t\t\tconst adminBlock = blockMap.get(blockId);\n\t\t\t\t\t\t\t\t\tif (adminBlock) {\n\t\t\t\t\t\t\t\t\t\tadminBlocksContainer.appendChild(adminBlock);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Populate hidden form with block IDs and submit via HTMX\n\t\t\t\t\t\t\tconst form = document.getElementById('block-reorder-form');\n\t\t\t\t\t\t\tconst inputsContainer = document.getElementById('block-order-inputs');\n\n\t\t\t\t\t\t\tif (!form || !inputsContainer) {\n\t\t\t\t\t\t\t\tconsole.error('Reorder form not found');\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Clear existing inputs\n\t\t\t\t\t\t\tinputsContainer.innerHTML = '';\n\n\t\t\t\t\t\t\t// Add hidden input for each block ID\n\t\t\t\t\t\t\tblockOrder.forEach(id => {\n\t\t\t\t\t\t\t\tconst input = document.createElement('input');\n\t\t\t\t\t\t\t\tinput.type = 'hidden';\n\t\t\t\t\t\t\t\tinput.name = 'block_id';\n\t\t\t\t\t\t\t\tinput.value = id;\n\t\t\t\t\t\t\t\tinputsContainer.appendChild(input);\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Trigger form submission via HTMX\n\t\t\t\t\t\t\thtmx.trigger(form, 'submit');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\t// Stop observing once initialized\n\t\t\t\t\tobs.disconnect();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Start observing for content changes\n\t\t\tobserver.observe(previewContainer, {\n\t\t\t\tchildList: true,\n\t\t\t\tsubtree: true\n\t\t\t});\n\t\t}\n\n\t\t// Initialize on page load\n\t\tdocument.addEventListener('DOMContentLoaded', initializePreviewSortable);\n\n\t\t// Each pane keeps its own instance, so the lock and the swap handlers\n\t\t// reach them through the DOM rather than through one shared variable.\n\t\tfunction eachPane(fn) {\n\t\t\tdocument.querySelectorAll('[data-blocks-target]').forEach(function(pane) {\n\t\t\t\tif (pane._sortable) fn(pane);\n\t\t\t});\n\t\t}\n\n\t\tdocument.body.addEventListener('quest-lock-change', function(evt) {\n\t\t\t// A running quest refuses the reorder POST, but an\n\t\t\t// accepted-looking drag leaves the block where the database does\n\t\t\t// not have it.\n\t\t\teachPane(function(pane) { pane._sortable.option('disabled', evt.detail.locked); });\n\t\t});\n\n\t\tfunction resetPanes() {\n\t\t\teachPane(function(pane) {\n\t\t\t\tpane._sortable.destroy();\n\t\t\t\tpane._sortable = null;\n\t\t\t\tpane._sortableBound = false;\n\t\t\t});\n\t\t\tinitializePreviewSortable();\n\t\t}\n\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\tif (evt.detail.target.querySelector('[data-blocks-target]') ||\n\t\t\t\tevt.detail.target.dataset.blocksTarget) {\n\t\t\t\tresetPanes();\n\t\t\t}\n\t\t});\n\n\t\tdocument.addEventListener('htmx:historyRestore', resetPanes);\n\n\t\t// Cleanup on page unload\n\t\twindow.addEventListener('beforeunload', function() {\n\t\t\teachPane(function(pane) { pane._sortable.destroy(); });\n\t\t});\n\n\t\t// Hover highlighting between preview and admin blocks\n\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<script src=\"/static/js/Sortable.min.js\"></script><script>\n\t(function() {\n\t\tfunction initializePreviewSortable() {\n\t\t\t// A preview per zone, each naming the admin list its reordering\n\t\t\t// belongs to. This used to be one preview reading the active tab;\n\t\t\t// there are no tabs now, and a preview that owns one zone cannot\n\t\t\t// write into the wrong list.\n\t\t\tdocument.querySelectorAll('[data-blocks-target]').forEach(initPreviewPane);\n\t\t}\n\n\t\tfunction initPreviewPane(previewContainer) {\n\t\t\tif (previewContainer._sortableBound) return;\n\t\t\tpreviewContainer._sortableBound = true;\n\n\t\t\t// Wait for HTMX to load preview content\n\t\t\tconst observer = new MutationObserver((mutations, obs) => {\n\t\t\t\tconst blocksContainer = previewContainer.querySelector('.flex.flex-col.gap-8');\n\n\t\t\t\tif (blocksContainer && !previewContainer._sortable) {\n\n\t\t\t\t\t// Initialize sortable.js\n\t\t\t\t\t// This instance is destroyed and rebuilt on its own\n\t\t\t\t\t// schedule, so the lock cannot hold a reference to it.\n\t\t\t\t\t// It reads the lock's published state instead, and the\n\t\t\t\t\t// listener below catches a change that arrives later.\n\t\t\t\t\tpreviewContainer._sortable = new Sortable(blocksContainer, {\n\t\t\t\t\t\tdisabled: document.body.dataset.questLocked === 'true',\n\t\t\t\t\t\tanimation: 150,\n\t\t\t\t\t\tdraggable: '.block-view',\n\t\t\t\t\t\thandle: '.block-view',\n\t\t\t\t\t\tghostClass: 'sortable-ghost-preview',\n\t\t\t\t\t\tchosenClass: 'sortable-chosen-preview',\n\t\t\t\t\t\tdragClass: 'sortable-drag-preview',\n\n\t\t\t\t\t\t// Allow clicking interactive elements\n\t\t\t\t\t\tfilter: 'a, button, input, select, textarea, [contenteditable]',\n\t\t\t\t\t\tpreventOnFilter: false,\n\n\t\t\t\t\t\t// Handle reordering\n\t\t\t\t\t\tonEnd: function(evt) {\n\t\t\t\t\t\t\t// Collect block IDs in new order from preview\n\t\t\t\t\t\t\t// Extract block ID from id attribute: \"preview-block-{uuid}\"\n\t\t\t\t\t\t\tconst blockOrder = Array.from(blocksContainer.querySelectorAll('.block-view'))\n\t\t\t\t\t\t\t\t.map(block => block.id.replace('preview-block-', ''))\n\t\t\t\t\t\t\t\t.filter(id => id); // Remove any nulls\n\n\t\t\t\t\t\t\t// First, visually reorder admin blocks to match preview\n\t\t\t\t\t\t\t// Determine which admin container to update based on active tab\n\t\t\t\t\t\t\tconst adminBlocksContainer = document.getElementById(\n\t\t\t\t\t\t\t\tpreviewContainer.dataset.blocksTarget\n\t\t\t\t\t\t\t);\n\n\t\t\t\t\t\t\tif (adminBlocksContainer) {\n\t\t\t\t\t\t\t\t// Get all admin block elements\n\t\t\t\t\t\t\t\tconst adminBlocks = Array.from(adminBlocksContainer.querySelectorAll('.content-block'));\n\n\t\t\t\t\t\t\t\t// Create a map of block ID to element\n\t\t\t\t\t\t\t\tconst blockMap = new Map();\n\t\t\t\t\t\t\t\tadminBlocks.forEach(block => {\n\t\t\t\t\t\t\t\t\tconst hiddenInput = block.querySelector('input[name=\"block_id\"]');\n\t\t\t\t\t\t\t\t\tif (hiddenInput) {\n\t\t\t\t\t\t\t\t\t\tblockMap.set(hiddenInput.value, block);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t\t// Reorder admin blocks to match preview order\n\t\t\t\t\t\t\t\tblockOrder.forEach(blockId => {\n\t\t\t\t\t\t\t\t\tconst adminBlock = blockMap.get(blockId);\n\t\t\t\t\t\t\t\t\tif (adminBlock) {\n\t\t\t\t\t\t\t\t\t\tadminBlocksContainer.appendChild(adminBlock);\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Populate hidden form with block IDs and submit via HTMX\n\t\t\t\t\t\t\tconst form = document.getElementById('block-reorder-form');\n\t\t\t\t\t\t\tconst inputsContainer = document.getElementById('block-order-inputs');\n\n\t\t\t\t\t\t\tif (!form || !inputsContainer) {\n\t\t\t\t\t\t\t\tconsole.error('Reorder form not found');\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\t// Clear existing inputs\n\t\t\t\t\t\t\tinputsContainer.innerHTML = '';\n\n\t\t\t\t\t\t\t// Add hidden input for each block ID\n\t\t\t\t\t\t\tblockOrder.forEach(id => {\n\t\t\t\t\t\t\t\tconst input = document.createElement('input');\n\t\t\t\t\t\t\t\tinput.type = 'hidden';\n\t\t\t\t\t\t\t\tinput.name = 'block_id';\n\t\t\t\t\t\t\t\tinput.value = id;\n\t\t\t\t\t\t\t\tinputsContainer.appendChild(input);\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\t// Trigger form submission via HTMX\n\t\t\t\t\t\t\thtmx.trigger(form, 'submit');\n\t\t\t\t\t\t}\n\t\t\t\t\t});\n\n\t\t\t\t\t// Stop observing once initialized\n\t\t\t\t\tobs.disconnect();\n\t\t\t\t}\n\t\t\t});\n\n\t\t\t// Start observing for content changes\n\t\t\tobserver.observe(previewContainer, {\n\t\t\t\tchildList: true,\n\t\t\t\tsubtree: true\n\t\t\t});\n\t\t}\n\n\t\t// Initialize on page load\n\t\tdocument.addEventListener('DOMContentLoaded', initializePreviewSortable);\n\n\t\t// Each pane keeps its own instance, so the lock and the swap handlers\n\t\t// reach them through the DOM rather than through one shared variable.\n\t\tfunction eachPane(fn) {\n\t\t\tdocument.querySelectorAll('[data-blocks-target]').forEach(function(pane) {\n\t\t\t\tif (pane._sortable) fn(pane);\n\t\t\t});\n\t\t}\n\n\t\tdocument.body.addEventListener('quest-lock-change', function(evt) {\n\t\t\t// A running quest refuses the reorder POST, but an\n\t\t\t// accepted-looking drag leaves the block where the database does\n\t\t\t// not have it.\n\t\t\teachPane(function(pane) { pane._sortable.option('disabled', evt.detail.locked); });\n\t\t});\n\n\t\tfunction resetPanes() {\n\t\t\teachPane(function(pane) {\n\t\t\t\tpane._sortable.destroy();\n\t\t\t\tpane._sortable = null;\n\t\t\t\tpane._sortableBound = false;\n\t\t\t});\n\t\t\tinitializePreviewSortable();\n\t\t}\n\n\t\tdocument.addEventListener('htmx:afterSwap', function(evt) {\n\t\t\tif (evt.detail.target.querySelector('[data-blocks-target]') ||\n\t\t\t\tevt.detail.target.dataset.blocksTarget) {\n\t\t\t\tresetPanes();\n\t\t\t}\n\t\t});\n\n\t\tdocument.addEventListener('htmx:historyRestore', resetPanes);\n\n\t\t// Cleanup on page unload\n\t\twindow.addEventListener('beforeunload', function() {\n\t\t\teachPane(function(pane) { pane._sortable.destroy(); });\n\t\t});\n\n\t\t// Hover highlighting between preview and admin blocks\n\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -431,12 +436,12 @@ func blockMoveScript() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var20 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var20 == nil {
-			templ_7745c5c3_Var20 = templ.NopComponent
+		templ_7745c5c3_Var17 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var17 == nil {
+			templ_7745c5c3_Var17 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = 20; // gap-5 in pixels\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n\n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n\n                        block.style.position = '';\n                        sibling.style.position = '';\n\n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<script>\n    function moveblock(event, direction) {\n        event.preventDefault();\n        const block = event.target.closest('.content-block');\n        if (block) {\n            let sibling;\n            if (direction === 'up') {\n                sibling = block.previousElementSibling;\n            } else if (direction === 'down') {\n                sibling = block.nextElementSibling;\n            }\n\n            if (sibling && sibling.classList.contains('content-block')) {\n                // The height of the sibling plus whatever gap the list has\n                const blockHeight = block.offsetHeight;\n                const siblingHeight = sibling.offsetHeight;\n                const gap = parseFloat(getComputedStyle(block.parentNode).rowGap) || 0;\n\n                // Apply a relative position and initial offset for a smooth transition\n                block.style.position = 'relative';\n                sibling.style.position = 'relative';\n\n                if (direction === 'up') {\n                    block.style.transform = `translateY(-${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(${blockHeight + gap}px)`;\n                } else {\n                    block.style.transform = `translateY(${siblingHeight + gap}px)`;\n                    sibling.style.transform = `translateY(-${blockHeight + gap}px)`;\n                }\n\n                // Trigger reflow to apply the animation\n                requestAnimationFrame(() => {\n                    block.classList.add('transitioning');\n                    sibling.classList.add('transitioning');\n\n                    // Reset transforms and swap elements after animation duration\n                    setTimeout(() => {\n                        block.style.transform = '';\n                        sibling.style.transform = '';\n                        block.classList.remove('transitioning');\n                        sibling.classList.remove('transitioning');\n\n                        block.style.position = '';\n                        sibling.style.position = '';\n\n                        block.parentNode.insertBefore(\n                            direction === 'up' ? block : sibling,\n                            direction === 'up' ? sibling : block\n                        );\n                    }, 300);\n                });\n            }\n        }\n    }\n</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -462,9 +467,9 @@ func sortableStyles() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var21 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var21 == nil {
-			templ_7745c5c3_Var21 = templ.NopComponent
+		templ_7745c5c3_Var18 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var18 == nil {
+			templ_7745c5c3_Var18 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		return nil

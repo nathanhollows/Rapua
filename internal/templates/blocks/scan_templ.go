@@ -553,7 +553,7 @@ func scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<fieldset class=\"fieldset\"><div class=\"w-full\"><div class=\"grid grid-cols-[1fr_7rem_3.5rem] bg-base-200/60 border-b border-base-300 font-semibold text-base-content\"><span class=\"px-4 py-2\">Code</span> <span class=\"px-4 py-2\">QR</span> <span class=\"px-4 py-2\"></span></div><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "<fieldset class=\"fieldset\"><div class=\"w-full overflow-hidden rounded-2xl border border-base-300\"><div class=\"grid grid-cols-[1fr_7rem_3.5rem] bg-base-200/60 border-b border-base-300 font-semibold text-base-content\"><span class=\"px-4 py-2\">Code</span> <span class=\"px-4 py-2\">QR</span> <span class=\"px-4 py-2\"></span></div><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

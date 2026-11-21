@@ -90,7 +90,7 @@ func adminPointsField(points int) templ.Component {
 			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Points</legend> <label class=\"input\"><input type=\"number\" name=\"points\" class=\"grow\" placeholder=\"Points\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<fieldset class=\"fieldset points-field\"><legend class=\"fieldset-legend\">Points</legend> <label class=\"input\"><input type=\"number\" name=\"points\" class=\"grow\" placeholder=\"Points\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -3,9 +3,6 @@
   @apply transition-all duration-100 cursor-grab rounded-xl;
 }
 
-/* The hover outline is the same shape wherever a preview lives: the objective
-   editor has a pane per zone and no #mobile-preview-container at all, so an id
-   selector left its blocks with no hover state. */
 /* Only draggable previews say so. The outline itself is applied by script, so
    that pointing at a preview block and pointing at its editor block light up
    together rather than one by CSS and one by class. */
@@ -16,9 +13,8 @@
 /* Hover highlighting, in both directions: pointing at a block in the editor
    lights it in the preview, and pointing at it in the preview lights it in the
    editor. One shape, so the pairing reads as the same relationship either way. */
-.preview-block-highlighted,
-.admin-block-highlighted {
-  @apply outline-2 outline-offset-4 outline-base-content rounded-2xl transition-all duration-100;
+.preview-block-highlighted {
+  @apply outline-2 outline-offset-4 outline-primary rounded-2xl transition-all duration-100;
 }
 
 /* Remove top margin from blocks container when first block is a header */
@@ -74,21 +70,6 @@
 }
 .settings-picker > summary::-webkit-details-marker {
   display: none;
-}
-
-/* The preview pills are the one piece of state on the objective editor that
-   changes without being asked, so the active one takes the primary colour
-   rather than the quieter surface daisyUI uses. Secondary rather than primary:
-   primary is the save and submit colour throughout the admin, and a pill that
-   wears it reads as something to press rather than something being reported.
-
-   Written here rather than as an arbitrary property on the element: Tailwind
-   does not emit [--tab-bg:var(--color-primary)], so that class built to
-   nothing. The component paints the active pill from --tab-bg and has no
-   matching variable for its text, so the ink is set alongside it. */
-#preview-pills > .tab-active {
-  --tab-bg: var(--color-secondary);
-  color: var(--color-secondary-content);
 }
 
 /* Removes the native up/down spinner from a number input. */
@@ -910,3 +891,329 @@ li.nest-target > .objective-row::after {
 #objective-tree .sortable-ghost-preview:has(+ li.objective-rail-item > .objective-group) > .drag-cue {
   top: calc(var(--group-step) / -2);
 }
+
+/* Objective editor: a heading row per step above plain panels, the way the
+   other pages are built. Blocks are cards of their own whose header never
+   changes, open or shut, so the page does not shift as it is used. */
+.obj-page { --side: 390px; padding-inline: 1.5rem; padding-bottom: 3rem; }
+
+.obj-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1.6rem;
+  margin-bottom: .9rem;
+  padding: .75rem 1.25rem;
+  border-radius: 22px;
+}
+.obj-worth { color: var(--soft); font-size: .9rem; font-weight: 600; }
+.obj-worth b { color: var(--color-base-content); font-weight: 800; }
+
+.obj-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.obj-switch svg { color: var(--soft); }
+.obj-switch:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 4px; border-radius: 8px; }
+.obj-switch i {
+  position: relative;
+  flex: none;
+  width: 2.4rem;
+  height: 1.4rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--color-base-300);
+  transition: background .15s, border-color .15s;
+}
+.obj-switch i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: .9rem;
+  height: .9rem;
+  border-radius: 50%;
+  background: var(--soft);
+  transition: transform .15s, background .15s;
+}
+.obj-switch[aria-checked="true"] i { border-color: var(--color-primary); background: var(--color-primary); }
+.obj-switch[aria-checked="true"] i::after { background: #fff; transform: translateX(1rem); }
+@media (prefers-reduced-motion: reduce) {
+  .obj-switch i, .obj-switch i::after { transition: none; }
+}
+
+.obj-num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--color-primary) 22%, var(--color-base-100));
+  color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
+  font: 800 .95rem var(--display-font);
+}
+.obj-title { display: grid; min-width: 0; }
+.obj-title h2 { font: 800 1.35rem/1.15 var(--display-font); letter-spacing: -.025em; }
+.obj-title small { overflow: hidden; color: var(--soft); font-size: .875rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.obj-gtot { color: var(--soft); font-size: .875rem; font-weight: 700; white-space: nowrap; }
+.obj-count { margin-left: .5rem; color: var(--soft); font-size: .78rem; font-weight: 600; }
+.obj-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .65rem;
+  margin: .6rem 0 .75rem;
+  color: var(--soft);
+  font-size: .85rem;
+}
+.obj-link code { color: var(--color-base-content); font: 600 .8rem ui-monospace, monospace; }
+.obj-link small { flex-basis: 100%; font-size: .8rem; }
+
+/* A block is a card. Its header is the same open or shut, hovered or not; only
+   the body comes and goes, under a hairline. The block being worked in gets a
+   ring that sits above its neighbours, so the next form cannot cut it. */
+.blocks { display: flex; flex-direction: column; gap: .9rem; }
+.blocks:empty::after {
+  content: "Nothing here yet. Add the first block.";
+  display: block;
+  padding: 1.5rem .75rem;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: 22px;
+  color: var(--soft);
+  text-align: center;
+}
+.content-block {
+  position: relative;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--color-base-100);
+  box-shadow: var(--soft-shadow);
+}
+.content-block.admin-block-highlighted { z-index: 1; outline: none; box-shadow: 0 0 0 2px var(--color-primary), var(--soft-shadow); }
+.block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .75rem;
+  min-height: 3.75rem;
+  padding: .4rem 3rem .4rem .9rem;
+  font-weight: 700;
+}
+.block-chip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: .75rem;
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
+  color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
+}
+.block-chip svg { width: 1.15rem; height: 1.15rem; }
+.block-name { font-size: 1.0625rem; font-weight: 700; }
+.block-pts {
+  min-width: 3.5rem;
+  padding: .05rem .7rem;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
+  font-size: .8rem;
+  font-weight: 700;
+  text-align: center;
+}
+.block-pts-zero { background: var(--tint-warning); color: var(--ico-warning); }
+.block-tools { position: relative; z-index: 10; display: flex; align-items: center; gap: .5rem; margin-left: auto; }
+.block-actions { display: flex; gap: .15rem; opacity: 0; transition: opacity .12s; }
+.content-block:hover .block-actions,
+.content-block:focus-within .block-actions { opacity: 1; }
+@media (hover: none) {
+  .block-actions { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .block-actions { transition: none; }
+}
+.block-actions .btn { width: 1.9rem; height: 1.9rem; min-height: 0; padding: 0; border-radius: .6rem; color: var(--soft); }
+.block-actions .btn:hover { color: var(--color-base-content); }
+.block-actions .block-delete:hover { color: var(--ico-error); }
+.block-body { padding-block: 0; }
+.content-block:has(> input:checked) > .block-body {
+  padding: 1rem 1.25rem 1.25rem 1.25rem;
+  border-top: 1px solid var(--line);
+}
+
+.block-pick {
+  z-index: 30;
+  width: 26rem;
+  max-width: calc(100vw - 2.5rem);
+  max-height: min(70vh, 36rem);
+  overflow-y: auto;
+  margin-top: .5rem;
+  padding: .9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 18px;
+  background: var(--color-base-100);
+  box-shadow: var(--soft-shadow);
+}
+.block-pick .kicker { display: block; margin: .25rem 0 .5rem .15rem; }
+.block-pick .block-pick-grid + .kicker { margin-top: 1rem; }
+.block-pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.block-pick-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  width: 100%;
+  padding: .6rem;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--color-base-100);
+  text-align: left;
+  cursor: pointer;
+}
+.block-pick-item:hover,
+.block-pick-item:focus-visible { border-color: var(--line-strong); box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.block-pick-item svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: .1rem; }
+.block-pick-item b { display: block; font-size: .9rem; }
+.block-pick-item small { display: block; color: var(--soft); font-size: .78rem; font-weight: 500; line-height: 1.3; }
+.block-actions .btn { width: 1.9rem; height: 1.9rem; min-height: 0; padding: 0; border-radius: .6rem; color: var(--soft); }
+.block-actions .btn:hover { color: var(--color-base-content); }
+.block-actions .block-delete:hover { color: var(--ico-error); }
+
+/* The variable button: a standard button in the editor, quiet again in the
+   accordion header where it sits among the block's other icons. */
+.collapse-title .vars-btn, .block-tools .vars-btn { --btn-bg: transparent; --btn-border: transparent; --btn-shadow: none; }
+.collapse-title .vars-btn:hover, .block-tools .vars-btn:hover { --btn-bg: var(--color-base-200); }
+.collapse-title .vars-label, .block-tools .vars-label { display: none; }
+.vars-label { font-family: var(--font-sans, inherit); font-weight: 700; }
+
+.cs { margin-top: 1.75rem; }
+.cs-head { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; padding-inline: .25rem; }
+.cs-head .grow { flex: 1; }
+.cs-panel { display: grid; grid-template-columns: 250px minmax(0, 1fr) var(--side); overflow: clip; }
+.cs-task { grid-template-columns: minmax(0, 1fr) var(--side); }
+.ct-panel { padding: 1.25rem 1.5rem .75rem; }
+.cs-phonecol { display: flex; flex-direction: column; align-items: center; align-self: stretch; gap: .6rem; padding: 1.25rem; border-left: 1px solid var(--line); background: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100)); }
+.cs-prevcol { align-items: stretch; }
+.ct-card { padding: 1rem; border-radius: 20px; background: var(--color-base-200); }
+.ctx-title { margin: 0 0 .6rem .25rem; font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.02em; }
+.ctx-rule { margin-left: .5rem; padding: .1rem .7rem; border-radius: 999px; background: color-mix(in oklab, var(--color-primary) 22%, var(--color-base-100)); font: 700 .8rem var(--font-sans, inherit); letter-spacing: 0; vertical-align: .15em; }
+.ctx-dim { margin-bottom: .6rem; opacity: .42; }
+.ct-card #objective-card { margin-bottom: .6rem; }
+@media (max-width: 1180px) {
+  .cs-panel { grid-template-columns: 220px minmax(0, 1fr); }
+  .cs-task { grid-template-columns: minmax(0, 1fr); }
+  .cs-phonecol { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
+  .cf-phone { position: static; }
+}
+
+.cs-rail { display: flex; flex-direction: column; padding: .9rem; border-right: 1px solid var(--line); background: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100)); }
+.rl { display: flex; flex-direction: column; gap: .4rem; }
+.rl-item { display: flex; align-items: center; gap: .45rem; width: 100%; padding: .35rem .6rem .35rem .3rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--color-base-100); font-size: .9rem; font-weight: 700; text-align: left; cursor: pointer; }
+.rl-item:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.rl-grip { padding: .35rem .1rem; color: color-mix(in oklab, var(--color-base-content) 55%, var(--color-base-100)); cursor: grab; }
+.rl-item .block-chip { flex: none; width: 1.8rem; height: 1.8rem; border-radius: .55rem; }
+.rl-item .block-chip svg { width: 1rem; height: 1rem; }
+.rl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-pts { color: var(--soft); font-size: .78rem; font-weight: 700; }
+.rl-pts::after { content: " pts"; }
+.rl-var { display: inline-grid; place-items: center; color: var(--color-primary); }
+.rl-var:empty { display: none; }
+.rl-var svg { width: .85rem; height: .85rem; }
+.rl-item.on { border-color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-100)); box-shadow: 0 0 0 1.5px var(--color-primary); }
+.rl-item.hl:not(.on) { border-color: color-mix(in oklab, var(--color-primary) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+.rl-int .block-chip { background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 80%, var(--color-base-content)); }
+.rl-int .rl-name { font-weight: 800; }
+.rl-static { border-color: transparent; background: none; }
+.rl-static .block-chip { background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: var(--soft); }
+.rl-static .rl-name { color: var(--soft); font-weight: 600; }
+.rl-static .rl-pts { display: none; }
+.rl-static:hover { border-color: var(--line); }
+.rl-static.on .rl-name { color: var(--color-base-content); }
+.rl-add { display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .55rem; border: 1.5px dashed var(--line-strong); border-radius: 14px; background: none; color: var(--soft); font-weight: 700; cursor: pointer; }
+.rl-add:hover, .rl-add.on { border-color: var(--color-primary); color: var(--color-base-content); }
+.sortable-ghost { opacity: .35; }
+
+.cs-edit { display: flex; flex-direction: column; min-width: 0; }
+.cs-forms { display: flex; flex: 1; flex-direction: column; }
+.cf-form { display: flex; flex: 1; flex-direction: column; }
+.cf-form[hidden] { display: none; }
+.cf-head { display: flex; align-items: center; gap: .8rem; padding: 1rem 1.4rem .25rem; }
+.cf-head .grow { flex: 1; }
+.cf-head .btn-ghost { color: var(--soft); }
+.cf-head .block-chip { flex: none; }
+.cf-title { display: grid; }
+.cf-title small { color: var(--soft); font-size: .8rem; font-weight: 600; }
+.cf-title b { font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.025em; }
+.cf-fields { flex: 1; padding: .75rem 1.4rem 1.5rem; }
+.cf-fields .points-field { display: none; }
+.cf-foot { margin-top: auto; padding: .8rem 1.4rem 1rem; border-top: 1px solid var(--line); }
+.del-ask { display: inline-flex; align-items: center; gap: .3rem; font-size: .85rem; font-weight: 700; }
+.cf-form .badge-neutral { border: 0; background: color-mix(in oklab, var(--color-base-content) 9%, var(--color-base-100)); color: var(--soft); }
+.cf-empty { display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; max-width: 30rem; padding: 2rem 1.4rem; }
+.cf-empty b { font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.025em; }
+.cf-empty p { margin: 0; color: var(--soft); }
+
+.pt-wrap { position: relative; }
+.pt-btn { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .8rem; border: 1.5px solid var(--line-strong); border-radius: 999px; background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100)); font-size: .85rem; font-weight: 800; cursor: pointer; }
+.pt-pop { display: none; position: absolute; right: 0; top: calc(100% + .5rem); z-index: 30; width: 18rem; padding: 1rem; border: 1px solid var(--line-strong); border-radius: 20px; background: var(--color-base-100); box-shadow: var(--soft-shadow); }
+.pt-wrap.open .pt-pop { display: block; }
+.pt-pop .kicker { display: block; margin-bottom: .65rem; }
+.pt-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: .45rem; }
+.pt-chips button { height: 2.5rem; padding: 0; border: 1.5px solid var(--line); border-radius: 12px; background: var(--color-base-100); font-size: .95rem; font-weight: 800; cursor: pointer; transition: background .12s, color .12s; }
+.pt-chips button:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.pt-chips button.on { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-content); box-shadow: none; }
+.pt-custom { display: flex; align-items: center; gap: .6rem; margin-top: .95rem; padding-top: .95rem; border-top: 1px solid var(--line); }
+.pt-custom .lbl { flex: none; margin: 0; color: var(--soft); font-size: .8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.pt-input { display: flex; flex: 1; align-items: center; gap: .4rem; min-width: 0; height: 2.5rem; margin: 0; }
+.pt-input input { flex: 1; width: 100%; min-width: 0; height: auto; padding: 0; font-weight: 800; line-height: 1.2; }
+.pt-input span { color: var(--soft); font-size: .85rem; font-weight: 700; }
+.pt-input.is-custom { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+.pt-input.is-custom span { color: var(--color-primary); }
+.pt-input:focus-within { border-color: var(--color-primary); }
+.pt-note { margin: .6rem 0 0; color: var(--soft); font-size: .8rem; }
+
+.cf-pick .cf-fields { padding-top: 1rem; }
+.cf-search { margin-bottom: 1.1rem; }
+.cf-pick .kicker { display: block; margin: .25rem 0 .6rem; }
+.cf-pick .block-pick-grid + .kicker { margin-top: 1.4rem; }
+.cf-pick .block-pick-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 5.75rem; }
+.cf-pick .block-pick-grid > form { display: flex; min-height: 0; }
+.cf-pick .block-pick-item { flex: 1; align-items: center; gap: .8rem; overflow: hidden; }
+.cf-pick .block-pick-item small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.cf-pick .block-pick-item svg { flex: none; width: 2.5rem; height: 2.5rem; margin: 0; padding: .4rem; border-radius: .75rem; background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: var(--soft); }
+.cf-pick .block-pick-item[data-kind="true"] svg { background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 80%, var(--color-base-content)); }
+.cf-none { padding: 2rem 0; color: var(--soft); text-align: center; }
+
+/* Pinned so it stays beside a long form. */
+.cf-phone { position: sticky; top: 1rem; flex: none; width: 350px; max-width: 100%; height: min(664px, calc(100vh - 2rem)); overflow: hidden; border: 9px solid #15131a; border-radius: 44px; background: var(--color-base-200); }
+[data-theme="dracula"] .cf-phone { border-color: #4a4f68; }
+.cf-screen { height: 100%; overflow-y: auto; scrollbar-width: none; background: var(--color-base-200); }
+.cf-screen::-webkit-scrollbar { display: none; }
+.cf-pane { padding: 2.2rem 1rem 1.5rem; }
+.cf-pane #objective-page { padding: 0; }
+.cf-pane #objective-page > .q-dim:first-child:has(h1:empty) { display: none; }
+.cf-pane #objective-zone { min-height: 9rem; }
+.cf-pane .block-view { position: relative; border-radius: 18px; cursor: pointer; }
+.cf-pane .block-view * { pointer-events: none; }
+.cf-pane .block-view:hover, .cf-pane .block-view.hl:not(.sel) { box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 45%, transparent); }
+.cf-pane .block-view.sel { box-shadow: 0 0 0 4px var(--color-primary); }
+/* The player's page has a tall minimum height of its own, which pushed this
+   below the phone. It is laid over the screen instead, centred in it. */
+.cf-screen { position: relative; }
+.cf-screen .cf-pane #objective-page.q-page { min-height: 0; }
+.cf-phone-empty { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; margin: 0; padding: 0 2rem; color: var(--soft); font-size: 1.05rem; font-weight: 600; line-height: 1.4; text-align: center; text-wrap: balance; pointer-events: none; }
+.cf-phone-empty[hidden] { display: none; }
+
+.cf-starters { max-width: none; width: 100%; }
+.st-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 6.25rem; gap: .6rem; width: 100%; margin-top: .6rem; }
+.st-grid > form { display: flex; min-height: 0; }
+.st-card { flex: 1; align-items: center; gap: .8rem; padding: .85rem; }
+.st-card svg { flex: none; width: 2.5rem; height: 2.5rem; margin: 0; padding: .4rem; border-radius: .75rem; background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 80%, var(--color-base-content)); }
+.st-card b { font-size: 1rem; }

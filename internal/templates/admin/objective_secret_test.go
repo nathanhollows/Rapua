@@ -65,7 +65,8 @@ func TestObjectiveSecretControl(t *testing.T) {
 	on := render(models.Objective{Slug: "rooftop", ParentID: "root", Secret: true})
 	assert.Contains(t, on, `hx-post="/admin/objective/rooftop/secret"`)
 	assert.Contains(t, on, `&#34;secret&#34;:&#34;false&#34;`, "a click turns it off")
-	assert.Contains(t, on, `aria-pressed="true"`)
+	assert.Contains(t, on, `role="switch"`)
+	assert.Contains(t, on, `aria-checked="true"`)
 }
 
 // TestObjectiveTreeSecretPreview writes a browsable copy of the tree when

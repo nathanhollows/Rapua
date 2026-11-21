@@ -1,0 +1,318 @@
+package templates
+
+import (
+	"fmt"
+
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+var pointPresets = []int{0, 1, 2, 5, 10, 20, 50, 100}
+
+// blockIsInteractive matches the split the variable controls make, so the list
+// and the lock agree.
+func blockIsInteractive(block blocks.Block) bool {
+	return game.CanSetVars(block) || block.RequiresValidation()
+}
+
+func blockKindTitle(block blocks.Block) string {
+	if blockIsInteractive(block) {
+		return "Interactive: players do something"
+	}
+	return "Static content"
+}
+
+func blockVarState(block blocks.Block) string {
+	switch {
+	case block.GetSets() != "":
+		return "sets"
+	case len(block.GetDepends()) > 0:
+		return "depends"
+	}
+	return ""
+}
+
+templ objectiveSection(data EditObjectiveData, zone blocks.BlockContext, num string) {
+	{{ z := zoneWordsFor(zone) }}
+	{{ list := z.Blocks(data) }}
+	<section
+		id={ "zone-" + z.Param }
+		data-sec={ z.Param }
+		data-zone={ z.Param }
+		data-context={ string(zone) }
+		data-owner={ data.Objective.ID }
+		class="cs"
+	>
+		<div class="cs-head">
+			<span class="obj-num">{ num }</span>
+			<span class="obj-title">
+				<h2>
+					{ z.Name }
+				</h2>
+				<small>{ z.Why }</small>
+			</span>
+			<span class="grow"></span>
+			<span class="obj-gtot" data-total></span>
+		</div>
+		<div class="panel cs-panel">
+			<div class="cs-rail">
+				<div id={ "rail-" + z.Param } class="rl" data-rail={ z.Param }>
+					for _, block := range list {
+						@objectiveRailItem(data.Settings, block)
+					}
+					<button type="button" id={ "rl-add-" + z.Param } class="rl-add" data-add={ z.Param }>
+						@icon("plus", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+						Add
+					</button>
+				</div>
+			</div>
+			<div class="cs-edit">
+				<div id={ "forms-" + z.Param } class="cs-forms" data-forms={ z.Param }>
+					for _, block := range list {
+						@objectiveBlockForm(data.Settings, block, z)
+					}
+					@objectiveChooser(data.Objective.ID, zone, z)
+					@objectiveEmptyState(data.Objective.ID, zone, z)
+				</div>
+			</div>
+			<aside class="cs-phonecol" aria-label={ z.Name + " preview" }>
+				<div class="cf-phone">
+					<div class="cf-screen player">
+						<div
+							class="cf-pane"
+							data-preview={ z.Param }
+							hx-get={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=", z.Param) }
+							hx-trigger="load, blocks-changed from:body, htmx:afterRequest from:.cs-edit, htmx:afterRequest from:#edit-objective"
+							hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
+							hx-swap="innerHTML"
+						></div>
+						<p class="cf-phone-empty" data-phone-empty hidden>
+							if z.proof {
+								No proof. Players open straight to the reveal.
+							} else {
+								No reveal. Players go straight back to the quest list.
+							}
+						</p>
+					</div>
+				</div>
+			</aside>
+		</div>
+	</section>
+}
+
+templ objectiveRailItem(settings models.QuestSettings, block blocks.Block) {
+	<button
+		type="button"
+		data-ignore-lock
+		data-id={ block.GetID() }
+		data-pts={ fmt.Sprint(block.GetPoints()) }
+		data-var={ blockVarState(block) }
+		title={ blockKindTitle(block) }
+		class={ "rl-item", templ.KV("rl-int", blockIsInteractive(block)), templ.KV("rl-static", !blockIsInteractive(block)) }
+	>
+		<span class="rl-grip" aria-hidden="true">
+			<svg class="w-4 h-4" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.6"></circle><circle cx="15" cy="6" r="1.6"></circle><circle cx="9" cy="12" r="1.6"></circle><circle cx="15" cy="12" r="1.6"></circle><circle cx="9" cy="18" r="1.6"></circle><circle cx="15" cy="18" r="1.6"></circle></svg>
+		</span>
+		<span class="block-chip">
+			@templ.Raw(block.GetIconSVG())
+		</span>
+		<span class="rl-name">{ block.GetName() }</span>
+		<span class="rl-var" data-rl-var></span>
+		if settings.EnablePoints {
+			<span class="rl-pts">{ fmt.Sprint(block.GetPoints()) }</span>
+		}
+	</button>
+}
+
+// objectiveBlockForm edits points through the block's ordinary (hidden) points
+// field, which the header pill writes to, so saving needs nothing new.
+templ objectiveBlockForm(settings models.QuestSettings, block blocks.Block, z zoneWords) {
+	<div class="cf-form" data-block-form={ block.GetID() } data-zone={ z.Param } hidden>
+		<div class="cf-head">
+			<span class="block-chip">
+				@templ.Raw(block.GetIconSVG())
+			</span>
+			<span class="cf-title">
+				<small data-pos></small>
+				<b>{ block.GetName() }</b>
+			</span>
+			<span class="grow"></span>
+			<span class="pt-wrap" data-pt-wrap hidden>
+				<button type="button" class="pt-btn" data-pt aria-haspopup="true">
+					<span data-pt-label>{ fmt.Sprint(block.GetPoints()) } pts</span>
+					@icon("chevron-down", templ.Attributes{"class": "w-3 h-3", "width": "12", "height": "12"})
+				</button>
+				<div class="pt-pop" role="dialog" aria-label="Points">
+					<span class="kicker">Points</span>
+					<div class="pt-chips">
+						for _, v := range pointPresets {
+							<button type="button" data-set={ fmt.Sprint(v) }>{ fmt.Sprint(v) }</button>
+						}
+					</div>
+					<div class="pt-custom">
+						<label class="lbl" for={ "pc-" + block.GetID() }>Custom</label>
+						<label class="input pt-input">
+							<input id={ "pc-" + block.GetID() } type="number" min="0" data-custom aria-label="Custom points"/>
+							<span>pts</span>
+						</label>
+					</div>
+					<p class="pt-note">Any whole number. 0 gives no points.</p>
+				</div>
+			</span>
+			<span data-del-wrap>
+				<button type="button" class="btn btn-ghost btn-sm btn-square" data-del-ask aria-label="Delete block">
+					@icon("trash-2", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+				</button>
+			</span>
+		</div>
+		<div class="cf-fields">
+			@bTemplates.RenderAdminEdit(settings, block)
+		</div>
+		<div class="cf-foot">
+			@bTemplates.BlockVarsButton(block)
+			@bTemplates.BlockVarsEditSlot(block)
+		</div>
+	</div>
+}
+
+// ObjectiveBlockAdded lets htmx swap the form in so the block's own scripts come
+// alive; the list item rides in a template for the script to move.
+templ ObjectiveBlockAdded(settings models.QuestSettings, block blocks.Block, zone blocks.BlockContext, selected bool) {
+	{{ z := zoneWordsFor(zone) }}
+	@objectiveBlockForm(settings, block, z)
+	<template data-rail-for={ block.GetID() } data-zone={ z.Param } data-select?={ selected }>
+		@objectiveRailItem(settings, block)
+	</template>
+}
+
+templ objectiveChooser(ownerID string, zone blocks.BlockContext, z zoneWords) {
+	<div class="cf-form cf-pick" data-add-form={ z.Param } hidden>
+		<div class="cf-head">
+			<span class="cf-title">
+				<small>Choose what to add</small>
+				<b>Add to { z.Name }</b>
+			</span>
+		</div>
+		<div class="cf-fields">
+			<label class="input w-full cf-search">
+				@icon("search", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+				<input type="search" data-bsearch placeholder="Search blocks" aria-label="Search blocks" autocomplete="off"/>
+			</label>
+			@objectivePickerGroup(ownerID, zone, z, "Static content", false)
+			@objectivePickerGroup(ownerID, zone, z, "Interactive", true)
+			<p class="cf-none" hidden>No blocks match.</p>
+		</div>
+	</div>
+}
+
+templ objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords, title string, interactive bool) {
+	<span class="kicker">{ title }</span>
+	<div class="block-pick-grid">
+		for _, block := range blocks.GetBlocksForContext(zone) {
+			if blockIsInteractive(block) == interactive {
+				<form hx-post="/admin/blocks/" hx-target={ "#forms-" + z.Param } hx-swap="beforeend">
+					<input type="hidden" name="owner" value={ ownerID }/>
+					<input type="hidden" name="context" value={ string(zone) }/>
+					<input type="hidden" name="type" value={ block.GetType() }/>
+					<button type="submit" class="block-pick-item" data-kind={ fmt.Sprint(interactive) }>
+						@templ.Raw(block.GetIconSVG())
+						<span>
+							<b>{ block.GetName() }</b>
+							<small>{ block.GetDescription() }</small>
+						</span>
+					</button>
+				</form>
+			}
+		}
+	</div>
+}
+
+// objectiveEmptyState tells the author an empty reveal is valid and what players
+// get instead, rather than leaving them to find out.
+templ objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords) {
+	<div class="cf-form" data-empty-form={ z.Param } hidden>
+		<div class="cf-empty cf-starters">
+			if z.proof {
+				<b>What should players do?</b>
+				<p>Start from a template, or choose blocks yourself. Everything can be changed afterwards. With no proof, players open this straight to its reveal.</p>
+				<div class="st-grid">
+					@objectiveKitCard(ownerID, zone, z, services.KitScan, "scan", "Scan a code", "A prompt and a scan block, with a QR code already made.")
+					@objectiveKitCard(ownerID, zone, z, services.KitLocation, "geofence", "Go to a place", "A location check, ready for you to choose the spot.")
+					@objectiveKitCard(ownerID, zone, z, services.KitQuiz, "quiz", "Answer a question", "Instructions and two quiz blocks to fill in.")
+					<button type="button" class="block-pick-item st-card" data-add={ z.Param }>
+						@icon("plus", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+						<span>
+							<b>Build it yourself</b>
+							<small>Choose blocks one at a time.</small>
+						</span>
+					</button>
+				</div>
+			} else {
+				<b>No reveal</b>
+				<p>A reveal is optional. Without one, players go straight back to the quest list once they clear the proof. Add blocks if you would like them to see something first.</p>
+				<button type="button" class="btn" data-add={ z.Param }>
+					@icon("plus", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+					Add a block
+				</button>
+			}
+		</div>
+	</div>
+}
+
+templ objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit services.BlockKit, iconType, title, text string) {
+	<form hx-post="/admin/blocks/kit" hx-target={ "#forms-" + z.Param } hx-swap="beforeend">
+		<input type="hidden" name="owner" value={ ownerID }/>
+		<input type="hidden" name="context" value={ string(zone) }/>
+		<input type="hidden" name="kit" value={ string(kit) }/>
+		<button type="submit" class="block-pick-item st-card" data-kit={ string(kit) }>
+			@templ.Raw(blocks.IconSVGForType(iconType))
+			<span>
+				<b>{ title }</b>
+				<small>{ text }</small>
+			</span>
+		</button>
+	</form>
+}
+
+// objectiveListPreview draws the row among its neighbours so the title is judged
+// next to the ones it must stand out from.
+templ objectiveListPreview(data EditObjectiveData) {
+	<span class="kicker">How it looks in the list</span>
+	<div class="ct-card player">
+		if data.ParentTitle != "" {
+			<p class="ctx-title">
+				{ data.ParentTitle }
+				if data.ParentRule != "" {
+					<span class="ctx-rule">{ data.ParentRule }</span>
+				}
+			</p>
+		}
+		for _, title := range data.SiblingsBefore {
+			@objectiveSiblingRow(title)
+		}
+		if data.Objective.Secret {
+			@objectiveSecretListPreview()
+		} else {
+			@objectiveCardRow(data)
+		}
+		for _, title := range data.SiblingsAfter {
+			@objectiveSiblingRow(title)
+		}
+	</div>
+}
+
+templ objectiveSiblingRow(title string) {
+	<div class="ctx-dim" aria-hidden="true">
+		<div class="q-tile">
+			<span class="q-ico">
+				@icon("book-open", templ.Attributes{})
+			</span>
+			<span class="grow min-w-0 flex flex-col gap-1">
+				<span class="q-title">{ title }</span>
+			</span>
+		</div>
+	</div>
+}

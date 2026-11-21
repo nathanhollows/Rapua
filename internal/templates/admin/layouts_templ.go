@@ -138,10 +138,11 @@ func Layout(contents templ.Component, user models.User, section string, title st
 
 // Migrated sections sit on base-200 so base-100 cards lift off it; the rest keep base-100, where their
 // bg-base-200 cards would vanish. Applied on #app because hx-boost never swaps body attributes.
-// The Quest section also holds the objective editor and system pages, so only the tree page is shaded.
+// The Quest section also holds the system page editors, which are not migrated, so only the tree page
+// and the objective editor are shaded.
 func shadedSection(section, title string) bool {
 	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Quests" ||
-		(section == "Quest" && title == "Quest")
+		(section == "Quest" && (title == "Quest" || title == "Edit Objective"))
 }
 
 func header(title string) templ.Component {
@@ -172,7 +173,7 @@ func header(title string) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 49, Col: 16}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 50, Col: 16}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -185,7 +186,7 @@ func header(title string) templ.Component {
 		var templ_7745c5c3_Var8 templ.SafeURL
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs("/static/css/admin.css" + getCSSVersion())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 76, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 77, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -348,7 +349,7 @@ func statusLegendKey(status models.GameStatus, label string) templ.Component {
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 187, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 188, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -420,7 +421,7 @@ func questStatusIndicator(quest models.Quest) templ.Component {
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.StartTime.Time.UTC().Format(time.RFC3339))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 198, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 199, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 			if templ_7745c5c3_Err != nil {
@@ -433,7 +434,7 @@ func questStatusIndicator(quest models.Quest) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(word)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 198, Col: 91}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 199, Col: 91}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -447,7 +448,7 @@ func questStatusIndicator(quest models.Quest) templ.Component {
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(word)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 200, Col: 9}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 201, Col: 9}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -536,7 +537,7 @@ func nav(user models.User, section string) templ.Component {
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(user.CurrentQuest.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 298, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 299, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -792,7 +793,7 @@ func questSwitchButton(quest models.Quest, section string) templ.Component {
 			var templ_7745c5c3_Var24 string
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(questSwitchTitle(quest))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 463, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 464, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 			if templ_7745c5c3_Err != nil {
@@ -810,7 +811,7 @@ func questSwitchButton(quest models.Quest, section string) templ.Component {
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 465, Col: 37}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 466, Col: 37}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 				if templ_7745c5c3_Err != nil {
@@ -823,7 +824,7 @@ func questSwitchButton(quest models.Quest, section string) templ.Component {
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(quest.StartTime.Time.UTC().Format(time.RFC3339))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 466, Col: 73}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 467, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 				if templ_7745c5c3_Err != nil {
@@ -851,7 +852,7 @@ func questSwitchButton(quest models.Quest, section string) templ.Component {
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(quest.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 472, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 473, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -869,7 +870,7 @@ func questSwitchButton(quest models.Quest, section string) templ.Component {
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(word)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 474, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 475, Col: 31}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -1002,7 +1003,7 @@ func questSwitcher(user models.User, section string) templ.Component {
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(user.CurrentQuest.Name)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 526, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 527, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -1035,7 +1036,7 @@ func questSwitcher(user models.User, section string) templ.Component {
 				var templ_7745c5c3_Var33 templ.SafeURL
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL(fmt.Sprintf("/admin/quests/%s/switch", quest.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 539, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 540, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 				if templ_7745c5c3_Err != nil {
@@ -1056,7 +1057,7 @@ func questSwitcher(user models.User, section string) templ.Component {
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(quest.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 543, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/layouts.templ`, Line: 544, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 				if templ_7745c5c3_Err != nil {

@@ -250,7 +250,7 @@ templ objectiveDependsButton(objective models.Objective, oob bool) {
 			if oob {
 				hx-swap-oob="true"
 			}
-			class="btn btn-sm btn-ghost gap-1 font-mono font-normal tooltip tooltip-bottom"
+			class="btn gap-2 font-mono font-normal tooltip tooltip-bottom"
 			data-tip={ objectiveDependsTip(objective) }
 			aria-label={ objectiveDependsTip(objective) }
 			hx-get={ "/admin/objective/" + objective.Slug + "/depends" }
@@ -258,11 +258,13 @@ templ objectiveDependsButton(objective models.Objective, oob bool) {
 			hx-swap="innerHTML"
 		>
 			if len(objective.Depends) == 0 {
-				@icon("lock-open", templ.Attributes{"class": "w-4 h-4 opacity-40"})
+				@icon("lock-open", templ.Attributes{"class": "w-4 h-4"})
+				<span class="font-sans font-semibold">No lock</span>
 			} else {
 				@icon("lock", templ.Attributes{"class": "w-4 h-4 text-primary"})
-				<span class="text-xs">{ strings.Join(objective.Depends, ", ") }</span>
+				<span class="text-sm">{ strings.Join(objective.Depends, ", ") }</span>
 			}
+			@icon("chevron-down", templ.Attributes{"class": "w-3.5 h-3.5 text-(--soft)"})
 		</button>
 	}
 }
@@ -278,7 +280,7 @@ func objectiveDependsTip(objective models.Objective) string {
 // the quest sets. Saving folds it back into the button.
 templ ObjectiveDependsEditor(objective models.Objective, known []string) {
 	<form
-		class="flex flex-wrap items-center gap-2 rounded-box bg-base-200 border border-base-300 px-4 py-3"
+		class="panel flex flex-wrap items-center gap-2 px-5 py-4"
 		hx-post={ "/admin/objective/" + objective.Slug + "/depends" }
 		hx-target="#objective-depends-edit"
 		hx-swap="innerHTML"

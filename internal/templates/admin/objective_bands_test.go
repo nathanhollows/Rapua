@@ -20,30 +20,31 @@ func renderEditor(t *testing.T) string {
 	return out.String()
 }
 
-// The preview is one phone showing the zone the author is scrolled to. The
-// tabs that used to point one preview at two zones are gone, and so is the
-// pair of previews that briefly replaced them.
-func TestEditObjective_PreviewFollowsTheScroll(t *testing.T) {
+// The preview fetches each zone's blocks once and refetches them when they
+// change, not when the page scrolls.
+func TestEditObjective_PreviewFetchesEachZone(t *testing.T) {
 	html := renderEditor(t)
 
 	assert.Contains(t, html, `?zone=proof`)
 	assert.Contains(t, html, `?zone=reveal`)
-	assert.Contains(t, html, "IntersectionObserver", "the browser decides what is on screen")
 	assert.NotContains(t, html, "changePreviewPage")
 }
 
-// The admin lists keep the ids the preview's drag mirror writes back into. A
-// rename here silently stops reordering from reaching the form.
-func TestEditObjective_KeepsTheIdsTheDragMirrorNeeds(t *testing.T) {
+// Each section keeps its list, its forms and its phone under ids the editor
+// script and the add chooser both address. A rename silently stops them.
+func TestEditObjective_KeepsTheIdsTheScriptNeeds(t *testing.T) {
 	html := renderEditor(t)
 
-	assert.Contains(t, html, `id="content-blocks"`)
-	assert.Contains(t, html, `id="nav-blocks"`)
+	for _, zone := range []string{"proof", "reveal"} {
+		assert.Contains(t, html, `id="rail-`+zone+`"`)
+		assert.Contains(t, html, `id="forms-`+zone+`"`)
+		assert.Contains(t, html, `id="rl-add-`+zone+`"`)
+	}
 }
 
-// The add control sits in the zone it adds to and names it, rather than
-// floating between two zones belonging to neither.
-func TestEditObjective_AddControlNamesItsZone(t *testing.T) {
+// The add control sits in the section it adds to and names it, rather than
+// floating between two sections belonging to neither.
+func TestEditObjective_AddControlNamesItsSection(t *testing.T) {
 	html := renderEditor(t)
 
 	assert.Contains(t, html, "Add to Proof")
@@ -86,7 +87,7 @@ func TestEditObjective_HasNoDuplicateTitle(t *testing.T) {
 	assert.NotContains(t, html, `id="objective-title"`)
 	// The heading names the kind of page, the way every other page here does.
 	// It used to be a copy of the title, kept in step by script.
-	assert.Contains(t, html, `class="text-2xl font-bold">Objective</h1>`)
+	assert.Contains(t, html, `class="text-4xl font-black">Objective</h1>`)
 	// Twice is right: the field holds the title and the card shows it. The card
 	// has to be correct on load, not only once somebody types.
 	assert.Equal(t, 2, strings.Count(html, "Scan the label"))
@@ -125,8 +126,9 @@ func TestEditObjective_DescriptionIsARealField(t *testing.T) {
 	html := out.String()
 	at := strings.Index(html, `id="description"`)
 	require.GreaterOrEqual(t, at, 0)
-	tag := html[strings.LastIndex(html[:at], "<"):]
-	tag = tag[:strings.Index(tag, ">")]
+	start := strings.LastIndex(html[:at], "<")
+	require.GreaterOrEqual(t, start, 0)
+	tag, _, _ := strings.Cut(html[start:], ">")
 	assert.Contains(t, tag, `name="description"`, "it posts")
 	assert.Contains(t, tag, `form="edit-objective"`, "with the rest of the objective")
 	assert.Contains(t, html, "objective-card-description's textContent", "and echoes into the card")

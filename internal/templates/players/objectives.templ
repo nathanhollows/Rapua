@@ -129,22 +129,6 @@ templ questPlaceFooter(place QuestPlace) {
 	}
 }
 
-// PreviewSection reuses the game's heading and pill so authors see what players
-// meet.
-templ PreviewSection(title, rule string) {
-	<section class="q-sec flex flex-col gap-4">
-		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
-			<h3 class="q-head">{ title }</h3>
-			if rule != "" {
-				<span class="q-pill">{ rule }</span>
-			}
-		</div>
-		<div class="flex flex-col gap-4">
-			{ children... }
-		</div>
-	</section>
-}
-
 // hero is the single next step of an ordered section, where nothing competes
 // with it.
 templ questRow(row QuestRow, hero bool) {

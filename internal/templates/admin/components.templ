@@ -14,75 +14,49 @@ templ blockAddButton(ownerID string, context blocks.BlockContext, targetSelector
 	@blockAddDropdownForContext(ownerID, context, targetSelector, label)
 }
 
-// blockAddDropdownForContext renders the dropdown options for adding blocks based on context
+// blockAddDropdownForContext is the add control for pages that list their
+// blocks after it, aimed at the next list. The objective editor has its own
+// chooser, in the place of a form: see objectiveChooser.
 templ blockAddDropdownForContext(ownerID string, context blocks.BlockContext, targetSelector, label string) {
 	<div class="divider my-10">
 		<div class="dropdown dropdown-center">
-			<div class="block">
-				<div tabindex="0" role="button" class="btn btn-sm btn-outline">
-					@icon("plus", templ.Attributes{"class": "w-4 h-4"})
-					{ label }
-				</div>
+			<div tabindex="0" role="button" class="btn btn-sm">
+				@icon("plus", templ.Attributes{"class": "w-4 h-4"})
+				{ label }
 			</div>
-			<div tabindex="0" class="dropdown-content card bg-base-200 border border-base-300 shadow-lg w-96 mt-3 z-50">
-				<div class="card-body pt-3">
-					<div class="divider">
-						<span class="badge badge-ghost">Static content</span>
-					</div>
-					<div class="grid grid-cols-3 grid-flow-row gap-5">
-						for _, block := range blocks.GetBlocksForContext(context) {
-							if !block.RequiresValidation() {
-								<form
-									class="indicator w-full"
-									hx-post="/admin/blocks/"
-									hx-target={ fmt.Sprintf("next %s", targetSelector) }
-									hx-swap="beforeend"
-								>
-									<input type="hidden" name="owner" value={ ownerID }/>
-									<input type="hidden" name="context" value={ string(context) }/>
-									<input type="hidden" name="type" value={ block.GetType() }/>
-									<button
-										type="submit"
-										class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
-										data-tip={ block.GetDescription() }
-									>
-										@templ.Raw(block.GetIconSVG())
-										{ block.GetName() }
-									</button>
-								</form>
-							}
-						}
-					</div>
-					<div class="divider">
-						<span class="badge badge-ghost">Interactive</span>
-					</div>
-					<div class="grid grid-cols-3 grid-flow-row gap-5">
-						for _, block := range blocks.GetBlocksForContext(context) {
-							if block.RequiresValidation() {
-								<form
-									class="indicator w-full"
-									hx-post="/admin/blocks/"
-									hx-target={ fmt.Sprintf("next %s", targetSelector) }
-									hx-swap="beforeend"
-								>
-									<input type="hidden" name="owner" value={ ownerID }/>
-									<input type="hidden" name="context" value={ string(context) }/>
-									<input type="hidden" name="type" value={ block.GetType() }/>
-									<button
-										type="submit"
-										class="btn btn-outline border-base-content/30 h-auto p-3 tooltip flex flex-col gap-1 items-center rounded-md w-full"
-										data-tip={ block.GetDescription() }
-									>
-										@templ.Raw(block.GetIconSVG())
-										{ block.GetName() }
-									</button>
-								</form>
-							}
-						}
-					</div>
-				</div>
-			</div>
+			@blockPickerMenu(ownerID, context, fmt.Sprintf("next %s", targetSelector))
 		</div>
+	</div>
+}
+
+// blockPickerMenu is the choice of block, static content first because it is
+// the common one. Each choice says what it does, since a name alone does not.
+templ blockPickerMenu(ownerID string, context blocks.BlockContext, target string) {
+	<div tabindex="0" class="dropdown-content block-pick">
+		@blockPickerGroup(ownerID, context, target, "Static content", false)
+		@blockPickerGroup(ownerID, context, target, "Interactive", true)
+	</div>
+}
+
+templ blockPickerGroup(ownerID string, context blocks.BlockContext, target, title string, interactive bool) {
+	<span class="kicker">{ title }</span>
+	<div class="block-pick-grid">
+		for _, block := range blocks.GetBlocksForContext(context) {
+			if block.RequiresValidation() == interactive {
+				<form hx-post="/admin/blocks/" hx-target={ target } hx-swap="beforeend">
+					<input type="hidden" name="owner" value={ ownerID }/>
+					<input type="hidden" name="context" value={ string(context) }/>
+					<input type="hidden" name="type" value={ block.GetType() }/>
+					<button type="submit" class="block-pick-item">
+						@templ.Raw(block.GetIconSVG())
+						<span>
+							<b>{ block.GetName() }</b>
+							<small>{ block.GetDescription() }</small>
+						</span>
+					</button>
+				</form>
+			}
+		}
 	</div>
 }
 
@@ -254,19 +228,42 @@ templ previewHoverScript() {
 				previewBlock._hoverBound = true;
 
 				previewBlock.addEventListener('mouseenter', function() {
-					previewBlock.classList.add('preview-block-highlighted');
-					adminBlock.classList.add('admin-block-highlighted');
+					setLinked(adminBlock, true);
 					revealInEditor(adminBlock);
 				});
 
+				// Clicking a preview block opens its form and puts the cursor in
+				// it. Anything interactive inside the preview keeps its own click.
+				previewBlock.addEventListener('click', function(evt) {
+					if (evt.target.closest('a, button, input, select, textarea, label')) return;
+					const toggle = adminBlock.querySelector(':scope > input[type="checkbox"]');
+					if (toggle && !toggle.checked) {
+						toggle.checked = true;
+						toggle.dispatchEvent(new Event('change', { bubbles: true }));
+					}
+					adminBlock.scrollIntoView({ behavior: scrollBehavior(), block: 'center' });
+					const field = adminBlock.querySelector('.collapse-content input:not([type="hidden"]):not([type="checkbox"]), .collapse-content textarea, .collapse-content select');
+					if (field) field.focus({ preventScroll: true });
+				});
+
 				previewBlock.addEventListener('mouseleave', function() {
-					previewBlock.classList.remove('preview-block-highlighted');
-					adminBlock.classList.remove('admin-block-highlighted');
+					if (!adminBlock.contains(document.activeElement)) setLinked(adminBlock, false);
 					// Leaving before the dwell elapses cancels the scroll,
 					// so passing over a block never moves the page.
 					clearTimeout(dwell);
 				});
 			});
+		}
+
+		// An editor block is "linked" while it is pointed at or has the cursor in
+		// it, and its phone block is lit with it. Focus counts, not only the
+		// pointer: while typing the pointer is somewhere else, and the block
+		// being edited is the one whose result matters.
+		function setLinked(adminBlock, on) {
+			const previewBlock = previewBlockFor(adminBlock.dataset.blockId);
+			adminBlock.classList.toggle('admin-block-highlighted', on);
+			if (previewBlock) previewBlock.classList.toggle('preview-block-highlighted', on);
+			return previewBlock;
 		}
 
 		function attachHoverToAdmin(adminBlock) {
@@ -275,20 +272,20 @@ templ previewHoverScript() {
 			if (!blockId) return;
 			adminBlock._hoverBound = true;
 
-			adminBlock.addEventListener('mouseenter', function() {
-				adminBlock.classList.add('admin-block-highlighted');
-				const previewBlock = previewBlockFor(blockId);
-				if (!previewBlock) return;
-				previewBlock.classList.add('preview-block-highlighted');
-				revealInPreview(previewBlock);
-			});
-
-			adminBlock.addEventListener('mouseleave', function() {
-				adminBlock.classList.remove('admin-block-highlighted');
-				const previewBlock = previewBlockFor(blockId);
-				if (previewBlock) previewBlock.classList.remove('preview-block-highlighted');
-				clearTimeout(dwell);
-			});
+			const refresh = function() {
+				const on = adminBlock.matches(':hover') || adminBlock.contains(document.activeElement);
+				const previewBlock = setLinked(adminBlock, on);
+				if (!on) {
+					clearTimeout(dwell);
+				} else if (previewBlock) {
+					revealInPreview(previewBlock);
+				}
+			};
+			adminBlock.addEventListener('mouseenter', refresh);
+			adminBlock.addEventListener('mouseleave', refresh);
+			adminBlock.addEventListener('focusin', refresh);
+			// The next element has the focus only after this event ends.
+			adminBlock.addEventListener('focusout', function() { requestAnimationFrame(refresh); });
 		}
 
 		function attachHoverHandlers() {
@@ -481,10 +478,10 @@ templ blockMoveScript() {
             }
 
             if (sibling && sibling.classList.contains('content-block')) {
-                // Calculate the height of the sibling plus the gap (20px for Tailwind gap-5)
+                // The height of the sibling plus whatever gap the list has
                 const blockHeight = block.offsetHeight;
                 const siblingHeight = sibling.offsetHeight;
-                const gap = 20; // gap-5 in pixels
+                const gap = parseFloat(getComputedStyle(block.parentNode).rowGap) || 0;
 
                 // Apply a relative position and initial offset for a smooth transition
                 block.style.position = 'relative';

@@ -20,10 +20,12 @@ func TestObjectiveTree_DragKeepsItsGeometryStill(t *testing.T) {
 	assert.NotContains(t, html, "emptyInsertThreshold: 56")
 	assert.Contains(t, html, "tree-dragging")
 	assert.NotContains(t, html, "evt.stopPropagation()", "stopping dragover starves Sortable's auto-scroll")
-	assert.Contains(t, html, "target.dataset.objectiveId", "nesting is a decision, posted at the drop, not a second thing moving the list")
+	assert.Contains(t, html, "target.dataset.objectiveId",
+		"nesting is a decision, posted at the drop, not a second thing moving the list")
 	assert.Contains(t, html, "dragScrollTick", "the page scrolls itself while dragging, the same in every browser")
 	assert.Contains(t, html, "scroll: false")
-	assert.Contains(t, html, "setDragImage", "the default picture is as wide as the row and covers the placeholder labels")
+	assert.Contains(t, html, "setDragImage",
+		"the default picture is as wide as the row and covers the placeholder labels")
 	assert.Contains(t, html, "steerNesting", "nesting is decided by horizontal intent")
 	assert.Contains(t, html, "rowMidpoint", "the row's own midpoint is the boundary, so it means the same at any depth")
 
@@ -32,7 +34,8 @@ func TestObjectiveTree_DragKeepsItsGeometryStill(t *testing.T) {
 	placeholder := `#objective-tree .objective-rail-item.sortable-ghost-preview {
   height: 0;`
 	assert.Contains(t, string(css), placeholder, "a placeholder with height moves everything under the pointer")
-	assert.Contains(t, string(css), "li.nest-target > .objective-row", "the row that would become the parent is highlighted")
+	assert.Contains(t, string(css), "li.nest-target > .objective-row",
+		"the row that would become the parent is highlighted")
 	assert.Contains(t, string(css), "attr(data-drag-hint)", "the gesture is explained while dragging")
 	assert.Contains(t, html, "right half of a row to nest")
 	assert.Contains(t, html, "Drop here", "the left half of the split line says where a drop lands")
