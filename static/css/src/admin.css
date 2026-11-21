@@ -11,6 +11,7 @@
 @import './player.css';
 
 @source "../../../internal/templates/admin";
+@source "../../../internal/templates/brand";
 @source "../../../internal/templates/players";
 @source "../../../internal/templates/blocks";
 @source "../../../internal/handlers/admin";

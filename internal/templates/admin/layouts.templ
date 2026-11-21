@@ -71,6 +71,7 @@ templ FacilitatorLayout(contents templ.Component, title string, admin bool) {
 // Only the pages that have been migrated are shaded: the tree, the objective editor and the system pages.
 func shadedSection(section, title string) bool {
 	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Quests" ||
+		section == "Error" ||
 		(section == "Quest" && (title == "Quest" || title == "Edit Objective" ||
 			title == "Edit Start Page" || title == "Edit Complete Page"))
 }

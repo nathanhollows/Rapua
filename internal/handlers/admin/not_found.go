@@ -6,28 +6,23 @@ import (
 	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 )
 
-// NotFound shows the not found page.
+// NotFound shows the not found page, in the admin's own frame.
 func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
-
-	w.Header().Set("Content-Type", "text/html")
-
-	if r.Header.Get("Hx-Boosted") != htmxHeaderTrue {
-		h.logger.WarnContext(r.Context(), "NotFound called without HTMX boost", "path", r.URL.Path)
-		err := templates.NotFound().Render(r.Context(), w)
-		if err != nil {
-			h.logger.ErrorContext(r.Context(), "rendering NotFound page", "err", err.Error())
-			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-			return
-		}
+	if user == nil {
+		http.NotFound(w, r)
 		return
 	}
 
-	c := templates.NotFound()
-	err := templates.Layout(c, *user, "Error", "Not Found").Render(r.Context(), w)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	// htmx will not swap a 4xx into the page, so a boosted visit has to say 200 to be
+	// seen at all. Anything else is an address that really is not found.
+	if r.Header.Get("Hx-Boosted") != htmxHeaderTrue {
+		w.WriteHeader(http.StatusNotFound)
+	}
+
+	err := templates.Layout(templates.NotFound(), *user, "Error", "Not Found").Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "rendering NotFound page", "error", err.Error())
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
 	}
 }

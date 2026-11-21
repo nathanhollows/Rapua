@@ -7,6 +7,7 @@
 @import './player.css';
 
 @source "../../../internal/templates/public";
+@source "../../../internal/templates/brand";
 @source "../../../internal/templates/players";
 @source "../../../internal/templates/blocks";
 @source "../../../internal/handlers/public";
