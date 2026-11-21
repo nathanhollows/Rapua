@@ -350,7 +350,7 @@ func progressFeedbackLabel(f game.ProgressFeedback) string {
 // and band; the row heading the tree reuses the section pickers for those.
 templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, settings models.QuestSettings) {
 	{{ rootPublished := publishedCount(nodes) }}
-	<div class="flex flex-col gap-3 md:grid md:grid-cols-[1fr_auto_1fr] items-center w-full px-6 py-5" hx-boost="true">
+	<div class="flex flex-col gap-3 md:grid md:grid-cols-[1fr_auto_1fr] items-center w-full px-5 py-5" hx-boost="true">
 		<div id="quest-title-group" class="flex items-center gap-3 md:justify-self-start">
 			<h1 class="text-4xl font-black">Quest</h1>
 		</div>
@@ -455,7 +455,7 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 		first and rule last, so the quest's rule sits where every section's
 		does; the search, which filters the whole tree, is centred between.
 		No overflow clipping, so the rule's menu can open past its edge. -->
-		<section class="quest-plane mx-6 rounded-2xl bg-base-100 shadow-[var(--soft-shadow)] border border-primary/40" data-routing={ string(root.Routing) }>
+		<section class="quest-plane mx-5 rounded-2xl bg-base-100 shadow-[var(--soft-shadow)] border border-primary/40" data-routing={ string(root.Routing) }>
 			<div
 				id="quest-root-settings"
 				class="flex flex-wrap items-center gap-3 px-6 py-3 md:grid md:grid-cols-[1fr_auto_1fr] rounded-t-2xl bg-primary/10 border-b border-primary/25"

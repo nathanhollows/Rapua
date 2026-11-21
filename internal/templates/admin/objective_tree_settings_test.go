@@ -235,9 +235,9 @@ func TestObjectiveTree_HeaderHasATitleGroupForTheLockBadge(t *testing.T) {
 	assert.Contains(t, html, `id="quest-title-group"`)
 	// Rows above the tree share its left edge; the header padding matches the
 	// other pages'.
-	assert.Contains(t, html, `items-center w-full px-6 py-5`)
-	assert.Contains(t, html, `id="quest-lint" class="px-6"`)
-	assert.Contains(t, html, `class="quest-plane mx-6`, "the quest's plane shares the header's edge")
+	assert.Contains(t, html, `items-center w-full px-5 py-5`)
+	assert.Contains(t, html, `id="quest-lint" class="px-5"`)
+	assert.Contains(t, html, `class="quest-plane mx-5`, "the quest's plane shares the header's edge")
 	assert.Contains(t, html, `id="objective-tree" class="px-6"`)
 }
 

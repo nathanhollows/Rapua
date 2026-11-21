@@ -3323,34 +3323,6 @@
         transform: rotateY(180deg);
       }
     }
-    .dropdown-center {
-      --anchor-h: center;
-    }
-    .dropdown-center :where(.dropdown-content) {
-      inset-inline-end: calc(1/2 * 100%);
-      translate: 50% 0;
-      [dir="rtl"] & {
-        translate: -50% 0;
-      }
-    }
-    .dropdown-center.dropdown-left {
-      --anchor-h: left;
-      --anchor-v: center;
-      .dropdown-content {
-        top: auto;
-        bottom: calc(1 / 2 * 100%);
-        translate: 0 50%;
-      }
-    }
-    .dropdown-center.dropdown-right {
-      --anchor-h: right;
-      --anchor-v: center;
-      .dropdown-content {
-        top: auto;
-        bottom: calc(1 / 2 * 100%);
-        translate: 0 50%;
-      }
-    }
     .dropdown-end {
       --anchor-h: span-inline-start;
     }
@@ -3983,9 +3955,6 @@
   }
   .my-5 {
     margin-block: calc(var(--spacing) * 5);
-  }
-  .my-10 {
-    margin-block: calc(var(--spacing) * 10);
   }
   @layer daisyui.l1.l2.l3 {
     .label {
@@ -7885,36 +7854,6 @@ p.label {
   background-size: cover;
   background-image: url("/static/images/map-satellite.webp");
 }
-#mobile-preview-container .block-view {
-  cursor: grab;
-  border-radius: var(--radius-xl);
-  transition-property: all;
-  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
-  transition-duration: var(--tw-duration, var(--default-transition-duration));
-  --tw-duration: 100ms;
-  transition-duration: 100ms;
-}
-[data-blocks-target] .block-view:hover {
-  cursor: move;
-}
-.preview-block-highlighted {
-  border-radius: var(--radius-2xl);
-  outline-style: var(--tw-outline-style);
-  outline-width: 2px;
-  outline-offset: 4px;
-  outline-color: var(--color-primary);
-  transition-property: all;
-  transition-timing-function: var(--tw-ease, var(--default-transition-timing-function));
-  transition-duration: var(--tw-duration, var(--default-transition-duration));
-  --tw-duration: 100ms;
-  transition-duration: 100ms;
-}
-#mobile-preview-container .flex.flex-col.gap-8:has(.block-view:first-child header) {
-  margin-top: 0px;
-}
-#mobile-preview-container .block-view:first-child header {
-  margin-top: 0px;
-}
 .sortable-ghost-preview {
   background-color: var(--color-base-200);
   opacity: 40%;
@@ -8707,7 +8646,7 @@ li.nest-target > .objective-row::after {
 }
 .obj-page {
   --side: 390px;
-  padding-inline: 1.5rem;
+  padding-inline: 1.25rem;
   padding-bottom: 3rem;
 }
 .obj-strip {
@@ -8844,41 +8783,6 @@ li.nest-target > .objective-row::after {
   flex-basis: 100%;
   font-size: .8rem;
 }
-.blocks {
-  display: flex;
-  flex-direction: column;
-  gap: .9rem;
-}
-.blocks:empty::after {
-  content: "Nothing here yet. Add the first block.";
-  display: block;
-  padding: 1.5rem .75rem;
-  border: 1.5px dashed var(--line-strong);
-  border-radius: 22px;
-  color: var(--soft);
-  text-align: center;
-}
-.content-block {
-  position: relative;
-  border: 1px solid var(--line);
-  border-radius: 22px;
-  background: var(--color-base-100);
-  box-shadow: var(--soft-shadow);
-}
-.content-block.admin-block-highlighted {
-  z-index: 1;
-  outline: none;
-  box-shadow: 0 0 0 2px var(--color-primary), var(--soft-shadow);
-}
-.block-head {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: .4rem .75rem;
-  min-height: 3.75rem;
-  padding: .4rem 3rem .4rem .9rem;
-  font-weight: 700;
-}
 .block-chip {
   display: grid;
   flex: none;
@@ -8898,94 +8802,6 @@ li.nest-target > .objective-row::after {
 .block-chip svg {
   width: 1.15rem;
   height: 1.15rem;
-}
-.block-name {
-  font-size: 1.0625rem;
-  font-weight: 700;
-}
-.block-pts {
-  min-width: 3.5rem;
-  padding: .05rem .7rem;
-  border-radius: 999px;
-  background: var(--color-primary);
-  @supports (color: color-mix(in lab, red, red)) {
-    background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
-  }
-  font-size: .8rem;
-  font-weight: 700;
-  text-align: center;
-}
-.block-pts-zero {
-  background: var(--tint-warning);
-  color: var(--ico-warning);
-}
-.block-tools {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  margin-left: auto;
-}
-.block-actions {
-  display: flex;
-  gap: .15rem;
-  opacity: 0;
-  transition: opacity .12s;
-}
-.content-block:hover .block-actions, .content-block:focus-within .block-actions {
-  opacity: 1;
-}
-@media (hover: none) {
-  .block-actions {
-    opacity: 1;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .block-actions {
-    transition: none;
-  }
-}
-.block-actions .btn {
-  width: 1.9rem;
-  height: 1.9rem;
-  min-height: 0;
-  padding: 0;
-  border-radius: .6rem;
-  color: var(--soft);
-}
-.block-actions .btn:hover {
-  color: var(--color-base-content);
-}
-.block-actions .block-delete:hover {
-  color: var(--ico-error);
-}
-.block-body {
-  padding-block: 0;
-}
-.content-block:has(> input:checked) > .block-body {
-  padding: 1rem 1.25rem 1.25rem 1.25rem;
-  border-top: 1px solid var(--line);
-}
-.block-pick {
-  z-index: 30;
-  width: 26rem;
-  max-width: calc(100vw - 2.5rem);
-  max-height: min(70vh, 36rem);
-  overflow-y: auto;
-  margin-top: .5rem;
-  padding: .9rem;
-  border: 1px solid var(--line-strong);
-  border-radius: 18px;
-  background: var(--color-base-100);
-  box-shadow: var(--soft-shadow);
-}
-.block-pick .kicker {
-  display: block;
-  margin: .25rem 0 .5rem .15rem;
-}
-.block-pick .block-pick-grid + .kicker {
-  margin-top: 1rem;
 }
 .block-pick-grid {
   display: grid;
@@ -9024,31 +8840,6 @@ li.nest-target > .objective-row::after {
   font-size: .78rem;
   font-weight: 500;
   line-height: 1.3;
-}
-.block-actions .btn {
-  width: 1.9rem;
-  height: 1.9rem;
-  min-height: 0;
-  padding: 0;
-  border-radius: .6rem;
-  color: var(--soft);
-}
-.block-actions .btn:hover {
-  color: var(--color-base-content);
-}
-.block-actions .block-delete:hover {
-  color: var(--ico-error);
-}
-.collapse-title .vars-btn, .block-tools .vars-btn {
-  --btn-bg: transparent;
-  --btn-border: transparent;
-  --btn-shadow: none;
-}
-.collapse-title .vars-btn:hover, .block-tools .vars-btn:hover {
-  --btn-bg: var(--color-base-200);
-}
-.collapse-title .vars-label, .block-tools .vars-label {
-  display: none;
 }
 .vars-label {
   font-family: var(--font-sans, inherit);
@@ -9711,6 +9502,7 @@ li.nest-target > .objective-row::after {
   font-size: 1rem;
 }
 :root {
+  scrollbar-gutter: stable;
   --hover-dim: color-mix(in oklab, black 6%, transparent);
   --line: var(--color-base-content);
   @supports (color: color-mix(in lab, red, red)) {

@@ -1,3 +1,7 @@
+/* Reserved on every page, so a page tall enough to scroll does not sit a few
+   pixels in from one that is not when moving between them. */
+:root { scrollbar-gutter: stable; }
+
 /* Tokens derive from the theme and stay out of the theme blocks, which
    theme_colours_test.go guards. Buttons set daisyUI's variables, not its
    properties, so a utility on one element still wins. */
