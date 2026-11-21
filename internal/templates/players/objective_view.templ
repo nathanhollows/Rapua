@@ -43,7 +43,7 @@ templ ObjectiveView(data ObjectiveViewData) {
 				<p class="text-lg q-soft text-pretty">{ data.Description }</p>
 			}
 		</div>
-		<div id="objective-zone" class="q-dim flex flex-col gap-8">
+		<div id="objective-zone" class="q-dim flex flex-col gap-8" data-block-list>
 			@objectiveZoneContents(data)
 		</div>
 		if !data.Preview {
@@ -85,7 +85,7 @@ func ObjectiveChrome(team models.Run) AppChrome {
 }
 
 templ ObjectiveZoneUpdate(data ObjectiveViewData) {
-	<div id="objective-zone" class="q-dim flex flex-col gap-8" hx-swap-oob="true">
+	<div id="objective-zone" class="q-dim flex flex-col gap-8" data-block-list hx-swap-oob="true">
 		@objectiveZoneContents(data)
 	</div>
 }

@@ -138,11 +138,11 @@ func Layout(contents templ.Component, user models.User, section string, title st
 
 // Migrated sections sit on base-200 so base-100 cards lift off it; the rest keep base-100, where their
 // bg-base-200 cards would vanish. Applied on #app because hx-boost never swaps body attributes.
-// The Quest section also holds the system page editors, which are not migrated, so only the tree page
-// and the objective editor are shaded.
+// Only the pages that have been migrated are shaded: the tree, the objective editor and the system pages.
 func shadedSection(section, title string) bool {
 	return section == "Activity" || section == "Runs" || section == "Settings" || section == "Quests" ||
-		(section == "Quest" && (title == "Quest" || title == "Edit Objective"))
+		(section == "Quest" && (title == "Quest" || title == "Edit Objective" ||
+			title == "Edit Start Page" || title == "Edit Complete Page"))
 }
 
 func header(title string) templ.Component {

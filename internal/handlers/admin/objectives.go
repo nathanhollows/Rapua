@@ -206,7 +206,7 @@ func (h *Handler) containerContext(
 // Drafts and secrets are left out because a player's list does not show them.
 func (h *Handler) listNeighbours(
 	r *http.Request, questID string, objective models.Objective,
-) ([]string, []string) {
+) ([]templates.ListRow, []templates.ListRow) {
 	if objective.ParentID == "" {
 		return nil, nil
 	}
@@ -215,7 +215,7 @@ func (h *Handler) listNeighbours(
 		return nil, nil
 	}
 	const maxBefore, maxAfter = 1, 2
-	var before, after []string
+	var before, after []models.Objective
 	seenSelf := false
 	for _, sibling := range siblings {
 		if sibling.ID == objective.ID {
@@ -227,16 +227,39 @@ func (h *Handler) listNeighbours(
 		}
 		if seenSelf {
 			if len(after) < maxAfter {
-				after = append(after, sibling.Title)
+				after = append(after, sibling)
 			}
 		} else {
-			before = append(before, sibling.Title)
+			before = append(before, sibling)
 			if len(before) > maxBefore {
 				before = before[1:]
 			}
 		}
 	}
-	return before, after
+	return h.listRows(r, before), h.listRows(r, after)
+}
+
+// listRows draws neighbours the way the player's list does: the icon comes
+// from the first block of the proof that asks for something.
+func (h *Handler) listRows(r *http.Request, objectives []models.Objective) []templates.ListRow {
+	rows := make([]templates.ListRow, 0, len(objectives))
+	for _, objective := range objectives {
+		row := templates.ListRow{Title: objective.Title, Description: objective.Description, IsDoor: true}
+		proof, err := h.blockService.FindByOwnerIDAndContext(r.Context(), objective.ID, blocks.ContextObjectiveProof)
+		if err != nil {
+			h.logger.ErrorContext(r.Context(), "listRows: getting proof blocks",
+				"error", err, "objective_id", objective.ID)
+		}
+		row.IsDoor = len(proof) == 0
+		for _, block := range proof {
+			if block.RequiresValidation() {
+				row.IconSVG = block.GetIconSVG()
+				break
+			}
+		}
+		rows = append(rows, row)
+	}
+	return rows
 }
 
 func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {

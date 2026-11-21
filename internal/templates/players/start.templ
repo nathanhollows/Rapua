@@ -33,7 +33,7 @@ templ Start(
 	hidden map[string]bool, preview bool,
 ) {
 	<div hx-get="/start" hx-swap="none" hx-trigger="every 20s, timer" hx-boost="true"></div>
-	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8">
+	<div class="mt-10 sm:mx-auto sm:w-full sm:max-w-sm flex flex-col gap-8" data-block-list>
 		for _, block := range pageBlocks {
 			@PlayerBlockSlot(team.Quest.Settings, block, blockStates[block.GetID()], hidden[block.GetID()], preview)
 		}

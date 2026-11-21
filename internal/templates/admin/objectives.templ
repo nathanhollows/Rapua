@@ -21,10 +21,10 @@ type EditObjectiveData struct {
 	// the preview row. Empty when the parent is the root.
 	ParentTitle string
 	ParentPill  string
-	// SiblingsBefore and SiblingsAfter are the titles beside this objective in
+	// SiblingsBefore and SiblingsAfter are the rows beside this objective in
 	// its list, so its own row can be judged among them. A few, not all.
-	SiblingsBefore []string
-	SiblingsAfter  []string
+	SiblingsBefore []ListRow
+	SiblingsAfter  []ListRow
 	// Lint is the whole quest's run, not this objective's slice of it: the
 	// root's diagnostics live with the quest and this is the only page that
 	// can act on them.
@@ -60,22 +60,44 @@ type zoneWords struct {
 	Name  string
 	Why   string
 	Param string
-	proof bool
+	// PhoneEmpty is said inside the phone when the zone has no blocks.
+	PhoneEmpty string
+	proof      bool
+	system     bool
 }
 
 func zoneWordsFor(zone blocks.BlockContext) zoneWords {
-	if zone == blocks.ContextObjectiveReveal {
+	switch zone {
+	case blocks.ContextObjectiveReveal:
 		return zoneWords{
-			Name:  "Reveal",
-			Why:   "what they get once the proof is cleared",
-			Param: "reveal",
+			Name:       "Reveal",
+			Why:        "what they get once the proof is cleared",
+			Param:      "reveal",
+			PhoneEmpty: "No reveal. Players go straight back to the quest list.",
+		}
+	case blocks.ContextStart:
+		return zoneWords{
+			Name:       "Content",
+			Why:        "what players see before they begin",
+			Param:      "start",
+			PhoneEmpty: "Nothing here yet. Players see a blank page.",
+			system:     true,
+		}
+	case blocks.ContextFinish:
+		return zoneWords{
+			Name:       "Content",
+			Why:        "what players see when they finish",
+			Param:      "finish",
+			PhoneEmpty: "Nothing here yet. Players see only the finish banner.",
+			system:     true,
 		}
 	}
 	return zoneWords{
-		Name:  "Proof",
-		Why:   "what they do here to complete it",
-		Param: "proof",
-		proof: true,
+		Name:       "Proof",
+		Why:        "what they do here to complete it",
+		Param:      "proof",
+		PhoneEmpty: "No proof. Players open straight to the reveal.",
+		proof:      true,
 	}
 }
 
@@ -129,16 +151,34 @@ templ objectiveSecretListPreview() {
 
 // objectiveCardRow is the row itself, drawn the same whether or not it sits
 // inside a container.
+// ListRow is a neighbouring objective as the player's list draws it.
+type ListRow struct {
+	Title       string
+	Description string
+	// IconSVG is empty when the proof asks nothing.
+	IconSVG string
+	// IsDoor is an objective with no proof, so its row must not promise work.
+	IsDoor bool
+}
+
+// listRowIcon is the player's rule: what the proof asks for, else a door when
+// there is no proof, else a plain marker.
+templ listRowIcon(iconSVG string, isDoor bool) {
+	if iconSVG != "" {
+		@templ.Raw(iconSVG)
+	} else if isDoor {
+		@icon("book-open", templ.Attributes{})
+	} else {
+		@icon("circle-dot", templ.Attributes{})
+	}
+}
+
 templ objectiveCardRow(data EditObjectiveData) {
 	<!-- The player's own tile classes, not a copy: a preview that differs from
 	the game previews something else. -->
 	<div id="objective-card" class="q-tile">
 		<span class="q-ico">
-			if proofIcon := data.FirstProofIcon(); proofIcon != "" {
-				@templ.Raw(proofIcon)
-			} else {
-				@icon("book-open", templ.Attributes{})
-			}
+			@listRowIcon(data.FirstProofIcon(), len(data.ProofBlocks) == 0)
 		</span>
 		<span class="grow min-w-0 flex flex-col gap-1">
 			<span id="objective-card-title" class="q-title">
@@ -308,15 +348,7 @@ templ EditObjective(data EditObjectiveData) {
 		</section>
 		@objectiveSection(data, blocks.ContextObjectiveProof, "2")
 		@objectiveSection(data, blocks.ContextObjectiveReveal, "3")
-		<template id="rl-icon-sets">
-			@icon("key-round", templ.Attributes{"class": "w-4 h-4", "width": "14", "height": "14"})
-		</template>
-		<template id="rl-icon-depends">
-			@icon("lock", templ.Attributes{"class": "w-4 h-4", "width": "14", "height": "14"})
-		</template>
-		<template id="rl-icon-trash">
-			@icon("trash-2", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
-		</template>
+		@objectiveEditorAssets()
 	</div>
 	<dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle">
 		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
@@ -341,8 +373,6 @@ templ EditObjective(data EditObjectiveData) {
 			</form>
 		</div>
 	</dialog>
-	<script src="/static/js/Sortable.min.js"></script>
-	<script src="/static/js/objective-editor.js"></script>
 }
 
 // objectiveVisibilityControl is the switch and the checkbox the form actually

@@ -1094,6 +1094,10 @@ li.nest-target > .objective-row::after {
 .vars-label { font-family: var(--font-sans, inherit); font-weight: 700; }
 
 .cs { margin-top: 1.75rem; }
+/* A page with one section has nothing above it to separate from but its heading. */
+.cs-solo { margin-top: .5rem; }
+/* Hints are all present and hidden by script, so space is only wanted for one showing. */
+[data-hints]:has(> :not([hidden])) { margin-top: .5rem; margin-bottom: .75rem; }
 .cs-head { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; padding-inline: .25rem; }
 .cs-head .grow { flex: 1; }
 .cs-panel { display: grid; grid-template-columns: 250px minmax(0, 1fr) var(--side); overflow: clip; }
@@ -1129,13 +1133,8 @@ li.nest-target > .objective-row::after {
 .rl-item.on { border-color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-100)); box-shadow: 0 0 0 1.5px var(--color-primary); }
 .rl-item.hl:not(.on) { border-color: color-mix(in oklab, var(--color-primary) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 35%, transparent); }
 .rl-int .block-chip { background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 80%, var(--color-base-content)); }
-.rl-int .rl-name { font-weight: 800; }
-.rl-static { border-color: transparent; background: none; }
 .rl-static .block-chip { background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: var(--soft); }
-.rl-static .rl-name { color: var(--soft); font-weight: 600; }
 .rl-static .rl-pts { display: none; }
-.rl-static:hover { border-color: var(--line); }
-.rl-static.on .rl-name { color: var(--color-base-content); }
 .rl-add { display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .55rem; border: 1.5px dashed var(--line-strong); border-radius: 14px; background: none; color: var(--soft); font-weight: 700; cursor: pointer; }
 .rl-add:hover, .rl-add.on { border-color: var(--color-primary); color: var(--color-base-content); }
 .sortable-ghost { opacity: .35; }

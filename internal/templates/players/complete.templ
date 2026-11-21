@@ -30,9 +30,11 @@ templ Complete(
 				}
 			</div>
 		</header>
-		for _, block := range pageBlocks {
-			@PlayerBlockSlot(team.Quest.Settings, block, blockStates[block.GetID()], hidden[block.GetID()], preview)
-		}
+		<div class="flex flex-col gap-8 empty:hidden" data-block-list>
+			for _, block := range pageBlocks {
+				@PlayerBlockSlot(team.Quest.Settings, block, blockStates[block.GetID()], hidden[block.GetID()], preview)
+			}
+		</div>
 		<div id="player-nav">
 			<a href="/journal" hx-boost="true" class="q-fin">
 				@icon("book-open-check", templ.Attributes{"class": "w-6 h-6"})

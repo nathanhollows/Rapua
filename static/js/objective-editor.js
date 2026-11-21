@@ -8,12 +8,13 @@
 	const qa = (selector, root = document) => [...root.querySelectorAll(selector)];
 
 	const state = (window.__objectiveEditor = window.__objectiveEditor || { bound: false, selected: {} });
-	const ZONES = ['proof', 'reveal'];
 	const ORDER_PATH = /\/admin\/blocks\/(reorder|[^/]+\/move)$/;
 	// Long enough to read the message before the page resyncs.
 	const RELOAD_DELAY = 1800;
-	const NAME = { proof: 'Proof', reveal: 'Reveal' };
 
+	// A page has one section (a system page) or several (an objective's proof and reveal).
+	// The task has a section too, but no blocks to edit.
+	const zones = () => qa('[data-sec]').filter((sec) => q('[data-rail]', sec)).map((sec) => sec.dataset.sec);
 	const section = (zone) => q(`[data-sec="${zone}"]`);
 	const rail = (zone) => q(`[data-rail="${zone}"]`);
 	const railItem = (id) => q(`.rl-item[data-id="${id}"]`);
@@ -23,7 +24,7 @@
 	const zoneOfItem = (item) => item.closest('[data-rail]').dataset.rail;
 	const pointsEnabled = () => q('[data-objective-editor]')?.dataset.pointsEnabled === 'true';
 	const locked = () => document.body.dataset.questLocked === 'true';
-	const phoneList = (zone) => q('#objective-zone', q(`[data-preview="${zone}"]`) || document.createElement('div'));
+	const phoneList = (zone) => q('[data-block-list]', q(`[data-preview="${zone}"]`) || document.createElement('div'));
 
 	function pointsInput(id) {
 		return q('.points-field input[name="points"]', blockForm(id) || document.createElement('div'));
@@ -54,7 +55,7 @@
 			const form = blockForm(key);
 			form.hidden = false;
 			const position = q('[data-pos]', form);
-			if (position) position.textContent = `${NAME[zone]} · ${list.indexOf(key) + 1} of ${list.length}`;
+			if (position) position.textContent = `${sec.dataset.name} · ${list.indexOf(key) + 1} of ${list.length}`;
 			refreshPointsPill(key);
 			const block = phoneBlock(key);
 			if (block) {
@@ -77,7 +78,7 @@
 	function totals() {
 		const enabled = pointsEnabled();
 		let all = 0;
-		ZONES.forEach((zone) => {
+		zones().forEach((zone) => {
 			const items = qa('.rl-item', rail(zone) || document.createElement('div'));
 			const sum = items.reduce((total, item) => total + (parseInt(item.dataset.pts, 10) || 0), 0);
 			all += sum;
@@ -96,6 +97,15 @@
 		});
 		const worth = q('[data-total-all]');
 		if (worth) worth.textContent = `${all} point${all === 1 ? '' : 's'}`;
+		hints();
+	}
+
+	// A hint for a block type is only wanted while the page has none of it.
+	function hints() {
+		qa('[data-hint-for]').forEach((hint) => {
+			const have = qa('.rl-item', hint.closest('.obj-page')).some((item) => item.dataset.type === hint.dataset.hintFor);
+			hint.hidden = have;
+		});
 	}
 
 	function refreshPointsPill(id) {
@@ -214,7 +224,7 @@
 
 	function bindRails() {
 		if (!window.Sortable) return;
-		ZONES.forEach((zone) => {
+		zones().forEach((zone) => {
 			const el = rail(zone);
 			if (!el || el._sortable) return;
 			el._sortable = new window.Sortable(el, dragOptions('.rl-item'));
@@ -223,7 +233,7 @@
 
 	function bindPhone(pane) {
 		const zone = pane.dataset.preview;
-		const list = q('#objective-zone', pane);
+		const list = q('[data-block-list]', pane);
 		if (list && window.Sortable && !list._sortable) {
 			list._sortable = new window.Sortable(list, dragOptions('.block-view'));
 		}
@@ -401,7 +411,7 @@
 
 		document.body.addEventListener('quest-lock-change', (evt) => {
 			qa('[data-rail]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
-			qa('#objective-zone').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
+			qa('[data-block-list]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
 		});
 	}
 
@@ -411,7 +421,7 @@
 		bindRails();
 		totals();
 		railMarkers();
-		ZONES.forEach((zone) => select(zone, idsIn(zone)[0]));
+		zones().forEach((zone) => select(zone, idsIn(zone)[0]));
 	}
 
 	init();

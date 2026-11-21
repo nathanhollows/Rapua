@@ -152,6 +152,25 @@ func TestEditObjective_EmptyProofOffersSectionTemplates(t *testing.T) {
 	assert.NotContains(t, revealSection, "/admin/blocks/kit")
 }
 
+// The neighbours in the task preview are drawn as the player's list draws them:
+// the icon of what their proof asks for, and their helper text.
+func TestEditObjective_PreviewNeighboursKeepTheirIconAndHelperText(t *testing.T) {
+	var out strings.Builder
+	require.NoError(t, EditObjective(EditObjectiveData{
+		Objective:   models.Objective{ID: "obj", Slug: "rose", Title: "Rose"},
+		ParentTitle: "Garden",
+		SiblingsAfter: []ListRow{
+			{Title: "Gate", Description: "Past the shed.", IconSVG: `<svg data-icon="scan"></svg>`},
+			{Title: "Lobby", IsDoor: true},
+		},
+	}).Render(context.Background(), &out))
+	html := out.String()
+
+	assert.Contains(t, html, `data-icon="scan"`, "the proof's icon, not a stand-in")
+	assert.Contains(t, html, "Past the shed.", "the helper text under the title")
+	assert.Equal(t, 1, strings.Count(html, `class="q-desc q-soft">`), "a neighbour without text shows none")
+}
+
 // A block just added arrives with its form, and says whether it is the one to
 // select, so a template of several puts the cursor in the first that matters.
 func TestObjectiveBlockAdded_SaysWhetherToSelectIt(t *testing.T) {

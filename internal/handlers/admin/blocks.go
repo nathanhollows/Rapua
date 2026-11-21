@@ -93,13 +93,8 @@ func (h *Handler) BlockCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// The start and finish pages still use the accordion.
-	if blockContext == blocks.ContextObjectiveProof || blockContext == blocks.ContextObjectiveReveal {
-		err = adminTemplates.ObjectiveBlockAdded(user.CurrentQuest.Settings, block, blockContext, true).
-			Render(r.Context(), w)
-	} else {
-		err = templates.RenderAdminBlock(user.CurrentQuest.Settings, block, true).Render(r.Context(), w)
-	}
+	err = adminTemplates.ObjectiveBlockAdded(user.CurrentQuest.Settings, block, blockContext, true).
+		Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "BlockCreate: rendering template", "error", err)
 	}

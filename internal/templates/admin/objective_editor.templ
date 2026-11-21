@@ -35,19 +35,56 @@ func blockVarState(block blocks.Block) string {
 	return ""
 }
 
+// blockSectionData is what a block editing section needs, whichever page it is
+// on: an objective's proof and reveal, or a quest's start and complete pages.
+type blockSectionData struct {
+	Settings models.QuestSettings
+	Zone     blocks.BlockContext
+	Blocks   blocks.Blocks
+	// OwnerID is the objective, or the quest for a system page.
+	OwnerID string
+	// Num is the step badge; empty on a page with a single section.
+	Num string
+	// PreviewURL is fetched for the phone.
+	PreviewURL string
+	// RefreshOn adds triggers beyond the blocks changing.
+	RefreshOn string
+}
+
+func objectiveSectionData(data EditObjectiveData, zone blocks.BlockContext, num string) blockSectionData {
+	z := zoneWordsFor(zone)
+	return blockSectionData{
+		Settings:   data.Settings,
+		Zone:       zone,
+		Blocks:     z.Blocks(data),
+		OwnerID:    data.Objective.ID,
+		Num:        num,
+		PreviewURL: fmt.Sprint("/objective/", data.Objective.Slug, "?zone=", z.Param),
+		RefreshOn:  ", htmx:afterRequest from:#edit-objective",
+	}
+}
+
 templ objectiveSection(data EditObjectiveData, zone blocks.BlockContext, num string) {
+	@blockSection(objectiveSectionData(data, zone, num))
+}
+
+templ blockSection(data blockSectionData) {
+	{{ zone := data.Zone }}
 	{{ z := zoneWordsFor(zone) }}
-	{{ list := z.Blocks(data) }}
+	{{ list := data.Blocks }}
 	<section
 		id={ "zone-" + z.Param }
 		data-sec={ z.Param }
 		data-zone={ z.Param }
+		data-name={ z.Name }
 		data-context={ string(zone) }
-		data-owner={ data.Objective.ID }
-		class="cs"
+		data-owner={ data.OwnerID }
+		class={ "cs", templ.KV("cs-solo", data.Num == "") }
 	>
 		<div class="cs-head">
-			<span class="obj-num">{ num }</span>
+			if data.Num != "" {
+				<span class="obj-num">{ data.Num }</span>
+			}
 			<span class="obj-title">
 				<h2>
 					{ z.Name }
@@ -74,8 +111,8 @@ templ objectiveSection(data EditObjectiveData, zone blocks.BlockContext, num str
 					for _, block := range list {
 						@objectiveBlockForm(data.Settings, block, z)
 					}
-					@objectiveChooser(data.Objective.ID, zone, z)
-					@objectiveEmptyState(data.Objective.ID, zone, z)
+					@objectiveChooser(data.OwnerID, zone, z)
+					@objectiveEmptyState(data.OwnerID, zone, z)
 				</div>
 			</div>
 			<aside class="cs-phonecol" aria-label={ z.Name + " preview" }>
@@ -84,18 +121,12 @@ templ objectiveSection(data EditObjectiveData, zone blocks.BlockContext, num str
 						<div
 							class="cf-pane"
 							data-preview={ z.Param }
-							hx-get={ fmt.Sprint("/objective/", data.Objective.Slug, "?zone=", z.Param) }
-							hx-trigger="load, blocks-changed from:body, htmx:afterRequest from:.cs-edit, htmx:afterRequest from:#edit-objective"
+							hx-get={ data.PreviewURL }
+							hx-trigger={ "load, blocks-changed from:body, htmx:afterRequest from:.cs-edit" + data.RefreshOn }
 							hx-vals={ fmt.Sprint(`{"questID": "`, data.Settings.QuestID, `"}`) }
 							hx-swap="innerHTML"
 						></div>
-						<p class="cf-phone-empty" data-phone-empty hidden>
-							if z.proof {
-								No proof. Players open straight to the reveal.
-							} else {
-								No reveal. Players go straight back to the quest list.
-							}
-						</p>
+						<p class="cf-phone-empty" data-phone-empty hidden>{ z.PhoneEmpty }</p>
 					</div>
 				</div>
 			</aside>
@@ -103,11 +134,28 @@ templ objectiveSection(data EditObjectiveData, zone blocks.BlockContext, num str
 	</section>
 }
 
+// objectiveEditorAssets is what the block editor script draws from: icons to
+// copy into the list and the libraries it runs on.
+templ objectiveEditorAssets() {
+	<template id="rl-icon-sets">
+		@icon("key-round", templ.Attributes{"class": "w-4 h-4", "width": "14", "height": "14"})
+	</template>
+	<template id="rl-icon-depends">
+		@icon("lock", templ.Attributes{"class": "w-4 h-4", "width": "14", "height": "14"})
+	</template>
+	<template id="rl-icon-trash">
+		@icon("trash-2", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+	</template>
+	<script src="/static/js/Sortable.min.js"></script>
+	<script src="/static/js/objective-editor.js"></script>
+}
+
 templ objectiveRailItem(settings models.QuestSettings, block blocks.Block) {
 	<button
 		type="button"
 		data-ignore-lock
 		data-id={ block.GetID() }
+		data-type={ block.GetType() }
 		data-pts={ fmt.Sprint(block.GetPoints()) }
 		data-var={ blockVarState(block) }
 		title={ blockKindTitle(block) }
@@ -250,6 +298,13 @@ templ objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords)
 						</span>
 					</button>
 				</div>
+			} else if z.system {
+				<b>Nothing on this page yet</b>
+				<p>Add blocks to build what players see. The preview on the right is the page as they will meet it.</p>
+				<button type="button" class="btn btn-primary" data-add={ z.Param }>
+					@icon("plus", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+					Add a block
+				</button>
 			} else {
 				<b>No reveal</b>
 				<p>A reveal is optional. Without one, players go straight back to the quest list once they clear the proof. Add blocks if you would like them to see something first.</p>
@@ -290,28 +345,31 @@ templ objectiveListPreview(data EditObjectiveData) {
 				}
 			</p>
 		}
-		for _, title := range data.SiblingsBefore {
-			@objectiveSiblingRow(title)
+		for _, row := range data.SiblingsBefore {
+			@objectiveSiblingRow(row)
 		}
 		if data.Objective.Secret {
 			@objectiveSecretListPreview()
 		} else {
 			@objectiveCardRow(data)
 		}
-		for _, title := range data.SiblingsAfter {
-			@objectiveSiblingRow(title)
+		for _, row := range data.SiblingsAfter {
+			@objectiveSiblingRow(row)
 		}
 	</div>
 }
 
-templ objectiveSiblingRow(title string) {
+templ objectiveSiblingRow(row ListRow) {
 	<div class="ctx-dim" aria-hidden="true">
 		<div class="q-tile">
 			<span class="q-ico">
-				@icon("book-open", templ.Attributes{})
+				@listRowIcon(row.IconSVG, row.IsDoor)
 			</span>
 			<span class="grow min-w-0 flex flex-col gap-1">
-				<span class="q-title">{ title }</span>
+				<span class="q-title">{ row.Title }</span>
+				if row.Description != "" {
+					<span class="q-desc q-soft">{ row.Description }</span>
+				}
 			</span>
 			@icon("chevron-right", templ.Attributes{"class": "w-5 h-5 shrink-0 opacity-60"})
 		</div>
