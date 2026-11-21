@@ -30,8 +30,12 @@ templ You(data YouParams) {
 		<div class="flex flex-col gap-2">
 			<span class="q-label">Game code</span>
 			<div class="flex gap-2" role="img" aria-label={ "Game code " + spaced(data.Run.Code) }>
-				for _, char := range data.Run.Code {
-					<b class="q-char">{ string(char) }</b>
+				for _, char := range models.FormatRunCode(data.Run.Code) {
+					if char == '-' {
+						<span class="self-center font-bold text-base-content/45" aria-hidden="true">-</span>
+					} else {
+						<b class="q-char">{ string(char) }</b>
+					}
 				}
 			</div>
 		</div>
@@ -161,7 +165,7 @@ templ teamBoard(data YouParams) {
 								if entry.Name != "" {
 									{ entry.Name }
 								} else {
-									{ entry.Code }
+									{ models.FormatRunCode(entry.Code) }
 								}
 								if isMe {
 									<em class="q-you">you</em>

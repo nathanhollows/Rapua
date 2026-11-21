@@ -12,6 +12,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/nathanhollows/Rapua/v8/internal/handlers/players"
 	"github.com/nathanhollows/Rapua/v8/internal/sessions"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -54,6 +55,24 @@ func TestPlayerHandler_PlayWithCode_Success(t *testing.T) {
 	run, err := runService.GetRunByCode(context.Background(), code)
 	require.NoError(t, err)
 	assert.False(t, run.HasStarted, "joining must not mark the run started; only pressing Start does")
+}
+
+// A code shared as it is shown, with its break and in any case, joins the same run.
+func TestPlayerHandler_PlayWithCode_AcceptsTheCodeAsItIsShown(t *testing.T) {
+	runService, dbc, cleanup := setupRunService(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	code := createTestRun(t, dbc, parents.QuestID)
+	shown := strings.ToLower(models.FormatRunCode(code))
+
+	handler := players.NewTestPlayerHandler(players.WithRunService(runService))
+	w := httptest.NewRecorder()
+	handler.PlayWithCode(w, requestWithCode(shown))
+
+	assert.Equal(t, http.StatusFound, w.Code)
+	assert.Equal(t, "/start", w.Header().Get("Location"))
+	assert.NotEmpty(t, w.Result().Cookies())
 }
 
 func TestPlayerHandler_PlayWithCode_UnknownCode(t *testing.T) {

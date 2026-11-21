@@ -2,6 +2,8 @@
   const $ = id => document.getElementById(id);
   const main = $('main'), form = $('join'), input = $('code'), tilesBox = $('tiles'), err = $('err'), go = $('go'), hero = $('hero'), tip = $('tip');
   const CODE_LENGTH = Number(form.dataset.length);
+  // Runs made before codes grew keep their shorter code, so pressing the button accepts one.
+  const LEGACY_LENGTH = Number(form.dataset.legacy);
   const tiles = [...tilesBox.querySelectorAll('.home-tile')];
   const goLabel = go.textContent;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -267,7 +269,7 @@
 
   // Checking never joins: a returning player who mistypes into another team's code stays on their own.
   async function check() {
-    if (input.value.length < CODE_LENGTH) { input.focus(); return; }
+    if (input.value.length < CODE_LENGTH && input.value.length !== LEGACY_LENGTH) { input.focus(); return; }
     if (go.dataset.btn === 'checking' || go.dataset.btn === 'error') return;
     const code = input.value;
     setButton('checking');

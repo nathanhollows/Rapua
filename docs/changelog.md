@@ -66,6 +66,7 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 - Points live on blocks. An objective's total is the sum of its blocks.
 - The points toggle moved to the quest page; the Experience settings page is gone.
 - A run is marked started, and its credit spent, when a player presses Start, not when they join.
+- Run codes are six letters, shown with a break in the middle (`ABC-DEF`), and are found however they are written. Runs made before keep their four-letter code.
 - Run, activity, and facilitator dashboards report progress in objectives.
 - Pincode is a single OTP-style field.
 - Importing applies everything in the document, drafts included.

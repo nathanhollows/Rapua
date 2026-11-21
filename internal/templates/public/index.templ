@@ -39,11 +39,7 @@ func tileColumns(n int) string {
 }
 
 func prettyCode(code string) string {
-	code = strings.ToUpper(code)
-	if s := codeSplit(len(code)); s > 0 {
-		return code[:s] + "-" + code[s:]
-	}
-	return code
+	return models.FormatRunCode(strings.ToUpper(code))
 }
 
 func resumeHref(run *models.Run) string {
@@ -60,12 +56,12 @@ func homeState(run *models.Run) string {
 	return "new"
 }
 
-templ Home(run *models.Run, codeLength int, authed bool) {
+templ Home(run *models.Run, codeLength, legacyLength int, authed bool) {
 	@siteDocument("Play", nil) {
 		<a href="#code" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:btn focus:btn-primary">Skip to the game code</a>
 		@siteHeader(authed, "/")
 		<main id="main" class="home flex-1" data-state={ homeState(run) }>
-			@homeHero(run, codeLength)
+			@homeHero(run, codeLength, legacyLength)
 			@homeQuest()
 		</main>
 		@siteFooter(true)
@@ -73,7 +69,7 @@ templ Home(run *models.Run, codeLength int, authed bool) {
 	}
 }
 
-templ homeHero(run *models.Run, codeLength int) {
+templ homeHero(run *models.Run, codeLength, legacyLength int) {
 	<section class="home-hero" id="hero">
 		<svg class="home-map" id="map" viewBox="350 -100 1100 920" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
 			<g>
@@ -121,7 +117,7 @@ templ homeHero(run *models.Run, codeLength int) {
 					<h1 class="text-center font-black leading-none tracking-[-0.035em] text-balance text-[clamp(2.6rem,10vw,4rem)]">Your quest starts <span class="text-primary">here.</span></h1>
 					<p class="mt-[1.1rem] text-center text-[1.0625rem] font-medium text-base-content/72 text-balance">Type the { codeWord(codeLength) }-letter game code your facilitator gave you.</p>
 				}
-				<form class="home-form" id="join" action="/play" method="post" novalidate data-length={ fmt.Sprint(codeLength) }>
+				<form class="home-form" id="join" action="/play" method="post" novalidate data-length={ fmt.Sprint(codeLength) } data-legacy={ fmt.Sprint(legacyLength) }>
 					<input type="hidden" name="csrf" value={ csrfToken(ctx) }/>
 					<div class="home-tiles" id="tiles" style={ templ.SafeCSS(tileColumns(codeLength)) }>
 						for i := 0; i < codeLength; i++ {

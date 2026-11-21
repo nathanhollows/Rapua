@@ -180,7 +180,7 @@ templ teamCode(code string) {
 			set @data-tip to 'Click to copy'
 			"
 	>
-		<span class="team-code code-chip">{ code }</span>
+		<span class="team-code code-chip">{ models.FormatRunCode(code) }</span>
 	</div>
 }
 
@@ -409,7 +409,7 @@ templ TeamOverview(data TeamOverviewData) {
 				if data.Run.Name != "" {
 					<span class="font-medium">{ data.Run.Name }</span>
 				}
-				<span class="code-chip">{ data.Run.Code }</span>
+				<span class="code-chip">{ models.FormatRunCode(data.Run.Code) }</span>
 			</h1>
 			<button
 				class="btn btn-error"

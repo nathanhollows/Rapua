@@ -40,7 +40,7 @@ func (h *PlayerHandler) PlayWithCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err = h.startSession(w, r, runCode); err != nil {
+	if err = h.startSession(w, r, run.Code); err != nil {
 		h.logger.ErrorContext(r.Context(), "PlayWithCode: starting session", "error", err, "runCode", runCode)
 		h.redirect(w, r, "/404")
 		return
@@ -108,7 +108,7 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.startSession(w, r, runCode)
+	err = h.startSession(w, r, run.Code)
 	if err != nil {
 		h.handleError(
 			w,

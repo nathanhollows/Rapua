@@ -17,6 +17,6 @@ func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
 		run = nil
 	}
 	h.renderPage(w, r, "home", func(authed bool) templ.Component {
-		return templates.Home(run, services.RunCodeLength, authed)
+		return templates.Home(run, services.RunCodeLength, services.LegacyRunCodeLength, authed)
 	})
 }

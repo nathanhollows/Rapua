@@ -2,6 +2,7 @@ package services_test
 
 import (
 	"context"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,6 +52,51 @@ func setupRunsService(t *testing.T) (services.RunService, *bun.DB, func()) {
 func getBaseTime() time.Time {
 	t, _ := time.Parse(time.RFC3339, baseTime)
 	return t
+}
+
+// New codes are six capitals from the alphabet without look-alike letters.
+func TestRunService_NewCodesAreSixUnconfusingLetters(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
+	defer cleanup()
+
+	p := createTestParents(t, dbc)
+	teams, err := runService.AddTeams(context.Background(), p.QuestID, 50)
+	require.NoError(t, err)
+
+	for _, team := range teams {
+		assert.Regexp(t, `^[ABCDEFGHJKLMNPRSTUVWXYZ]{6}$`, team.Code)
+	}
+}
+
+// A code is found however it was written, and a run made when codes had four
+// letters still answers to its own.
+func TestRunService_FindsACodeHoweverItIsWritten(t *testing.T) {
+	runService, dbc, cleanup := setupRunsService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	p := createTestParents(t, dbc)
+	teams, err := runService.AddTeams(ctx, p.QuestID, 1)
+	require.NoError(t, err)
+	code := teams[0].Code
+	shown := code[:3] + "-" + code[3:]
+
+	for name, typed := range map[string]string{
+		"as stored":   code,
+		"with break":  shown,
+		"lower case":  strings.ToLower(shown),
+		"with spaces": " " + code[:3] + " " + code[3:] + " ",
+	} {
+		found, findErr := runService.GetRunByCode(ctx, typed)
+		require.NoError(t, findErr, name)
+		assert.Equal(t, code, found.Code, name)
+	}
+
+	_, err = dbc.NewUpdate().Model((*models.Run)(nil)).Set("code = ?", "WXYZ").Where("code = ?", code).Exec(ctx)
+	require.NoError(t, err)
+	old, err := runService.GetRunByCode(ctx, "wxyz")
+	require.NoError(t, err)
+	assert.Equal(t, "WXYZ", old.Code, "a four-letter code from before still works")
 }
 
 func TestRunService_AddTeams(t *testing.T) {

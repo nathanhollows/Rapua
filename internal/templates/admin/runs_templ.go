@@ -223,9 +223,9 @@ func teamCode(code string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(code)
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(models.FormatRunCode(code))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 183, Col: 42}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 183, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -753,9 +753,9 @@ func TeamOverview(data TeamOverviewData) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(data.Run.Code)
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(models.FormatRunCode(data.Run.Code))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 412, Col: 43}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 412, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 		if templ_7745c5c3_Err != nil {

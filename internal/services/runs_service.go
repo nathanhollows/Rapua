@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"math/rand/v2"
@@ -23,7 +22,11 @@ type RunCreditService interface {
 }
 
 // RunCodeLength is shared so the homepage draws one tile per letter.
-const RunCodeLength = 4
+const RunCodeLength = 6
+
+// LegacyRunCodeLength is the length codes had before RunCodeLength grew. Runs made
+// then keep their code, so it still has to be accepted.
+const LegacyRunCodeLength = 4
 
 const (
 	batchSize = 100
@@ -145,8 +148,7 @@ func (s *RunService) FindAll(ctx context.Context, questID string) ([]models.Run,
 
 // GetRunByCode returns a run by code.
 func (s *RunService) GetRunByCode(ctx context.Context, code string) (*models.Run, error) {
-	code = strings.TrimSpace(strings.ToUpper(code))
-	return s.teamRepo.GetByCode(ctx, code)
+	return s.teamRepo.GetByCode(ctx, models.NormaliseRunCode(code))
 }
 
 // AwardPoints awards points to a team.
@@ -196,8 +198,6 @@ func (s *RunService) LoadRelations(ctx context.Context, team *models.Run) error 
 }
 
 func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
-	runCode = strings.TrimSpace(strings.ToUpper(runCode))
-
 	team, err := s.GetRunByCode(ctx, runCode)
 	if err != nil {
 		return ErrTeamNotFound

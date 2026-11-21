@@ -1023,9 +1023,9 @@ func ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, leade
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var50 string
-			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(teamData.Code)
+			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(models.FormatRunCode(teamData.Code))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 403, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 403, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
@@ -1761,9 +1761,9 @@ func RunActivity(settings models.QuestSettings, team models.Run, notifications [
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var82 string
-		templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(team.Code)
+		templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(models.FormatRunCode(team.Code))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 668, Col: 13}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/activity.templ`, Line: 668, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
 		if templ_7745c5c3_Err != nil {

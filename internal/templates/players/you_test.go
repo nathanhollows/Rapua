@@ -89,3 +89,11 @@ func TestYou_TheBoardMarksYouAndNoOneElse(t *testing.T) {
 	assert.Equal(t, 1, strings.Count(html, "q-lb-me"))
 	assert.Equal(t, 1, strings.Count(html, ">you</em>"))
 }
+
+// The player's own code is drawn a tile per letter, in two halves like the box they typed it into.
+func TestYou_ShowsTheCodeInTwoHalves(t *testing.T) {
+	html := render(t, You(YouParams{Run: models.Run{Code: "ABCDEF", Quest: models.Quest{Name: "Q"}}}))
+
+	assert.Equal(t, 6, strings.Count(html, `class="q-char"`))
+	assert.Contains(t, html, `aria-label="Game code A B C D E F"`, "read out as letters, with no dash to announce")
+}

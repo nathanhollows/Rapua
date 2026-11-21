@@ -400,7 +400,7 @@ templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, lead
 							}
 						</td>
 						<td class="font-mono tracking-wider">
-							{ teamData.Code }
+							{ models.FormatRunCode(teamData.Code) }
 						</td>
 						if teamData.Name != "" {
 							<td>{ teamData.Name }</td>
@@ -665,7 +665,7 @@ templ gameControlScript() {
 
 templ RunActivity(settings models.QuestSettings, team models.Run, notifications []models.Notification, incompleteObjectives []models.Objective, completedObjectives []models.Objective) {
 	<h3 class="text-lg font-bold">
-		{ team.Code }
+		{ models.FormatRunCode(team.Code) }
 		if team.Name != "" {
 			<span class="opacity-50">∕</span> { team.Name }
 		}
