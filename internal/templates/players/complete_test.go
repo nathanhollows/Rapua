@@ -43,3 +43,14 @@ func TestComplete_OnlyAnnouncesAScoreThatExists(t *testing.T) {
 	assert.NotContains(t, renderComplete(t, finishedRun(0, true)), "points")
 	assert.NotContains(t, renderComplete(t, finishedRun(80, false)), "points")
 }
+
+// The editor shows this page in a phone. A click on the journal link there must do
+// nothing, or it would take the whole admin page to the player's journal.
+func TestComplete_JournalLinkIsInertInAPreview(t *testing.T) {
+	run := finishedRun(0, false)
+	inPlay := render(t, Complete(run, nil, map[string]blocks.PlayerState{}, map[string]bool{}, false))
+	preview := render(t, Complete(run, nil, map[string]blocks.PlayerState{}, map[string]bool{}, true))
+
+	assert.Contains(t, preview, `<div id="player-nav" inert>`)
+	assert.NotContains(t, inPlay, "inert", "a player can follow it")
+}
