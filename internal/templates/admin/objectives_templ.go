@@ -72,6 +72,9 @@ type zoneWords struct {
 	PhoneEmpty string
 	proof      bool
 	system     bool
+	// dock is whether the player's navigation shows on this screen. Pre-game
+	// pages have none: a dock of tabs that go nowhere is worse than none.
+	dock bool
 }
 
 func zoneWordsFor(zone blocks.BlockContext) zoneWords {
@@ -82,6 +85,7 @@ func zoneWordsFor(zone blocks.BlockContext) zoneWords {
 			Why:        "what they get once the proof is cleared",
 			Param:      "reveal",
 			PhoneEmpty: "No reveal. Players go straight back to the quest list.",
+			dock:       true,
 		}
 	case blocks.ContextStart:
 		return zoneWords{
@@ -98,6 +102,7 @@ func zoneWordsFor(zone blocks.BlockContext) zoneWords {
 			Param:      "finish",
 			PhoneEmpty: "Nothing here yet. Players see only the finish banner.",
 			system:     true,
+			dock:       true,
 		}
 	}
 	return zoneWords{
@@ -106,6 +111,7 @@ func zoneWordsFor(zone blocks.BlockContext) zoneWords {
 		Param:      "proof",
 		PhoneEmpty: "No proof. Players open straight to the reveal.",
 		proof:      true,
+		dock:       true,
 	}
 }
 
@@ -273,7 +279,7 @@ func objectiveCardRow(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(data.Objective.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 185, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 191, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -308,7 +314,7 @@ func objectiveCardRow(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.Objective.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 191, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 197, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -362,7 +368,7 @@ func objectiveDescription(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d / 280", utf8.RuneCountInString(data.Objective.Description)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 206, Col: 127}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 212, Col: 127}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -375,7 +381,7 @@ func objectiveDescription(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(data.Objective.Description)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 224, Col: 31}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 230, Col: 31}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -429,7 +435,7 @@ func objectiveLinkRow(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprint("/objective/", data.Objective.Slug))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 236, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 242, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -442,7 +448,7 @@ func objectiveLinkRow(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/objective/", data.Objective.Slug))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 241, Col: 61}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 247, Col: 61}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -523,7 +529,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/objective/", data.Objective.Slug))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 277, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 283, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 		if templ_7745c5c3_Err != nil {
@@ -536,7 +542,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(data.Settings.EnablePoints))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 281, Col: 105}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 287, Col: 105}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 		if templ_7745c5c3_Err != nil {
@@ -602,7 +608,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d points", data.TotalPoints()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 310, Col: 98}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 316, Col: 98}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -628,7 +634,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Objective.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 335, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 341, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
@@ -677,7 +683,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/objective/", data.Objective.Slug))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 366, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 372, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
@@ -724,7 +730,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(!draft))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 389, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 395, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {
@@ -737,7 +743,7 @@ func objectiveVisibilityControl(draft bool) templ.Component {
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(visibilityBtnTip(draft))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 390, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 396, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 		if templ_7745c5c3_Err != nil {
@@ -868,7 +874,7 @@ func objectiveSecretControl(objective models.Objective) templ.Component {
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(secretBtnTip(objective.Secret))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 443, Col: 44}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 449, Col: 44}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 			if templ_7745c5c3_Err != nil {
@@ -881,7 +887,7 @@ func objectiveSecretControl(objective models.Objective) templ.Component {
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(objective.Secret))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 444, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 450, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 			if templ_7745c5c3_Err != nil {
@@ -894,7 +900,7 @@ func objectiveSecretControl(objective models.Objective) templ.Component {
 			var templ_7745c5c3_Var31 string
 			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue("/admin/objective/" + objective.Slug + "/secret")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 445, Col: 61}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 451, Col: 61}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 			if templ_7745c5c3_Err != nil {
@@ -907,7 +913,7 @@ func objectiveSecretControl(objective models.Objective) templ.Component {
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{"secret":"%t","surface":"edit"}`, !objective.Secret))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 446, Col: 79}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objectives.templ`, Line: 452, Col: 79}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 			if templ_7745c5c3_Err != nil {

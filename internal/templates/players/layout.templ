@@ -108,6 +108,15 @@ templ AppLayout(contents templ.Component, chrome AppChrome, title string, messag
 	</html>
 }
 
+// PreviewDock is the real dock, for an editor drawing a player's screen. It is
+// the same component, not a picture of it, so it cannot drift from the app, and
+// inert so a click in the preview never leaves the page being edited.
+templ PreviewDock(active string) {
+	<div class="cf-dock player" inert aria-hidden="true">
+		@appDock(active)
+	</div>
+}
+
 // appDock is the only navigation, placed where a thumb reaches while walking.
 templ appDock(active string) {
 	<!-- Padding aligns the items with the content column (28rem is max-w-md)

@@ -1190,19 +1190,32 @@ li.nest-target > .objective-row::after {
 .cf-pick .block-pick-item[data-kind="true"] svg { background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 80%, var(--color-base-content)); }
 .cf-none { padding: 2rem 0; color: var(--soft); text-align: center; }
 
-/* Pinned so it stays beside a long form. */
-.cf-phone { position: sticky; top: 1rem; flex: none; width: 350px; max-width: 100%; height: min(664px, calc(100vh - 2rem)); overflow: hidden; border: 9px solid #15131a; border-radius: 44px; background: var(--color-base-200); }
-[data-theme="dracula"] .cf-phone { border-color: #4a4f68; }
-.cf-screen { height: 100%; overflow-y: auto; scrollbar-width: none; background: var(--color-base-200); }
+.cf-prevhead { display: flex; align-items: center; justify-content: space-between; width: 350px; max-width: 100%; }
+.cf-frame { display: inline-flex; align-items: center; gap: .5rem; color: var(--soft); font-size: .8rem; font-weight: 700; cursor: pointer; }
+/* A plain card, like the task preview, until the phone is asked for. Its height
+   follows its content up to the cap, and it is pinned to stay beside a long form. */
+.cf-phone { position: sticky; top: 1rem; display: flex; flex: none; flex-direction: column; width: 350px; max-width: 100%; max-height: min(664px, calc(100vh - 2rem)); overflow: hidden; border: 1.5px solid var(--line); border-radius: 20px; background: var(--color-base-200); }
+.obj-page[data-frame="on"] .cf-phone { height: min(664px, calc(100vh - 2rem)); border: 9px solid #15131a; border-radius: 44px; }
+[data-theme="dracula"] .obj-page[data-frame="on"] .cf-phone { border-color: #4a4f68; }
+/* The dock is fixed to the screen in the app, so it is pinned to the card's foot here. */
+.cf-dock { display: none; }
+.cf-dock .dock { position: static; }
+.obj-page[data-frame="on"] .cf-dock { display: block; flex: none; }
+.cf-screen { flex: 1; min-height: 11rem; overflow-y: auto; scrollbar-width: none; background: var(--color-base-200); }
 .cf-screen::-webkit-scrollbar { display: none; }
-.cf-pane { padding: 2.2rem 1rem 1.5rem; }
+.cf-pane { padding: 1rem; }
+/* Clears the frame's corner, which crops the top edge. */
+.obj-page[data-frame="on"] .cf-pane { padding: 2.2rem 1rem 1.5rem; }
+/* The player's start page sits low to clear its own header, which a plain card has not got. */
+.obj-page:not([data-frame="on"]) .cf-pane [data-block-list] { margin-top: 0; }
 .cf-pane #objective-page { padding: 0; }
 .cf-pane #objective-page > .q-dim:first-child:has(h1:empty) { display: none; }
 .cf-pane #objective-zone { min-height: 9rem; }
 .cf-pane .block-view { position: relative; border-radius: 18px; cursor: pointer; }
 .cf-pane .block-view * { pointer-events: none; }
-.cf-pane .block-view:hover, .cf-pane .block-view.hl:not(.sel) { box-shadow: 0 0 0 3px color-mix(in oklab, var(--color-primary) 45%, transparent); }
-.cf-pane .block-view.sel { box-shadow: 0 0 0 4px var(--color-primary); }
+/* Thin and offset, so the ring frames a block and does not crowd it. */
+.cf-pane .block-view:hover, .cf-pane .block-view.hl:not(.sel) { outline: 2px solid color-mix(in oklab, var(--color-primary) 45%, transparent); outline-offset: 5px; }
+.cf-pane .block-view.sel { outline: 2px solid var(--color-primary); outline-offset: 5px; }
 /* The player's page has a tall minimum height of its own, which pushed this
    below the phone. It is laid over the screen instead, centred in it. */
 .cf-screen { position: relative; }

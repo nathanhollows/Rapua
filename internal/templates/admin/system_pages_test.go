@@ -68,3 +68,10 @@ func TestSystemPageEditor_HintsNameTheBlocksTheyRecommend(t *testing.T) {
 	})
 	assert.Contains(t, withButton, `data-type="start_button"`)
 }
+
+// The phone view draws the player's dock where the real screen has one. The
+// start page is pre-game, and the player's own layout gives it none.
+func TestSystemPageEditor_DockFollowsThePlayersLayout(t *testing.T) {
+	assert.NotContains(t, renderSystemPage(t, "start", "Start", nil), "cf-dock")
+	assert.Equal(t, 1, strings.Count(renderSystemPage(t, "complete", "Complete", nil), `class="cf-dock player"`))
+}

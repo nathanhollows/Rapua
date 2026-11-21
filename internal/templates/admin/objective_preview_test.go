@@ -2,6 +2,8 @@ package templates
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -152,6 +154,17 @@ func TestEditObjective_EmptyProofOffersSectionTemplates(t *testing.T) {
 	assert.NotContains(t, revealSection, "/admin/blocks/kit")
 }
 
+// The preview is a plain card until the phone is asked for: each section offers
+// the switch.
+func TestEditObjective_EachPreviewOffersThePhoneFrame(t *testing.T) {
+	html := renderEditor(t)
+
+	assert.Equal(t, 2, strings.Count(html, `data-frame-toggle`), "proof and reveal")
+	assert.Contains(t, html, "Phone view")
+	assert.Equal(t, 2, strings.Count(html, `class="cf-dock player"`), "the player's dock, on proof and reveal")
+	assert.Contains(t, html, `/static/js/objective-editor.js`)
+}
+
 // The neighbours in the task preview are drawn as the player's list draws them:
 // the icon of what their proof asks for, and their helper text.
 func TestEditObjective_PreviewNeighboursKeepTheirIconAndHelperText(t *testing.T) {
@@ -186,4 +199,25 @@ func TestObjectiveBlockAdded_SaysWhetherToSelectIt(t *testing.T) {
 	assert.Contains(t, render(scan, true), `data-rail-for="scan-1"`)
 	assert.Contains(t, render(scan, true), "data-select")
 	assert.NotContains(t, render(text, false), "data-select")
+}
+
+// The chosen block is picked out by a thin outline held off its edge, the same
+// in the plain card and the phone view: no fading or blurring of the others.
+func TestEditObjective_PreviewOutlinesTheChosenBlock(t *testing.T) {
+	css, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "css", "src", "editor.css"))
+	require.NoError(t, err)
+	sheet := string(css)
+
+	assert.Contains(t, sheet, `.cf-pane .block-view.sel { outline: 2px solid var(--color-primary); outline-offset: 5px; }`)
+	assert.NotContains(t, sheet, "blur(", "the others are not dimmed or blurred")
+	assert.NotContains(t, sheet, `content: "Editing"`)
+}
+
+// Changing every preview's height would carry the switch away from the pointer,
+// so the page scrolls by however far it was carried.
+func TestEditorScript_HoldsThePhoneSwitchStill(t *testing.T) {
+	js, err := os.ReadFile(filepath.Join("..", "..", "..", "static", "js", "objective-editor.js"))
+	require.NoError(t, err)
+
+	assert.Contains(t, string(js), "window.scrollBy(0, carried)")
 }

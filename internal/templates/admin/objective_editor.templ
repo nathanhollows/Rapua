@@ -7,6 +7,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	bTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	pTemplates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
@@ -116,6 +117,13 @@ templ blockSection(data blockSectionData) {
 				</div>
 			</div>
 			<aside class="cs-phonecol" aria-label={ z.Name + " preview" }>
+				<div class="cf-prevhead">
+					<span class="kicker">Preview</span>
+					<label class="cf-frame">
+						<span>Phone view</span>
+						<input type="checkbox" class="toggle toggle-sm toggle-primary" data-frame-toggle/>
+					</label>
+				</div>
 				<div class="cf-phone">
 					<div class="cf-screen player">
 						<div
@@ -128,6 +136,9 @@ templ blockSection(data blockSectionData) {
 						></div>
 						<p class="cf-phone-empty" data-phone-empty hidden>{ z.PhoneEmpty }</p>
 					</div>
+					if z.dock {
+						@pTemplates.PreviewDock("quest")
+					}
 				</div>
 			</aside>
 		</div>
@@ -146,8 +157,8 @@ templ objectiveEditorAssets() {
 	<template id="rl-icon-trash">
 		@icon("trash-2", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
 	</template>
-	<script src="/static/js/Sortable.min.js"></script>
-	<script src="/static/js/objective-editor.js"></script>
+	<script src={ assetURL("/static/js/Sortable.min.js") }></script>
+	<script src={ assetURL("/static/js/objective-editor.js") }></script>
 }
 
 templ objectiveRailItem(settings models.QuestSettings, block blocks.Block) {

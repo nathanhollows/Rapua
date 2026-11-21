@@ -366,6 +366,16 @@
 		document.addEventListener('mouseout', (evt) => { if (!evt.relatedTarget) highlight(null); });
 
 		document.addEventListener('change', (evt) => {
+			if (evt.target.matches?.('[data-frame-toggle]')) {
+				// Every preview on the page changes height, so what is above would carry the
+				// switch away from the pointer. Scroll by however far it was carried.
+				const switchTop = evt.target.getBoundingClientRect().top;
+				applyFrame(evt.target.checked);
+				const carried = evt.target.getBoundingClientRect().top - switchTop;
+				if (carried) window.scrollBy(0, carried);
+				try { localStorage.setItem(FRAME_KEY, evt.target.checked ? 'on' : 'off'); } catch (err) { /* not saved */ }
+				return;
+			}
 			if (!evt.target.matches?.('.points-field input[name="points"]')) return;
 			const form = evt.target.closest('[data-block-form]');
 			if (!form) return;
@@ -415,8 +425,19 @@
 		});
 	}
 
+	// The phone frame is a preference of whoever is editing, not of the page.
+	const FRAME_KEY = 'objective-editor.frame';
+
+	function applyFrame(on) {
+		qa('.obj-page').forEach((page) => { page.dataset.frame = on ? 'on' : 'off'; });
+		qa('[data-frame-toggle]').forEach((toggle) => { toggle.checked = on; });
+	}
+
 	function init() {
 		bind();
+		let framed = false;
+		try { framed = localStorage.getItem(FRAME_KEY) === 'on'; } catch (err) { /* private windows throw */ }
+		applyFrame(framed);
 		state.selected = {};
 		bindRails();
 		totals();

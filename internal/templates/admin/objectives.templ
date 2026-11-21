@@ -64,6 +64,9 @@ type zoneWords struct {
 	PhoneEmpty string
 	proof      bool
 	system     bool
+	// dock is whether the player's navigation shows on this screen. Pre-game
+	// pages have none: a dock of tabs that go nowhere is worse than none.
+	dock bool
 }
 
 func zoneWordsFor(zone blocks.BlockContext) zoneWords {
@@ -74,6 +77,7 @@ func zoneWordsFor(zone blocks.BlockContext) zoneWords {
 			Why:        "what they get once the proof is cleared",
 			Param:      "reveal",
 			PhoneEmpty: "No reveal. Players go straight back to the quest list.",
+			dock:       true,
 		}
 	case blocks.ContextStart:
 		return zoneWords{
@@ -90,6 +94,7 @@ func zoneWordsFor(zone blocks.BlockContext) zoneWords {
 			Param:      "finish",
 			PhoneEmpty: "Nothing here yet. Players see only the finish banner.",
 			system:     true,
+			dock:       true,
 		}
 	}
 	return zoneWords{
@@ -98,6 +103,7 @@ func zoneWordsFor(zone blocks.BlockContext) zoneWords {
 		Param:      "proof",
 		PhoneEmpty: "No proof. Players open straight to the reveal.",
 		proof:      true,
+		dock:       true,
 	}
 }
 
