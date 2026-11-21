@@ -5354,6 +5354,9 @@
   :where(.divide-base-300 > :not(:last-child)) {
     border-color: var(--color-base-300);
   }
+  .self-center {
+    align-self: center;
+  }
   .self-end {
     align-self: flex-end;
   }
