@@ -1,0 +1,39 @@
+// Package brand holds what every page of Rapua wears, so the admin, the public site and
+// the facilitator view draw one logo and not three.
+package brand
+
+// HopScript plays the logo's hop when it is pressed. Guarded: hx-boost swaps the body
+// without a reload, so listeners would stack.
+templ HopScript() {
+	<script>
+		(function () {
+			if (window.__logoHop) return;
+			window.__logoHop = true;
+			document.addEventListener('click', function (e) {
+				var link = e.target.closest('.logo');
+				// A link navigates, and the listener outlives a boosted page change, so
+				// the hop belongs to the button alone.
+				if (!link || link.tagName !== 'BUTTON') return;
+				var wrap = link.querySelector('.logo-wrap');
+				if (!wrap) return;
+				wrap.classList.remove('logo-hop');
+				void wrap.offsetWidth;
+				wrap.classList.add('logo-hop');
+			});
+			document.addEventListener('animationend', function (e) {
+				if (e.target.classList && e.target.classList.contains('logo-mark')) e.target.parentNode.classList.remove('logo-hop');
+			});
+		})();
+	</script>
+}
+
+// Mark is the Rapua logo: the chip and the name. Where the hop matters it belongs in a
+// button, not a link: navigating cuts the hop short.
+templ Mark() {
+	<span class="logo-wrap">
+		<span class="logo-mark">
+			<svg viewBox="0 0 31.622 38.219" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M-20.305 167.985a15.811 15.811 0 0 0-22.36-.096 15.811 15.811 0 0 0-4.639 11.194h-.108v15.845h13.196l.023-5.49a10.678 10.678 0 0 1-4.923-2.803 10.678 10.678 0 0 1 .065-15.1 10.678 10.678 0 0 1 15.1.065 10.678 10.678 0 0 1-.065 15.1 10.678 10.678 0 0 1-5.043 2.789l-.023 5.213a15.811 15.811 0 0 0 8.68-4.357 15.811 15.811 0 0 0 .097-22.36zm-7.437 7.373a5.339 5.339 0 0 0-7.55-.032 5.339 5.339 0 0 0-.033 7.55 5.339 5.339 0 0 0 7.55.033 5.339 5.339 0 0 0 .033-7.55z" transform="rotate(-45.247 -203.79 40.662)"></path></svg>
+		</span>
+	</span>
+	Rapua
+}

@@ -3,6 +3,7 @@ package templates
 import (
 	"fmt"
 	"github.com/nathanhollows/Rapua/v8/internal/assets"
+	"github.com/nathanhollows/Rapua/v8/internal/templates/brand"
 )
 
 type siteLink struct {
@@ -68,10 +69,17 @@ templ siteHeader(authed bool, current string) {
 	<header class="relative z-[3] site-wrap flex items-center justify-between h-16">
 		<div class="flex items-center gap-1">
 			{ children... }
-			<a href="/" class="inline-flex items-center gap-2 text-lg font-extrabold" aria-label="Rapua home" hx-boost="true">
-				<svg class="w-[1.375rem] h-[1.375rem]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
-				Rapua
-			</a>
+			if current == "/" {
+				<!-- Already home, so there is nowhere to go: a button, so it can hop. -->
+				<button type="button" class="logo" aria-label="Rapua">
+					@brand.Mark()
+				</button>
+				@brand.HopScript()
+			} else {
+				<a href="/" class="logo" aria-label="Rapua home" hx-boost="true">
+					@brand.Mark()
+				</a>
+			}
 		</div>
 		<nav class="flex items-center gap-1 text-sm font-bold" aria-label="Site" hx-boost="true">
 			for _, l := range siteLinks {
