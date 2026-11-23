@@ -555,7 +555,7 @@ templ QuestMapCard(progress services.RunProgress) {
 					>
 						@questMapState(node)
 						<span class={ "mapname", templ.KV("excluded", node.RuledOut), templ.KV("todo", !node.Done && !node.RuledOut && !node.Started) }>
-							{ node.Objective.Title }
+							{ objectiveTitleOrBlank(node.Objective.Title) }
 						</span>
 						if node.Section {
 							<span class="maproute">

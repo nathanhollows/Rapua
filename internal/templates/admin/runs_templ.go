@@ -1156,9 +1156,9 @@ func QuestMapCard(progress services.RunProgress) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var44 string
-				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(node.Objective.Title)
+				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(objectiveTitleOrBlank(node.Objective.Title))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 558, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/runs.templ`, Line: 558, Col: 52}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {

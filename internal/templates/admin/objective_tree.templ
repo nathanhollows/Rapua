@@ -546,7 +546,7 @@ templ objectiveNewButton(nodes []*ObjectiveTreeNode) {
 									hx-swap="none"
 									class={ sectionChoicePad(section.Depth) }
 								>
-									{ section.Title }
+									{ objectiveTitleOrBlank(section.Title) }
 								</button>
 							</li>
 						}
@@ -1131,8 +1131,8 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 		<li class="list-none rounded-xl bg-base-100/60 border border-base-content/10 p-4 text-sm">
 			<div class="flex items-center gap-3">
 				@icon("triangle-alert", templ.Attributes{"class": "w-4 h-4 text-warning shrink-0"})
-				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-medium">
-					{ node.Objective.Title }
+				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class={ "link link-hover font-medium", templ.KV("italic opacity-60", node.Objective.Title == "") }>
+					{ objectiveTitleOrBlank(node.Objective.Title) }
 				</a>
 				<span class="text-xs opacity-70">
 					{ fmt.Sprintf("nested %d levels deep, past what this view draws", depth) }
@@ -1166,8 +1166,8 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 						<span class="tooltip tooltip-right" data-tip="Drag to move">
 							@icon("grip-vertical", templ.Attributes{"class": dragHandleClass})
 						</span>
-						<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-bold">
-							{ node.Objective.Title }
+						<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class={ "link link-hover font-bold", templ.KV("italic opacity-60", node.Objective.Title == "") }>
+							{ objectiveTitleOrBlank(node.Objective.Title) }
 						</a>
 						@objectiveDraftTag(node)
 						@objectiveVarsBadges(node)
@@ -1206,8 +1206,8 @@ templ objectiveNode(node *ObjectiveTreeNode, enablePoints bool, depth int) {
 				<span class="tooltip tooltip-right" data-tip="Drag to move">
 					@icon("grip-vertical", templ.Attributes{"class": dragHandleClass})
 				</span>
-				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class="link link-hover font-medium">
-					{ node.Objective.Title }
+				<a href={ templ.URL("/admin/objective/" + node.Objective.Slug) } class={ "link link-hover font-medium", templ.KV("italic opacity-60", node.Objective.Title == "") }>
+					{ objectiveTitleOrBlank(node.Objective.Title) }
 				</a>
 				@objectiveDraftTag(node)
 				@objectiveVarsBadges(node)

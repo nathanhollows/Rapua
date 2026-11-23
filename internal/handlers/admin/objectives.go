@@ -282,6 +282,19 @@ func (h *Handler) ObjectiveEditPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// A title field that arrives blank is refused rather than ignored: ignoring it
+	// left the box empty on screen while the stored title stayed, and the next
+	// reload undid what the author had just typed. A form that omits the field
+	// is a different request (the settings popover) and says nothing about it.
+	if values, sent := r.Form["title"]; sent && strings.TrimSpace(values[0]) == "" {
+		if renderErr := templates.ObjectiveVisibilityOOB(objective.Draft).
+			Render(r.Context(), w); renderErr != nil {
+			h.logger.ErrorContext(r.Context(), "ObjectiveEditPost: rendering visibility", "error", renderErr)
+		}
+		h.handleError(w, r, "ObjectiveEditPost: blank title", "A task needs a title", "objective_id", objective.ID)
+		return
+	}
+
 	// The checkbox is absent from the form when unticked, so its absence is the
 	// instruction to park rather than a form that said nothing.
 	published := r.FormValue("published") == publishedFormValue

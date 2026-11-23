@@ -344,6 +344,45 @@ func TestObjectiveEditPost(t *testing.T) {
 	})
 }
 
+// A blank title used to be ignored, which left the box empty on screen while the
+// stored title stayed: the next reload undid what had just been typed.
+func TestObjectiveEditPost_BlankTitleIsRefused(t *testing.T) {
+	dbc, cleanup := setupObjectiveTestDB(t)
+	defer cleanup()
+	h := newObjectiveTestHandler(t, dbc)
+	user := objectiveTestQuest(t, dbc)
+	root, err := h.objectiveService.FindRoot(context.Background(), user.CurrentQuestID)
+	require.NoError(t, err)
+	objective, err := h.objectiveService.CreateObjective(
+		context.Background(), user.CurrentQuestID, root.ID, "Keep Me")
+	require.NoError(t, err)
+
+	post := func(form url.Values) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(
+			http.MethodPost, "/admin/objective/"+objective.Slug, strings.NewReader(form.Encode()))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req.Header.Set("Hx-Request", "true")
+		req = withObjectiveSlug(withObjectiveUser(req, user), objective.Slug)
+		w := httptest.NewRecorder()
+		h.ObjectiveEditPost(w, req)
+		return w
+	}
+
+	for _, blank := range []string{"", "   "} {
+		w := post(url.Values{"title": {blank}, "published": {"on"}})
+		assert.Contains(t, w.Body.String(), "A task needs a title", "blank %q", blank)
+
+		reloaded, loadErr := h.objectiveService.GetByQuestIDAndSlug(
+			context.Background(), user.CurrentQuestID, objective.Slug)
+		require.NoError(t, loadErr)
+		assert.Equal(t, "Keep Me", reloaded.Title, "blank %q must not replace the title", blank)
+	}
+
+	// A form that does not carry the field says nothing about it.
+	w := post(url.Values{"published": {"on"}})
+	assert.NotContains(t, w.Body.String(), "A task needs a title")
+}
+
 // A rename must not change the slug or redirect: the redirect reloads the page,
 // which re-ran questLock.set(true) and relocked a quest the author had just
 // unlocked. Both are asserted because either alone passes the wrong way.
