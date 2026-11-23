@@ -89,6 +89,45 @@ func TestLintPanels_SwapInPlace(t *testing.T) {
 	} {
 		assert.Contains(t, rendered, `hx-swap-oob="true"`, name+" panel swaps in place")
 	}
-	assert.Contains(t, objective.String(), `id="objective-lint"`)
+	for _, slot := range []string{"lint-task", "lint-proof", "lint-reveal"} {
+		assert.Contains(t, objective.String(), `id="`+slot+`"`)
+	}
 	assert.Contains(t, systemPage.String(), `id="system-page-lint"`)
+}
+
+// A note about a block belongs with that block's section, numbered the way the
+// rail counts; one that names no block falls to the task.
+func TestLintForZone_PlacesByPath(t *testing.T) {
+	result := game.LintResult{
+		Warnings: []game.LintDiag{
+			{Path: "structure.children[2].proof.blocks[3].max_rating", Message: "in proof"},
+			{Path: "structure.children[2].reveal.blocks[0]", Message: "in reveal"},
+			{Path: "structure.children[2].slug", Message: "on the task"},
+			{Path: "structure.children[2].proof", Message: "the proof as a whole"},
+		},
+		Errors: []game.LintDiag{{Path: "objective:somewhere", Message: "structural"}},
+	}
+
+	proof := lintForZone(result, "proof")
+	require.Len(t, proof.Warnings, 2)
+	assert.Equal(t, lintLine{Message: "in proof", Block: 4}, proof.Warnings[0])
+	assert.Equal(t, lintLine{Message: "the proof as a whole"}, proof.Warnings[1])
+
+	reveal := lintForZone(result, "reveal")
+	require.Len(t, reveal.Warnings, 1)
+	assert.Equal(t, 1, reveal.Warnings[0].Block)
+
+	task := lintForZone(result, "task")
+	require.Len(t, task.Warnings, 1)
+	assert.Equal(t, lintLine{Message: "on the task"}, task.Warnings[0])
+	assert.Len(t, task.Errors, 1)
+	assert.Empty(t, proof.Errors)
+}
+
+// A blank title still needs text to click, or the author cannot reach the
+// objective that needs one.
+func TestObjectiveTitleOrBlank(t *testing.T) {
+	assert.Equal(t, "Untitled task", objectiveTitleOrBlank(""))
+	assert.Equal(t, "Untitled task", objectiveTitleOrBlank("  "))
+	assert.Equal(t, "Find the chest", objectiveTitleOrBlank("Find the chest"))
 }

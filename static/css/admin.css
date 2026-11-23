@@ -5876,6 +5876,9 @@
   .uppercase {
     text-transform: uppercase;
   }
+  .italic {
+    font-style: italic;
+  }
   .tabular-nums {
     --tw-numeric-spacing: tabular-nums;
     font-variant-numeric: var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);
@@ -8595,6 +8598,76 @@ li.nest-target > .objective-row::after {
   .cf-phone {
     position: static;
   }
+}
+.lint-note {
+  --tone: var(--color-info);
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  margin-bottom: .75rem;
+  padding: .8rem 1rem;
+  border-radius: 16px;
+  background: var(--tone);
+  @supports (color: color-mix(in lab, red, red)) {
+    background: color-mix(in oklab, var(--tone) 15%, var(--color-base-100));
+  }
+  font-size: .875rem;
+  line-height: 1.45;
+}
+.lint-note.warning {
+  --tone: var(--color-warning);
+}
+.lint-note.error {
+  --tone: var(--color-error);
+}
+.lint-ico {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: .6rem;
+  background: var(--tone);
+  @supports (color: color-mix(in lab, red, red)) {
+    background: color-mix(in oklab, var(--tone) 28%, var(--color-base-100));
+  }
+  color: var(--tone);
+  @supports (color: color-mix(in lab, red, red)) {
+    color: color-mix(in oklab, var(--tone) 55%, var(--color-base-content));
+  }
+}
+.lint-head {
+  margin: 0;
+  font-weight: 800;
+}
+.lint-n {
+  margin-left: .25rem;
+  padding: .05rem .45rem;
+  border-radius: 999px;
+  background: var(--tone);
+  @supports (color: color-mix(in lab, red, red)) {
+    background: color-mix(in oklab, var(--tone) 24%, var(--color-base-100));
+  }
+  font-size: .75rem;
+}
+.lint-list {
+  display: grid;
+  gap: .2rem;
+  margin: .2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.lint-go {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-weight: 700;
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.lint-go:disabled {
+  cursor: not-allowed;
 }
 .cs-rail {
   --rail-bg: var(--color-base-content);

@@ -2,11 +2,67 @@ package templates
 
 import (
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/nathanhollows/Rapua/v8/models"
 )
+
+// lintBlockPath picks the section, and the block when there is one, that a
+// diagnostic is about out of its document path: structure.children[2].proof.blocks[0].max_rating
+// names a block, structure.children[2].proof the section as a whole.
+var lintBlockPath = regexp.MustCompile(`\.(proof|reveal)(?:\.blocks\[(\d+)\])?(?:\.|$)`)
+
+// objectiveTitleOrBlank gives an objective with no title something to read and
+// click. A title can be empty in older data, and a link with no text has no
+// target to hit, which strands the author from the objective they need to fix.
+func objectiveTitleOrBlank(title string) string {
+	if strings.TrimSpace(title) == "" {
+		return "Untitled task"
+	}
+	return title
+}
+
+// lintLine is a diagnostic placed in the editor. Block is the 1-based position
+// in its section, or zero when the note is about the section as a whole.
+type lintLine struct {
+	Message string
+	Block   int
+}
+
+type zoneLint struct {
+	Errors   []lintLine
+	Warnings []lintLine
+}
+
+// lintForZone keeps the diagnostics that belong in one section. Anything that
+// names no block falls to the task section, which is where the objective's own
+// fields live.
+func lintForZone(result game.LintResult, zone string) zoneLint {
+	return zoneLint{
+		Errors:   zoneLines(result.Errors, zone),
+		Warnings: zoneLines(result.Warnings, zone),
+	}
+}
+
+func zoneLines(diagnostics []game.LintDiag, zone string) []lintLine {
+	var lines []lintLine
+	for _, diagnostic := range diagnostics {
+		where, block := "task", 0
+		if match := lintBlockPath.FindStringSubmatch(diagnostic.Path); match != nil {
+			where = match[1]
+			if _, err := fmt.Sscan(match[2], &block); err == nil {
+				block++
+			}
+		}
+		if where == zone {
+			lines = append(lines, lintLine{Message: diagnostic.Message, Block: block})
+		}
+	}
+	return lines
+}
 
 // QuestLint reports what is wrong with the quest itself: the start and finish
 // pages, the settings, and the shape of the tree. What is wrong with a
@@ -122,38 +178,70 @@ templ SystemPageLint(lint services.QuestLint, pathPrefix string) {
 	}
 }
 
-// ObjectiveLintPanelOOB re-renders the panel in place after a save. The
-// objective form posts with no swap, so without this the panel keeps whatever
-// it said when the page loaded: a fixed problem still reads as broken, and a
+// ObjectiveLintPanelOOB re-renders every slot in place after a save. The
+// objective form posts with no swap, so without this the slots keep whatever
+// they said when the page loaded: a fixed problem still reads as broken, and a
 // newly broken one still reads as clean.
 templ ObjectiveLintPanelOOB(lint services.QuestLint, objectiveID string) {
-	<div id="objective-lint" hx-swap-oob="true">
-		@objectiveLintPanel(lint, objectiveID)
+	@objectiveLintSlot(lint, objectiveID, "task", true)
+	@objectiveLintSlot(lint, objectiveID, "proof", true)
+	@objectiveLintSlot(lint, objectiveID, "reveal", true)
+}
+
+// objectiveLintSlot is what the rules say about one part of the editor, shown
+// inside that part: a note about a block sits with the blocks, not above a page
+// the author may have scrolled away from.
+//
+// The task slot also takes whatever names no block, and the root's diagnostics
+// about the quest. The root has no row in the tree, so this page is the only
+// one carrying the controls those are about.
+//
+// Every slot sits between its section's header and its panel, flush with the
+// panel, so a note never pushes the form it is about out of place.
+templ objectiveLintSlot(lint services.QuestLint, objectiveID, zone string, oob bool) {
+	{{ found := lintForZone(lint.ForEditor(objectiveID), zone) }}
+	<div
+		id={ "lint-" + zone }
+		class="empty:hidden"
+		if oob {
+			hx-swap-oob="true"
+		}
+	>
+		if zone == "task" && lint.Unreadable() {
+			<div role="alert" class="lint-note warning">
+				<span class="lint-ico">
+					@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
+				</span>
+				<p>Checks could not run, so nothing on this page has been checked.</p>
+			</div>
+		}
+		if len(found.Errors) > 0 {
+			@zoneLintList("error", "circle-alert", "Needs fixing", found.Errors)
+		}
+		if len(found.Warnings) > 0 {
+			@zoneLintList("warning", "triangle-alert", "Worth a look", found.Warnings)
+		}
 	</div>
 }
 
-// objectiveLintPanel says in full what the tree only badges.
-//
-// The root is the exception the tree cannot cover: it has no row, so its
-// diagnostics sit with the quest, and this is the only page carrying the
-// controls those diagnostics are about.
-templ objectiveLintPanel(lint services.QuestLint, objectiveID string) {
-	{{ result := lint.ForEditor(objectiveID) }}
-	if lint.Unreadable() {
-		<div class="px-5">
-			<div role="alert" class="alert alert-outline alert-warning mb-3 items-start">
-				@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
-				<p class="text-sm">Checks could not run, so nothing below has been checked.</p>
-			</div>
+templ zoneLintList(style, iconName, heading string, lines []lintLine) {
+	<div role="alert" class={ "lint-note", style }>
+		<span class="lint-ico">
+			@icon(iconName, templ.Attributes{"class": "w-5 h-5"})
+		</span>
+		<div>
+			<p class="lint-head">{ heading } <span class="lint-n">{ fmt.Sprint(len(lines)) }</span></p>
+			<ul class="lint-list">
+				for _, line := range lines {
+					<li>
+						if line.Block > 0 {
+							<button type="button" class="lint-go" data-ignore-lock data-lint-goto={ fmt.Sprint(line.Block) }>Block { fmt.Sprint(line.Block) }</button>{ ": " + line.Message }
+						} else {
+							{ line.Message }
+						}
+					</li>
+				}
+			</ul>
 		</div>
-	} else if len(result.Errors) > 0 || len(result.Warnings) > 0 {
-		<div class="px-5">
-			if len(result.Errors) > 0 {
-				@questLintList("error", "circle-alert", "Needs fixing", result.Errors)
-			}
-			if len(result.Warnings) > 0 {
-				@questLintList("warning", "triangle-alert", "Worth a look", result.Warnings)
-			}
-		</div>
-	}
+	</div>
 }

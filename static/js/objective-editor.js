@@ -352,6 +352,13 @@
 			const add = t.closest('[data-add]');
 			if (add) return select(add.closest('[data-sec]').dataset.sec, 'add');
 
+			// A diagnostic names its block by position, so the author can go straight to it.
+			const goto = t.closest('[data-lint-goto]');
+			if (goto) {
+				const zone = goto.closest('[data-sec]').dataset.sec;
+				return select(zone, idsIn(zone)[Number(goto.dataset.lintGoto) - 1]);
+			}
+
 			const item = t.closest('.rl-item');
 			if (item) return select(zoneOfItem(item), item.dataset.id);
 			const block = t.closest('.block-view');

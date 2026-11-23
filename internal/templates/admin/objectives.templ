@@ -317,9 +317,6 @@ templ EditObjective(data EditObjectiveData) {
 			}
 		</div>
 		<div id="objective-depends-edit" class="empty:hidden mb-3.5"></div>
-		<div id="objective-lint">
-			@objectiveLintPanel(data.Lint, data.Objective.ID)
-		</div>
 		<section id="zone-card" data-sec="task" data-zone="card" class="cs">
 			<div class="cs-head">
 				<span class="obj-num">1</span>
@@ -328,6 +325,7 @@ templ EditObjective(data EditObjectiveData) {
 					<small>what the player is asked to do</small>
 				</span>
 			</div>
+			@objectiveLintSlot(data.Lint, data.Objective.ID, "task", false)
 			<div class="panel cs-panel cs-task">
 				<div class="ct-panel">
 					<fieldset class="fieldset w-full">
@@ -339,6 +337,7 @@ templ EditObjective(data EditObjectiveData) {
 							form="edit-objective"
 							class="input input-lg w-full font-semibold"
 							value={ data.Objective.Title }
+							required
 							placeholder="Find the plan chest in the Architecture Library"
 							_="on input set #objective-card-title's textContent to my value"
 						/>

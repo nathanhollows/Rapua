@@ -51,6 +51,9 @@ type blockSectionData struct {
 	PreviewURL string
 	// RefreshOn adds triggers beyond the blocks changing.
 	RefreshOn string
+	// LintSlot shows what the rules say about this section; nil where another
+	// panel already does.
+	LintSlot templ.Component
 }
 
 func objectiveSectionData(data EditObjectiveData, zone blocks.BlockContext, num string) blockSectionData {
@@ -63,6 +66,7 @@ func objectiveSectionData(data EditObjectiveData, zone blocks.BlockContext, num 
 		Num:        num,
 		PreviewURL: fmt.Sprint("/objective/", data.Objective.Slug, "?zone=", z.Param),
 		RefreshOn:  ", htmx:afterRequest from:#edit-objective",
+		LintSlot:   objectiveLintSlot(data.Lint, data.Objective.ID, z.Param, false),
 	}
 }
 
@@ -96,6 +100,9 @@ templ blockSection(data blockSectionData) {
 			<span class="grow"></span>
 			<span class="obj-gtot" data-total></span>
 		</div>
+		if data.LintSlot != nil {
+			@data.LintSlot
+		}
 		<div class="panel cs-panel">
 			<div class="cs-rail">
 				<div id={ "rail-" + z.Param } class="rl" data-rail={ z.Param }>
