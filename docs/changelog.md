@@ -3,6 +3,7 @@ title: "Changelog"
 sidebar: true
 order: 100
 tag: updated
+tag_until: 2026-12-23
 ---
 
 # Changelog
@@ -60,6 +61,7 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 
 ### Changed
 
+- Block forms follow the new admin style. Points are set from the picker in each block's header, and a clue's picker offers its cost as negative values. A Location check's accuracy limit is a choice by where players will be standing (outdoors, indoors, deep inside), and Choice options are a list you drag to reorder.
 - **Breaking:** Location, Marker, and Check-in are gone. Locations with a marker convert to objectives on upgrade, and printed posters keep working.
 - **Breaking:** Navigation display modes (Map, Labelled Map, List, Custom Clues, Tasks) are gone. Every objective uses the same navigation and content blocks.
 - **Breaking:** There are no separate groups. A group's routing and completion rule is now what any objective does once it has children. "All" / "minimum required" becomes a completion band: equal bounds finish automatically, a range adds an optional finish button.
@@ -80,6 +82,7 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 
 ### Fixed
 
+- A clue with a points cost was flagged as needing a fix, because its cost is negative. It no longer is, and an exported game with a clue imports again.
 - Stripe checkout no longer holds a write lock while fetching the receipt.
 - A failed upload no longer leaves its file behind.
 - The activity page's "last seen" showed when a run was created, not when the team last played.
