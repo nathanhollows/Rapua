@@ -6,9 +6,8 @@ import (
 	"github.com/google/uuid"
 )
 
-// IDAssigner is implemented by blocks whose items are told apart by an id. The
-// editor makes one for each item, but a game document may leave them out, and
-// items sharing an empty id collapse into one when played.
+// IDAssigner exists because a document may omit item ids, and items sharing an
+// empty id collapse into one when played.
 type IDAssigner interface {
 	AssignMissingIDs() error
 }
@@ -41,8 +40,7 @@ func (b *ChecklistBlock) AssignMissingIDs() error {
 	return nil
 }
 
-// AssignMissingIDs names an option by its place, as the editor does, because a
-// player's answer is recorded against that name.
+// Named by place, as the editor does: a player's answer is recorded against it.
 func (b *QuizBlock) AssignMissingIDs() error {
 	for i := range b.Options {
 		if b.Options[i].ID == "" {

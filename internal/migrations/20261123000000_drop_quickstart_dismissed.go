@@ -11,7 +11,7 @@ func init() {
 	Migrations.MustRegister(m20261123000000_up, m20261123000000_down)
 }
 
-// m20261123000000_up drops the flag for a bar that no longer exists.
+// The bar that read this flag is gone.
 func m20261123000000_up(ctx context.Context, db *bun.DB) error {
 	if !columnExists(ctx, db, "quests", "is_quick_start_dismissed") {
 		return nil
