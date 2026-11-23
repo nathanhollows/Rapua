@@ -8,15 +8,18 @@ import (
 
 templ buttonPlayer(_ models.QuestSettings, block blocks.ButtonBlock) {
 	if block.Link != "" && block.Text != "" {
-		<div class="text-center">
+		<div class="qb-link text-center">
 			<a
 				href={ templ.SafeURL(block.Link) }
 				class={ fmt.Sprintf("btn btn-%s", block.Style) }
 				target="_blank"
+				rel="noopener"
 			>
 				<span>
 					{ block.Text }
 				</span>
+				@icon("arrow-up-right", templ.Attributes{"aria-hidden": "true"})
+				<span class="sr-only">(opens in a new tab)</span>
 			</a>
 		</div>
 	}

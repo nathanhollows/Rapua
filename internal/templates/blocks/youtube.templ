@@ -8,7 +8,7 @@ import (
 
 templ youtubePlayer(_ models.QuestSettings, block blocks.YoutubeBlock) {
 	if block.URL != "" {
-		<div class="skeleton w-full aspect-square">
+		<div class="qb-video">
 			@templ.Raw(stringToMarkdown(fmt.Sprintf("![](%s)", block.URL)))
 		</div>
 	}

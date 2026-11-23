@@ -36,7 +36,7 @@ func youtubePlayer(_ models.QuestSettings, block blocks.YoutubeBlock) templ.Comp
 		}
 		ctx = templ.ClearChildren(ctx)
 		if block.URL != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"skeleton w-full aspect-square\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"qb-video\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

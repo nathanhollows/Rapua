@@ -7,7 +7,7 @@ import (
 )
 
 templ markdownPlayer(_ models.QuestSettings, block blocks.MarkdownBlock) {
-	<div class="card prose">
+	<div class="prose">
 		@templ.Raw(stringToMarkdown(block.Content))
 	</div>
 }

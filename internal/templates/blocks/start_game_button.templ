@@ -28,13 +28,14 @@ templ StartGameButtonScheduled(block blocks.StartGameButtonBlock) {
 		hx-swap="outerHTML"
 		class="text-center"
 	>
-		<button class="btn btn-neutral" disabled>
+		<div class="qb-wait" role="status">
+			@icon("clock", templ.Attributes{"aria-hidden": "true"})
 			if block.ScheduledButtonText != "" {
 				{ block.ScheduledButtonText }
 			} else {
-				Waiting for game to start
+				Waiting for the game to start
 			}
-		</button>
+		</div>
 	</div>
 }
 
@@ -45,7 +46,7 @@ templ StartGameButtonActive(block blocks.StartGameButtonBlock) {
 		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
-		class="text-center"
+		class="qb-start text-center"
 	>
 		<form action="/start" method="post">
 			<input type="hidden" name="csrf" value={ fmt.Sprintf("%s", ctx.Value("gorilla.csrf.Token")) }/>
@@ -56,8 +57,9 @@ templ StartGameButtonActive(block blocks.StartGameButtonBlock) {
 				if block.ActiveButtonText != "" {
 					{ block.ActiveButtonText }
 				} else {
-					Start Playing
+					Start playing
 				}
+				@icon("arrow-right", templ.Attributes{})
 			</button>
 		</form>
 	</div>

@@ -25,7 +25,7 @@ templ mapPlayer(_ models.QuestSettings, block blocks.MapBlock) {
 				data-hide-marker={ fmt.Sprintf("%v", block.HideMarker) }
 			></div>
 			if block.Caption != "" {
-				<p class="text-sm text-center mt-2 text-base-content/70">{ block.Caption }</p>
+				<p class="qb-cap">{ block.Caption }</p>
 			}
 		</div>
 		<script>

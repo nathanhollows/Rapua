@@ -8,35 +8,33 @@ import (
 
 templ headerPlayer(_ models.QuestSettings, block blocks.HeaderBlock) {
 	if block.TitleText != "" || block.Icon != "" {
-		<header class="w-full my-4 mx-auto">
-			<div class="flex flex-col gap-4 items-center">
-				if block.Icon != "" {
-					switch block.TitleSize {
-						case "large":
-							@icon(block.Icon, templ.Attributes{"class": "w-16 h-16"})
-						case "medium":
-							@icon(block.Icon, templ.Attributes{"class": "w-14 h-14"})
-						case "small":
-							@icon(block.Icon, templ.Attributes{"class": "w-12 h-12"})
-						default:
-							@icon(block.Icon, templ.Attributes{"class": "w-16 h-16"})
-					}
-				}
-				if block.TitleText != "" {
-					switch block.TitleSize {
-						case "small":
-							<h1 class="text-lg font-bold text-center">{ block.TitleText }</h1>
-						case "medium":
-							<h1 class="text-xl font-bold text-center">{ block.TitleText }</h1>
-						case "large":
-							<h1 class="text-2xl font-bold text-center">{ block.TitleText }</h1>
-						default:
-							<h1 class="text-2xl font-bold text-center">{ block.TitleText }</h1>
-					}
-				}
-			</div>
+		<header class={ "qb-head", headerSizeClass(block.TitleSize) }>
+			if block.Icon != "" {
+				<span
+					class={ "qb-sticker", headerSizeClass(block.TitleSize) }
+					aria-hidden="true"
+					_="on click add .qb-hop then wait 600ms then remove .qb-hop"
+				>
+					@icon(block.Icon, templ.Attributes{})
+				</span>
+			}
+			if block.TitleText != "" {
+				<h1>{ block.TitleText }</h1>
+			}
 		</header>
 	}
+}
+
+// headerSizeClass maps a heading's size to the modifier the sticker and the
+// title share. Large is the default, so it needs none.
+func headerSizeClass(size string) string {
+	switch size {
+	case "small":
+		return "sm"
+	case "medium":
+		return "md"
+	}
+	return ""
 }
 
 var headerTitleText = TextInputParams{

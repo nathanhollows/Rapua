@@ -8,15 +8,21 @@ import (
 
 templ toggleTextPlayer(_ models.QuestSettings, block blocks.ToggleTextBlock) {
 	if block.Title != "" || block.Content != "" {
-		<details
-			if block.Small {
-				class="collapse collapse-arrow bg-base-100 border-base-300 border text-sm"
-			} else {
-				class="collapse collapse-arrow bg-base-100 border-base-300 border"
-			}
-		>
-			<summary class="collapse-title font-semibold after:start-5 after:end-auto pe-4 ps-12">{ block.Title }</summary>
-			<div class="collapse-content prose">
+		<details class="qb-reveal">
+			<summary>
+				<span class="qb-chev">
+					@icon("chevron-down", templ.Attributes{})
+				</span>
+				<span class="qb-reveal-t">
+					if block.Title != "" {
+						{ block.Title }
+						<small>Tap to read</small>
+					} else {
+						Tap to read
+					}
+				</span>
+			</summary>
+			<div class="qb-reveal-body prose">
 				@templ.Raw(stringToMarkdown(block.Content))
 			</div>
 		</details>
@@ -50,20 +56,6 @@ templ toggleTextAdmin(_ models.QuestSettings, block blocks.ToggleTextBlock) {
 					value={ block.Title }
 					required
 				/>
-			</fieldset>
-			<fieldset class="fieldset">
-				<legend class="fieldset-legend">Options</legend>
-				<div class="form-control">
-					<label class="label cursor-pointer justify-start gap-2">
-						<input
-							type="checkbox"
-							name="small"
-							class="checkbox checkbox-sm"
-							checked?={ block.Small }
-						/>
-						<span class="label-text">Small text</span>
-					</label>
-				</div>
 			</fieldset>
 		</div>
 		@TextareaField(toggleTextContentTextarea.SetValue(block.Content))
