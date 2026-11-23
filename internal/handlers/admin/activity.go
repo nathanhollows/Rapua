@@ -91,7 +91,8 @@ func (h *Handler) ActivityRunsOverview(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = templates.ActivityTeamsTable(user.CurrentQuest.Settings, len(user.CurrentQuest.Objectives), leaderboardData, sortField, sortOrder).
+	unusedCodes := len(user.CurrentQuest.Runs) - len(teams)
+	err = templates.ActivityTeamsTable(user.CurrentQuest.Settings, len(user.CurrentQuest.Objectives), leaderboardData, unusedCodes, sortField, sortOrder).
 		Render(r.Context(), w)
 	if err != nil {
 		h.logger.ErrorContext(r.Context(), "ActivityRunsOverview: rendering template", "error", err)

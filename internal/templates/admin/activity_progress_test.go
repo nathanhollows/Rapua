@@ -27,7 +27,7 @@ func teamRow(code string, done, total int, status services.TeamStatus) []service
 func teammatesTable(t *testing.T, rows []services.LeaderBoardTeamData) string {
 	t.Helper()
 	return render(t, templates.ActivityTeamsTable(
-		models.QuestSettings{EnablePoints: true}, 3, rows, "rank", "asc",
+		models.QuestSettings{EnablePoints: true}, 3, rows, 0, "rank", "asc",
 	))
 }
 
@@ -80,7 +80,7 @@ func TestActivityTeamsTable_StatusColumn(t *testing.T) {
 // divide by it.
 func TestActivityTeamsTable_NoObjectives(t *testing.T) {
 	rendered := render(t, templates.ActivityTeamsTable(
-		models.QuestSettings{}, 0, teamRow("P001", 0, 0, services.StatusStarted), "rank", "asc",
+		models.QuestSettings{}, 0, teamRow("P001", 0, 0, services.StatusStarted), 0, "rank", "asc",
 	))
 
 	assert.Contains(t, rendered, "No objectives")
@@ -108,7 +108,7 @@ func TestActivityTeamsPreview(t *testing.T) {
 	}
 
 	page := render(t, templates.ActivityTeamsTable(
-		models.QuestSettings{EnablePoints: true}, 3, rows, "rank", "asc",
+		models.QuestSettings{EnablePoints: true}, 3, rows, 0, "rank", "asc",
 	))
 
 	wd, err := os.Getwd()
@@ -125,4 +125,20 @@ func TestActivityTeamsPreview(t *testing.T) {
 <body class="bg-base-100 min-h-screen p-8">%s</body>
 </html>`, css, page)
 	require.NoError(t, os.WriteFile(path, []byte(doc), 0o600))
+}
+
+// An empty table says what to do next, and what that is depends on whether any
+// code is waiting to be shared.
+func TestActivityTeamsTable_EmptyAdvice(t *testing.T) {
+	none := render(t, templates.ActivityTeamsTable(models.QuestSettings{}, 3, nil, 0, "rank", "asc"))
+	assert.Contains(t, none, "There are no runs yet")
+	assert.Contains(t, none, `href="/admin/runs?add"`, "no codes: link straight to making some")
+
+	one := render(t, templates.ActivityTeamsTable(models.QuestSettings{}, 3, nil, 1, "rank", "asc"))
+	assert.Contains(t, one, "one unused code ready to share")
+	assert.Contains(t, one, `href="/admin/runs"`)
+	assert.NotContains(t, one, "?add")
+
+	many := render(t, templates.ActivityTeamsTable(models.QuestSettings{}, 3, nil, 12, "rank", "asc"))
+	assert.Contains(t, many, "12 unused codes ready to share")
 }

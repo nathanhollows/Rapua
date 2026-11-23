@@ -335,7 +335,7 @@ templ runProgressBar(done, total int) {
 	</div>
 }
 
-templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) {
+templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, leaderboardData []services.LeaderBoardTeamData, unusedCodes int, currentSortField string, currentSortOrder string) {
 	<div class="overflow-x-auto">
 		<table
 			id="team-activity"
@@ -434,13 +434,33 @@ templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, lead
 				if len(leaderboardData) == 0 {
 					<tr>
 						<td colspan="7" class="text-center py-5">
-							No teams or players have joined the game yet.
+							@activityEmptyAdvice(unusedCodes)
 						</td>
 					</tr>
 				}
 			</tbody>
 		</table>
 	</div>
+}
+
+// activityEmptyAdvice says what to do about an empty table, which depends on
+// whether there is anything to hand out: codes already waiting need sharing,
+// and with none there is nothing to share until some are made.
+templ activityEmptyAdvice(unusedCodes int) {
+	if unusedCodes > 0 {
+		<p>
+			Nobody has joined yet. 
+			if unusedCodes == 1 {
+				You have one unused code ready to share.
+			} else {
+				You have { fmt.Sprint(unusedCodes) } unused codes ready to share.
+			}
+		</p>
+		<a href="/admin/runs" class="link link-primary font-semibold">See your codes</a>
+	} else {
+		<p>There are no runs yet, and players join with a run code.</p>
+		<a href="/admin/runs?add" class="link link-primary font-semibold">Make codes to share</a>
+	}
 }
 
 const (

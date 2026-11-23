@@ -172,6 +172,8 @@
 .run-unused .code-chip { padding: 0; background: none; }
 .when-empty { flex-basis: 100%; padding: 1rem; border-radius: 16px; background: var(--color-base-200); color: var(--soft); text-align: center; }
 .when-empty:not(:only-child) { display: none; }
+/* Which advice is true depends on whether any unused code exists, which changes as runs are added without a reload. */
+.runs-grid:has(.run-unused) .wh-none, .runs-grid:not(:has(.run-unused)) .wh-codes { display: none; }
 .unused-card:not(:has(.run-unused)) .copy-all { display: none; }
 .code-chip { padding: 0; background: none; }
 .code-chip { padding: .15rem .6rem; border-radius: 10px; background: var(--color-base-100); font: 700 .875rem ui-monospace, monospace; letter-spacing: .06em; }
