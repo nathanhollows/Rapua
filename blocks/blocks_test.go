@@ -28,7 +28,12 @@ func TestCreateFromBaseBlock(t *testing.T) {
 			assert.IsType(t, block, newBlock)
 			assert.Equal(t, block.GetType(), newBlock.GetType())
 			assert.Equal(t, "1", newBlock.GetID())
-			assert.Equal(t, 10, newBlock.GetPoints())
+			// A clue is paid for, so what it holds is a cost however it was written.
+			want := 10
+			if block.GetType() == "clue" {
+				want = -10
+			}
+			assert.Equal(t, want, newBlock.GetPoints())
 		})
 	}
 }

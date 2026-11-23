@@ -26,8 +26,17 @@ func (b *ClueBlock) GetName() string    { return "Clue" }
 func (b *ClueBlock) GetDescription() string {
 	return "Players can reveal a clue by spending points."
 }
-func (b *ClueBlock) GetOrder() int  { return b.Order }
-func (b *ClueBlock) GetPoints() int { return b.Points }
+func (b *ClueBlock) GetOrder() int { return b.Order }
+
+// GetPoints is always the cost, as a number at or below zero. The editor stores it
+// negative, but an imported game can hold the same amount written positive, and
+// a clue must take points off whichever way it was written down.
+func (b *ClueBlock) GetPoints() int {
+	if b.Points > 0 {
+		return -b.Points
+	}
+	return b.Points
+}
 func (b *ClueBlock) GetIconSVG() string {
 	return `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search-icon lucide-search"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>`
 }
@@ -118,7 +127,7 @@ func (b *ClueBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 
 		// Mark as complete and award the points (which should be negative for cost)
 		newState.SetComplete(true)
-		newState.SetPointsAwarded(b.Points)
+		newState.SetPointsAwarded(b.GetPoints())
 	}
 
 	return newState, nil
