@@ -26,6 +26,9 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 - Give every location a marker first. A location without one stops the upgrade.
 - Check-in history is dropped, along with the "must check out before finishing" setting. Back up first if you need it.
 - Game documents exported from v7 won't import. Export a fresh copy on v8.
+- Images can no longer be full width. Any image set to full width is now drawn like the rest, and a document that still sets `full_width` imports with a warning.
+- Toggle text blocks no longer have a small option, which never changed how they looked. A document that still sets `small` imports with a warning.
+- Ratings are always out of five. A longer scale cannot fit a phone in one row of stars big enough to tap. A document that still sets `max_rating` imports with a warning.
 
 ### Added
 
@@ -88,6 +91,9 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 - The "Unlocked" badge on the objective reveal view.
 - The "manage groups" editor, replaced by the quest tree.
 - Creating an objective by duplicating a marker's coordinates from another quest.
+- **Breaking:** the full-width option on image blocks, added in 7.0.0. The upgrade clears the setting from existing images.
+- **Breaking:** the small option on toggle text blocks. The upgrade clears the setting from existing blocks.
+- **Breaking:** the scale option on rating blocks. Every rating is out of five, and the upgrade clears the setting from existing blocks.
 
 ## 7.0.0
 
