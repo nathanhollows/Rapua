@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type PincodeBlock struct {
@@ -89,11 +90,11 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		return state, errors.New("pincode is a required field")
 	}
 
-	if len(input["pincode"]) == 0 || input["pincode"][0] == "" {
+	// One box per digit posts one value each, in order; a single field posts one.
+	pincodeGuess := strings.Join(input["pincode"], "")
+	if pincodeGuess == "" {
 		return state, errors.New("pincode cannot be empty")
 	}
-
-	pincodeGuess := input["pincode"][0]
 
 	if len(pincodeGuess) != len(b.Pincode) {
 		return state, errors.New("pincode length does not match the required length")
