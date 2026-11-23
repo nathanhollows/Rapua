@@ -156,3 +156,176 @@ func TestConvertRetiredBlocks_EmptyTaskStillConverts(t *testing.T) {
 	require.True(t, found)
 	assert.Equal(t, "checklist", blockType)
 }
+
+func TestDropRemovedOptions_ImageFullWidth(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	withTrue, withFalse := gofakeit.UUID(), gofakeit.UUID()
+	seedBlock(t, dbc, withTrue, "image", `{"url":"/a.jpg","caption":"A","link":"","full_width":true}`)
+	seedBlock(t, dbc, withFalse, "image", `{"url":"/b.jpg","caption":"","link":"","full_width":false}`)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, found := blockRow(t, dbc, withTrue)
+	require.True(t, found)
+	assert.JSONEq(t, `{"url":"/a.jpg","caption":"A","link":""}`, data)
+	_, data, found = blockRow(t, dbc, withFalse)
+	require.True(t, found)
+	assert.JSONEq(t, `{"url":"/b.jpg","caption":"","link":""}`, data)
+}
+
+func TestDropRemovedOptions_ToggleTextSmall(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	id := gofakeit.UUID()
+	seedBlock(t, dbc, id, "toggle_text", `{"title":"Hint","content":"Look closer","small":true}`)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, found := blockRow(t, dbc, id)
+	require.True(t, found)
+	assert.JSONEq(t, `{"title":"Hint","content":"Look closer"}`, data)
+}
+
+func TestDropRemovedOptions_RatingScale(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	id := gofakeit.UUID()
+	seedBlock(t, dbc, id, "rating", `{"prompt":"How was it?","max_rating":10}`)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, found := blockRow(t, dbc, id)
+	require.True(t, found)
+	assert.JSONEq(t, `{"prompt":"How was it?"}`, data)
+}
+
+func TestDropRemovedOptions_LeavesOtherTypesAlone(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	id, imageSmall := gofakeit.UUID(), gofakeit.UUID()
+	seedBlock(t, dbc, id, "text", `{"content":"full_width and small are only words here"}`)
+	seedBlock(t, dbc, imageSmall, "image", `{"url":"/a.jpg","small":true}`)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, found := blockRow(t, dbc, id)
+	require.True(t, found)
+	assert.JSONEq(t, `{"content":"full_width and small are only words here"}`, data)
+	_, data, found = blockRow(t, dbc, imageSmall)
+	require.True(t, found)
+	assert.JSONEq(t, `{"url":"/a.jpg","small":true}`, data, "each type loses only its own keys")
+}
+
+func TestDropRemovedOptions_UnreadableDataIsLeftAsFound(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	id := gofakeit.UUID()
+	seedBlock(t, dbc, id, "image", `not json full_width`)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, found := blockRow(t, dbc, id)
+	require.True(t, found)
+	assert.Equal(t, "not json full_width", data)
+}
+
+func TestDropRemovedOptions_IsRepeatable(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	ctx := context.Background()
+	id := gofakeit.UUID()
+	seedBlock(t, dbc, id, "image", `{"url":"/a.jpg","full_width":true}`)
+
+	require.NoError(t, m20260907000000_up(ctx, dbc))
+	require.NoError(t, m20260907000000_up(ctx, dbc))
+	require.NoError(t, m20260907000000_down(ctx, dbc))
+
+	_, data, found := blockRow(t, dbc, id)
+	require.True(t, found)
+	assert.JSONEq(t, `{"url":"/a.jpg"}`, data)
+}
+
+func itemIDs(t *testing.T, data, key string) []string {
+	t.Helper()
+	var fields map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal([]byte(data), &fields))
+	var items []struct {
+		ID string `json:"id"`
+	}
+	require.NoError(t, json.Unmarshal(fields[key], &items))
+	ids := make([]string, len(items))
+	for i, item := range items {
+		ids[i] = item.ID
+	}
+	return ids
+}
+
+// Items that share an empty id are told apart by their place.
+func TestAssignItemIDs_NamesEveryItemThatHasNone(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	sorting, quiz, todo := gofakeit.UUID(), gofakeit.UUID(), gofakeit.UUID()
+	seedBlock(
+		t,
+		dbc,
+		sorting,
+		"sorting",
+		`{"content":"Order.","items":[{"id":"","description":"One","position":1},{"id":"","description":"Two","position":2}],"scoring":"partial"}`,
+	)
+	seedBlock(
+		t,
+		dbc,
+		quiz,
+		"quiz",
+		`{"question":"Q","options":[{"id":"","text":"A","correct":true},{"id":"","text":"B","correct":false}]}`,
+	)
+	seedBlock(
+		t,
+		dbc,
+		todo,
+		"checklist",
+		`{"content":"Do.","items":[{"id":"","description":"x"},{"id":"","description":"y"}]}`,
+	)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, _ := blockRow(t, dbc, sorting)
+	assert.Equal(t, []string{"item_0", "item_1"}, itemIDs(t, data, "items"))
+	assert.Contains(t, data, `"description":"One"`, "nothing else about the item changed")
+	_, data, _ = blockRow(t, dbc, quiz)
+	assert.Equal(t, []string{"option_0", "option_1"}, itemIDs(t, data, "options"), "named by place, as the editor does")
+	_, data, _ = blockRow(t, dbc, todo)
+	assert.Equal(t, []string{"item_0", "item_1"}, itemIDs(t, data, "items"))
+}
+
+// Ids the author or the editor gave are kept, and a new one never repeats one.
+func TestAssignItemIDs_KeepsWhatIsThereAndNeverRepeats(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	id := gofakeit.UUID()
+	seedBlock(
+		t,
+		dbc,
+		id,
+		"sorting",
+		`{"items":[{"id":"keep","description":"A","position":1},{"id":"","description":"B","position":2},{"id":"item_1","description":"C","position":3}]}`,
+	)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, _ := blockRow(t, dbc, id)
+	ids := itemIDs(t, data, "items")
+	assert.Equal(t, "keep", ids[0])
+	assert.Equal(t, "item_1", ids[2])
+	assert.NotEmpty(t, ids[1])
+	assert.Len(t, map[string]bool{ids[0]: true, ids[1]: true, ids[2]: true}, 3, "every id is different")
+}
+
+func TestAssignItemIDs_LeavesFineAndUnreadableBlocksAloneAndIsRepeatable(t *testing.T) {
+	dbc := m20260827_setupDBThrough(t, "20260906000000")
+	fine, broken := gofakeit.UUID(), gofakeit.UUID()
+	const fineData = `{"items":[{"id":"a","description":"A","position":1}]}`
+	seedBlock(t, dbc, fine, "sorting", fineData)
+	seedBlock(t, dbc, broken, "sorting", `not json`)
+
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+	require.NoError(t, m20260907000000_up(context.Background(), dbc))
+
+	_, data, _ := blockRow(t, dbc, fine)
+	assert.JSONEq(t, fineData, data)
+	_, data, _ = blockRow(t, dbc, broken)
+	assert.Equal(t, "not json", data)
+}

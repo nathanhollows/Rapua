@@ -750,6 +750,11 @@ func docToBlock(doc game.BlockDoc, ownerID string, ordering int) (blocks.Block, 
 	if err := block.ParseData(); err != nil {
 		return nil, fmt.Errorf("parse data for block type %q: %w", blockType, err)
 	}
+	if assigner, ok := block.(blocks.IDAssigner); ok {
+		if err := assigner.AssignMissingIDs(); err != nil {
+			return nil, fmt.Errorf("assign item ids for block type %q: %w", blockType, err)
+		}
+	}
 	return block, nil
 }
 
