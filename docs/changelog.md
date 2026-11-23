@@ -94,6 +94,7 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 - The "Unlocked" badge on the objective reveal view.
 - The "manage groups" editor, replaced by the quest tree.
 - Creating an objective by duplicating a marker's coordinates from another quest.
+- The Quickstart bar and its guide. Its steps (create an instance, add a team, update settings) no longer matched how the app works. The upgrade drops the "dismissed" flag it kept on each quest.
 - **Breaking:** the full-width option on image blocks, added in 7.0.0. The upgrade clears the setting from existing images.
 - **Breaking:** the small option on toggle text blocks. The upgrade clears the setting from existing blocks.
 - **Breaking:** the scale option on rating blocks. Every rating is out of five, and the upgrade clears the setting from existing blocks.

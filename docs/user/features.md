@@ -68,7 +68,6 @@ Rapua includes a point system that can be used to:
 ---
 
 ### What’s Next?
-- **[Quickstart Guide](/docs/user/quickstart)**: Learn how to set up Rapua and create your first game.  
 - **[Contact](mailto:nathan@rapua.nz)**: Share feedback or get in touch for support.
 
 Rapua makes learning an adventure. Dive in and start creating today!

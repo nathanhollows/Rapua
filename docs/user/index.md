@@ -16,7 +16,6 @@ I designed Rapua to scale from small groups to hundreds of participants with no 
 
 These user docs are designed to help you get started with Rapua. They cover everything from creating your first game to managing participants and analysing results.
 
-- [Quick Start Guide](/docs/user/quickstart): Create your first game in minutes.
 - [Features](/docs/user/features): Learn about the core features of Rapua.
 <!-- - [Game Design](/docs/user/gamedesign): Explore the different types of games you can create with Rapua. -->
 <!-- - [Managing Participants](/docs/user/participants): Learn how to manage participants in your games. -->
@@ -28,6 +27,6 @@ These user docs are designed to help you get started with Rapua. They cover ever
 ---
 
 ### What's Next?
-- Follow the [quick start guide](/docs/user/quickstart) to create your first game.
+- See how a quest fits together in [Sections](/docs/user/sections).
 - Learn more about the core [Features](/docs/user/features)
 - Need help? Contact me at [nathan@rapua.nz](mailto:nathan@rapua.nz)

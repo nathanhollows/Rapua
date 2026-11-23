@@ -51,7 +51,6 @@ The central table representing a game instance or template. (Was `Instance`.)
 | template_id | string | ID of the template this quest was created from (if any) |
 | start_time | time | When the quest is scheduled to start |
 | end_time | time | When the quest is scheduled to end |
-| is_quick_start_dismissed | bool | Whether the quickstart guide has been dismissed |
 
 `Status` (Scheduled/Active/Closed) is computed from `start_time`/`end_time` via `Quest.GetStatus()` — it is not a column.
 

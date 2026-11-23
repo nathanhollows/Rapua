@@ -14,7 +14,7 @@ Outline the logistics of the game:
 
 - **Purpose & Audience** - Define the game’s objectives and target participants.
 - **Choose Places** - Define where the game will take place.
-- **Movement & Flow** - Determine how players will [navigate the space](/docs/user/quickstart#step-4-update-game-settings).
+- **Movement & Flow** - Determine how players will [navigate the space](/docs/user/sections).
 - **Supervised or Unsupervised?** - Decide if any objective needs a facilitator or an activity of its own.
 - **Staffing** - Plan required personnel for support and oversight.
 - **Resources & Budget** - Allocate necessary materials and funding.
