@@ -15,6 +15,6 @@ Unlike quiz or password blocks, any non-empty response is accepted. If points ar
 
 ## Notes
 
-- Responses cannot be changed once submitted
+- A response can be edited after it is sent: an "Edit answer" button reopens it, and saving needs a change. Points are awarded once
 - The submitted response is displayed back to the player as a blockquote
 - The prompt field supports [Markdown](/docs/user/markdown-guide) for rich text formatting

@@ -39,6 +39,9 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 - Quest tree: see, drag, publish and park the whole quest at once. Each section has a rule pill for its routing and completion band. A live lint panel flags problems on the row they belong to.
 - Players see at most two sections deep; anything deeper passes through.
 - New blocks: Map, Free Text, Choice, Scan, and Location check (stand inside an area you draw).
+- Redesigned blocks: every interactive block shares one raised card with a points and done pill, so a right answer, a wrong one, and a status message each look the same wherever they appear.
+- A wrong Location check says roughly how far off it was, in rounded steps ("about 100 m away"), so players can tell they are getting closer.
+- Free text answers can be edited after they are sent. Pincodes can be any length, and long ones wrap to two rows.
 - Any short code can be rendered as a QR image.
 - Join a run by opening a link with the run code in it.
 - The event stream also records what a failed attempt carried. The player's journal is built from it.

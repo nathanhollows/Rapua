@@ -10,10 +10,10 @@ The sorting block allows you to create a list of items that participants need to
 
 ## Features
 
-- **Drag-and-drop interface** makes it easy for participants to reorder items
+- **Drag by the handle** to reorder items. The handle follows a finger or a mouse, and a long item has the whole row to itself
 - **Multiple scoring options** for different gameplay needs
 - **Deterministic shuffling** ensures each player sees a consistent shuffle
-- **Up/down buttons** provide alternative reordering method for accessibility
+- **Keyboard reordering** is built into the handle: focus it and press the up or down arrow key
 
 ## Scoring Schemes
 

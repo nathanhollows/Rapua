@@ -10,7 +10,7 @@ The pincode block allows you to require participants to enter a numeric code to 
 
 ## Notes
 
-- The pincode is numeric only and can be any length.
+- The pincode is numeric only and can be any length. Players get one box per digit, and codes longer than six digits wrap to two rows so each box stays big enough to tap.
     - For alphanumeric codes, consider using a [Password Block](/docs/user/blocks/password) instead.
 - Future development will include the ability to set a maximum number of attempts before the block is marked as incorrect. To see progress on or to show support for this feature, check out the [GitHub issue](https://github.com/nathanhollows/Rapua/issues/37)
 

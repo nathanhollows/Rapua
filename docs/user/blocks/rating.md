@@ -14,8 +14,9 @@ The rating block enables participants to provide star ratings for feedback or as
 ## Configuration
 
 - **Prompt**: The question or statement participants are rating
-- **Max Rating**: Configure the rating scale (3-10 stars, default: 5)
 - **Points**: Award points when participants submit their rating (all ratings award equal points)
+
+Every rating is out of five stars.
 
 ## Notes
 

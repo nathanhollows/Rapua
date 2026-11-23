@@ -18,7 +18,3 @@ This block is useful for optional or supplementary content that you don't want t
 - **Explanations** — reveal the answer or reasoning after a checkpoint is complete
 
 Content is formatted using Markdown. Check out the [Markdown Guide](/docs/user/markdown-guide) for more information.
-
-## Options
-
-**Small text** — renders the content in a smaller, more subdued style. Useful for references or fine print that is supplementary rather than central to the experience.
