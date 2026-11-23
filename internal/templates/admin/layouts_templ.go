@@ -905,7 +905,7 @@ func nav(user models.User, section string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</div><div class=\"dropdown dropdown-end hidden lg:inline-block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-circle tooltip tooltip-bottom\" data-tip=\"Account\" aria-label=\"Account\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 74, "</div><div class=\"dropdown dropdown-end hidden lg:inline-block\"><div tabindex=\"0\" role=\"button\" class=\"btn btn-ghost btn-circle tooltip tooltip-bottom\" data-tip=\"Account\" aria-label=\"Account\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -943,7 +943,7 @@ func questSwitchButton(quest models.Quest, section string) templ.Component {
 			templ_7745c5c3_Var30 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		var templ_7745c5c3_Var31 = []any{"btn tooltip tooltip-bottom flex-nowrap min-w-0 max-w-full rounded-full", templ.KV("btn-active", section == "Quests")}
+		var templ_7745c5c3_Var31 = []any{"btn btn-ghost tooltip tooltip-bottom flex-nowrap min-w-0 max-w-full rounded-full", templ.KV("btn-active", section == "Quests")}
 		templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var31...)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

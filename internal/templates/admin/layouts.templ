@@ -466,7 +466,7 @@ templ nav(user models.User, section string) {
 					@questSwitcher(user, section)
 				</div>
 				<div class="dropdown dropdown-end hidden lg:inline-block">
-					<div tabindex="0" role="button" class="btn btn-circle tooltip tooltip-bottom" data-tip="Account" aria-label="Account">
+					<div tabindex="0" role="button" class="btn btn-ghost btn-circle tooltip tooltip-bottom" data-tip="Account" aria-label="Account">
 						@icon("user", templ.Attributes{"class": "w-5 h-5"})
 					</div>
 					<ul
@@ -492,7 +492,7 @@ templ nav(user models.User, section string) {
 templ questSwitchButton(quest models.Quest, section string) {
 	<button
 		tabindex="0"
-		class={ "btn tooltip tooltip-bottom flex-nowrap min-w-0 max-w-full rounded-full", templ.KV("btn-active", section == "Quests") }
+		class={ "btn btn-ghost tooltip tooltip-bottom flex-nowrap min-w-0 max-w-full rounded-full", templ.KV("btn-active", section == "Quests") }
 		if quest.ID != "" {
 			data-tip={ questSwitchTitle(quest) }
 			if quest.GetStatus() == models.Scheduled && !quest.StartTime.IsZero() {
