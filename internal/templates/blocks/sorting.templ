@@ -351,9 +351,6 @@ templ sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, click from:#form-%s delay:100ms, change from:#form-%s delay:100ms, save delay:500ms", block.ID, block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Scoring Scheme</legend>
 			<select class="select w-full" name="scoring">

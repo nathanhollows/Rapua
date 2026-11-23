@@ -627,7 +627,7 @@ func EditObjective(data EditObjectiveData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"panel cs-panel cs-task\"><div class=\"ct-panel\"><fieldset class=\"fieldset w-full\"><legend class=\"fieldset-legend\">Task</legend> <input type=\"text\" id=\"title\" name=\"title\" form=\"edit-objective\" class=\"input input-lg w-full font-semibold\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<div class=\"panel cs-panel cs-task\"><div class=\"ct-panel cf-fields\"><fieldset class=\"fieldset w-full\"><legend class=\"fieldset-legend\">Task</legend> <input type=\"text\" id=\"title\" name=\"title\" form=\"edit-objective\" class=\"input input-lg w-full font-semibold\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

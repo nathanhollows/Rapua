@@ -101,9 +101,6 @@ templ clueAdmin(settings models.QuestSettings, block blocks.ClueBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea) delay:500ms, keyup from:(#form-%s input) delay:500ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointCostField(block.Points)
-		}
 		@TextareaField(clueTextarea.SetValue(block.DescriptionText))
 		@TextareaField(clueRevealTextarea.SetValue(block.ClueText))
 		@TextInputField(clueButtonTextInput.SetValue(block.ButtonLabel))

@@ -734,12 +734,6 @@ func geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.EnablePoints {
-			templ_7745c5c3_Err = adminPointsField(block.Points).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
 		templ_7745c5c3_Err = TextareaField(geofencePromptTextarea.SetValue(block.Prompt)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -751,33 +745,33 @@ func geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) te
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(geofenceAreaJSON(block))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 177, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 174, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"><div class=\"flex items-center gap-2 mb-2\"><div class=\"join shadow\"><button type=\"button\" class=\"btn btn-xs join-item btn-active\" data-geofence-tool=\"pin\">Pin</button> <button type=\"button\" class=\"btn btn-xs join-item\" data-geofence-tool=\"shape\">Shape</button></div><button type=\"button\" class=\"btn btn-xs btn-error shadow hidden\" data-geofence-clear data-geofence-shape-only>Clear</button></div><div class=\"relative\"><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "\"><div class=\"flex items-center gap-2 mb-2\"><div class=\"join shadow\"><button type=\"button\" class=\"btn btn-xs join-item btn-active\" data-geofence-tool=\"pin\">Pin</button> <button type=\"button\" class=\"btn btn-xs join-item\" data-geofence-tool=\"shape\">Shape</button></div><button type=\"button\" class=\"btn btn-xs btn-error shadow hidden\" data-geofence-clear data-geofence-shape-only>Clear</button></div><div class=\"relative map-frame\"><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("geofence-map-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 187, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 184, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\" class=\"geofence-map-uninit w-full h-64 rounded-box overflow-hidden bg-base-300\" data-form-id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\" class=\"geofence-map-uninit w-full h-64 overflow-hidden bg-base-300\" data-form-id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 189, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 186, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 		if templ_7745c5c3_Err != nil {
@@ -790,7 +784,7 @@ func geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) te
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.ResolveAttributeValue(geofenceAreaJSON(block))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 190, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 187, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var37)
 		if templ_7745c5c3_Err != nil {
@@ -804,76 +798,122 @@ func geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</div></div><div class=\"flex items-center justify-end mt-2\"><span class=\"badge badge-neutral badge-sm font-mono\" data-geofence-readout></span></div><p class=\"fieldset-label hidden text-error\" data-geofence-warning></p><div data-geofence-pin-only><label class=\"fieldset-label\">How close counts</label><div class=\"flex items-center gap-4\"><input type=\"range\" min=\"5\" max=\"500\" step=\"5\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "</div></div><span class=\"map-chip\" data-geofence-readout></span><p class=\"label hidden text-error\" data-geofence-warning></p><div data-geofence-pin-only class=\"mt-4\"><div class=\"fieldset-legend\">How close counts <span class=\"val-pill\" data-geofence-radius-value>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var38 string
-		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.ResolveAttributeValue(geofenceRadiusValue(block))
+		templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(geofenceRadiusValue(block))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 211, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 201, Col: 83}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var38)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "\" class=\"range range-primary range-sm grow\" data-geofence-radius></div></div><p class=\"fieldset-label\" data-geofence-shape-only>Click the map to drop corners, then click the first one again to close the shape. Drag a corner to move it.</p></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Accuracy limit</legend> <label class=\"input w-full\"><input type=\"number\" name=\"max_accuracy\" min=\"1\" step=\"1\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, " m</span></div><input type=\"range\" min=\"5\" max=\"500\" step=\"5\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var39 string
-		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(geofenceAccuracyValue(block))
+		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(geofenceRadiusValue(block))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 229, Col: 41}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 208, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" placeholder=\"50\" class=\"grow\"> <span class=\"opacity-60\">metres</span></label><p class=\"fieldset-label\">A reading vaguer than this is refused rather than guessed at. Good outdoor GPS lands within 10 m; under cover or indoors it can exceed 50 m, so raise it there rather than leaving players stuck.</p></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">What players see</legend> <select name=\"map_mode\" class=\"select w-full\"><option value=\"button\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" class=\"range range-primary range-sm w-full\" data-geofence-radius></div><p class=\"fieldset-label\" data-geofence-shape-only>Click the map to drop corners, then click the first one again to close the shape. Drag a corner to move it.</p></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">How exact the phone has to be</legend> <select name=\"max_accuracy\" class=\"select w-full\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		for _, option := range geofenceAccuracyOptions(block) {
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<option value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var40 string
+			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Value)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 221, Col: 33}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var40)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if option.Selected {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, " selected")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, ">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var41 string
+			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(option.Label)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 221, Col: 80}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "</option>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</select><p class=\"label\">A reading vaguer than this is refused rather than guessed at. Pick the place players will be standing: indoors a phone often cannot do better than 50 m, so a tighter limit there leaves them stuck.</p></fieldset><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">What players see</legend> <select name=\"map_mode\" class=\"select w-full\"><option value=\"button\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.MapMode != blocks.GeofenceMapShow && block.MapMode != blocks.GeofenceMapArea {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, ">Just a button</option> <option value=\"map\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, ">Just a button</option> <option value=\"map\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.MapMode == blocks.GeofenceMapShow {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, ">Live map of their position</option> <option value=\"map_area\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, ">Live map of their position</option> <option value=\"map_area\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if block.MapMode == blocks.GeofenceMapArea {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, " selected")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, " selected")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, ">Live map with the target area shown</option></select><p class=\"fieldset-label\">\"Just a button\" keeps the target hidden, so finding it is part of the challenge. The map options turn on the player's live GPS position; \"with the target area\" also draws the area itself, guiding them there.</p></fieldset></form><script src=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, ">Live map with the target area shown</option></select><p class=\"fieldset-label\">\"Just a button\" keeps the target hidden, so finding it is part of the challenge. The map options turn on the player's live GPS position; \"with the target area\" also draws the area itself, guiding them there.</p></fieldset></form><script src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var40 string
-		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.ResolveAttributeValue(assets.URL("/static/js/geofence-picker.js"))
+		var templ_7745c5c3_Var42 string
+		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.ResolveAttributeValue(assets.URL("/static/js/geofence-picker.js"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 253, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/geofence.templ`, Line: 242, Col: 58}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var40)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var42)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\" defer></script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "\" defer></script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -909,11 +949,48 @@ func geofenceMapAreaJSON(block blocks.GeofenceBlock) string {
 	return geofenceAreaJSON(block)
 }
 
-func geofenceAccuracyValue(block blocks.GeofenceBlock) string {
-	if block.MaxAccuracy <= 0 {
-		return ""
+// geofenceAccuracyChoices are the limits an author picks between, named by where
+// the players will be, which is what decides how good a phone's reading can be.
+var geofenceAccuracyChoices = []struct {
+	Metres float64
+	Label  string
+}{
+	{10, "10 m: outdoors, open sky"},
+	{25, "25 m: outdoors, between buildings or under trees"},
+	{50, "50 m: indoors, or under cover"},
+	{100, "100 m: deep inside a building"},
+}
+
+type geofenceAccuracyOption struct {
+	Value    string
+	Label    string
+	Selected bool
+}
+
+// geofenceAccuracyOptions lists the choices with the block's own limit marked.
+// A limit that is not one of them (an imported game can hold any number) is kept
+// as an extra entry rather than silently rewritten on the next save. A block with
+// no limit set uses the server's default, so that is what is shown.
+func geofenceAccuracyOptions(block blocks.GeofenceBlock) []geofenceAccuracyOption {
+	current := block.MaxAccuracy
+	if current <= 0 {
+		current = blocks.DefaultMaxAccuracy
 	}
-	return fmt.Sprintf("%g", block.MaxAccuracy)
+	options := make([]geofenceAccuracyOption, 0, len(geofenceAccuracyChoices)+1)
+	matched := false
+	for _, choice := range geofenceAccuracyChoices {
+		isCurrent := choice.Metres == current
+		matched = matched || isCurrent
+		options = append(options, geofenceAccuracyOption{
+			Value: fmt.Sprintf("%g", choice.Metres), Label: choice.Label, Selected: isCurrent,
+		})
+	}
+	if !matched {
+		options = append(options, geofenceAccuracyOption{
+			Value: fmt.Sprintf("%g", current), Label: fmt.Sprintf("%g m: set elsewhere", current), Selected: true,
+		})
+	}
+	return options
 }
 
 // The browser needs a threshold even when the author left one unset, and it has to

@@ -125,7 +125,8 @@ func TestEditObjective_ChooserTargetsItsSection(t *testing.T) {
 	assert.Contains(t, html, `data-bsearch`, "and can be searched")
 }
 
-// The points picker offers these, and the page hides the real field it writes to.
+// The points picker offers these, and the input it writes to is its own: no
+// block form carries a points field for the picker to reach into.
 func TestEditObjective_PointsPickerOffersThePresets(t *testing.T) {
 	proof, reveal := sampleBlocks()
 	html := renderEditorWith(t, proof, reveal, models.QuestSettings{EnablePoints: true})
@@ -133,7 +134,8 @@ func TestEditObjective_PointsPickerOffersThePresets(t *testing.T) {
 	for _, v := range []string{"0", "1", "2", "5", "10", "20", "50", "100"} {
 		assert.Contains(t, html, `data-set="`+v+`"`)
 	}
-	assert.Contains(t, html, `points-field`, "so the stylesheet can hide the field the pill writes to")
+	assert.Contains(t, html, `data-pt-input`, "the picker owns the input it writes to")
+	assert.NotContains(t, html, `points-field`)
 }
 
 // An empty proof offers templates for the common things a player is asked to

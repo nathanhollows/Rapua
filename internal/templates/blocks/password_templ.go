@@ -336,12 +336,6 @@ func passwordAdmin(settings models.QuestSettings, block blocks.PasswordBlock) te
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.EnablePoints {
-			templ_7745c5c3_Err = adminPointsField(block.GetPoints()).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
 		templ_7745c5c3_Err = TextareaField(passwordPromptTextarea.SetValue(block.Prompt)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

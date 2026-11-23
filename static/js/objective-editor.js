@@ -13,6 +13,7 @@
 	const LIST_PATH = /^\/admin\/blocks\/(kit|reorder|[^/]+\/move)?$/;
 	// Long enough to read the message before the page resyncs.
 	const RELOAD_DELAY = 1800;
+	const SAVE_DELAY = 400;
 
 	// A page has one section (a system page) or several (an objective's proof and reveal).
 	// The task has a section too, but no blocks to edit.
@@ -29,7 +30,7 @@
 	const phoneList = (zone) => q('[data-block-list]', q(`[data-preview="${zone}"]`) || document.createElement('div'));
 
 	function pointsInput(id) {
-		return q('.points-field input[name="points"]', blockForm(id) || document.createElement('div'));
+		return q('[data-pt-input]', blockForm(id) || document.createElement('div'));
 	}
 
 	// Scrolls the rail itself, never the page, so a click in the preview does not jerk the editor.
@@ -69,6 +70,8 @@
 			scrollRailTo(zone, row);
 			const form = blockForm(key);
 			form.hidden = false;
+			// A map started while its form was hidden has no size to fit, so ask it to measure again.
+			requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
 			const position = q('[data-pos]', form);
 			if (position) position.textContent = `${sec.dataset.name} · ${list.indexOf(key) + 1} of ${list.length}`;
 			refreshPointsPill(key);
@@ -139,13 +142,28 @@
 		q('.pt-input', wrap).classList.toggle('is-custom', !presets.some((chip) => parseInt(chip.dataset.set, 10) === value));
 	}
 
-	// The block's own points field is what saves, so the picker writes to it.
+	// The points input sits in the header, outside the block's form, and every block's form listens for
+	// different events (some only keyup, some a custom save). So the header sends the form itself, as the
+	// form's own hx-put would, once the value stops changing.
+	const saveTimers = {};
+	function saveBlockForm(id) {
+		const form = q('form[hx-put]', blockForm(id) || document.createElement('div'));
+		if (!form || !window.htmx) return;
+		clearTimeout(saveTimers[id]);
+		saveTimers[id] = setTimeout(() => {
+			window.htmx.ajax('PUT', form.getAttribute('hx-put'), { source: form, swap: 'none' });
+		}, SAVE_DELAY);
+	}
+
+	// The picker writes to the header's own points input, which the form's request includes.
 	function setPoints(id, value) {
 		const input = pointsInput(id);
 		if (!input) return;
-		input.value = Math.max(0, parseInt(value, 10) || 0);
-		input.dispatchEvent(new Event('input', { bubbles: true }));
-		input.dispatchEvent(new Event('change', { bubbles: true }));
+		// A cost is always taken off, so a positive number typed for it is read as the same amount negative.
+		const wanted = parseInt(value, 10) || 0;
+		const costs = q('[data-pt-wrap]', blockForm(id))?.hasAttribute('data-cost');
+		input.value = costs ? -Math.abs(wanted) : Math.max(0, wanted);
+		saveBlockForm(id);
 		const item = railItem(id);
 		if (item) item.dataset.pts = input.value;
 		totals();
@@ -244,6 +262,36 @@
 			if (!el || el._sortable) return;
 			el._sortable = new window.Sortable(el, dragOptions('.rl-item'));
 		});
+	}
+
+	// A list of rows inside a block's form (a choice's options). Reordering changes the form, so it
+	// saves the way any other edit does: by telling the form it changed.
+	function bindRows() {
+		if (!window.Sortable) return;
+		qa('[data-rows]').forEach((list) => {
+			if (list._sortable) return;
+			list._sortable = new window.Sortable(list, {
+				animation: 150,
+				handle: '.rows-grip',
+				draggable: '.rows-item',
+				ghostClass: 'sortable-ghost',
+				disabled: locked(),
+				onEnd: () => list.closest('form').dispatchEvent(new Event('change')),
+			});
+		});
+	}
+
+	// The handle is a button, so the keyboard can move the row it belongs to.
+	function moveRowWithKeys(evt) {
+		const grip = evt.target.closest?.('.rows-grip');
+		if (!grip || (evt.key !== 'ArrowUp' && evt.key !== 'ArrowDown')) return;
+		evt.preventDefault();
+		const row = grip.closest('.rows-item');
+		const swap = evt.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
+		if (!swap) return;
+		if (evt.key === 'ArrowUp') swap.before(row); else swap.after(row);
+		grip.focus();
+		row.closest('form').dispatchEvent(new Event('change'));
 	}
 
 	function bindPhone(pane) {
@@ -376,6 +424,7 @@
 
 		document.addEventListener('keydown', (evt) => {
 			if (evt.key === 'Escape') qa('.pt-wrap.open').forEach((wrap) => wrap.classList.remove('open'));
+			moveRowWithKeys(evt);
 		});
 
 		document.addEventListener('mouseover', (evt) => {
@@ -398,19 +447,13 @@
 				try { localStorage.setItem(FRAME_KEY, evt.target.checked ? 'on' : 'off'); } catch (err) { /* not saved */ }
 				return;
 			}
-			if (!evt.target.matches?.('.points-field input[name="points"]')) return;
-			const form = evt.target.closest('[data-block-form]');
-			if (!form) return;
-			const item = railItem(form.dataset.blockForm);
-			if (item) item.dataset.pts = evt.target.value;
-			totals();
 		});
 
 		document.body.addEventListener('htmx:afterSwap', (evt) => {
 			const target = evt.detail.target;
 			if (!target || !q('[data-objective-editor]')) return;
 			if (target.matches('[data-preview]')) bindPhone(target);
-			if (target.matches('[data-forms]')) adopt(target);
+			if (target.matches('[data-forms]')) { adopt(target); bindRows(); }
 			railMarkers();
 		});
 		document.body.addEventListener('htmx:oobAfterSwap', railMarkers);
@@ -444,6 +487,7 @@
 		document.body.addEventListener('quest-lock-change', (evt) => {
 			qa('[data-rail]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
 			qa('[data-block-list]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
+			qa('[data-rows]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
 		});
 	}
 
@@ -462,6 +506,7 @@
 		applyFrame(framed);
 		state.selected = {};
 		bindRails();
+		bindRows();
 		totals();
 		railMarkers();
 		zones().forEach((zone) => select(zone, idsIn(zone)[0]));

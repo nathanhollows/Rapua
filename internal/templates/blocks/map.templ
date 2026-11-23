@@ -120,10 +120,10 @@ templ mapAdmin(_ models.QuestSettings, block blocks.MapBlock) {
 		hx-trigger={ fmt.Sprintf("change from:#form-%s delay:800ms", block.ID) }
 		hx-swap="none"
 	>
-		<div class="mb-3 relative">
+		<div class="mb-4 relative map-frame">
 			<div
 				id={ fmt.Sprintf("admin-map-block-%s", block.ID) }
-				class="admin-map-uninit w-full h-56 rounded-box overflow-hidden"
+				class="admin-map-uninit w-full h-60 overflow-hidden"
 				data-lat={ fmt.Sprintf("%.6f", block.Latitude) }
 				data-lng={ fmt.Sprintf("%.6f", block.Longitude) }
 				data-zoom={ fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)) }
@@ -134,7 +134,7 @@ templ mapAdmin(_ models.QuestSettings, block blocks.MapBlock) {
 			></div>
 			<div
 				id={ fmt.Sprintf("map-overlay-%s", block.ID) }
-				class="absolute inset-0 bg-base-300/70 flex justify-center items-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition rounded-box"
+				class="absolute inset-0 bg-base-300/70 flex justify-center items-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition"
 				tabindex="0"
 			>
 				<button
@@ -159,24 +159,9 @@ templ mapAdmin(_ models.QuestSettings, block blocks.MapBlock) {
 				value={ block.Caption }
 			/>
 		</fieldset>
-		<div class="flex gap-3 items-start">
+		<div class="grid grid-cols-2 gap-x-4 items-start">
 			<fieldset class="fieldset">
-				<legend class="fieldset-legend">Show pin</legend>
-				<label class="flex items-center gap-2 mt-1 cursor-pointer">
-					<input
-						type="checkbox"
-						id={ fmt.Sprintf("show-marker-%s", block.ID) }
-						name="show_marker"
-						class="toggle"
-						if !block.HideMarker {
-							checked
-						}
-					/>
-					<span class="label-text">Show map pin</span>
-				</label>
-			</fieldset>
-			<fieldset class="fieldset md:w-1/2">
-				<legend class="fieldset-legend">Zoom Level</legend>
+				<legend class="fieldset-legend">Zoom level</legend>
 				<label class="input validator">
 					<input
 						id={ fmt.Sprintf("zoom-input-%s", block.ID) }
@@ -189,8 +174,11 @@ templ mapAdmin(_ models.QuestSettings, block blocks.MapBlock) {
 						step="0.5"
 					/>
 				</label>
-				<span class="label">Higher = closer view (1–20)</span>
+				<span class="label">1 to 20. Higher is closer.</span>
 			</fieldset>
+			<div class="pt-6">
+				@adminSwitch("show_marker", "Show the pin", "Marks the centre of the map.", !block.HideMarker, templ.Attributes{"id": fmt.Sprintf("show-marker-%s", block.ID)})
+			</div>
 		</div>
 	</form>
 	<script>

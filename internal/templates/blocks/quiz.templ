@@ -179,6 +179,28 @@ templ quizCard(settings models.QuestSettings, block blocks.QuizBlock, data block
 	</div>
 }
 
+// quizMultipleChoiceScript turns the answer marks between radios and checkboxes
+// as the switch moves, so the form shows what the block will do before it saves.
+const quizMultipleChoiceScript = `on change
+	set :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')
+	if I match <:checked /> then
+		add .checkbox to :inputs
+		add .checkbox-sm to :inputs
+		add .checkbox-success to :inputs
+		remove .radio from :inputs
+		remove .radio-sm from :inputs
+		remove .radio-success from :inputs
+		set @type of :inputs to 'checkbox'
+	else
+		add .radio to :inputs
+		add .radio-sm to :inputs
+		add .radio-success to :inputs
+		remove .checkbox from :inputs
+		remove .checkbox-sm from :inputs
+		remove .checkbox-success from :inputs
+		set @type of :inputs to 'radio'
+	end`
+
 var quizQuestionTextarea = TextareaParams{
 	Name:        "question",
 	Title:       "Question",
@@ -203,61 +225,13 @@ templ quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input[type=number]) delay:500ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID) }
 		hx-swap="none"
 	>
-		// Points setting
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		// Question field
 		@TextareaField(quizQuestionTextarea.SetValue(block.Question))
 		// Answer type selection
-		<div class="flex flex-col gap-2 my-3">
-			<label class="label w-full flex justify-between">
-				Multiple choice
-				<input
-					type="checkbox"
-					name="multiple_choice"
-					class="toggle"
-					checked?={ block.MultipleChoice }
-					_="on change
-					set :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')
-					if I match <:checked /> then
-						add .checkbox to :inputs
-						add .checkbox-sm to :inputs
-						add .checkbox-success to :inputs
-						remove .radio from :inputs
-						remove .radio-sm from :inputs
-						remove .radio-success from :inputs
-						set @type of :inputs to 'checkbox'
-					else
-						add .radio to :inputs
-						add .radio-sm to :inputs
-						add .radio-success to :inputs
-						remove .checkbox from :inputs
-						remove .checkbox-sm from :inputs
-						remove .checkbox-success from :inputs
-						set @type of :inputs to 'radio'
-					end
-				"
-				/>
-			</label>
-			<label class="label w-full flex justify-between">
-				Randomise Order
-				<input
-					type="checkbox"
-					name="randomise_order"
-					class="toggle"
-					checked?={ block.RandomizeOrder }
-				/>
-			</label>
-			<label class="label w-full flex justify-between">
-				Multiple Attempts
-				<input
-					type="checkbox"
-					name="allow_retry"
-					class="toggle"
-					checked?={ block.RetryEnabled }
-				/>
-			</label>
+		<div class="flex flex-col gap-3 mb-5">
+			@adminSwitch("multiple_choice", "Multiple choice", "Players can pick more than one answer.", block.MultipleChoice, templ.Attributes{"_": quizMultipleChoiceScript})
+			@adminSwitch("randomise_order", "Randomise the order", "Each player sees the answers in a different order.", block.RandomizeOrder, templ.Attributes{})
+			@adminSwitch("allow_retry", "Allow more than one attempt", "A wrong answer can be tried again.", block.RetryEnabled, templ.Attributes{})
 		</div>
 		// Answer options
 		<fieldset class="fieldset">

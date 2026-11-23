@@ -14,6 +14,25 @@ import (
 
 var pointPresets = []int{0, 1, 2, 5, 10, 20, 50, 100}
 
+// blockCostsPoints is true for a block that takes points off rather than giving
+// them. A clue is paid for, so its header picker offers the same values as a cost.
+func blockCostsPoints(block blocks.Block) bool {
+	_, isClue := block.(*blocks.ClueBlock)
+	return isClue
+}
+
+// pointPresetsFor is the picker's values: the usual ones, negated for a cost.
+func pointPresetsFor(block blocks.Block) []int {
+	if !blockCostsPoints(block) {
+		return pointPresets
+	}
+	costs := make([]int, len(pointPresets))
+	for i, value := range pointPresets {
+		costs[i] = -value
+	}
+	return costs
+}
+
 // blockIsInteractive matches the split the variable controls make, so the list
 // and the lock agree.
 func blockIsInteractive(block blocks.Block) bool {
@@ -193,8 +212,9 @@ templ objectiveRailItem(settings models.QuestSettings, block blocks.Block) {
 	</button>
 }
 
-// objectiveBlockForm edits points through the block's ordinary (hidden) points
-// field, which the header pill writes to, so saving needs nothing new.
+// objectiveBlockForm keeps a block's points in one place: the header's picker
+// owns the points input, and the form attribute sends it with the block's own
+// form. The block's template says nothing about points.
 templ objectiveBlockForm(settings models.QuestSettings, block blocks.Block, z zoneWords) {
 	<div class="cf-form" data-block-form={ block.GetID() } data-zone={ z.Param } hidden>
 		<div class="cf-head">
@@ -206,26 +226,37 @@ templ objectiveBlockForm(settings models.QuestSettings, block blocks.Block, z zo
 				<b>{ block.GetName() }</b>
 			</span>
 			<span class="grow"></span>
-			<span class="pt-wrap" data-pt-wrap hidden>
+			<span class="pt-wrap" data-pt-wrap data-cost?={ blockCostsPoints(block) } hidden>
+				if block.RequiresValidation() {
+					<input type="hidden" name="points" form={ "form-" + block.GetID() } value={ fmt.Sprint(block.GetPoints()) } data-pt-input/>
+				}
 				<button type="button" class="pt-btn" data-pt aria-haspopup="true">
 					<span data-pt-label>{ fmt.Sprint(block.GetPoints()) } pts</span>
 					@icon("chevron-down", templ.Attributes{"class": "w-3 h-3", "width": "12", "height": "12"})
 				</button>
 				<div class="pt-pop" role="dialog" aria-label="Points">
-					<span class="kicker">Points</span>
+					if blockCostsPoints(block) {
+						<span class="kicker">Cost</span>
+					} else {
+						<span class="kicker">Points</span>
+					}
 					<div class="pt-chips">
-						for _, v := range pointPresets {
+						for _, v := range pointPresetsFor(block) {
 							<button type="button" data-set={ fmt.Sprint(v) }>{ fmt.Sprint(v) }</button>
 						}
 					</div>
 					<div class="pt-custom">
 						<label class="lbl" for={ "pc-" + block.GetID() }>Custom</label>
 						<label class="input pt-input">
-							<input id={ "pc-" + block.GetID() } type="number" min="0" data-custom aria-label="Custom points"/>
+							<input id={ "pc-" + block.GetID() } type="number" data-custom aria-label="Custom points"/>
 							<span>pts</span>
 						</label>
 					</div>
-					<p class="pt-note">Any whole number. 0 gives no points.</p>
+					if blockCostsPoints(block) {
+						<p class="pt-note">Taken from the team when they reveal the clue. 0 costs nothing.</p>
+					} else {
+						<p class="pt-note">Any whole number. 0 gives no points.</p>
+					}
 				</div>
 			</span>
 			<span data-del-wrap>

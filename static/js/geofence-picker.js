@@ -213,7 +213,7 @@
 			area: parseArea(input.value),
 		};
 
-		picker.accuracyInput = form.querySelector('input[name="max_accuracy"]');
+		picker.accuracyInput = form.querySelector('[name="max_accuracy"]');
 
 		if (picker.area && picker.area.type === "circle") {
 			picker.radius = picker.area.radius || DEFAULT_RADIUS;
@@ -400,10 +400,13 @@
 		});
 
 		const slider = picker.root.querySelector("[data-geofence-radius]");
+		const sliderValue = picker.root.querySelector("[data-geofence-radius-value]");
 		if (slider) {
 			slider.value = picker.radius;
+			if (sliderValue) sliderValue.textContent = slider.value + " m";
 			slider.addEventListener("input", function () {
 				picker.radius = parseFloat(slider.value);
+				if (sliderValue) sliderValue.textContent = slider.value + " m";
 				render(picker, true);
 			});
 		}

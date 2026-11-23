@@ -143,9 +143,6 @@ templ teamNameChangerAdmin(settings models.QuestSettings, block blocks.TeamNameC
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.GetID(), block.GetID()) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.GetPoints())
-		}
 		@TextInputField(teamNamePromptText.SetValue(block.BlockText))
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Options</legend>

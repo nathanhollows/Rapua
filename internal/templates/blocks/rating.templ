@@ -101,9 +101,6 @@ templ ratingAdmin(settings models.QuestSettings, block blocks.RatingBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.GetPoints())
-		}
 		@TextareaField(ratingPromptTextarea.SetValue(block.Prompt))
 	</form>
 }

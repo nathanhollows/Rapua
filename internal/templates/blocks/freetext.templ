@@ -145,9 +145,6 @@ templ freeTextAdmin(settings models.QuestSettings, block blocks.FreeTextBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.GetPoints())
-		}
 		@TextareaField(freeTextPromptTextarea.SetValue(block.Prompt))
 		@TextInputField(freeTextPlaceholderInput.SetValue(block.Placeholder))
 	</form>

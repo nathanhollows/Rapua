@@ -991,7 +991,9 @@ li.nest-target > .objective-row::after {
 .cs-head .grow { flex: 1; }
 .cs-panel { display: grid; grid-template-columns: 250px minmax(0, 1fr) var(--side); overflow: clip; }
 .cs-task { grid-template-columns: minmax(0, 1fr) var(--side); }
-.ct-panel { padding: 1.25rem 1.5rem .75rem; }
+/* The task panel takes the same field styling as the block forms, with its own padding. */
+.ct-panel.cf-fields { flex: none; padding: 1.25rem 1.5rem .75rem; }
+.cf-fields .input.input-lg { min-height: 3rem; font-size: 1.1rem; }
 .cs-phonecol { display: flex; flex-direction: column; align-items: center; align-self: stretch; gap: .6rem; padding: 1.25rem; border-left: 1px solid var(--line); background: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100)); }
 .cs-prevcol { align-items: stretch; }
 .ct-card { padding: 0; }
@@ -1054,7 +1056,52 @@ li.nest-target > .objective-row::after {
 .cf-title small { color: var(--soft); font-size: .8rem; font-weight: 600; }
 .cf-title b { font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.025em; }
 .cf-fields { flex: 1; padding: .75rem 1.4rem 1.5rem; }
-.cf-fields .points-field { display: none; }
+/* Block form fields. The templates keep daisyUI's names (fieldset, input, textarea, select), so one
+   place restyles every block's form: a label row, a control, a hint, in the same rhythm. */
+.cf-fields .fieldset { display: block; margin: 0 0 1.05rem; padding: 0; border: 0; background: none; font-size: .9rem; }
+.cf-fields .fieldset-legend { display: flex; align-items: center; gap: .4rem; width: 100%; margin: 0 0 .35rem; padding: 0; font-size: .85rem; font-weight: 700; color: var(--color-base-content); }
+/* The Markdown glyph comes before the name in the markup and reads better after it. */
+.cf-fields .fieldset-legend > a { order: 1; display: inline-grid; place-items: center; color: var(--soft); }
+.cf-fields .fieldset-legend > a svg { width: .95rem; height: .95rem; }
+.cf-fields .fieldset-legend .badge { order: 2; margin-left: auto; height: auto; padding: .12rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+.cf-fields .label, .cf-fields .fieldset-label { display: block; margin: .35rem 0 0; padding: 0; font-size: .8rem; line-height: 1.4; font-weight: 500; color: var(--soft); white-space: normal; }
+.cf-fields .input, .cf-fields .select, .cf-fields .textarea { width: 100%; min-height: 2.6rem; border: 1.5px solid var(--line-strong); border-radius: 14px; background-color: var(--color-base-100); box-shadow: none; color: var(--color-base-content); font-size: .9rem; font-weight: 500; }
+.cf-fields .textarea { padding: .65rem .85rem; line-height: 1.5; }
+.cf-fields .textarea.font-mono { font-size: .84rem; }
+.cf-fields .input input { font-weight: 500; }
+/* daisyUI's join is inline-flex, which stretched inside the grid a fieldset used to be and shrinks inside a block. */
+.cf-fields .join.join-vertical { display: flex; width: 100%; }
+/* A field inside a row that is itself styled as a field (quiz answers, checklist items) is not boxed twice. */
+.cf-fields .input .input, .cf-fields .input .textarea { min-height: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; outline: 0; }
+.cf-fields .input:focus-within, .cf-fields .select:focus, .cf-fields .textarea:focus { outline: 2px solid var(--color-base-content); outline-offset: 1px; }
+
+/* A switch with its own words and a line saying what it does. */
+.sw { display: flex; align-items: flex-start; gap: .8rem; cursor: pointer; }
+.sw .toggle { flex: none; margin-top: .05rem; }
+.sw-text b { display: block; font-size: .85rem; font-weight: 700; }
+.sw-text small { display: block; margin-top: .1rem; font-size: .8rem; font-weight: 500; color: var(--soft); }
+
+.val-pill { margin-left: auto; padding: .12rem .6rem; border-radius: 999px; background: color-mix(in oklab, var(--color-primary) 18%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content)); font-size: .8rem; font-weight: 800; }
+
+/* A list of rows the author fills in. Choice uses it now; quiz, sorting and checklist can. */
+.rows { overflow: hidden; border: 1.5px solid var(--line-strong); border-radius: 16px; background: var(--color-base-100); }
+.rows-head, .rows-item { display: grid; grid-template-columns: 1.4rem 1fr 8.5rem 2.1rem; align-items: center; gap: .4rem; padding: .25rem .55rem; }
+.rows-head { padding-block: .45rem; background: color-mix(in oklab, var(--color-base-content) 4.5%, var(--color-base-100)); color: var(--soft); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.rows-item { border-top: 1px solid var(--line); }
+.rows-item.sortable-ghost { opacity: .4; }
+.rows-cell { box-sizing: border-box; width: 100%; min-height: 2.3rem; padding: 0 .55rem; border: 0; border-radius: 10px; background: none; color: var(--color-base-content); font: inherit; font-size: .9rem; line-height: 1.5; }
+.rows-cell.code { color: var(--soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; }
+.rows-cell::placeholder { color: var(--soft); opacity: .7; }
+.rows-cell:focus { outline: 0; background: color-mix(in oklab, var(--color-base-content) 6%, transparent); box-shadow: inset 0 0 0 2px var(--color-base-content); }
+.rows-grip, .rows-rm { display: inline-grid; place-items: center; width: 1.6rem; height: 2rem; border: 0; border-radius: 10px; background: none; color: var(--soft); cursor: grab; }
+.rows-grip svg, .rows-rm svg { width: 1rem; height: 1rem; }
+.rows-rm { width: 2rem; cursor: pointer; }
+.rows-rm:hover { background: color-mix(in oklab, var(--color-error) 14%, var(--color-base-100)); color: var(--color-error); }
+.rows-add { display: flex; align-items: center; justify-content: center; gap: .4rem; width: 100%; padding: .6rem; border: 0; border-top: 1.5px dashed var(--line-strong); background: none; color: var(--soft); font-size: .9rem; font-weight: 700; cursor: pointer; }
+.rows-add svg { width: 1rem; height: 1rem; }
+.rows-add:hover { background: color-mix(in oklab, var(--color-base-content) 4%, transparent); color: var(--color-base-content); }
+.map-frame { overflow: hidden; border: 1.5px solid var(--line-strong); border-radius: 16px; }
+.map-chip { display: inline-block; margin-top: .5rem; padding: .15rem .65rem; border-radius: 999px; background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: var(--soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; font-weight: 600; }
 .cf-foot { margin-top: auto; padding: .8rem 1.4rem 1rem; border-top: 1px solid var(--line); }
 .del-ask { display: inline-flex; align-items: center; gap: .3rem; font-size: .85rem; font-weight: 700; }
 .cf-form .badge-neutral { border: 0; background: color-mix(in oklab, var(--color-base-content) 9%, var(--color-base-100)); color: var(--soft); }

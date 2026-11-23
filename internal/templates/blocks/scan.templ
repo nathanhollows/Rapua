@@ -131,9 +131,6 @@ templ scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		@TextareaField(scanPromptTextarea.SetValue(block.Prompt))
 		<fieldset class="fieldset">
 			<div class="w-full overflow-hidden rounded-2xl border border-base-300">

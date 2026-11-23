@@ -173,29 +173,24 @@ templ photoAdmin(settings models.QuestSettings, block blocks.PhotoBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, input from:#form-%s delay:500ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		@TextareaField(photoTextarea.SetValue(block.Prompt))
-		<fieldset class="fieldset max-w-xs">
-			<legend class="fieldset-legend">Max Images</legend>
-			<div class="flex items-center gap-2">
-				<input
-					type="range"
-					name="max_images"
-					id={ fmt.Sprintf("max-images-%s", block.ID) }
-					min="1"
-					max="5"
-					value={ fmt.Sprint(block.MaxImages) }
-					class="range range-primary flex-1"
-					step="1"
-					_={ fmt.Sprintf("on input set #max-images-output-%s.textContent to my.value", block.ID) }
-				/>
-				<output id={ fmt.Sprintf("max-images-output-%s", block.ID) } class="badge badge-sm badge-primary min-w-[3rem] text-center font-bold">
-					{ fmt.Sprint(block.MaxImages) }
-				</output>
-			</div>
-			<p class="label">Maximum number of photos that can be uploaded</p>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">
+				Max images
+				<output id={ fmt.Sprintf("max-images-output-%s", block.ID) } class="val-pill">{ fmt.Sprint(block.MaxImages) }</output>
+			</legend>
+			<input
+				type="range"
+				name="max_images"
+				id={ fmt.Sprintf("max-images-%s", block.ID) }
+				min="1"
+				max="5"
+				value={ fmt.Sprint(block.MaxImages) }
+				class="range range-primary range-sm w-full"
+				step="1"
+				_={ fmt.Sprintf("on input set #max-images-output-%s.textContent to my.value", block.ID) }
+			/>
+			<p class="label">The most photos a player can upload. They finish the block when they have sent this many.</p>
 		</fieldset>
 	</form>
 }

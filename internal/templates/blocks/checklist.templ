@@ -94,9 +94,6 @@ templ checklistAdmin(settings models.QuestSettings, block blocks.ChecklistBlock)
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, click from:#form-%s delay:100ms, change from:#form-%s delay:100ms", block.ID, block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		@TextareaField(checklistInstructionsTextarea.SetValue(block.Content))
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend justify-start w-full">

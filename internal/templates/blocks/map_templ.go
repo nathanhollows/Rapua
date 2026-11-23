@@ -200,7 +200,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" hx-swap=\"none\"><div class=\"mb-3 relative\"><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\" hx-swap=\"none\"><div class=\"mb-4 relative map-frame\"><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -213,7 +213,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"admin-map-uninit w-full h-56 rounded-box overflow-hidden\" data-lat=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"admin-map-uninit w-full h-60 overflow-hidden\" data-lat=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -317,7 +317,7 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"absolute inset-0 bg-base-300/70 flex justify-center items-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition rounded-box\" tabindex=\"0\"><button type=\"button\" id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"absolute inset-0 bg-base-300/70 flex justify-center items-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition\" tabindex=\"0\"><button type=\"button\" id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -377,56 +377,41 @@ func mapAdmin(_ models.QuestSettings, block blocks.MapBlock) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\"></fieldset><div class=\"flex gap-3 items-start\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Show pin</legend> <label class=\"flex items-center gap-2 mt-1 cursor-pointer\"><input type=\"checkbox\" id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\"></fieldset><div class=\"grid grid-cols-2 gap-x-4 items-start\"><fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Zoom level</legend> <label class=\"input validator\"><input id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var25 string
-		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("show-marker-%s", block.ID))
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("zoom-input-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 168, Col: 50}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 167, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" name=\"show_marker\" class=\"toggle\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if !block.HideMarker {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "> <span class=\"label-text\">Show map pin</span></label></fieldset><fieldset class=\"fieldset md:w-1/2\"><legend class=\"fieldset-legend\">Zoom Level</legend> <label class=\"input validator\"><input id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" type=\"number\" name=\"zoom\" placeholder=\"14\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("zoom-input-%s", block.ID))
+		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 182, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 171, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" type=\"number\" name=\"zoom\" placeholder=\"14\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" min=\"1\" max=\"20\" step=\"0.5\"></label> <span class=\"label\">1 to 20. Higher is closer.</span></fieldset><div class=\"pt-6\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var27 string
-		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.1f", mapZoomOrDefault(block.Zoom)))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/map.templ`, Line: 186, Col: 63}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
+		templ_7745c5c3_Err = adminSwitch("show_marker", "Show the pin", "Marks the centre of the map.", !block.HideMarker, templ.Attributes{"id": fmt.Sprintf("show-marker-%s", block.ID)}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" min=\"1\" max=\"20\" step=\"0.5\"></label> <span class=\"label\">Higher = closer view (1–20)</span></fieldset></div></form><script>\n\t(function() {\n\t\twindow.__mapInstances = window.__mapInstances || {};\n\n\t\tvar keyEl = document.getElementById('mapbox_key');\n\t\tif (!keyEl) return;\n\t\tmapboxgl.accessToken = keyEl.dataset.key;\n\n\t\tvar isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;\n\t\tvar style = isDark\n\t\t\t? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n\t\t\t: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n\t\tdocument.querySelectorAll('.admin-map-uninit').forEach(function(el) {\n\t\t\tel.classList.remove('admin-map-uninit');\n\n\t\t\tvar prev = window.__mapInstances[el.id];\n\t\t\tif (prev) { prev.remove(); delete window.__mapInstances[el.id]; }\n\n\t\t\tvar lat = parseFloat(el.dataset.lat);\n\t\t\tvar lng = parseFloat(el.dataset.lng);\n\t\t\tvar zoom = parseFloat(el.dataset.zoom) || 14;\n\n\t\t\tvar hasPosition = !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);\n\t\t\tvar centerLat = hasPosition ? lat : -40.9664536;\n\t\t\tvar centerLng = hasPosition ? lng : 174.0710596;\n\t\t\tvar centerZoom = hasPosition ? zoom : 4;\n\n\t\t\tvar map = new mapboxgl.Map({\n\t\t\t\tcontainer: el,\n\t\t\t\tstyle: style,\n\t\t\t\tcenter: [centerLng, centerLat],\n\t\t\t\tzoom: centerZoom,\n\t\t\t\tscrollZoom: false,\n\t\t\t\tdragPan: false,\n\t\t\t});\n\t\t\twindow.__mapInstances[el.id] = map;\n\n\t\t\tvar hideMarker = el.dataset.hideMarker === 'true';\n\t\t\tvar marker = new mapboxgl.Marker().setLngLat([centerLng, centerLat]);\n\t\t\tif (!hideMarker) marker.addTo(map);\n\n\t\t\tmap.on('load', function() {\n\t\t\t\tif (window.__mapInstances[el.id] !== map) return;\n\t\t\t\tMapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, [marker]);\n\t\t\t});\n\n\t\t\tvar form = el.dataset.formId ? document.getElementById(el.dataset.formId) : null;\n\n\t\t\tvar zoomManuallySet = false;\n\t\t\tvar programmaticZoom = false;\n\n\t\t\tfunction getLatInput()  { return form && form.querySelector('input[name=\"latitude\"]'); }\n\t\t\tfunction getLngInput()  { return form && form.querySelector('input[name=\"longitude\"]'); }\n\t\t\tfunction getZoomInput() { return form && form.querySelector('input[name=\"zoom\"]'); }\n\n\t\t\tfunction triggerSave() {\n\t\t\t\tvar latInput = getLatInput();\n\t\t\t\tif (latInput) latInput.dispatchEvent(new Event('change', { bubbles: true }));\n\t\t\t}\n\n\t\t\tmap.on('move', function() {\n\t\t\t\tvar c = map.getCenter();\n\t\t\t\tmarker.setLngLat(c);\n\t\t\t\tvar latInput = getLatInput();\n\t\t\t\tvar lngInput = getLngInput();\n\t\t\t\tif (latInput) latInput.value = c.lat.toFixed(6);\n\t\t\t\tif (lngInput) lngInput.value = c.lng.toFixed(6);\n\t\t\t});\n\n\t\t\tmap.on('moveend', function() {\n\t\t\t\tresetLockTimer();\n\t\t\t\ttriggerSave();\n\t\t\t});\n\n\t\t\tmap.on('zoomend', function() {\n\t\t\t\tresetLockTimer();\n\t\t\t\tif (!programmaticZoom && !zoomManuallySet) {\n\t\t\t\t\tvar zoomInput = getZoomInput();\n\t\t\t\t\tif (zoomInput) zoomInput.value = map.getZoom().toFixed(1);\n\t\t\t\t}\n\t\t\t\ttriggerSave();\n\t\t\t});\n\n\t\t\tvar zoomInput = getZoomInput();\n\t\t\tif (zoomInput) {\n\t\t\t\tzoomInput.addEventListener('change', function() {\n\t\t\t\t\tvar v = parseFloat(zoomInput.value);\n\t\t\t\t\tif (!isNaN(v)) {\n\t\t\t\t\t\tzoomManuallySet = true;\n\t\t\t\t\t\tprogrammaticZoom = true;\n\t\t\t\t\t\tmap.setZoom(v);\n\t\t\t\t\t\tsetTimeout(function() { programmaticZoom = false; }, 300);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tvar showMarkerToggle = form && form.querySelector('input[name=\"show_marker\"]');\n\t\t\tif (showMarkerToggle) {\n\t\t\t\tshowMarkerToggle.addEventListener('change', function() {\n\t\t\t\t\tif (showMarkerToggle.checked) {\n\t\t\t\t\t\tmarker.addTo(map);\n\t\t\t\t\t} else {\n\t\t\t\t\t\tmarker.remove();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Lock / unlock.\n\t\t\tvar LOCK_TIMEOUT = 30000;\n\t\t\tvar lockTimer = null;\n\n\t\t\tvar overlay = document.getElementById(el.dataset.overlayId);\n\t\t\tvar editBtn = document.getElementById(el.dataset.editBtnId);\n\n\t\t\tfunction lock() {\n\t\t\t\tclearTimeout(lockTimer);\n\t\t\t\tlockTimer = null;\n\t\t\t\tmap.scrollZoom.disable();\n\t\t\t\tmap.dragPan.disable();\n\t\t\t\tif (overlay) overlay.style.display = '';\n\t\t\t}\n\n\t\t\tfunction resetLockTimer() {\n\t\t\t\tclearTimeout(lockTimer);\n\t\t\t\tlockTimer = setTimeout(lock, LOCK_TIMEOUT);\n\t\t\t}\n\n\t\t\tif (editBtn) {\n\t\t\t\teditBtn.addEventListener('click', function() {\n\t\t\t\t\tif (overlay) overlay.style.display = 'none';\n\t\t\t\t\tmap.scrollZoom.enable();\n\t\t\t\t\tmap.dragPan.enable();\n\t\t\t\t\tzoomManuallySet = false;\n\t\t\t\t\tresetLockTimer();\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tel.addEventListener('mousedown', resetLockTimer);\n\t\t\tel.addEventListener('wheel', resetLockTimer, { passive: true });\n\n\t\t\t// Resize when the parent collapse opens.\n\t\t\tvar collapse = el.closest('.collapse');\n\t\t\tif (collapse) {\n\t\t\t\tvar checkbox = collapse.querySelector('input[type=\"checkbox\"]');\n\t\t\t\tif (checkbox) {\n\t\t\t\t\tcheckbox.addEventListener('change', function() {\n\t\t\t\t\t\tif (checkbox.checked) setTimeout(function() { map.resize(); }, 50);\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t})();\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div></div></form><script>\n\t(function() {\n\t\twindow.__mapInstances = window.__mapInstances || {};\n\n\t\tvar keyEl = document.getElementById('mapbox_key');\n\t\tif (!keyEl) return;\n\t\tmapboxgl.accessToken = keyEl.dataset.key;\n\n\t\tvar isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;\n\t\tvar style = isDark\n\t\t\t? 'mapbox://styles/nathanhollows/cl9w3nxff002m14sy9fco4vnr'\n\t\t\t: 'mapbox://styles/nathanhollows/clszboe2y005i01oid8ca37jm';\n\n\t\tdocument.querySelectorAll('.admin-map-uninit').forEach(function(el) {\n\t\t\tel.classList.remove('admin-map-uninit');\n\n\t\t\tvar prev = window.__mapInstances[el.id];\n\t\t\tif (prev) { prev.remove(); delete window.__mapInstances[el.id]; }\n\n\t\t\tvar lat = parseFloat(el.dataset.lat);\n\t\t\tvar lng = parseFloat(el.dataset.lng);\n\t\t\tvar zoom = parseFloat(el.dataset.zoom) || 14;\n\n\t\t\tvar hasPosition = !isNaN(lat) && !isNaN(lng) && (lat !== 0 || lng !== 0);\n\t\t\tvar centerLat = hasPosition ? lat : -40.9664536;\n\t\t\tvar centerLng = hasPosition ? lng : 174.0710596;\n\t\t\tvar centerZoom = hasPosition ? zoom : 4;\n\n\t\t\tvar map = new mapboxgl.Map({\n\t\t\t\tcontainer: el,\n\t\t\t\tstyle: style,\n\t\t\t\tcenter: [centerLng, centerLat],\n\t\t\t\tzoom: centerZoom,\n\t\t\t\tscrollZoom: false,\n\t\t\t\tdragPan: false,\n\t\t\t});\n\t\t\twindow.__mapInstances[el.id] = map;\n\n\t\t\tvar hideMarker = el.dataset.hideMarker === 'true';\n\t\t\tvar marker = new mapboxgl.Marker().setLngLat([centerLng, centerLat]);\n\t\t\tif (!hideMarker) marker.addTo(map);\n\n\t\t\tmap.on('load', function() {\n\t\t\t\tif (window.__mapInstances[el.id] !== map) return;\n\t\t\t\tMapboxStyleSwitcher.extend(map, { controlPosition: 'top-left' }, [marker]);\n\t\t\t});\n\n\t\t\tvar form = el.dataset.formId ? document.getElementById(el.dataset.formId) : null;\n\n\t\t\tvar zoomManuallySet = false;\n\t\t\tvar programmaticZoom = false;\n\n\t\t\tfunction getLatInput()  { return form && form.querySelector('input[name=\"latitude\"]'); }\n\t\t\tfunction getLngInput()  { return form && form.querySelector('input[name=\"longitude\"]'); }\n\t\t\tfunction getZoomInput() { return form && form.querySelector('input[name=\"zoom\"]'); }\n\n\t\t\tfunction triggerSave() {\n\t\t\t\tvar latInput = getLatInput();\n\t\t\t\tif (latInput) latInput.dispatchEvent(new Event('change', { bubbles: true }));\n\t\t\t}\n\n\t\t\tmap.on('move', function() {\n\t\t\t\tvar c = map.getCenter();\n\t\t\t\tmarker.setLngLat(c);\n\t\t\t\tvar latInput = getLatInput();\n\t\t\t\tvar lngInput = getLngInput();\n\t\t\t\tif (latInput) latInput.value = c.lat.toFixed(6);\n\t\t\t\tif (lngInput) lngInput.value = c.lng.toFixed(6);\n\t\t\t});\n\n\t\t\tmap.on('moveend', function() {\n\t\t\t\tresetLockTimer();\n\t\t\t\ttriggerSave();\n\t\t\t});\n\n\t\t\tmap.on('zoomend', function() {\n\t\t\t\tresetLockTimer();\n\t\t\t\tif (!programmaticZoom && !zoomManuallySet) {\n\t\t\t\t\tvar zoomInput = getZoomInput();\n\t\t\t\t\tif (zoomInput) zoomInput.value = map.getZoom().toFixed(1);\n\t\t\t\t}\n\t\t\t\ttriggerSave();\n\t\t\t});\n\n\t\t\tvar zoomInput = getZoomInput();\n\t\t\tif (zoomInput) {\n\t\t\t\tzoomInput.addEventListener('change', function() {\n\t\t\t\t\tvar v = parseFloat(zoomInput.value);\n\t\t\t\t\tif (!isNaN(v)) {\n\t\t\t\t\t\tzoomManuallySet = true;\n\t\t\t\t\t\tprogrammaticZoom = true;\n\t\t\t\t\t\tmap.setZoom(v);\n\t\t\t\t\t\tsetTimeout(function() { programmaticZoom = false; }, 300);\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tvar showMarkerToggle = form && form.querySelector('input[name=\"show_marker\"]');\n\t\t\tif (showMarkerToggle) {\n\t\t\t\tshowMarkerToggle.addEventListener('change', function() {\n\t\t\t\t\tif (showMarkerToggle.checked) {\n\t\t\t\t\t\tmarker.addTo(map);\n\t\t\t\t\t} else {\n\t\t\t\t\t\tmarker.remove();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t}\n\n\t\t\t// Lock / unlock.\n\t\t\tvar LOCK_TIMEOUT = 30000;\n\t\t\tvar lockTimer = null;\n\n\t\t\tvar overlay = document.getElementById(el.dataset.overlayId);\n\t\t\tvar editBtn = document.getElementById(el.dataset.editBtnId);\n\n\t\t\tfunction lock() {\n\t\t\t\tclearTimeout(lockTimer);\n\t\t\t\tlockTimer = null;\n\t\t\t\tmap.scrollZoom.disable();\n\t\t\t\tmap.dragPan.disable();\n\t\t\t\tif (overlay) overlay.style.display = '';\n\t\t\t}\n\n\t\t\tfunction resetLockTimer() {\n\t\t\t\tclearTimeout(lockTimer);\n\t\t\t\tlockTimer = setTimeout(lock, LOCK_TIMEOUT);\n\t\t\t}\n\n\t\t\tif (editBtn) {\n\t\t\t\teditBtn.addEventListener('click', function() {\n\t\t\t\t\tif (overlay) overlay.style.display = 'none';\n\t\t\t\t\tmap.scrollZoom.enable();\n\t\t\t\t\tmap.dragPan.enable();\n\t\t\t\t\tzoomManuallySet = false;\n\t\t\t\t\tresetLockTimer();\n\t\t\t\t});\n\t\t\t}\n\n\t\t\tel.addEventListener('mousedown', resetLockTimer);\n\t\t\tel.addEventListener('wheel', resetLockTimer, { passive: true });\n\n\t\t\t// Resize when the parent collapse opens.\n\t\t\tvar collapse = el.closest('.collapse');\n\t\t\tif (collapse) {\n\t\t\t\tvar checkbox = collapse.querySelector('input[type=\"checkbox\"]');\n\t\t\t\tif (checkbox) {\n\t\t\t\t\tcheckbox.addEventListener('change', function() {\n\t\t\t\t\t\tif (checkbox.checked) setTimeout(function() { map.resize(); }, 50);\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\t})();\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

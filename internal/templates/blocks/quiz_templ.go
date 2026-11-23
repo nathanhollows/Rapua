@@ -547,6 +547,28 @@ func quizCard(settings models.QuestSettings, block blocks.QuizBlock, data blocks
 	})
 }
 
+// quizMultipleChoiceScript turns the answer marks between radios and checkboxes
+// as the switch moves, so the form shows what the block will do before it saves.
+const quizMultipleChoiceScript = `on change
+	set :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')
+	if I match <:checked /> then
+		add .checkbox to :inputs
+		add .checkbox-sm to :inputs
+		add .checkbox-success to :inputs
+		remove .radio from :inputs
+		remove .radio-sm from :inputs
+		remove .radio-success from :inputs
+		set @type of :inputs to 'checkbox'
+	else
+		add .radio to :inputs
+		add .radio-sm to :inputs
+		add .radio-success to :inputs
+		remove .checkbox from :inputs
+		remove .checkbox-sm from :inputs
+		remove .checkbox-success from :inputs
+		set @type of :inputs to 'radio'
+	end`
+
 var quizQuestionTextarea = TextareaParams{
 	Name:        "question",
 	Title:       "Question",
@@ -592,7 +614,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("form-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 201, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 223, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 		if templ_7745c5c3_Err != nil {
@@ -605,7 +627,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint("/admin/blocks/", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 202, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 224, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {
@@ -618,7 +640,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input[type=number]) delay:500ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 203, Col: 206}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 225, Col: 206}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 		if templ_7745c5c3_Err != nil {
@@ -628,47 +650,27 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.EnablePoints {
-			templ_7745c5c3_Err = adminPointsField(block.Points).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
 		templ_7745c5c3_Err = TextareaField(quizQuestionTextarea.SetValue(block.Question)).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div class=\"flex flex-col gap-2 my-3\"><label class=\"label w-full flex justify-between\">Multiple choice <input type=\"checkbox\" name=\"multiple_choice\" class=\"toggle\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "<div class=\"flex flex-col gap-3 mb-5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if block.MultipleChoice {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, " _=\"on change\n\t\t\t\t\tset :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')\n\t\t\t\t\tif I match <:checked /> then\n\t\t\t\t\t\tadd .checkbox to :inputs\n\t\t\t\t\t\tadd .checkbox-sm to :inputs\n\t\t\t\t\t\tadd .checkbox-success to :inputs\n\t\t\t\t\t\tremove .radio from :inputs\n\t\t\t\t\t\tremove .radio-sm from :inputs\n\t\t\t\t\t\tremove .radio-success from :inputs\n\t\t\t\t\t\tset @type of :inputs to 'checkbox'\n\t\t\t\t\telse\n\t\t\t\t\t\tadd .radio to :inputs\n\t\t\t\t\t\tadd .radio-sm to :inputs\n\t\t\t\t\t\tadd .radio-success to :inputs\n\t\t\t\t\t\tremove .checkbox from :inputs\n\t\t\t\t\t\tremove .checkbox-sm from :inputs\n\t\t\t\t\t\tremove .checkbox-success from :inputs\n\t\t\t\t\t\tset @type of :inputs to 'radio'\n\t\t\t\t\tend\n\t\t\t\t\"></label> <label class=\"label w-full flex justify-between\">Randomise Order <input type=\"checkbox\" name=\"randomise_order\" class=\"toggle\"")
+		templ_7745c5c3_Err = adminSwitch("multiple_choice", "Multiple choice", "Players can pick more than one answer.", block.MultipleChoice, templ.Attributes{"_": quizMultipleChoiceScript}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if block.RandomizeOrder {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "></label> <label class=\"label w-full flex justify-between\">Multiple Attempts <input type=\"checkbox\" name=\"allow_retry\" class=\"toggle\"")
+		templ_7745c5c3_Err = adminSwitch("randomise_order", "Randomise the order", "Each player sees the answers in a different order.", block.RandomizeOrder, templ.Attributes{}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if block.RetryEnabled {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
+		templ_7745c5c3_Err = adminSwitch("allow_retry", "Allow more than one attempt", "A wrong answer can be tried again.", block.RetryEnabled, templ.Attributes{}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "></label></div><fieldset class=\"fieldset\"><legend class=\"fieldset-legend flex justify-between w-full\">Answer options <button class=\"btn btn-outline btn-xs\" type=\"button\" id=\"add-option-btn\" _=\"\n\t\t\t\t\t\ton click\n\t\t\t\t\t\t\tset :group to closest <form />\n\t\t\t\t\t\t\tput #quiz-option-template's innerHTML after last .quiz-option in :group.querySelector('.quiz-options')\n\t\t\t\t\t\t\tif :group.querySelectorAll('input[name=multiple_choice]:checked').length then\n\t\t\t\t\t\t\t\tremove <input[type=radio] /> from last <label /> in :group\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tremove <input[type=checkbox] /> from last <label /> in :group\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tset @value of last <input[name=option_correct] /> to 'option_' + ( :group.querySelectorAll('.quiz-options label').length - 1 )\n\t\t\t\t\t\t\tset :newInput to last <input[name=option_text] /> in :group\n\t\t\t\t\t\t\tcall :newInput.focus()\n\t\t\t\t\t\t\">Add Option</button></legend><div class=\"quiz-options join join-vertical\" _=\"on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate\n\t\t\t\tif my children's length > 2\n\t\t\t\t\tremove .invisible from me.querySelectorAll('button')\n\t\t\t\telse\n\t\t\t\t\tadd .invisible to me.querySelectorAll('button')\n\t\t\t\tend\n\t\t\t\t\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</div><fieldset class=\"fieldset\"><legend class=\"fieldset-legend flex justify-between w-full\">Answer options <button class=\"btn btn-outline btn-xs\" type=\"button\" id=\"add-option-btn\" _=\"\n\t\t\t\t\t\ton click\n\t\t\t\t\t\t\tset :group to closest <form />\n\t\t\t\t\t\t\tput #quiz-option-template's innerHTML after last .quiz-option in :group.querySelector('.quiz-options')\n\t\t\t\t\t\t\tif :group.querySelectorAll('input[name=multiple_choice]:checked').length then\n\t\t\t\t\t\t\t\tremove <input[type=radio] /> from last <label /> in :group\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tremove <input[type=checkbox] /> from last <label /> in :group\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\t\tset @value of last <input[name=option_correct] /> to 'option_' + ( :group.querySelectorAll('.quiz-options label').length - 1 )\n\t\t\t\t\t\t\tset :newInput to last <input[name=option_text] /> in :group\n\t\t\t\t\t\t\tcall :newInput.focus()\n\t\t\t\t\t\t\">Add Option</button></legend><div class=\"quiz-options join join-vertical\" _=\"on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate\n\t\t\t\tif my children's length > 2\n\t\t\t\t\tremove .invisible from me.querySelectorAll('button')\n\t\t\t\telse\n\t\t\t\t\tadd .invisible to me.querySelectorAll('button')\n\t\t\t\tend\n\t\t\t\t\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -679,7 +681,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 			}
 		}
 		for i := len(block.Options); i < 2; i++ {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, " ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, " ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -695,7 +697,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</div><span class=\"label-text text-xs text-error invisible mt-1\" _=\"\n\t\t\t\tset :group to closest <form />\n\t\t\t\ton load or click from :group.querySelectorAll('.quiz-options input')\n\t\t\t\tset :checkedInputs to :group.querySelectorAll('.quiz-options input:checked')\n\t\t\t\tif :checkedInputs's length != 0\n\t\t\t\t\tadd .invisible to me\n\t\t\t\telse\n\t\t\t\t\tremove .invisible from me\n\t\t\t\tend\n\t\t\t\">At least one option must be correct.</span></fieldset>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</div><span class=\"label-text text-xs text-error invisible mt-1\" _=\"\n\t\t\t\tset :group to closest <form />\n\t\t\t\ton load or click from :group.querySelectorAll('.quiz-options input')\n\t\t\t\tset :checkedInputs to :group.querySelectorAll('.quiz-options input:checked')\n\t\t\t\tif :checkedInputs's length != 0\n\t\t\t\t\tadd .invisible to me\n\t\t\t\telse\n\t\t\t\t\tremove .invisible from me\n\t\t\t\tend\n\t\t\t\">At least one option must be correct.</span></fieldset>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -703,7 +705,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "<template id=\"quiz-option-template\"><label class=\"quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full\"><input type=\"checkbox\" name=\"option_correct\" class=\"checkbox checkbox-sm checkbox-success\" _=\"on change send save to (closest <form/>)\"> <input type=\"radio\" name=\"option_correct\" class=\"radio radio-sm radio-success\" _=\"on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')\"> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 52, "<template id=\"quiz-option-template\"><label class=\"quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full\"><input type=\"checkbox\" name=\"option_correct\" class=\"checkbox checkbox-sm checkbox-success\" _=\"on change send save to (closest <form/>)\"> <input type=\"radio\" name=\"option_correct\" class=\"radio radio-sm radio-success\" _=\"on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')\"> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -712,7 +714,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "<input name=\"option_text\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<input name=\"option_text\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -725,7 +727,7 @@ func quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "\" style=\"field-sizing: content;\" placeholder=\"Answer option...\" autoComplete=\"off\" _=\"on keyup\n\t\t\t\t\t\tsend save to (closest <form/>)\n\t\t\t\t\t\tif event.key is 'Enter'\n\t\t\t\t\t\t\tset :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')\n\t\t\t\t\t\t\tset :myIndex to Array.from(:allOptions).indexOf(me)\n\t\t\t\t\t\t\tif :myIndex is :allOptions.length - 1\n\t\t\t\t\t\t\t\tsend click to (closest <form />).querySelector('#add-option-btn')\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tcall :allOptions[:myIndex + 1].focus()\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest <form />\n\t\t\t\tremove closest parent <label />\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector('.quiz-options')\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></form>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "\" style=\"field-sizing: content;\" placeholder=\"Answer option...\" autoComplete=\"off\" _=\"on keyup\n\t\t\t\t\t\tsend save to (closest <form/>)\n\t\t\t\t\t\tif event.key is 'Enter'\n\t\t\t\t\t\t\tset :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')\n\t\t\t\t\t\t\tset :myIndex to Array.from(:allOptions).indexOf(me)\n\t\t\t\t\t\t\tif :myIndex is :allOptions.length - 1\n\t\t\t\t\t\t\t\tsend click to (closest <form />).querySelector('#add-option-btn')\n\t\t\t\t\t\t\telse\n\t\t\t\t\t\t\t\tcall :allOptions[:myIndex + 1].focus()\n\t\t\t\t\t\t\tend\n\t\t\t\t\t\tend\n\t\t\t\t\t\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest <form />\n\t\t\t\tremove closest parent <label />\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector('.quiz-options')\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label></template></form>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -754,63 +756,63 @@ func quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool)
 			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<label class=\"quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, "<label class=\"quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if isMultipleChoice {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "<input type=\"checkbox\" name=\"option_correct\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "<input type=\"checkbox\" name=\"option_correct\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("option_%d", index))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 386, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 360, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\" class=\"checkbox checkbox-sm checkbox-success\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" class=\"checkbox checkbox-sm checkbox-success\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if option.IsCorrect {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, " _=\"on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, " _=\"on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')\"> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "<input type=\"radio\" name=\"option_correct\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<input type=\"radio\" name=\"option_correct\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("option_%d", index))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 395, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 369, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" class=\"radio radio-sm radio-success\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "\" class=\"radio radio-sm radio-success\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if option.IsCorrect {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 68, " _=\"on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, " _=\"on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')\"> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -820,7 +822,7 @@ func quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<input name=\"option_text\" class=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "<input name=\"option_text\" class=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -833,20 +835,20 @@ func quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\" style=\"field-sizing: content;\" placeholder=\"Answer option...\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\" style=\"field-sizing: content;\" placeholder=\"Answer option...\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(option.Text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 406, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/quiz.templ`, Line: 380, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" autoComplete=\"off\" _=\"on keyup\n\t\t\t\tsend save to (closest <form/>)\n\t\t\t\tif event.key is 'Enter'\n\t\t\t\t\tset :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')\n\t\t\t\t\tset :myIndex to Array.from(:allOptions).indexOf(me)\n\t\t\t\t\tif :myIndex is :allOptions.length - 1\n\t\t\t\t\t\tsend click to (closest <form />).querySelector('#add-option-btn')\n\t\t\t\t\telse\n\t\t\t\t\t\tcall :allOptions[:myIndex + 1].focus()\n\t\t\t\t\tend\n\t\t\t\tend\n\t\t\t\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest <form />\n\t\t\t\tremove closest parent <label />\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector('.quiz-options')\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "\" autoComplete=\"off\" _=\"on keyup\n\t\t\t\tsend save to (closest <form/>)\n\t\t\t\tif event.key is 'Enter'\n\t\t\t\t\tset :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')\n\t\t\t\t\tset :myIndex to Array.from(:allOptions).indexOf(me)\n\t\t\t\t\tif :myIndex is :allOptions.length - 1\n\t\t\t\t\t\tsend click to (closest <form />).querySelector('#add-option-btn')\n\t\t\t\t\telse\n\t\t\t\t\t\tcall :allOptions[:myIndex + 1].focus()\n\t\t\t\t\tend\n\t\t\t\tend\n\t\t\t\"> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible\" data-tip=\"Delete\" _=\"on click\n\t\t\t\tset :group to closest <form />\n\t\t\t\tremove closest parent <label />\n\t\t\t\tsend save to :group\n\t\t\t\tsend triggerUpdate to :group.querySelector('.quiz-options')\n\t\t\t\t\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></label>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

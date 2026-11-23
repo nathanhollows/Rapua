@@ -435,12 +435,6 @@ func choiceAdmin(settings models.QuestSettings, block blocks.ChoiceBlock) templ.
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if settings.EnablePoints {
-			templ_7745c5c3_Err = adminPointsField(block.GetPoints()).Render(ctx, templ_7745c5c3_Buffer)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
 		templ_7745c5c3_Err = TextareaField(TextareaParams{
 			Name:        "prompt",
 			Title:       "Prompt",
@@ -461,20 +455,20 @@ func choiceAdmin(settings models.QuestSettings, block blocks.ChoiceBlock) templ.
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<fieldset class=\"fieldset\"><div class=\"w-full\"><div class=\"grid grid-cols-[1fr_9rem_5.5rem] bg-base-200/60 border-b border-base-300 font-semibold text-base-content\"><span class=\"px-4 py-2\">Label</span> <span class=\"px-4 py-2\">Variable</span> <span class=\"px-4 py-2\"></span></div><div id=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "<fieldset class=\"fieldset\"><legend class=\"fieldset-legend\">Choices</legend><div class=\"rows\"><div class=\"rows-head\"><span></span><span>Label</span><span>Variable</span><span></span></div><div id=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("choice-options-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 128, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 121, Col: 56}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" class=\"divide-y divide-base-300 [&>div:first-child>input:first-of-type]:rounded-tl-lg [&>div:first-child>input:last-of-type]:rounded-tr-lg [&>div:last-child>input:first-of-type]:rounded-bl-lg [&>div:last-child>input:last-of-type]:rounded-br-lg\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\" data-rows>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -490,30 +484,70 @@ func choiceAdmin(settings models.QuestSettings, block blocks.ChoiceBlock) templ.
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</div></div><p class=\"fieldset-label\">Each option sets a variable when chosen. Variable names must be lowercase with underscores.</p><div class=\"flex\"><fieldset class=\"fieldset flex-1 content-center\"><label class=\"label text-base-content\" for=\"multiselect\"><input id=\"multiselect\" type=\"checkbox\" name=\"multi_select\" class=\"toggle\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		if block.MultiSelect {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, " checked")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "> Allow multiple selections</label></fieldset><button class=\"btn btn-outline btn-xs\" type=\"button\" data-target=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</div><button type=\"button\" class=\"rows-add\" data-target=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("choice-options-%s", block.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 156, Col: 113}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 129, Col: 99}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\" onclick=\"addChoiceOption(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-plus w-4 h-4\"><path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path></svg> Add Option</button></div></fieldset></form><script>\n\t\tfunction addChoiceOption(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst btn = event.target.closest('button');\n\t\t\tconst container = document.getElementById(btn.dataset.target);\n\t\t\tconst item = document.createElement('div');\n\t\t\titem.classList.add('choice-option-item', 'grid', 'grid-cols-[1fr_9rem_5.5rem]', 'hover:bg-base-200/30', 'transition-colors');\n\t\t\titem.innerHTML =\n\t\t\t\t'<input type=\"text\" name=\"option_label\" placeholder=\"Option label\" class=\"input input-sm rounded-none h-10 w-full\" autocomplete=\"off\" />' +\n\t\t\t\t'<input type=\"text\" name=\"option_sets\" placeholder=\"var_name\" pattern=\"[a-z_][a-z0-9_]*\" class=\"input input-sm font-mono rounded-none h-10 w-full validator\" autocomplete=\"off\" />' +\n\t\t\t\t'<div class=\"flex items-center justify-center gap-1 h-10 bg-base-100\">' +\n\t\t\t\t\t'<button type=\"button\" class=\"btn btn-xs btn-circle tooltip\" data-tip=\"Move up\" onclick=\"moveChoiceOptionUp(event)\">' +\n\t\t\t\t\t\t'<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-3 h-3\"><path d=\"M8 6L12 2L16 6\"/><path d=\"M12 2V22\"/></svg>' +\n\t\t\t\t\t'</button>' +\n\t\t\t\t\t'<button type=\"button\" class=\"btn btn-xs btn-circle tooltip\" data-tip=\"Move down\" onclick=\"moveChoiceOptionDown(event)\">' +\n\t\t\t\t\t\t'<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-3 h-3\"><path d=\"M8 18L12 22L16 18\"/><path d=\"M12 2V22\"/></svg>' +\n\t\t\t\t\t'</button>' +\n\t\t\t\t\t'<button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip\" data-tip=\"Delete\" onclick=\"removeChoiceOption(event)\">' +\n\t\t\t\t\t\t'<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"w-3 h-3\"><path d=\"M3 6h18\"/><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"/><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"/></svg>' +\n\t\t\t\t\t'</button>' +\n\t\t\t\t'</div>';\n\t\t\tcontainer.appendChild(item);\n\t\t}\n\t\tfunction removeChoiceOption(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst form = event.target.closest('form');\n\t\t\tevent.target.closest('.choice-option-item').remove();\n\t\t\tform.dispatchEvent(new Event('change'));\n\t\t}\n\t\tfunction moveChoiceOptionUp(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst item = event.target.closest('.choice-option-item');\n\t\t\tconst prev = item.previousElementSibling;\n\t\t\tif (prev && prev.classList.contains('choice-option-item')) {\n\t\t\t\titem.parentNode.insertBefore(item, prev);\n\t\t\t}\n\t\t}\n\t\tfunction moveChoiceOptionDown(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst item = event.target.closest('.choice-option-item');\n\t\t\tconst next = item.nextElementSibling;\n\t\t\tif (next && next.classList.contains('choice-option-item')) {\n\t\t\t\titem.parentNode.insertBefore(next, item);\n\t\t\t}\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\" data-template=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var24 string
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("choice-row-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 129, Col: 156}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\" onclick=\"addChoiceOption(event)\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = icon("plus", templ.Attributes{"aria-hidden": "true"}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "Add a choice</button></div><p class=\"label\">Each choice sets a variable when picked. Names use lowercase letters, digits and underscores.</p></fieldset>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = adminSwitch("multi_select", "Allow multiple selections", "Players can pick more than one choice.", block.MultiSelect, templ.Attributes{}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "</form><script>\n\t\tfunction addChoiceOption(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst btn = event.target.closest('button');\n\t\t\tconst container = document.getElementById(btn.dataset.target);\n\t\t\tcontainer.append(document.getElementById(btn.dataset.template).content.cloneNode(true));\n\t\t\tcontainer.lastElementChild.querySelector('input').focus();\n\t\t}\n\t\tfunction removeChoiceOption(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst form = event.target.closest('form');\n\t\t\tevent.target.closest('.rows-item').remove();\n\t\t\tform.dispatchEvent(new Event('change'));\n\t\t}\n\t</script><template id=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var25 string
+		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("choice-row-%s", block.ID))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 153, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = choiceOptionItem(blocks.ChoiceOption{}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</template>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -537,38 +571,54 @@ func choiceOptionItem(opt blocks.ChoiceOption) templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var24 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var24 == nil {
-			templ_7745c5c3_Var24 = templ.NopComponent
+		templ_7745c5c3_Var26 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var26 == nil {
+			templ_7745c5c3_Var26 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "<div class=\"choice-option-item grid grid-cols-[1fr_9rem_5.5rem] hover:bg-base-200/30 transition-colors\"><input type=\"text\" name=\"option_label\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "<div class=\"rows-item\"><button type=\"button\" class=\"rows-grip\" aria-label=\"Drag to reorder, or press the up and down arrow keys\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var25 string
-		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Label)
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 216, Col: 20}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
+		templ_7745c5c3_Err = icon("grip-vertical", templ.Attributes{"aria-hidden": "true"}).Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\" placeholder=\"Option label\" class=\"input input-sm rounded-none h-10 w-full\" autocomplete=\"off\"> <input type=\"text\" name=\"option_sets\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</button> <input type=\"text\" name=\"option_label\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var26 string
-		templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Sets)
+		var templ_7745c5c3_Var27 string
+		templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 224, Col: 19}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 166, Col: 20}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "\" placeholder=\"var_name\" pattern=\"[a-z_][a-z0-9_]*\" class=\"input input-sm font-mono rounded-none h-10 w-full validator\" autocomplete=\"off\"><div class=\"flex items-center justify-center gap-1 h-10\"><button type=\"button\" class=\"btn btn-xs btn-circle tooltip\" data-tip=\"Move up\" onclick=\"moveChoiceOptionUp(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-up w-3 h-3\"><path d=\"M8 6L12 2L16 6\"></path><path d=\"M12 2V22\"></path></svg></button> <button type=\"button\" class=\"btn btn-xs btn-circle tooltip\" data-tip=\"Move down\" onclick=\"moveChoiceOptionDown(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-move-down w-3 h-3\"><path d=\"M8 18L12 22L16 18\"></path><path d=\"M12 2V22\"></path></svg></button> <button type=\"button\" class=\"btn btn-xs btn-circle hover:btn-error tooltip\" data-tip=\"Delete\" onclick=\"removeChoiceOption(event)\"><svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" class=\"lucide lucide-trash-2 w-3 h-3\"><path d=\"M3 6h18\"></path><path d=\"M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6\"></path><path d=\"M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2\"></path><line x1=\"10\" x2=\"10\" y1=\"11\" y2=\"17\"></line><line x1=\"14\" x2=\"14\" y1=\"11\" y2=\"17\"></line></svg></button></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "\" placeholder=\"Choice label\" class=\"rows-cell\" autocomplete=\"off\"> <input type=\"text\" name=\"option_sets\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var28 string
+		templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(opt.Sets)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/choice.templ`, Line: 174, Col: 19}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\" placeholder=\"var_name\" pattern=\"[a-z_][a-z0-9_]*\" class=\"rows-cell code\" autocomplete=\"off\"> <button type=\"button\" class=\"rows-rm\" aria-label=\"Delete choice\" onclick=\"removeChoiceOption(event)\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = icon("trash-2", templ.Attributes{"aria-hidden": "true"}).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 48, "</button></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

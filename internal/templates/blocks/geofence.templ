@@ -168,9 +168,6 @@ templ geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) {
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		@TextareaField(geofencePromptTextarea.SetValue(block.Prompt))
 		<fieldset class="fieldset" data-geofence-picker>
 			<legend class="fieldset-legend">Area</legend>
@@ -182,10 +179,10 @@ templ geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) {
 				</div>
 				<button type="button" class="btn btn-xs btn-error shadow hidden" data-geofence-clear data-geofence-shape-only>Clear</button>
 			</div>
-			<div class="relative">
+			<div class="relative map-frame">
 				<div
 					id={ fmt.Sprintf("geofence-map-%s", block.ID) }
-					class="geofence-map-uninit w-full h-64 rounded-box overflow-hidden bg-base-300"
+					class="geofence-map-uninit w-full h-64 overflow-hidden bg-base-300"
 					data-form-id={ fmt.Sprintf("form-%s", block.ID) }
 					data-area={ geofenceAreaJSON(block) }
 				></div>
@@ -196,45 +193,37 @@ templ geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) {
 					@icon("map-pin", templ.Attributes{"class": "w-8 h-8 -mt-8 text-primary drop-shadow"})
 				</div>
 			</div>
-			<div class="flex items-center justify-end mt-2">
-				<span class="badge badge-neutral badge-sm font-mono" data-geofence-readout></span>
-			</div>
-			<p class="fieldset-label hidden text-error" data-geofence-warning></p>
-			<div data-geofence-pin-only>
-				<label class="fieldset-label">How close counts</label>
-				<div class="flex items-center gap-4">
-					<input
-						type="range"
-						min="5"
-						max="500"
-						step="5"
-						value={ geofenceRadiusValue(block) }
-						class="range range-primary range-sm grow"
-						data-geofence-radius
-					/>
+			<span class="map-chip" data-geofence-readout></span>
+			<p class="label hidden text-error" data-geofence-warning></p>
+			<div data-geofence-pin-only class="mt-4">
+				<div class="fieldset-legend">
+					How close counts
+					<span class="val-pill" data-geofence-radius-value>{ geofenceRadiusValue(block) } m</span>
 				</div>
+				<input
+					type="range"
+					min="5"
+					max="500"
+					step="5"
+					value={ geofenceRadiusValue(block) }
+					class="range range-primary range-sm w-full"
+					data-geofence-radius
+				/>
 			</div>
 			<p class="fieldset-label" data-geofence-shape-only>
 				Click the map to drop corners, then click the first one again to close the shape. Drag a corner to move it.
 			</p>
 		</fieldset>
 		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Accuracy limit</legend>
-			<label class="input w-full">
-				<input
-					type="number"
-					name="max_accuracy"
-					min="1"
-					step="1"
-					value={ geofenceAccuracyValue(block) }
-					placeholder="50"
-					class="grow"
-				/>
-				<span class="opacity-60">metres</span>
-			</label>
-			<p class="fieldset-label">
-				A reading vaguer than this is refused rather than guessed at. Good outdoor GPS lands within 10 m; under
-				cover or indoors it can exceed 50 m, so raise it there rather than leaving players stuck.
+			<legend class="fieldset-legend">How exact the phone has to be</legend>
+			<select name="max_accuracy" class="select w-full">
+				for _, option := range geofenceAccuracyOptions(block) {
+					<option value={ option.Value } selected?={ option.Selected }>{ option.Label }</option>
+				}
+			</select>
+			<p class="label">
+				A reading vaguer than this is refused rather than guessed at. Pick the place players will be standing:
+				indoors a phone often cannot do better than 50 m, so a tighter limit there leaves them stuck.
 			</p>
 		</fieldset>
 		<fieldset class="fieldset">
@@ -281,11 +270,48 @@ func geofenceMapAreaJSON(block blocks.GeofenceBlock) string {
 	return geofenceAreaJSON(block)
 }
 
-func geofenceAccuracyValue(block blocks.GeofenceBlock) string {
-	if block.MaxAccuracy <= 0 {
-		return ""
+// geofenceAccuracyChoices are the limits an author picks between, named by where
+// the players will be, which is what decides how good a phone's reading can be.
+var geofenceAccuracyChoices = []struct {
+	Metres float64
+	Label  string
+}{
+	{10, "10 m: outdoors, open sky"},
+	{25, "25 m: outdoors, between buildings or under trees"},
+	{50, "50 m: indoors, or under cover"},
+	{100, "100 m: deep inside a building"},
+}
+
+type geofenceAccuracyOption struct {
+	Value    string
+	Label    string
+	Selected bool
+}
+
+// geofenceAccuracyOptions lists the choices with the block's own limit marked.
+// A limit that is not one of them (an imported game can hold any number) is kept
+// as an extra entry rather than silently rewritten on the next save. A block with
+// no limit set uses the server's default, so that is what is shown.
+func geofenceAccuracyOptions(block blocks.GeofenceBlock) []geofenceAccuracyOption {
+	current := block.MaxAccuracy
+	if current <= 0 {
+		current = blocks.DefaultMaxAccuracy
 	}
-	return fmt.Sprintf("%g", block.MaxAccuracy)
+	options := make([]geofenceAccuracyOption, 0, len(geofenceAccuracyChoices)+1)
+	matched := false
+	for _, choice := range geofenceAccuracyChoices {
+		isCurrent := choice.Metres == current
+		matched = matched || isCurrent
+		options = append(options, geofenceAccuracyOption{
+			Value: fmt.Sprintf("%g", choice.Metres), Label: choice.Label, Selected: isCurrent,
+		})
+	}
+	if !matched {
+		options = append(options, geofenceAccuracyOption{
+			Value: fmt.Sprintf("%g", current), Label: fmt.Sprintf("%g m: set elsewhere", current), Selected: true,
+		})
+	}
+	return options
 }
 
 // The browser needs a threshold even when the author left one unset, and it has to
