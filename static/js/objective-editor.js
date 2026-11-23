@@ -32,6 +32,17 @@
 		return q('.points-field input[name="points"]', blockForm(id) || document.createElement('div'));
 	}
 
+	// Scrolls the rail itself, never the page, so a click in the preview does not jerk the editor.
+	function scrollRailTo(zone, row) {
+		const list = rail(zone);
+		if (!list || list.scrollHeight <= list.clientHeight) return;
+		const top = row.offsetTop;
+		const add = q('.rl-add', list);
+		const room = list.clientHeight - (add ? add.offsetHeight : 0);
+		if (top < list.scrollTop) list.scrollTop = top;
+		else if (top + row.offsetHeight > list.scrollTop + room) list.scrollTop = top + row.offsetHeight - room;
+	}
+
 	function select(zone, wanted) {
 		const sec = section(zone);
 		if (!sec) return;
@@ -53,7 +64,9 @@
 		} else if (key === 'empty') {
 			q('[data-empty-form]', sec).hidden = false;
 		} else {
-			railItem(key).classList.add('on');
+			const row = railItem(key);
+			row.classList.add('on');
+			scrollRailTo(zone, row);
 			const form = blockForm(key);
 			form.hidden = false;
 			const position = q('[data-pos]', form);

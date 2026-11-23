@@ -1006,7 +1006,11 @@ li.nest-target > .objective-row::after {
   .cf-phone { position: static; }
 }
 
-.cs-rail { display: flex; flex-direction: column; padding: .9rem; border-right: 1px solid var(--line); background: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100)); }
+.cs-rail { --rail-bg: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100)); display: flex; flex-direction: column; padding: .9rem; border-right: 1px solid var(--line); background: var(--rail-bg); }
+/* A long stack scrolls in the rail so the section stays about as tall as its preview. The add button
+   stays in view because it is how an author reaches the end of a list they cannot see. */
+.cs-rail .rl { position: relative; max-height: min(640px, calc(100vh - 4rem)); margin: -3px; padding: 3px; overflow-y: auto; overscroll-behavior: contain; }
+.cs-rail .rl-add { position: sticky; bottom: -3px; background: var(--rail-bg); }
 .rl { display: flex; flex-direction: column; gap: .4rem; }
 .rl-item { display: flex; align-items: center; gap: .45rem; width: 100%; padding: .35rem .6rem .35rem .3rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--color-base-100); font-size: .9rem; font-weight: 700; text-align: left; cursor: pointer; }
 .rl-item:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
