@@ -24,130 +24,108 @@ templ teamNameChangerPlayer(_ models.QuestSettings, block blocks.TeamNameChanger
 }
 
 templ TeamNameChangerForm(block blocks.TeamNameChangerBlock, teamName string) {
-	<div id={ fmt.Sprintf("player-block-%s", block.GetID()) } class="indicator w-full">
-		<span class="indicator-item indicator-top indicator-right badge mr-12">Incomplete</span>
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			<p>
-				if block.BlockText != "" {
-					{ block.BlockText }
-				} else {
-					Set your team name!
-				}
-			</p>
-			<form hx-post="/start/team-name" hx-swap="outerHTML swap:1.5s" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
-				<input type="hidden" name="block" value={ block.GetID() }/>
-				<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
-					<div class="join w-full">
-						<input
-							id={ fmt.Sprintf("team-name-%s", block.GetID()) }
-							name="name"
-							type="text"
-							placeholder="Team name"
-							class="input input-primary join-item w-full max-w-xs"
-							autocomplete="off"
-							value={ teamName }
-							required
-						/>
-						<template id={ fmt.Sprintf("btn-save-loading-%s", block.GetID()) }>
-							<span class="loading loading-dots loading-md"></span>
-						</template>
-						<template id={ fmt.Sprintf("btn-save-success-%s", block.GetID()) }>
-							<span class="flex items-center gap-2">
-								<span>Saved!</span>
-								@icon("check", templ.Attributes{"class": "w-4 h-4"})
-							</span>
-						</template>
-						<template id={ fmt.Sprintf("btn-save-normal-%s", block.GetID()) }>
-							<span class="flex items-center gap-2">
-								<span>Save</span>
-								@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
-							</span>
-						</template>
-						<button
-							type="submit"
-							class="btn btn-primary btn-outline join-item rounded-r-full flex items-center gap-2"
-							_={ fmt.Sprintf(`on htmx:beforeRequest from closest <form/>
-							     put #btn-save-loading-%s.content.cloneNode(true) into me
-							   on htmx:afterRequest from closest <form/>
-							     put #btn-save-success-%s.content.cloneNode(true) into me
-							     wait 1s
-							     put #btn-save-normal-%s.content.cloneNode(true) into me`, block.GetID(), block.GetID(), block.GetID()) }
-						>
-							<span class="flex items-center gap-2">
-								<span>Save</span>
-								@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
-							</span>
-						</button>
-					</div>
-				</label>
-			</form>
+	<div id={ fmt.Sprintf("player-block-%s", block.GetID()) } class="qb-card">
+		<div class="qb-top">
+			<span class="qb-sticker xs" aria-hidden="true">
+				@icon("users", templ.Attributes{})
+			</span>
+			<span class="qb-kind">Team name</span>
 		</div>
+		@teamNamePrompt(block)
+		@teamNameForm(block, teamName, "Save", "Saved!", false)
 	</div>
 }
 
-templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string, allowChanging bool) {
-	<div id={ fmt.Sprintf("player-block-%s", block.GetID()) } class="indicator w-full">
-		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			if allowChanging {
-				<p>
-					if block.BlockText != "" {
-						{ block.BlockText }
-					} else {
-						Set your team name!
-					}
-				</p>
-				<form hx-post="/start/team-name" hx-swap="outerHTML swap:1.5s" hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }>
-					<input type="hidden" name="block" value={ block.GetID() }/>
-					<label for={ fmt.Sprintf("team-name-%s", block.GetID()) } class="form-control w-full">
-						<div class="join w-full">
-							<input
-								id={ fmt.Sprintf("team-name-%s", block.GetID()) }
-								name="name"
-								type="text"
-								placeholder="Team name"
-								class="input input-primary join-item w-full max-w-xs"
-								autocomplete="off"
-								value={ teamName }
-								required
-							/>
-							<template id={ fmt.Sprintf("btn-update-loading-%s", block.GetID()) }>
-								<span class="loading loading-dots loading-md"></span>
-							</template>
-							<template id={ fmt.Sprintf("btn-update-success-%s", block.GetID()) }>
-								<span class="flex items-center gap-2">
-									<span>Updated!</span>
-									@icon("check", templ.Attributes{"class": "w-4 h-4"})
-								</span>
-							</template>
-							<template id={ fmt.Sprintf("btn-update-normal-%s", block.GetID()) }>
-								<span class="flex items-center gap-2">
-									<span>Update</span>
-									@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
-								</span>
-							</template>
-							<button
-								type="submit"
-								class="btn btn-primary btn-outline join-item rounded-r-full flex items-center gap-2"
-								_={ fmt.Sprintf(`on htmx:beforeRequest from closest <form/>
-								     put #btn-update-loading-%s.content.cloneNode(true) into me
-								   on htmx:afterRequest from closest <form/>
-								     put #btn-update-success-%s.content.cloneNode(true) into me
-								     wait 1s
-								     put #btn-update-normal-%s.content.cloneNode(true) into me`, block.GetID(), block.GetID(), block.GetID()) }
-							>
-								<span class="flex items-center gap-2">
-									<span>Update</span>
-									@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
-								</span>
-							</button>
-						</div>
-					</label>
-				</form>
-			} else {
-				<p>Name: <strong>{ teamName }</strong></p>
+templ teamNamePrompt(block blocks.TeamNameChangerBlock) {
+	<div class="qb-q">
+		if block.BlockText != "" {
+			{ block.BlockText }
+		} else {
+			Set your team name!
+		}
+	</div>
+}
+
+// teamNameForm is the field and its button. When it is changing a name already set,
+// the button stays off until the name is different.
+templ teamNameForm(block blocks.TeamNameChangerBlock, teamName, verb, done string, changing bool) {
+	<form
+		class="qb-form"
+		hx-post="/start/team-name"
+		hx-swap="outerHTML swap:1.5s"
+		hx-target={ fmt.Sprintf("#player-block-%s", block.GetID()) }
+	>
+		<input type="hidden" name="block" value={ block.GetID() }/>
+		<input
+			id={ fmt.Sprintf("team-name-%s", block.GetID()) }
+			name="name"
+			type="text"
+			class="qb-input"
+			placeholder="Team name"
+			aria-label="Team name"
+			autocomplete="off"
+			maxlength="50"
+			value={ teamName }
+			required
+		/>
+		<template id={ fmt.Sprintf("btn-save-loading-%s", block.GetID()) }>
+			<span class="loading loading-dots loading-md"></span>
+		</template>
+		<template id={ fmt.Sprintf("btn-save-success-%s", block.GetID()) }>
+			<span class="flex items-center gap-2">
+				<span>{ done }</span>
+				@icon("check", templ.Attributes{"class": "w-5 h-5"})
+			</span>
+		</template>
+		<template id={ fmt.Sprintf("btn-save-normal-%s", block.GetID()) }>
+			<span class="flex items-center gap-2">
+				<span>{ verb }</span>
+				@icon("check", templ.Attributes{"class": "w-5 h-5"})
+			</span>
+		</template>
+		<button
+			type="submit"
+			class="btn btn-primary qb-go"
+			if changing {
+				disabled
 			}
+			_={ fmt.Sprintf(`on htmx:beforeRequest from closest <form/>
+			     put #btn-save-loading-%s.content.cloneNode(true) into me
+			   on htmx:afterRequest from closest <form/>
+			     put #btn-save-success-%s.content.cloneNode(true) into me
+			     wait 1s
+			     put #btn-save-normal-%s.content.cloneNode(true) into me
+			   on input from closest <form/>
+			     if %t then
+			       set my.disabled to (the first <input[name=name]/> in closest <form/>).value is (the first <input[name=name]/> in closest <form/>).defaultValue
+			     end`, block.GetID(), block.GetID(), block.GetID(), changing) }
+		>
+			<span class="flex items-center gap-2">
+				<span>{ verb }</span>
+				@icon("check", templ.Attributes{"class": "w-5 h-5"})
+			</span>
+		</button>
+	</form>
+}
+
+templ TeamNameChangerComplete(block blocks.TeamNameChangerBlock, teamName string, allowChanging bool) {
+	<div id={ fmt.Sprintf("player-block-%s", block.GetID()) } class="qb-card">
+		<div class="qb-top">
+			<span class="qb-sticker xs" aria-hidden="true">
+				@icon("users", templ.Attributes{})
+			</span>
+			<span class="qb-kind">Team name</span>
+			<span class="qb-chip earned">
+				Done
+				@icon("check", templ.Attributes{"aria-hidden": "true"})
+			</span>
 		</div>
+		if allowChanging {
+			@teamNamePrompt(block)
+			@teamNameForm(block, teamName, "Update", "Updated!", true)
+		} else {
+			<div class="qb-name">{ teamName }</div>
+		}
 	</div>
 }
 

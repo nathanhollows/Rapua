@@ -193,7 +193,7 @@ func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state
 		return pincodePlayerUpdate(settings, *b, state)
 	case "checklist":
 		b := block.(*blocks.ChecklistBlock)
-		return checklistPlayer(settings, *b, state)
+		return checklistPlayerUpdate(settings, *b, state)
 	case "youtube":
 		b := block.(*blocks.YoutubeBlock)
 		return youtubePlayer(settings, *b)
@@ -202,7 +202,7 @@ func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state
 		return alertPlayer(settings, *b)
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
-		return sortingPlayer(settings, *b, state)
+		return sortingPlayerUpdate(settings, *b, state)
 	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayerUpdate(settings, *b, state)
@@ -249,11 +249,84 @@ func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state
 	return nil
 }
 
+// completionBadge marks a block that is done. A block not yet done says
+// nothing: that is how every block starts, so a label for it is only noise.
 templ completionBadge(data blocks.PlayerState) {
 	if data.IsComplete() {
-		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
-	} else {
-		<span class="indicator-item indicator-top indicator-right badge mr-12">Incomplete</span>
+		@completeMark()
+	}
+}
+
+templ completeMark() {
+	<span
+		class="indicator-item indicator-top indicator-right badge badge-success q-check"
+		role="img"
+		aria-label="Complete"
+	>
+		@icon("check", templ.Attributes{"class": "w-4 h-4", "stroke-width": "3"})
+	</span>
+}
+
+// qbTop is the head of a raised card: what kind of block it is, and its points.
+templ qbTop(iconName, kind string, settings models.QuestSettings, points int, data blocks.PlayerState) {
+	<div class="qb-top">
+		<span class="qb-sticker xs" aria-hidden="true">
+			@icon(iconName, templ.Attributes{})
+		</span>
+		<span class="qb-kind">{ kind }</span>
+		@qbChip(settings, points, data)
+	</div>
+}
+
+// qbRightRow is an answer that was accepted, drawn as a quiz draws a right one: a
+// green edge, a ticked mark, and the same words.
+templ qbRightRow(text string) {
+	<div class="qb-opt locked is-ok">
+		<span class="qb-mark">
+			@icon("check", templ.Attributes{"aria-hidden": "true"})
+		</span>
+		<div class="qb-t">
+			<div class="qb-tt">{ text }</div>
+			<span class="qb-verdict">
+				@icon("check", templ.Attributes{"aria-hidden": "true"})
+				That's right
+			</span>
+		</div>
+	</div>
+}
+
+// qbDoneMessage is a status the block gives, not an answer: a white block with a
+// green icon, the same shape as the messages for a miss.
+templ qbDoneMessage(text string) {
+	<p class="qb-msg ok" role="status">
+		@icon("circle-check", templ.Attributes{"aria-hidden": "true"})
+		<span>{ text }</span>
+	</p>
+}
+
+// qbChip is points and completion in one pill: plain while there is something
+// to earn, green once it is done. A block with no points says nothing until it
+// is finished.
+templ qbChip(settings models.QuestSettings, points int, data blocks.PlayerState) {
+	if data.IsComplete() {
+		<span class="qb-chip earned">
+			if awarded := data.GetPointsAwarded(); settings.EnablePoints && awarded > 0 {
+				+{ fmt.Sprint(awarded) } pts
+			} else if settings.EnablePoints && awarded < 0 {
+				-{ fmt.Sprint(-awarded) } pts
+			} else {
+				Done
+			}
+			@icon("check", templ.Attributes{"aria-hidden": "true"})
+		</span>
+	} else if settings.EnablePoints && points != 0 {
+		<span class="qb-chip">
+			if points < 0 {
+				-{ fmt.Sprint(-points) } pts
+			} else {
+				{ fmt.Sprint(points) } pts
+			}
+		</span>
 	}
 }
 

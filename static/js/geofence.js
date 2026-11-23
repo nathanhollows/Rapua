@@ -38,12 +38,23 @@
 		};
 	}
 
+	const STATUS_ICONS = {
+		info: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>',
+		error: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>',
+	};
+
 	function say(el, message, tone) {
 		if (!el) return;
-		el.textContent = message || "";
-		el.className = "text-sm text-center " + (!message
-			? "hidden"
-			: tone === "error" ? "text-error" : "opacity-70");
+		if (!message) {
+			el.textContent = "";
+			el.className = "hidden";
+			return;
+		}
+		const error = tone === "error";
+		el.className = "qb-msg" + (error ? " no" : "");
+		el.setAttribute("role", "status");
+		el.innerHTML = STATUS_ICONS[error ? "error" : "info"] + "<span></span>";
+		el.querySelector("span").textContent = message;
 	}
 
 	function limitFor(form) {
@@ -192,7 +203,7 @@
 		if (!el.form) return;
 
 		if (!navigator.geolocation) {
-			say(el.status, "This browser cannot report where you are.", "error");
+			say(el.status, "This browser cannot tell where you are.", "error");
 			return;
 		}
 
@@ -229,9 +240,10 @@
 			const blockID = session.blockID;
 			stop(blockID);
 			say(parts(blockID).status, best
-				? "Your phone is only getting to about ±" + Math.round(best) +
-					" m here, which is too vague to check. Try moving into the open."
-				: "Your phone could not get a fix. Try moving into the open.", "error");
+				? "Your phone can only place you to within about " + Math.round(best) +
+					" m here, and this check needs " + Math.round(limitFor(parts(blockID).form)) +
+					" m. Step into the open and try again."
+				: "Your phone could not find you. Check that location is turned on, then try again.", "error");
 		}, GIVE_UP_MS);
 	}
 
@@ -262,14 +274,14 @@
 
 		if (err && err.code === err.PERMISSION_DENIED) {
 			say(el.status,
-				"Location permission was declined. Allow it for this site, then try again.", "error");
+				"Location is turned off for this page. Turn it on in your browser settings, then press the button again.", "error");
 			return;
 		}
 		if (err && err.code === err.POSITION_UNAVAILABLE) {
-			say(el.status, "Your position is not available right now. Try moving into the open.", "error");
+			say(el.status, "Your phone could not find you. Check that location is turned on, then try again.", "error");
 			return;
 		}
-		say(el.status, "We could not work out where you are. Try again.", "error");
+		say(el.status, "Your phone could not find you. Check that location is turned on, then try again.", "error");
 	}
 
 	// A fix worth checking is posted straight away; the watch stays open so the
@@ -305,17 +317,27 @@
 	function markComplete(blockID) {
 		const live = document.getElementById("geofence-live-" + blockID);
 		if (live) live.classList.add("hidden");
+		const hint = document.getElementById("geofence-hint-" + blockID);
+		if (hint) hint.classList.add("hidden");
 	}
 
 	// A miss gets a quiet countdown rather than an immediate resubmit: posting
 	// on every watchPosition update would hammer the server and read as the UI
 	// nagging, where a few seconds of "still looking" reads as normal search.
+	// The server answers a miss with a rounded sentence about how far off it was.
+	function awayText(blockID) {
+		const el = document.getElementById("geofence-away-" + blockID);
+		return el ? el.textContent.trim() : "";
+	}
+
 	function scheduleRecheck(session) {
 		session.state = "cooldown";
 		let remaining = RECHECK_SECONDS;
+		const away = awayText(session.blockID);
 		const render = function () {
 			say(session.el.status,
-				"Found you. Keep this page open while you move around — rechecking in " + remaining + "…");
+				(away || "Found you, but not there yet.") +
+				" Keep this page open while you move around. Rechecking in " + remaining + "…");
 		};
 		render();
 

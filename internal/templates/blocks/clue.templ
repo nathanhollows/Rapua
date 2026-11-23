@@ -7,59 +7,65 @@ import (
 )
 
 templ cluePlayer(settings models.QuestSettings, block blocks.ClueBlock, data blocks.PlayerState) {
-	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full">
-		@pointsBadge(settings.EnablePoints, block.GetPoints())
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			if data.IsComplete() {
-				<div>
-					@templ.Raw(stringToMarkdown(block.ClueText))
-				</div>
-			} else {
-				<div>
-					if block.DescriptionText != "" {
-						@templ.Raw(stringToMarkdown(block.DescriptionText))
-					}
-					<div class="flex justify-center mt-4">
-						<form hx-post={ fmt.Sprint("/blocks/validate") } hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }>
-							<input type="hidden" name="block" value={ block.ID }/>
-							<input type="hidden" name="reveal_clue" value="true"/>
-							<button
-								type="button"
-								class="btn btn-warning"
-								_="on click
-								if my @type == 'button' then
-								halt the event
-								set :text to my innerHTML
-								set my innerHTML to 'Are you sure?'
-								set my @type to 'submit'
-								wait 3000ms
-								then set my innerHTML to :text
-								then set my @type to 'button'
-								end
-								end"
-							>
-								if block.ButtonLabel != "" {
-									{ block.ButtonLabel }
-								} else {
-									Reveal Clue
-								}
-							</button>
-						</form>
-					</div>
-				</div>
-			}
-		</div>
-	</div>
+	@clueCard(settings, block, data, false)
 }
 
 templ cluePlayerUpdate(settings models.QuestSettings, block blocks.ClueBlock, data blocks.PlayerState) {
-	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full" hx-swap-oob="true">
-		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			@templ.Raw(stringToMarkdown(block.ClueText))
-		</div>
+	@clueCard(settings, block, data, true)
+}
+
+// clueCard asks twice before it spends anything, and lights its bulb once the clue is out.
+templ clueCard(settings models.QuestSettings, block blocks.ClueBlock, data blocks.PlayerState, update bool) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class={ "qb-card", templ.KV("is-fresh", update), templ.KV("is-lit", data.IsComplete()) }
+		if update {
+			hx-swap-oob="true"
+		}
+	>
+		@qbTop("lightbulb", "Clue", settings, block.GetPoints(), data)
+		if data.IsComplete() {
+			<div class="q-unlocked prose" role="status">
+				@templ.Raw(stringToMarkdown(block.ClueText))
+			</div>
+		} else {
+			if block.DescriptionText != "" {
+				<div class="qb-q">
+					@templ.Raw(stringToMarkdown(block.DescriptionText))
+				</div>
+			}
+			if settings.EnablePoints && block.GetPoints() < 0 {
+				<p class="qb-hint">Revealing it takes { fmt.Sprint(-block.GetPoints()) } points.</p>
+			}
+			<form hx-post="/blocks/validate" hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }>
+				<input type="hidden" name="block" value={ block.ID }/>
+				<input type="hidden" name="reveal_clue" value="true"/>
+				<button
+					type="button"
+					class="btn btn-warning qb-go"
+					_="on click
+						if my @type == 'button' then
+							halt the event
+							set :text to my innerHTML
+							set my innerHTML to 'Are you sure? Tap again'
+							add .qb-confirm to me
+							set my @type to 'submit'
+							wait 3000ms
+							then set my innerHTML to :text
+							then remove .qb-confirm from me
+							then set my @type to 'button'
+						end
+					end"
+				>
+					@icon("lightbulb", templ.Attributes{"aria-hidden": "true"})
+					if block.ButtonLabel != "" {
+						{ block.ButtonLabel }
+					} else {
+						Reveal the clue
+					}
+				</button>
+			</form>
+		}
 	</div>
 }
 

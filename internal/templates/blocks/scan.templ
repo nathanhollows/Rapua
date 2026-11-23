@@ -15,7 +15,7 @@ func scanQRHref(code string) templ.SafeURL {
 }
 
 templ scanPlayer(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState) {
-	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full">
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="qb-card">
 		@scanCard(settings, block, data, false)
 	</div>
 }
@@ -23,29 +23,34 @@ templ scanPlayer(settings models.QuestSettings, block blocks.ScanBlock, data blo
 // Re-rendered after an attempt, so an incomplete block here means the code was
 // wrong. Without that distinction a failed scan looks like a dropped request.
 templ scanPlayerUpdate(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState) {
-	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="indicator w-full" hx-swap-oob="true">
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class={ "qb-card", "is-fresh", templ.KV("is-wrong", !data.IsComplete()) }
+		hx-swap-oob="true"
+	>
 		@scanCard(settings, block, data, true)
 	</div>
 }
 
 templ scanCard(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState, attempted bool) {
-	if settings.EnablePoints && block.Points > 0 {
-		<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
-	}
-	@completionBadge(data)
-	<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-		if block.Prompt != "" {
+	@qbTop("scan-qr-code", "Scan", settings, block.GetPoints(), data)
+	if block.Prompt != "" {
+		<div class="qb-q">
 			@templ.Raw(stringToMarkdown(block.Prompt))
+		</div>
+	}
+	if data.IsComplete() {
+		@qbDoneMessage("Code scanned.")
+	} else {
+		<p class="qb-hint">Scan it, or type the code.</p>
+		if attempted {
+			<p class="qb-msg no" role="status">
+				@icon("circle-x", templ.Attributes{"aria-hidden": "true"})
+				<span>That is not the right code. Have another look.</span>
+			</p>
 		}
-		if data.IsComplete() {
-			<p class="text-success">Scanned.</p>
-		} else {
-			if attempted {
-				<p class="text-error text-sm not-prose">That's not the right code. Have another look.</p>
-			}
-			@scanForm(block, attempted)
-		}
-	</div>
+		@scanForm(block, attempted)
+	}
 }
 
 // The camera posts "scanned" and the box posts "code" so the server can tell a
@@ -62,8 +67,7 @@ templ scanForm(block blocks.ScanBlock, attempted bool) {
 		<input type="hidden" name="block" value={ block.ID }/>
 		<input type="hidden" name="scanned" value=""/>
 		<div
-			class={ "flex flex-col gap-3",
-				templ.KV("animate-[wobble_1s_ease-in-out]", attempted) }
+			class="flex flex-col gap-3"
 		>
 			<div id={ fmt.Sprintf("scan-controls-%s", block.ID) } class="flex flex-col gap-3 not-prose">
 				<button

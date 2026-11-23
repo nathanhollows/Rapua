@@ -7,88 +7,89 @@ import (
 )
 
 templ choicePlayer(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState) {
-	<div
-		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
-	>
-		@pointsBadge(settings.EnablePoints, block.GetPoints())
-		@completionBadge(state)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			if block.Prompt != "" {
-				@templ.Raw(stringToMarkdown(block.Prompt))
-			}
-			if state.IsComplete() {
-				<div class="not-prose flex flex-col gap-1 mt-2">
-					for _, label := range block.GetChosenLabels(state) {
-						<div class="flex items-center gap-2">
-							@icon("check-circle", templ.Attributes{"class": "w-5 h-5 text-success shrink-0"})
-							<span class="font-medium">{ label }</span>
-						</div>
-					}
-				</div>
-			} else {
-				<form
-					hx-post="/blocks/validate"
-					hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-					class="not-prose"
-				>
-					<input type="hidden" name="block" value={ block.ID }/>
-					<div class="flex flex-col gap-2 mt-2">
-						for _, opt := range block.Options {
-							<label class="flex items-center gap-3 cursor-pointer p-3 rounded-lg border border-base-300 hover:bg-base-300 transition-colors has-checked:border-primary has-checked:bg-primary/10">
-								if block.MultiSelect {
-									<input
-										type="checkbox"
-										name="choice"
-										value={ opt.Sets }
-										class="checkbox checkbox-primary checkbox-sm"
-									/>
-								} else {
-									<input
-										type="radio"
-										name="choice"
-										value={ opt.Sets }
-										class="radio radio-primary radio-sm"
-										required
-									/>
-								}
-								<span>{ opt.Label }</span>
-							</label>
-						}
-					</div>
-					<div class="w-full flex justify-center mt-4">
-						<button type="submit" class="btn btn-primary">
-							{ block.GetButtonText() }
-							@icon("check", templ.Attributes{"class": "w-5 h-5"})
-						</button>
-					</div>
-				</form>
-			}
-		</div>
-	</div>
+	@choiceCard(settings, block, state, false)
 }
 
+// choicePlayerUpdate answers a pick: it replaces the card in place.
 templ choicePlayerUpdate(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState) {
+	@choiceCard(settings, block, state, true)
+}
+
+// choiceCard has no right answer, so nothing on it is green or red. Once a pick is
+// made it stays, locked, in the section colour.
+templ choiceCard(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState, update bool) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
-		hx-swap-oob="true"
+		class={ "qb-card", templ.KV("is-fresh", update) }
+		if update {
+			hx-swap-oob="true"
+		}
 	>
-		@pointsBadge(settings.EnablePoints, block.GetPoints())
-		@completionBadge(state)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			if block.Prompt != "" {
+		@qbTop("signpost", "Choice", settings, block.GetPoints(), state)
+		if block.Prompt != "" {
+			<div class="qb-q">
 				@templ.Raw(stringToMarkdown(block.Prompt))
-			}
-			<div class="not-prose flex flex-col gap-1 mt-2">
+			</div>
+		}
+		if state.IsComplete() {
+			<p class="qb-hint">You chose:</p>
+			<div class="qb-opts">
 				for _, label := range block.GetChosenLabels(state) {
-					<div class="flex items-center gap-2">
-						@icon("check-circle", templ.Attributes{"class": "w-5 h-5 text-success shrink-0"})
-						<span class="font-medium">{ label }</span>
+					<div class={ "qb-opt", "locked", "chosen", templ.KV("box", block.MultiSelect) }>
+						<span class="qb-mark">
+							@icon("check", templ.Attributes{"aria-hidden": "true"})
+						</span>
+						<div class="qb-t">{ label }</div>
 					</div>
 				}
 			</div>
-		</div>
+		} else {
+			<form
+				class="qb-form"
+				hx-post="/blocks/validate"
+				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+			>
+				<input type="hidden" name="block" value={ block.ID }/>
+				<p class="qb-hint">
+					if block.MultiSelect {
+						Pick all that apply.
+					} else {
+						Pick one.
+					}
+				</p>
+				<div class="qb-opts">
+					for _, opt := range block.Options {
+						<label class={ "qb-opt", templ.KV("box", block.MultiSelect) }>
+							<span class="qb-mark">
+								if block.MultiSelect {
+									<input type="checkbox" name="choice" value={ opt.Sets }/>
+								} else {
+									<input type="radio" name="choice" value={ opt.Sets }/>
+								}
+								@icon("check", templ.Attributes{"aria-hidden": "true"})
+							</span>
+							<div class="qb-t">{ opt.Label }</div>
+						</label>
+					}
+				</div>
+				<button
+					type="submit"
+					class="btn btn-primary qb-go"
+					disabled
+					_="
+						on change from (closest <form />).querySelectorAll('input[name=choice]')
+							set my.disabled to ((closest <form />).querySelector('input[name=choice]:checked') is null)
+						end
+					"
+				>
+					<span class="qb-idle">Pick an option</span>
+					<span class="qb-ready">
+						{ block.GetButtonText() }
+						@icon("check", templ.Attributes{"aria-hidden": "true"})
+					</span>
+				</button>
+			</form>
+		}
 	</div>
 }
 

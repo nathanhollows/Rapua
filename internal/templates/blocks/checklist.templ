@@ -6,67 +6,77 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 )
 
+// checklistTicked is how many items the player has ticked.
+func checklistTicked(block blocks.ChecklistBlock, data blocks.PlayerState) int {
+	n := 0
+	for _, item := range block.List {
+		if item.IsChecked(data.GetPlayerData()) {
+			n++
+		}
+	}
+	return n
+}
+
 templ checklistPlayer(settings models.QuestSettings, block blocks.ChecklistBlock, data blocks.PlayerState) {
+	@checklistCard(settings, block, data, false)
+}
+
+// checklistPlayerUpdate answers a tick. The card pops only when the last one
+// completes it.
+templ checklistPlayerUpdate(settings models.QuestSettings, block blocks.ChecklistBlock, data blocks.PlayerState) {
+	@checklistCard(settings, block, data, true)
+}
+
+templ checklistCard(settings models.QuestSettings, block blocks.ChecklistBlock, data blocks.PlayerState, fresh bool) {
+	{{ done := data.IsComplete() }}
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
+		class={ "qb-card", templ.KV("is-fresh", fresh) }
 	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
+		@qbTop("list-checks", "To do", settings, block.GetPoints(), data)
+		if block.Content != "" {
+			<div class="qb-q">
+				@templ.Raw(stringToMarkdown(block.Content))
+			</div>
 		}
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			@templ.Raw(stringToMarkdown(block.Content))
-			<form
-				hx-post={ fmt.Sprint("/blocks/validate") }
-				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-				hx-trigger="change"
-			>
-				<input type="hidden" name="block" value={ block.ID }/>
-				<div
-					if data.IsComplete() {
-						class="checklist w-full flex flex-col gap-3 text-success"
-					} else {
-						class="checklist w-full flex flex-col gap-3"
-					}
-				>
-					for _, item := range block.List {
-						<div class="form-control">
-							<label class="label cursor-pointer flex gap-3 justify-start text-base-content">
-								<input
-									id={ fmt.Sprintf("checklist-%s-%s", block.ID, item.ID) }
-									name="checklist-item-ids"
-									type="checkbox"
-									value={ item.ID }
-									autoComplete="off"
-									if data.IsComplete() {
-										disabled
-										class="checkbox checkbox-success"
-									} else {
-										class="checkbox checkbox-primary"
-									}
-									if item.IsChecked(data.GetPlayerData()) || data.IsComplete() {
-										checked
-									}
-								/>
-								<div class="checklist-label">
-									@templ.Raw(stringToMarkdown(item.Description))
-								</div>
-							</label>
+		<p class="qb-hint">
+			if done {
+				All done.
+			} else {
+				{ fmt.Sprint(checklistTicked(block, data)) } of { fmt.Sprint(len(block.List)) } done. Tick each one as you go.
+			}
+		</p>
+		<form
+			class="qb-form"
+			hx-post="/blocks/validate"
+			hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+			hx-swap="outerHTML"
+			hx-trigger="change"
+		>
+			<input type="hidden" name="block" value={ block.ID }/>
+			<div class="qb-opts checklist">
+				for _, item := range block.List {
+					<label class={ "qb-opt", "box", "is-done", templ.KV("locked", done) }>
+						<span class="qb-mark">
+							<input
+								id={ fmt.Sprintf("checklist-%s-%s", block.ID, item.ID) }
+								name="checklist-item-ids"
+								type="checkbox"
+								value={ item.ID }
+								autoComplete="off"
+								disabled?={ done }
+								checked?={ done || item.IsChecked(data.GetPlayerData()) }
+							/>
+							@icon("check", templ.Attributes{"aria-hidden": "true"})
+						</span>
+						<div class="qb-t">
+							@templ.Raw(stringToMarkdown(item.Description))
 						</div>
-					}
-				</div>
-			</form>
-		</div>
+					</label>
+				}
+			</div>
+		</form>
 	</div>
-	<style>
-		.checklist-label p {
-			margin: 0;
-		}
-		.checklist-label strong {
-			color: inherit;
-		}
-	</style>
 }
 
 var checklistInstructionsTextarea = TextareaParams{

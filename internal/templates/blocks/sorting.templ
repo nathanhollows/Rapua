@@ -33,6 +33,20 @@ func getDisplayOrder(playerData blocks.SortingPlayerData) []string {
 }
 
 // Helper function to extract item positions for showing answers
+// orderResolves is whether a saved order names any item the block still has. One
+// that names none, because the items were given ids since, would draw an empty
+// list, so it is treated as no order at all.
+func orderResolves(block blocks.SortingBlock, playerData blocks.SortingPlayerData) bool {
+	for _, item := range block.Items {
+		for _, id := range getDisplayOrder(playerData) {
+			if item.ID == id {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func getItemPositions(block blocks.SortingBlock) map[string]int {
 	positions := make(map[string]int)
 	for _, item := range block.Items {
@@ -55,7 +69,7 @@ func renderItems(block blocks.SortingBlock, data blocks.PlayerState) templ.Compo
 		positions := getItemPositions(block)
 
 		// Determine which items to show and in what order
-		if err == nil && len(playerData.ShuffleOrder) > 0 {
+		if err == nil && len(playerData.ShuffleOrder) > 0 && orderResolves(block, playerData) {
 			// Create a map for quick item lookup
 			itemMap := make(map[string]blocks.SortingItem)
 			for _, item := range block.Items {
@@ -80,7 +94,7 @@ func renderItems(block blocks.SortingBlock, data blocks.PlayerState) templ.Compo
 						}
 					} else {
 						// Regular sortable item
-						err := sortItem(item).Render(ctx, w)
+						err := sortItem(item, i+1).Render(ctx, w)
 						if err != nil {
 							return err
 						}
@@ -91,7 +105,7 @@ func renderItems(block blocks.SortingBlock, data blocks.PlayerState) templ.Compo
 			// First time viewing, use the shuffle order if it exists
 			itemsToShow := make([]blocks.SortingItem, 0, len(block.Items))
 
-			if len(playerData.ShuffleOrder) > 0 {
+			if len(playerData.ShuffleOrder) > 0 && orderResolves(block, playerData) {
 				// Use the existing shuffle order
 				itemMap := make(map[string]blocks.SortingItem)
 				for _, item := range block.Items {
@@ -124,8 +138,8 @@ func renderItems(block blocks.SortingBlock, data blocks.PlayerState) templ.Compo
 			}
 
 			// Render the items
-			for _, item := range itemsToShow {
-				err := sortItem(item).Render(ctx, w)
+			for i, item := range itemsToShow {
+				err := sortItem(item, i+1).Render(ctx, w)
 				if err != nil {
 					return err
 				}
@@ -158,59 +172,80 @@ func deterministicShuffle(items []string, seed string) []string {
 }
 
 templ sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, data blocks.PlayerState) {
+	@sortingCard(settings, block, data, false)
+}
+
+// sortingPlayerUpdate answers a check: the card is replaced, and a wrong order shakes.
+templ sortingPlayerUpdate(settings models.QuestSettings, block blocks.SortingBlock, data blocks.PlayerState) {
+	@sortingCard(settings, block, data, true)
+}
+
+// sortingRightPlace is how many items sit where they belong in the player's last order.
+func sortingRightPlace(block blocks.SortingBlock, playerData blocks.SortingPlayerData) int {
+	positions := getItemPositions(block)
+	right := 0
+	for i, id := range playerData.PlayerOrder {
+		if isItemInCorrectPosition(id, i+1, positions) {
+			right++
+		}
+	}
+	return right
+}
+
+templ sortingCard(settings models.QuestSettings, block blocks.SortingBlock, data blocks.PlayerState, update bool) {
+	{{ playerData, _ := getPlayerData(data.GetPlayerData()) }}
+	{{ missed := !data.IsComplete() && block.ScoringScheme == blocks.RetryUntilCorrect && playerData.Attempts > 0 && !playerData.IsCorrect }}
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
+		class={ "qb-card", templ.KV("is-fresh", update), templ.KV("is-wrong", update && missed) }
 	>
 		if data.IsComplete() {
-			@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
+			@qbTop("arrow-up-down", "Sorting", settings, data.GetPointsAwarded(), data)
 		} else {
-			@pointsBadge(settings.EnablePoints, block.Points)
+			@qbTop("arrow-up-down", "Sorting", settings, block.Points, data)
 		}
-		@completionBadge(data)
-		<div class="card bg-base-200 shadow-lg w-full">
-			<div class="prose p-5 pb-3">
-				if block.Content == "" {
-					<h2>Sortable</h2>
-					<p>Sort the items below in the correct order.</p>
-				} else {
-					@templ.Raw(stringToMarkdown(block.Content))
-				}
-			</div>
-			<form
-				id={ fmt.Sprintf("sorting-form-%s", block.ID) }
-				hx-post={ fmt.Sprint("/blocks/validate") }
-				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-				class="pb-4"
-			>
-				<input type="hidden" name="block" value={ block.ID }/>
-				<div
-					id={ fmt.Sprintf("sorting-items-%s", block.ID) }
-					class="list sort-container"
-					data-complete={ fmt.Sprint(data.IsComplete()) }
-				>
-					@renderItems(block, data)
-				</div>
-				if block.ScoringScheme == blocks.RetryUntilCorrect {
-					// Get player data to check attempts
-					if playerData, err := getPlayerData(data.GetPlayerData()); err == nil && playerData.Attempts > 0 && !playerData.IsCorrect {
-						<p class="p-4 pb-0 text-primary font-bold text-center">Not quite! Try again (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
-					}
-				}
-				if !data.IsComplete() {
-					<div class="flex justify-center mt-4">
-						<button class="btn btn-primary btn-wide">
-							if block.ScoringScheme == blocks.RetryUntilCorrect {
-								Check
-							} else {
-								Submit
-							}
-							<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal-icon lucide-send-horizontal w-5 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-						</button>
-					</div>
-				}
-			</form>
+		<div class="qb-q">
+			if block.Content == "" {
+				<p>Put these in the right order.</p>
+			} else {
+				@templ.Raw(stringToMarkdown(block.Content))
+			}
 		</div>
+		<form
+			id={ fmt.Sprintf("sorting-form-%s", block.ID) }
+			class="qb-form"
+			hx-post="/blocks/validate"
+			hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+			hx-swap="outerHTML"
+		>
+			<input type="hidden" name="block" value={ block.ID }/>
+			if !data.IsComplete() {
+				<p class="qb-hint">Drag the handle to move one.</p>
+			}
+			<ul
+				id={ fmt.Sprintf("sorting-items-%s", block.ID) }
+				class={ "qb-sort", "sort-container", templ.KV("locked", data.IsComplete()) }
+				data-complete={ fmt.Sprint(data.IsComplete()) }
+			>
+				@renderItems(block, data)
+			</ul>
+			if missed {
+				<p class="qb-msg no" role="status">
+					@icon("circle-x", templ.Attributes{"aria-hidden": "true"})
+					<span>Not quite. { fmt.Sprint(sortingRightPlace(block, playerData)) } of { fmt.Sprint(len(block.Items)) } are in the right place.</span>
+				</p>
+			}
+			if !data.IsComplete() {
+				<button type="submit" class="btn btn-primary qb-go">
+					if block.ScoringScheme == blocks.RetryUntilCorrect {
+						Check order
+					} else {
+						Submit order
+					}
+					@icon("check", templ.Attributes{"aria-hidden": "true"})
+				</button>
+			}
+		</form>
 	</div>
 	<script>
 		// Only the dragging: items carry their own order input, so rewriting it
@@ -218,6 +253,9 @@ templ sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, da
 		// in a script prints as written. It reruns after an htmx swap, as a
 		// re-rendered block arrives without a page load.
 		(function() {
+			function renumber(container) {
+				container.querySelectorAll('.qb-n').forEach(function(n, i) { n.textContent = i + 1; });
+			}
 			function setUpSorting() {
 				if (typeof Sortable === 'undefined') {
 					window.addEventListener('load', setUpSorting, { once: true });
@@ -227,10 +265,12 @@ templ sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, da
 					container.setAttribute('data-ready', 'true');
 					if (container.getAttribute('data-complete') === 'true') return;
 					new Sortable(container, {
+						handle: '.qb-grip',
 						animation: 150,
 						ghostClass: 'sortable-ghost',
 						chosenClass: 'sortable-chosen',
-						dragClass: 'sortable-drag'
+						dragClass: 'sortable-drag',
+						onEnd: function() { renumber(container); }
 					});
 				});
 			}
@@ -243,85 +283,56 @@ templ sortingPlayer(settings models.QuestSettings, block blocks.SortingBlock, da
 				window.__sortingSwapBound = true;
 				document.addEventListener('htmx:afterSettle', setUpSorting);
 			}
+			// The handle is also a keyboard control: up and down move the item.
+			if (!window.__sortingKeysBound) {
+				window.__sortingKeysBound = true;
+				document.addEventListener('keydown', function(e) {
+					var grip = e.target.closest && e.target.closest('.qb-grip');
+					if (!grip || (e.key !== 'ArrowUp' && e.key !== 'ArrowDown')) return;
+					var row = grip.closest('.qb-srow'), container = row.parentElement;
+					var other = e.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
+					if (!other) return;
+					e.preventDefault();
+					if (e.key === 'ArrowUp') { container.insertBefore(row, other); } else { container.insertBefore(other, row); }
+					renumber(container);
+					grip.focus();
+				});
+			}
 		})();
 	</script>
 }
 
-templ sortItem(item blocks.SortingItem) {
+templ sortItem(item blocks.SortingItem, n int) {
 	<li
 		id={ fmt.Sprintf("sort-item-%s", item.ID) }
-		class="list-row items-center py-3 pr-3 pl-5"
+		class="qb-srow"
 		data-id={ item.ID }
 		data-correct-position={ fmt.Sprint(item.Position) }
 	>
-		<div class="list-col-grow prose">
+		<button type="button" class="qb-grip" aria-label="Move this item. Drag it, or use the up and down arrow keys.">
+			@icon("grip-vertical", templ.Attributes{"aria-hidden": "true"})
+		</button>
+		<span class="qb-n">{ fmt.Sprint(n) }</span>
+		<div class="qb-t">
 			@templ.Raw(stringToMarkdown(item.Description))
 		</div>
 		<input type="hidden" name="sorting-item-order" value={ item.ID }/>
-		<span class="join join-vertical">
-			<button
-				type="button"
-				class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-				data-tip="Move up"
-				_="on click
-						set :item to closest parent <li/>
-						set :prev to :item.previousElementSibling
-						if :prev then
-							put :item before :prev
-						end
-					"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
-			</button>
-			<button
-				type="button"
-				class="btn btn-xs btn-ghost join-item tooltip tooltip-left"
-				data-tip="Move down"
-				_="on click
-					set :item to closest parent <li/>
-					set :next to :item.nextElementSibling
-					if :next then
-						put :item after :next
-					end
-				"
-			>
-				<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-			</button>
-		</span>
 	</li>
 }
 
 // Template for an item with position indicators for completed blocks
 templ sortItemWithPosition(item blocks.SortingItem, currentPosition int, isCorrect bool) {
-	if isCorrect {
-		<li
-			id={ fmt.Sprintf("sort-item-%s", item.ID) }
-			class="list-row items-center py-3 pr-3 pl-5"
-			data-id={ item.ID }
-			data-correct-position={ fmt.Sprint(item.Position) }
-		>
-			<span class="badge badge-lg badge-success rounded-full">
-				{ fmt.Sprint(item.Position) }
-			</span>
-			<div class="list-col-grow prose">
-				@templ.Raw(stringToMarkdown(item.Description))
-			</div>
-		</li>
-	} else {
-		<li
-			id={ fmt.Sprintf("sort-item-%s", item.ID) }
-			class="list-row items-center py-3 pr-3 pl-5"
-			data-id={ item.ID }
-			data-correct-position={ fmt.Sprint(item.Position) }
-		>
-			<span class="badge badge-lg badge-error rounded-full">
-				{ fmt.Sprint(item.Position) }
-			</span>
-			<div class="list-col-grow prose">
-				@templ.Raw(stringToMarkdown(item.Description))
-			</div>
-		</li>
-	}
+	<li
+		id={ fmt.Sprintf("sort-item-%s", item.ID) }
+		class={ "qb-srow", templ.KV("is-ok", isCorrect), templ.KV("is-no", !isCorrect) }
+		data-id={ item.ID }
+		data-correct-position={ fmt.Sprint(item.Position) }
+	>
+		<span class="qb-n">{ fmt.Sprint(currentPosition) }</span>
+		<div class="qb-t">
+			@templ.Raw(stringToMarkdown(item.Description))
+		</div>
+	</li>
 }
 
 var sortableInstructionTextarea = TextareaParams{
