@@ -310,6 +310,20 @@ func TestLint_NegativeBlockPoints(t *testing.T) {
 	assert.Equal(t, "INVALID_POINTS", result.Errors[0].Code)
 }
 
+// A clue is paid for, so its points are a cost and negative by design. Flagging
+// them left every priced clue permanently marked as needing a fix, and an
+// exported game could not be imported again.
+func TestLint_ClueCostIsNegative(t *testing.T) {
+	doc := validDoc()
+	leaf(doc).Reveal = game.ObjectiveContextDoc{
+		Blocks: []game.BlockDoc{{"type": "clue", "points": float64(-15)}},
+	}
+	result := game.Lint(doc, newTestRegistry())
+	for _, diagnostic := range result.Errors {
+		assert.NotEqual(t, "INVALID_POINTS", diagnostic.Code)
+	}
+}
+
 func TestLint_NegativeBlockPointsJsonNumber(t *testing.T) {
 	doc := validDoc()
 	leaf(doc).Reveal = game.ObjectiveContextDoc{

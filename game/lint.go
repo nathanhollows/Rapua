@@ -14,6 +14,11 @@ var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$`)
 // expresses that.
 const startButtonBlockType = "start_button"
 
+// costBlockType is the one block that takes points off instead of giving them, so
+// its points are negative by design: "paying points to reveal a clue" in the spec.
+// Every other block's points are a reward and cannot be below zero.
+const costBlockType = "clue"
+
 // retiredSecretRouting is no longer a RouteStrategy, but a document written
 // before it was retired can still name it, and saying why is more use than
 // calling the value unrecognised.
@@ -432,7 +437,7 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //noli
 		l.errorf(path+".type", "UNKNOWN_BLOCK_TYPE", "unknown block type %q", typStr)
 		return
 	}
-	if pointsVal, ok := b["points"]; ok {
+	if pointsVal, ok := b["points"]; ok && typStr != costBlockType {
 		switch v := pointsVal.(type) {
 		case float64:
 			if v < 0 {
