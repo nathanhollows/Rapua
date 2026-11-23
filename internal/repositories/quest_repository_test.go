@@ -492,63 +492,6 @@ func TestQuestRepository_DeleteByUser(t *testing.T) {
 	}
 }
 
-func TestQuestRepository_DismissQuickstart(t *testing.T) {
-	testCases := []struct {
-		name    string
-		questID string
-		setupFn func(context.Context, testing.TB, string) error
-		wantErr bool
-	}{
-		{
-			name:    "Dismiss quickstart for existing user",
-			questID: gofakeit.UUID(),
-			setupFn: func(ctx context.Context, tb testing.TB, questID string) error {
-				innerRepo, _, innerDbc, _ := setupInstanceRepo(tb.(*testing.T))
-				inst := models.Quest{
-					ID:                    questID,
-					Name:                  gofakeit.Word(),
-					UserID:                gofakeit.UUID(),
-					IsQuickStartDismissed: false,
-				}
-				insertUserWithID(tb.(*testing.T), innerDbc, inst.UserID)
-				return innerRepo.Create(ctx, &inst)
-			},
-			wantErr: false,
-		},
-		{
-			name:    "Dismiss quickstart for user who has no instances",
-			questID: gofakeit.UUID(),
-			setupFn: func(_ context.Context, _ testing.TB, _ string) error {
-				return nil
-			},
-			wantErr: false,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			repo, _, _, cleanup := setupInstanceRepo(t)
-			defer cleanup()
-
-			ctx := context.Background()
-			err := tc.setupFn(ctx, t, tc.questID)
-			require.NoError(t, err)
-
-			err = repo.DismissQuickstart(ctx, tc.questID)
-			if tc.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				instances, findErr := repo.FindByUserID(ctx, tc.questID)
-				require.NoError(t, findErr)
-				for _, inst := range instances {
-					assert.True(t, inst.IsQuickStartDismissed, "quickstart should be dismissed")
-				}
-			}
-		})
-	}
-}
-
 func TestQuestRepository_CreateTx(t *testing.T) {
 	repo, transactor, dbc, cleanup := setupInstanceRepo(t)
 	defer cleanup()

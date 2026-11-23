@@ -107,7 +107,6 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 	accessService := services.NewAccessService(blockRepo, instanceRepo, objectiveRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
-	quickstartService := services.NewQuickstartService(instanceRepo)
 	uploadService := services.NewUploadService(transactor, uploadRepo, runEventRepo, localStorage)
 	deleteService := services.NewDeleteService(
 		transactor, instanceRepo,
@@ -207,7 +206,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		exportService, importService, facilitatorService, gameScheduleService,
 		instanceRepo, questService, instanceSettingsService,
 		objectiveService, notificationService,
-		runService, templateService, uploadService, userService, quickstartService,
+		runService, templateService, uploadService, userService,
 		leaderBoardService, stripeService,
 	)
 

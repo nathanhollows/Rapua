@@ -44,7 +44,6 @@ func TestAdminLinksOutOfTheAdminAreNotBoosted(t *testing.T) {
 		"the page frame, with no quest":   Layout(templ.NopComponent, models.User{ID: "u"}, "Quests", "Quests"),
 		"the facilitator frame":           FacilitatorLayout(templ.NopComponent, "Facilitator Dashboard", false),
 		"the facilitator frame for admin": FacilitatorLayout(templ.NopComponent, "Facilitator Dashboard", true),
-		"the quickstart bar":              QuickstartBar(models.Quest{ID: "q"}),
 	}
 
 	for name, page := range pages {

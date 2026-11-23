@@ -34,9 +34,6 @@ type QuestRepository interface {
 	// DeleteByUserID removes all instances associated with a user ID
 	DeleteByUser(ctx context.Context, tx *bun.Tx, userID string) error
 
-	// DismissQuickstart marks the user as having dismissed the quickstart
-	DismissQuickstart(ctx context.Context, questID string) error
-
 	// GetByIDWithRelations loads an instance with all relations needed for the admin panel
 	GetByIDWithRelations(ctx context.Context, id string) (*models.Quest, error)
 }
@@ -198,14 +195,4 @@ func (r *questRepository) GetByIDWithRelations(ctx context.Context, id string) (
 		return nil, err
 	}
 	return instance, nil
-}
-
-// DismissQuickstart marks the user as having dismissed the quickstart.
-func (r *questRepository) DismissQuickstart(ctx context.Context, questID string) error {
-	_, err := r.db.NewUpdate().
-		Model(&models.Quest{}).
-		Set("is_quick_start_dismissed = ?", true).
-		Where("id = ?", questID).
-		Exec(ctx)
-	return err
 }

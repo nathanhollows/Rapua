@@ -239,10 +239,9 @@ func (s *DuplicationService) duplicateInstance(
 	asTemplate bool,
 ) (*models.Quest, error) {
 	newInstance := &models.Quest{
-		Name:                  name,
-		UserID:                userID,
-		IsTemplate:            asTemplate,
-		IsQuickStartDismissed: true,
+		Name:       name,
+		UserID:     userID,
+		IsTemplate: asTemplate,
 	}
 
 	if err := s.instanceRepo.CreateTx(ctx, tx, newInstance); err != nil {

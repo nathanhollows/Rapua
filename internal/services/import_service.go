@@ -223,9 +223,8 @@ func (s *ImportService) importCreate(
 ) (*createResult, error) {
 	// Create Instance
 	newInstance := &models.Quest{
-		Name:                  doc.Name,
-		UserID:                userID,
-		IsQuickStartDismissed: true,
+		Name:   doc.Name,
+		UserID: userID,
 	}
 	if err := s.instanceRepo.CreateTx(ctx, tx, newInstance); err != nil {
 		return nil, fmt.Errorf("create instance: %w", err)

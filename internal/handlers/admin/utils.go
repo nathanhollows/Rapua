@@ -203,10 +203,6 @@ type NotificationService interface {
 	GetNotifications(ctx context.Context, runCode string) ([]models.Notification, error)
 }
 
-type QuickstartService interface {
-	DismissQuickstart(ctx context.Context, instanceID string) error
-}
-
 type RunService interface {
 	// AddTeams adds teams to the database
 	AddTeams(ctx context.Context, instanceID string, count int) ([]models.Run, error)
@@ -291,7 +287,6 @@ type Handler struct {
 	templateService         services.TemplateService
 	uploadService           UploadService
 	userService             UserService
-	quickstartService       QuickstartService
 	leaderBoardService      LeaderBoardService
 	stripeService           StripeService
 }
@@ -321,7 +316,6 @@ func NewAdminHandler(
 	templateService services.TemplateService,
 	uploadService UploadService,
 	userService UserService,
-	quickstartService QuickstartService,
 	leaderBoardService LeaderBoardService,
 	stripeService StripeService,
 ) *Handler {
@@ -350,7 +344,6 @@ func NewAdminHandler(
 		templateService:         templateService,
 		uploadService:           uploadService,
 		userService:             userService,
-		quickstartService:       quickstartService,
 		leaderBoardService:      leaderBoardService,
 		stripeService:           stripeService,
 	}
