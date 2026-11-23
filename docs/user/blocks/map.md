@@ -3,6 +3,7 @@ title: "Map"
 sidebar: true
 order: 11
 tag: new
+tag_until: 2027-02-21
 ---
 
 # Map Block

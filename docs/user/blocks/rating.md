@@ -3,6 +3,7 @@ title: "Rating"
 sidebar: true
 order: 15
 tag: new
+tag_until: 2026-06-16
 ---
 
 # Rating Block
