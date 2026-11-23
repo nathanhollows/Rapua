@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -22,9 +23,26 @@ type DocPage struct {
 	Path     string
 	Content  string
 	URL      string
-	Tag      string
+	Tag      string    // Read through ActiveTag, or the expiry is skipped.
+	TagUntil time.Time // Zero never expires.
 	Headings []Heading
 	Children []*DocPage
+}
+
+// A dated tag claims recency, so it lapses without anyone editing the page.
+func (p *DocPage) TagAt(now time.Time) string {
+	if !p.TagUntil.IsZero() {
+		// Midnight UTC: comparing instants would lapse it at a different hour per zone.
+		y, m, d := now.Date()
+		if time.Date(y, m, d, 0, 0, 0, 0, time.UTC).After(p.TagUntil) {
+			return ""
+		}
+	}
+	return p.Tag
+}
+
+func (p *DocPage) ActiveTag() string {
+	return p.TagAt(time.Now())
 }
 
 // Heading represents a section heading within a doc page.
@@ -266,9 +284,10 @@ func (ds *DocsService) loadDocs() error {
 
 		// Parse YAML front matter
 		var meta struct {
-			Title string `yaml:"title"`
-			Order int    `yaml:"order"`
-			Tag   string `yaml:"tag"`
+			Title    string    `yaml:"title"`
+			Order    int       `yaml:"order"`
+			Tag      string    `yaml:"tag"`
+			TagUntil time.Time `yaml:"tag_until"`
 		}
 		if err = yaml.Unmarshal([]byte(parts[1]), &meta); err != nil {
 			return fmt.Errorf("parsing YAML front matter in %s: %w", relativePath, err)
@@ -285,6 +304,7 @@ func (ds *DocsService) loadDocs() error {
 			URL:      "/docs/" + strings.TrimSuffix(relativePath, ".md"),
 			Content:  parts[2],
 			Tag:      meta.Tag,
+			TagUntil: meta.TagUntil,
 			Headings: headings,
 		}
 
@@ -354,6 +374,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 			existing.Order = page.Order
 			existing.Content = page.Content
 			existing.Tag = page.Tag
+			existing.TagUntil = page.TagUntil
 			existing.Headings = page.Headings
 			existing.URL = page.URL
 		} else {
@@ -364,6 +385,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 				existing.Order = page.Order
 				existing.Content = page.Content
 				existing.Tag = page.Tag
+				existing.TagUntil = page.TagUntil
 				existing.Headings = page.Headings
 				existing.URL = page.URL
 			}
@@ -392,6 +414,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 			newPage.Order = page.Order
 			newPage.Content = page.Content
 			newPage.Tag = page.Tag
+			newPage.TagUntil = page.TagUntil
 			newPage.Headings = page.Headings
 			newPage.URL = page.URL
 		} else {
@@ -402,6 +425,7 @@ func addToTree(node map[string]*DocPage, parts []string, page *DocPage, depth in
 				newPage.Order = page.Order
 				newPage.Content = page.Content
 				newPage.Tag = page.Tag
+				newPage.TagUntil = page.TagUntil
 				newPage.Headings = page.Headings
 				newPage.URL = page.URL
 			}
