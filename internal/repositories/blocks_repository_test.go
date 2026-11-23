@@ -178,7 +178,7 @@ func TestBlockRepository(t *testing.T) {
 				updatedBlock := result.(blocks.Block)
 				assert.JSONEq(
 					t,
-					`{"url":"/updated-url","caption":"","link":"","full_width":false}`,
+					`{"url":"/updated-url","caption":"","link":""}`,
 					string(updatedBlock.GetData()),
 				)
 			},

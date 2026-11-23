@@ -459,12 +459,9 @@ func NewStartGameButtonBlock(base BaseBlock) *StartGameButtonBlock {
 	}
 }
 
-const defaultMaxRating = 5
-
 func NewRatingBlock(base BaseBlock) *RatingBlock {
 	return &RatingBlock{
 		BaseBlock: base,
-		MaxRating: defaultMaxRating,
 	}
 }
 

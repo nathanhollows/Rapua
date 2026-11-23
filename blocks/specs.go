@@ -128,7 +128,6 @@ func (b *ImageBlock) GetSpec() game.BlockSpec {
 			{Name: "url", Type: "string", Required: true, Description: "Image URL"},
 			{Name: "caption", Type: "string", Description: "Caption displayed below the image"},
 			{Name: "link", Type: "string", Description: "Optional URL to open when the image is clicked"},
-			{Name: "full_width", Type: "bool", Description: "Render image edge-to-edge on mobile screens"},
 		},
 	}
 }
@@ -273,7 +272,6 @@ func (b *RatingBlock) GetSpec() game.BlockSpec {
 		Description: "Players rate something on a star scale.",
 		Fields: []game.FieldSpec{
 			{Name: "prompt", Type: "string", Description: "What the player is rating"},
-			{Name: "max_rating", Type: "int", Description: "Maximum rating value (default 5)"},
 		},
 	}
 }
@@ -334,7 +332,6 @@ func (b *ToggleTextBlock) GetSpec() game.BlockSpec {
 		Fields: []game.FieldSpec{
 			{Name: "title", Type: "string", Required: true, Description: "Visible toggle button label"},
 			{Name: "content", Type: "markdown", Required: true, Description: "Hidden content revealed when toggled"},
-			{Name: "small", Type: "bool", Description: "Use a smaller toggle style"},
 		},
 	}
 }

@@ -792,11 +792,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           "name": "link",
           "type": "string",
           "description": "Optional URL to open when the image is clicked"
-        },
-        {
-          "name": "full_width",
-          "type": "bool",
-          "description": "Render image edge-to-edge on mobile screens"
         }
       ]
     },
@@ -1043,11 +1038,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           "name": "prompt",
           "type": "string",
           "description": "What the player is rating"
-        },
-        {
-          "name": "max_rating",
-          "type": "int",
-          "description": "Maximum rating value (default 5)"
         }
       ]
     },
@@ -1262,11 +1252,6 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
           "type": "markdown",
           "description": "Hidden content revealed when toggled",
           "required": true
-        },
-        {
-          "name": "small",
-          "type": "bool",
-          "description": "Use a smaller toggle style"
         }
       ]
     },
