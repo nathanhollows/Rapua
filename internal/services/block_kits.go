@@ -113,8 +113,7 @@ func kitSteps(kit BlockKit) ([]kitStep, bool) {
 	case KitScan:
 		return []kitStep{
 			{blockType: kitTypeText, data: contentOf(scanKitHelp)},
-			// "generate" so there is a printable image the moment the block exists.
-			{blockType: kitTypeScan, data: map[string][]string{"code": {newScanCode()}, "generate": {"0"}}},
+			{blockType: kitTypeScan, data: map[string][]string{"code": {newScanCode()}}},
 		}, true
 	case KitLocation:
 		return []kitStep{{blockType: kitTypeGeofence}}, true

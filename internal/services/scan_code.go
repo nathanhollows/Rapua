@@ -45,7 +45,7 @@ func (s *CheckInService) ScanCode(
 		}
 	}
 
-	obj, block, err := s.matchScan(ctx, open, value)
+	obj, block, err := s.matchScan(ctx, open, value, modality)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (s *CheckInService) ScanCode(
 		return obj, s.submitScan(ctx, team, obj, block, value, modality)
 	}
 
-	obj, _, err = s.matchScan(ctx, done, value)
+	obj, _, err = s.matchScan(ctx, done, value, modality)
 	if err != nil {
 		return nil, err
 	}
@@ -64,9 +64,10 @@ func (s *CheckInService) ScanCode(
 }
 
 // matchScan returns the first objective, in tree order, with a proof scan
-// accepting the value.
+// accepting the value the way it was read: a block that refuses typing never
+// matches a typed one.
 func (s *CheckInService) matchScan(
-	ctx context.Context, candidates []models.Objective, value string,
+	ctx context.Context, candidates []models.Objective, value string, modality blocks.ScanModality,
 ) (*models.Objective, *blocks.ScanBlock, error) {
 	if len(candidates) == 0 {
 		return nil, nil, nil
@@ -95,7 +96,7 @@ func (s *CheckInService) matchScan(
 	}
 
 	for i := range candidates {
-		idx := slices.IndexFunc(scans[candidates[i].ID], func(b *blocks.ScanBlock) bool { return b.Matches(value) })
+		idx := slices.IndexFunc(scans[candidates[i].ID], func(b *blocks.ScanBlock) bool { return b.Accepts(value, modality) })
 		if idx >= 0 {
 			return &candidates[i], scans[candidates[i].ID][idx], nil
 		}

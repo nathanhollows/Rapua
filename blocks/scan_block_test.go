@@ -15,7 +15,7 @@ func scanBlock(match blocks.MatchRule, values ...string) *blocks.ScanBlock {
 	for _, v := range values {
 		codes = append(codes, blocks.ScanCode{Value: v})
 	}
-	return &blocks.ScanBlock{Match: match, Codes: codes}
+	return &blocks.ScanBlock{Match: match, Codes: codes, AllowTyping: true}
 }
 
 func TestScanBlock_Matches(t *testing.T) {
@@ -191,35 +191,17 @@ func TestScanBlock_EmptyInputErrors(t *testing.T) {
 	require.Error(t, err, "whitespace is not a scan")
 }
 
-// Generate is off unless the author asks for it.
-func TestScanBlock_MintsOnlyFlaggedCodes(t *testing.T) {
-	b := &blocks.ScanBlock{Codes: []blocks.ScanCode{
-		{Value: "ABCDE", Generate: true},
-		{Value: "9780143567592"},
-		{Value: "FGHJK", Generate: true},
-	}}
-	assert.Equal(t, []string{"ABCDE", "FGHJK"}, b.MintedCodes())
-}
-
-func TestScanBlock_MintsNothingByDefault(t *testing.T) {
-	assert.Empty(t, scanBlock(blocks.MatchCaseInsensitive, "ABCDE").MintedCodes())
-	assert.Empty(t, (&blocks.ScanBlock{}).MintedCodes())
-}
-
 func TestScanBlock_UpdateBlockData(t *testing.T) {
 	var b blocks.ScanBlock
 	require.NoError(t, b.UpdateBlockData(map[string][]string{
-		"code":     {"  ABCDE ", "9780143567592"},
-		"generate": {"0"},
-		"prompt":   {"Find the totara"},
-		"match":    {"ci"},
-		"points":   {"5"},
+		"code":   {"  ABCDE ", "9780143567592"},
+		"prompt": {"Find the totara"},
+		"match":  {"ci"},
+		"points": {"5"},
 	}))
 
 	require.Len(t, b.Codes, 2)
 	assert.Equal(t, "ABCDE", b.Codes[0].Value, "surrounding space would never survive a scan")
-	assert.True(t, b.Codes[0].Generate)
-	assert.False(t, b.Codes[1].Generate, "an unticked row is not generated")
 	assert.Equal(t, blocks.MatchCaseInsensitive, b.Match)
 	assert.Equal(t, 5, b.GetPoints())
 }
@@ -274,7 +256,7 @@ func TestScanBlock_UpdateBlockDataDefaultsMatch(t *testing.T) {
 
 func TestScanBlock_ToYAML(t *testing.T) {
 	b := &blocks.ScanBlock{Codes: []blocks.ScanCode{
-		{Value: "ABCDE", Generate: true},
+		{Value: "ABCDE"},
 		{Value: "9780143567592"},
 	}}
 	m := b.ToYAML()
@@ -284,6 +266,24 @@ func TestScanBlock_ToYAML(t *testing.T) {
 	codes, ok := m["codes"].([]map[string]any)
 	require.True(t, ok)
 	require.Len(t, codes, 2)
-	assert.Equal(t, map[string]any{"value": "ABCDE", "generate": true}, codes[0])
-	assert.Equal(t, map[string]any{"value": "9780143567592"}, codes[1], "the default is not restated")
+	assert.Equal(t, map[string]any{"value": "ABCDE"}, codes[0])
+	assert.Equal(t, map[string]any{"value": "9780143567592"}, codes[1])
+}
+
+func TestScanBlock_TypingIsOffUnlessAllowed(t *testing.T) {
+	b := scanBlock(blocks.MatchExact, "ABCDE")
+	b.AllowTyping = false
+	typed := map[string][]string{"code": {"ABCDE"}}
+
+	_, err := b.ValidatePlayerInput(&blocks.MockPlayerState{}, typed)
+	require.Error(t, err, "a typed code is refused unless the author allows it")
+
+	state, err := b.ValidatePlayerInput(&blocks.MockPlayerState{}, map[string][]string{"scanned": {"ABCDE"}})
+	require.NoError(t, err)
+	assert.True(t, state.IsComplete(), "a scan always counts")
+
+	require.NoError(t, b.UpdateBlockData(map[string][]string{"code": {"ABCDE"}, "allow_typing": {"on"}}))
+	state, err = b.ValidatePlayerInput(&blocks.MockPlayerState{}, typed)
+	require.NoError(t, err)
+	assert.True(t, state.IsComplete())
 }

@@ -892,8 +892,7 @@ func TestBlockService_CreateKit(t *testing.T) {
 		require.True(t, ok)
 		require.Len(t, scan.Codes, 1)
 		assert.Regexp(t, `^[a-hj-km-np-z2-9]{4}-[a-hj-km-np-z2-9]{4}$`, scan.Codes[0].Value,
-			"the form of code the editor's own Mint a QR makes")
-		assert.True(t, scan.Codes[0].Generate, "marked for a printable image")
+			"the form of code the editor's own Generate a code makes")
 		assert.Equal(t, 10, scan.GetPoints())
 		assert.Equal(t, 0, text.GetPoints(), "reading earns nothing")
 
@@ -959,6 +958,7 @@ func TestBlockService_CreateKit(t *testing.T) {
 		_, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitScan, 0)
 		require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
 	})
+}
 
 // Every empty start page needs a way in, so every start kit ends on the button
 // that starts a run. These are what an import with `start: []` is offered.
@@ -1050,5 +1050,4 @@ func TestBlockService_CreatePageKit(t *testing.T) {
 		_, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitScan, "X")
 		require.ErrorIs(t, err, services.ErrUnknownBlockKit)
 	})
-}
 }

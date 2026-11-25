@@ -51,6 +51,21 @@ templ imagePlayer(_ models.QuestSettings, block blocks.ImageBlock) {
 	</figure>
 }
 
+var imageCaptionInput = TextInputParams{
+	Name:         "caption",
+	Title:        "Caption",
+	Placeholder:  "Caption for image",
+	ExtraClasses: "w-full",
+}
+
+var imageLinkInput = TextInputParams{
+	Name:         "link",
+	Title:        "Link",
+	Placeholder:  "https://...",
+	HelpText:     "Where the image goes when it is clicked.",
+	ExtraClasses: "w-full",
+}
+
 templ imageAdmin(_ models.QuestSettings, block blocks.ImageBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s-upload", block.ID) }
@@ -119,29 +134,9 @@ templ imageAdmin(_ models.QuestSettings, block blocks.ImageBlock) {
 				max="100"
 			></progress>
 		</fieldset>
-		<div class="flex flex-col md:flex-row gap-5">
-			<fieldset class="fieldset w-full">
-				<legend class="fieldset-legend">Caption</legend>
-				<input
-					type="text"
-					name="caption"
-					class="input w-full"
-					placeholder="Caption for image"
-					value={ block.Caption }
-				/>
-				<p class="label">Optional</p>
-			</fieldset>
-			<fieldset class="fieldset w-full">
-				<legend class="fieldset-legend">Image Link</legend>
-				<input
-					type="text"
-					name="link"
-					class="input w-full"
-					placeholder="Link to image"
-					value={ block.Link }
-				/>
-				<p class="label">Optional</p>
-			</fieldset>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+			@TextInputField(imageCaptionInput.SetValue(block.Caption))
+			@TextInputField(imageLinkInput.SetValue(block.Link))
 		</div>
 	</form>
 }

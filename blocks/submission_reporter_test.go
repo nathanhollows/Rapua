@@ -40,8 +40,9 @@ func TestSubmission_Pincode(t *testing.T) {
 
 func TestSubmission_ScanReadsTheRequest(t *testing.T) {
 	block := &blocks.ScanBlock{
-		Codes: []blocks.ScanCode{{Value: "right"}},
-		Match: blocks.MatchExact,
+		Codes:       []blocks.ScanCode{{Value: "right"}},
+		Match:       blocks.MatchExact,
+		AllowTyping: true,
 	}
 
 	wrong := map[string][]string{"code": {"wrong"}}

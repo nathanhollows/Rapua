@@ -179,28 +179,6 @@ templ quizCard(settings models.QuestSettings, block blocks.QuizBlock, data block
 	</div>
 }
 
-// quizMultipleChoiceScript turns the answer marks between radios and checkboxes
-// as the switch moves, so the form shows what the block will do before it saves.
-const quizMultipleChoiceScript = `on change
-	set :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')
-	if I match <:checked /> then
-		add .checkbox to :inputs
-		add .checkbox-sm to :inputs
-		add .checkbox-success to :inputs
-		remove .radio from :inputs
-		remove .radio-sm from :inputs
-		remove .radio-success from :inputs
-		set @type of :inputs to 'checkbox'
-	else
-		add .radio to :inputs
-		add .radio-sm to :inputs
-		add .radio-success to :inputs
-		remove .checkbox from :inputs
-		remove .checkbox-sm from :inputs
-		remove .checkbox-success from :inputs
-		set @type of :inputs to 'radio'
-	end`
-
 var quizQuestionTextarea = TextareaParams{
 	Name:        "question",
 	Title:       "Question",
@@ -215,195 +193,91 @@ var quizUnlockedContentTextarea = TextareaParams{
 	Placeholder: "Well done! Here's what happens next...",
 	Markdown:    true,
 	Required:    false,
+	MinLines: 2,
 	HelpText:    "This content will be shown to the player when they answer correctly.",
+}
+
+const quizCols = "1.4rem 3.4rem 1fr 2.1rem"
+
+func quizRows(blockID string) RowsParams {
+	return RowsParams{
+		ID:       "quiz-options-" + blockID,
+		Cols:     quizCols,
+		Heads:    []string{"Right", "Answer"},
+		Min:      2,
+		AddLabel: "Add an answer",
+		Marks:    "multiple_choice",
+	}
 }
 
 templ quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
-		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input[type=number]) delay:500ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		// Question field
 		@TextareaField(quizQuestionTextarea.SetValue(block.Question))
-		// Answer type selection
 		<div class="flex flex-col gap-3 mb-5">
-			@adminSwitch("multiple_choice", "Multiple choice", "Players can pick more than one answer.", block.MultipleChoice, templ.Attributes{"_": quizMultipleChoiceScript})
+			@adminSwitch("multiple_choice", "Multiple choice", "Players can pick more than one answer.", block.MultipleChoice, templ.Attributes{})
 			@adminSwitch("randomise_order", "Randomise the order", "Each player sees the answers in a different order.", block.RandomizeOrder, templ.Attributes{})
 			@adminSwitch("allow_retry", "Allow more than one attempt", "A wrong answer can be tried again.", block.RetryEnabled, templ.Attributes{})
 		</div>
-		// Answer options
 		<fieldset class="fieldset">
-			<legend class="fieldset-legend flex justify-between w-full">
-				Answer options
-				<button
-					class="btn btn-outline btn-xs"
-					type="button"
-					id="add-option-btn"
-					_="
-						on click
-							set :group to closest <form />
-							put #quiz-option-template's innerHTML after last .quiz-option in :group.querySelector('.quiz-options')
-							if :group.querySelectorAll('input[name=multiple_choice]:checked').length then
-								remove <input[type=radio] /> from last <label /> in :group
-							else
-								remove <input[type=checkbox] /> from last <label /> in :group
-							end
-							set @value of last <input[name=option_correct] /> to 'option_' + ( :group.querySelectorAll('.quiz-options label').length - 1 )
-							set :newInput to last <input[name=option_text] /> in :group
-							call :newInput.focus()
-						"
-				>
-					Add Option
-				</button>
-			</legend>
-			<div
-				class="quiz-options join join-vertical"
-				_="on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate
-				if my children's length > 2
-					remove .invisible from me.querySelectorAll('button')
-				else
-					add .invisible to me.querySelectorAll('button')
-				end
-				"
-			>
-				// Existing options
+			<legend class="fieldset-legend">Answer options</legend>
+			@adminRows(quizRows(block.ID), nil) {
 				for i, option := range block.Options {
 					@quizOptionAdmin(i, option, block.MultipleChoice)
 				}
-				// Empty slots for new options (minimum 2 total)
 				for i := len(block.Options); i < 2; i++ {
-					// For the first option when creating a new quiz, set it as correct by default
-					if len(block.Options) == 0 && i == 0 {
-						@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: true}, block.MultipleChoice)
-					} else {
-						@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: false}, block.MultipleChoice)
-					}
+					@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: len(block.Options) == 0 && i == 0}, block.MultipleChoice)
 				}
-			</div>
-			<span
-				class="label-text text-xs text-error invisible mt-1"
-				_="
-				set :group to closest <form />
-				on load or click from :group.querySelectorAll('.quiz-options input')
-				set :checkedInputs to :group.querySelectorAll('.quiz-options input:checked')
-				if :checkedInputs's length != 0
-					add .invisible to me
-				else
-					remove .invisible from me
-				end
-			"
-			>
-				At least one option must be correct.
-			</span>
+			}
+			<p class="label">Mark every answer that is right. At least one must be.</p>
 		</fieldset>
-		// Unlocked content field
 		@TextareaField(quizUnlockedContentTextarea.SetValue(block.UnlockedContent))
-		<template id="quiz-option-template">
-			<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
-				<input
-					type="checkbox"
-					name="option_correct"
-					class="checkbox checkbox-sm checkbox-success"
-					_="on change send save to (closest <form/>)"
-				/>
-				<input
-					type="radio"
-					name="option_correct"
-					class="radio radio-sm radio-success"
-					_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
-				/>
-				<input
-					name="option_text"
-					class={ fmt.Sprintf("w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent item-%s", "") }
-					style="field-sizing: content;"
-					placeholder="Answer option..."
-					autoComplete="off"
-					_="on keyup
-						send save to (closest <form/>)
-						if event.key is 'Enter'
-							set :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')
-							set :myIndex to Array.from(:allOptions).indexOf(me)
-							if :myIndex is :allOptions.length - 1
-								send click to (closest <form />).querySelector('#add-option-btn')
-							else
-								call :allOptions[:myIndex + 1].focus()
-							end
-						end
-					"
-				/>
-				<button
-					type="button"
-					class="btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible"
-					data-tip="Delete"
-					_="on click
-				set :group to closest <form />
-				remove closest parent <label />
-				send save to :group
-				send triggerUpdate to :group.querySelector('.quiz-options')
-				"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-				</button>
-			</label>
-		</template>
 	</form>
+	<template id={ quizRows(block.ID).TemplateID() }>
+		@quizOptionAdmin(0, blocks.QuizOption{}, block.MultipleChoice)
+	</template>
 }
 
+// The mark's value is its row's place: the block matches marks to answers by it.
 templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool) {
-	<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
-		if isMultipleChoice {
-			<input
-				type="checkbox"
-				name="option_correct"
-				value={ fmt.Sprintf("option_%d", index) }
-				class="checkbox checkbox-sm checkbox-success"
-				checked?={ option.IsCorrect }
-				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
-			/>
-		} else {
-			<input
-				type="radio"
-				name="option_correct"
-				value={ fmt.Sprintf("option_%d", index) }
-				class="radio radio-sm radio-success"
-				checked?={ option.IsCorrect }
-				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
-			/>
-		}
+	<div class="rows-item" style={ gridCols(quizCols) }>
+		@rowGrip()
 		<input
-			name="option_text"
-			class={ fmt.Sprintf("w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent item-%s", "") }
-			style="field-sizing: content;"
-			placeholder="Answer option..."
-			value={ option.Text }
-			autoComplete="off"
-			_="on keyup
-				send save to (closest <form/>)
-				if event.key is 'Enter'
-					set :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')
-					set :myIndex to Array.from(:allOptions).indexOf(me)
-					if :myIndex is :allOptions.length - 1
-						send click to (closest <form />).querySelector('#add-option-btn')
-					else
-						call :allOptions[:myIndex + 1].focus()
-					end
-				end
-			"
+			type={ quizMarkType(isMultipleChoice) }
+			name="option_correct"
+			value={ fmt.Sprintf("option_%d", index) }
+			class={ quizMarkClass(isMultipleChoice), "justify-self-center" }
+			checked?={ option.IsCorrect }
+			aria-label="This answer is right"
+			data-rows-mark
+			data-rows-index="option_"
 		/>
-		<button
-			type="button"
-			class="btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible"
-			data-tip="Delete"
-			_="on click
-				set :group to closest <form />
-				remove closest parent <label />
-				send save to :group
-				send triggerUpdate to :group.querySelector('.quiz-options')
-				"
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-		</button>
-	</label>
+		<input
+			type="text"
+			name="option_text"
+			value={ option.Text }
+			placeholder="Answer option..."
+			class="rows-cell"
+			autocomplete="off"
+		/>
+		@rowRemove("answer")
+	</div>
+}
+
+func quizMarkType(multiple bool) string {
+	if multiple {
+		return "checkbox"
+	}
+	return "radio"
+}
+
+func quizMarkClass(multiple bool) string {
+	if multiple {
+		return "checkbox checkbox-sm checkbox-success"
+	}
+	return "radio radio-sm radio-success"
 }

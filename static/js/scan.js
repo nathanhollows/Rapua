@@ -46,6 +46,11 @@
 	}
 
 	// Hidden rather than empty, so a silent status does not leave a flex gap either side.
+	// A block that does not take typed codes has no box, so the way out is the camera or a facilitator.
+	function otherWay(form) {
+		return form.querySelector('input[name="code"]') ? "Type the code instead." : "Ask your facilitator for help.";
+	}
+
 	function say(el, message, tone) {
 		if (!el) return;
 		el.textContent = message || "";
@@ -61,7 +66,7 @@
 		if (!el.form || !el.video) return;
 
 		if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-			say(el.status, "Scanning needs a secure (https) connection. Type the code instead.", "error");
+			say(el.status, "Scanning needs a secure (https) connection. " + otherWay(el.form), "error");
 			return;
 		}
 
@@ -89,8 +94,8 @@
 			stop(blockID);
 			const denied = err && (err.name === "NotAllowedError" || err.name === "SecurityError");
 			say(el.status, denied
-				? "Camera permission was declined. Type the code instead."
-				: "The camera could not be opened. Type the code instead.", "error");
+				? "Camera permission was declined. " + otherWay(el.form)
+				: "The camera could not be opened. " + otherWay(el.form), "error");
 			return;
 		}
 

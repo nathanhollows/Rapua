@@ -41,6 +41,7 @@ var alertTextarea = TextareaParams{
 	Placeholder: "**Alert title!** Alert content.",
 	Markdown:    true,
 	Required:    true,
+	MinLines:    2,
 }
 
 templ alertAdmin(_ models.QuestSettings, block blocks.AlertBlock) {

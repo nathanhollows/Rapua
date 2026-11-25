@@ -493,7 +493,7 @@ func (c *m20260827_converter) insertScanBlock(
 	// the SITE_URL/s/CODE links v7 printed on its posters.
 	data, err := json.Marshal(map[string]any{
 		"prompt": "Scan the code to prove you found it",
-		"codes":  []map[string]any{{"value": loc.MarkerID, "generate": false}},
+		"codes":  []map[string]any{{"value": loc.MarkerID}},
 		"match":  "ci",
 	})
 	if err != nil {

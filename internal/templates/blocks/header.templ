@@ -54,6 +54,22 @@ templ headerAdmin(_ models.QuestSettings, block blocks.HeaderBlock) {
 		@TextInputField(headerTitleText.SetValue(block.TitleText))
 		<div class="grid grid-col-1 md:grid-cols-2 gap-5">
 			<fieldset class="fieldset">
+				<legend class="fieldset-legend">Styling</legend>
+				<select
+					name="size"
+					class="select select-bordered w-full"
+				>
+					for size, label := range block.GetTitleSizes() {
+						<option
+							value={ size }
+							if block.TitleSize == size {
+								selected
+							}
+						>{ label }</option>
+					}
+				</select>
+			</fieldset>
+			<fieldset class="fieldset">
 				<legend class="fieldset-legend justify-start w-full">
 					Icon name 
 					<span class="ml-auto badge badge-neutral badge-xs tooltip tooltip-left" data-tip="This field is optional">
@@ -72,22 +88,6 @@ templ headerAdmin(_ models.QuestSettings, block blocks.HeaderBlock) {
 						Enter the name of a Lucide icon (e.g., 'map-pin'). See <a href="https://lucide.dev/icons/?focus" target="_blank" class="link">Lucide Icons</a> { "for" } options.
 					</span>
 				</div>
-			</fieldset>
-			<fieldset class="fieldset">
-				<legend class="fieldset-legend">Styling</legend>
-				<select
-					name="size"
-					class="select select-bordered w-full"
-				>
-					for size, label := range block.GetTitleSizes() {
-						<option
-							value={ size }
-							if block.TitleSize == size {
-								selected
-							}
-						>{ label }</option>
-					}
-				</select>
 			</fieldset>
 		</div>
 	</form>

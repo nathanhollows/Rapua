@@ -38,12 +38,9 @@ const (
 	ModalityTyped  ScanModality = "typed"
 )
 
-// ScanCode is one value that satisfies the block. Generate marks the ones Rapua
-// renders as printable images; a code already in the world, such as an ISBN, is
-// left off.
+// ScanCode is one value that satisfies the block.
 type ScanCode struct {
-	Value    string `json:"value"`
-	Generate bool   `json:"generate,omitempty"`
+	Value string `json:"value"`
 }
 
 type ScanBlock struct {
@@ -51,6 +48,8 @@ type ScanBlock struct {
 	Prompt string     `json:"prompt"`
 	Codes  []ScanCode `json:"codes"`
 	Match  MatchRule  `json:"match"`
+	// AllowTyping is off unless set: a typed code can be passed along in a message.
+	AllowTyping bool `json:"allow_typing,omitempty"`
 }
 
 type scanBlockData struct {
@@ -100,6 +99,7 @@ func (b *ScanBlock) UpdateBlockData(input map[string][]string) error {
 		b.Prompt = input["prompt"][0]
 	}
 
+	b.AllowTyping = len(input["allow_typing"]) > 0 && input["allow_typing"][0] == "on"
 	b.Match = MatchExact
 	if input["match"] != nil && strings.TrimSpace(input["match"][0]) != "" {
 		rule := MatchRule(strings.TrimSpace(input["match"][0]))
@@ -114,11 +114,7 @@ func (b *ScanBlock) UpdateBlockData(input map[string][]string) error {
 func (b *ScanBlock) ToYAML() map[string]any {
 	codes := make([]map[string]any, 0, len(b.Codes))
 	for _, c := range b.Codes {
-		entry := map[string]any{"value": c.Value}
-		if c.Generate {
-			entry["generate"] = true
-		}
-		codes = append(codes, entry)
+		codes = append(codes, map[string]any{"value": c.Value})
 	}
 
 	m := map[string]any{
@@ -127,6 +123,9 @@ func (b *ScanBlock) ToYAML() map[string]any {
 	}
 	if b.Prompt != "" {
 		m["prompt"] = b.Prompt
+	}
+	if b.AllowTyping {
+		m["allow_typing"] = true
 	}
 	return m
 }
@@ -141,14 +140,9 @@ func (b *ScanBlock) matchRule() MatchRule {
 	return MatchExact
 }
 
-func (b *ScanBlock) MintedCodes() []string {
-	var codes []string
-	for _, c := range b.Codes {
-		if c.Generate && strings.TrimSpace(c.Value) != "" {
-			codes = append(codes, strings.TrimSpace(c.Value))
-		}
-	}
-	return codes
+// Accepts is Matches, and also refuses a typed code when the block only takes scans.
+func (b *ScanBlock) Accepts(scanned string, modality ScanModality) bool {
+	return b.Matches(scanned) && (modality != ModalityTyped || b.AllowTyping)
 }
 
 // Matches compares server-side; the client never says whether it was correct.
@@ -193,25 +187,17 @@ func matches(rule MatchRule, scanned, expected string) bool {
 	}
 }
 
-// parseScanCodes reads the repeated code fields. A checkbox posts only when
-// ticked, so generate carries the index of each row the author marked.
+// parseScanCodes reads the repeated code fields.
 //
 // No codes is allowed: the editor saves on every keystroke, so rejecting it here
 // would discard the prompt an author is still typing. A block with no codes
 // matches nothing, which fails closed at play time.
 func parseScanCodes(input map[string][]string) []ScanCode {
-	generate := map[string]bool{}
-	for _, idx := range input["generate"] {
-		generate[idx] = true
-	}
-
 	codes := make([]ScanCode, 0, len(input["code"]))
-	for i, raw := range input["code"] {
-		value := strings.TrimSpace(raw)
-		if value == "" {
-			continue
+	for _, raw := range input["code"] {
+		if value := strings.TrimSpace(raw); value != "" {
+			codes = append(codes, ScanCode{Value: value})
 		}
-		codes = append(codes, ScanCode{Value: value, Generate: generate[strconv.Itoa(i)]})
 	}
 	return codes
 }
@@ -234,6 +220,9 @@ func (b *ScanBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 	scanned, modality, err := scannedValue(input)
 	if err != nil {
 		return state, err
+	}
+	if modality == ModalityTyped && !b.AllowTyping {
+		return state, errors.New("this code has to be scanned")
 	}
 
 	newPlayerData := scanBlockData{}

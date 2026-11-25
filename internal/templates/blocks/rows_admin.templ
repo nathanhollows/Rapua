@@ -1,0 +1,94 @@
+package blocks
+
+import (
+	"fmt"
+	"strings"
+)
+
+type RowsParams struct {
+	ID string
+	Cols string
+	Heads []string
+	Min int
+	AddLabel string
+	Marks string
+}
+
+func (p RowsParams) TemplateID() string { return p.ID + "-row" }
+
+// Inline because editor.css sets the default columns outside any layer, which
+// utilities cannot beat.
+func gridCols(cols string) templ.SafeCSS {
+	if strings.TrimSpace(cols) == "" {
+		return ""
+	}
+	return templ.SafeCSS("grid-template-columns:" + cols + ";")
+}
+
+templ adminRows(p RowsParams, extra templ.Component) {
+	<div class="rows">
+		if len(p.Heads) > 0 {
+			<div class="rows-head" style={ gridCols(p.Cols) }>
+				<span></span>
+				for _, head := range p.Heads {
+					<span>{ head }</span>
+				}
+				<span></span>
+			</div>
+		}
+		<div
+			id={ p.ID }
+			data-rows
+			data-rows-template={ p.TemplateID() }
+			data-rows-min={ fmt.Sprint(p.Min) }
+			if p.Marks != "" {
+				data-rows-marks={ p.Marks }
+			}
+		>
+			{ children... }
+		</div>
+		<div class="flex">
+			<button type="button" class="rows-add" data-rows-add={ p.ID }>
+				@icon("plus", templ.Attributes{"aria-hidden": "true"})
+				{ p.AddLabel }
+			</button>
+			if extra != nil {
+				@extra
+			}
+		</div>
+	</div>
+}
+
+// A button, so the keyboard can move the row too.
+templ rowGrip() {
+	<button type="button" class="rows-grip" aria-label="Move this row: drag it, or use the up and down arrow keys">
+		@icon("grip-vertical", templ.Attributes{"aria-hidden": "true"})
+	</button>
+}
+
+templ rowRemove(what string) {
+	<button type="button" class="rows-rm" data-rows-remove aria-label={ "Delete " + what }>
+		@icon("trash-2", templ.Attributes{"aria-hidden": "true"})
+	</button>
+}
+
+const textRowCols = "1.4rem 1fr 2.1rem"
+
+// idName posts the row's ID so the block can tell a reworded item from a new one.
+templ rowText(name, idName, id, value, placeholder, what string) {
+	<div class="rows-item" style={ gridCols(textRowCols) }>
+		@rowGrip()
+		<textarea
+			name={ name }
+			class="rows-cell markdown-textarea"
+			style="field-sizing: content; resize: none; padding-block: .45rem;"
+			rows="1"
+			placeholder={ placeholder }
+			autocomplete="off"
+		>{ value }</textarea>
+		if idName != "" {
+			<input type="hidden" name={ idName } value={ id }/>
+		}
+		@rowRemove(what)
+	</div>
+}

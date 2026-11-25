@@ -61,7 +61,7 @@ func setupScanQuest(t *testing.T) scanQuest {
 		block, err := blockService.NewBlockWithOwnerAndContext(ctx, obj.ID, blocks.ContextObjectiveProof, "scan")
 		require.NoError(t, err)
 		_, err = dbc.NewUpdate().Model((*models.Block)(nil)).
-			Set("data = ?", `{"prompt":"Scan","codes":[{"value":"`+code+`"}],"match":"contains"}`).
+			Set("data = ?", `{"prompt":"Scan","codes":[{"value":"`+code+`"}],"match":"contains","allow_typing":true}`).
 			Set("points = 10").
 			Where("id = ?", block.GetID()).Exec(ctx)
 		require.NoError(t, err)

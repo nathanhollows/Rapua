@@ -36,9 +36,18 @@
 	// Scrolls the rail itself, never the page, so a click in the preview does not jerk the editor.
 	function scrollRailTo(zone, row) {
 		const list = rail(zone);
-		if (!list || list.scrollHeight <= list.clientHeight) return;
-		const top = row.offsetTop;
+		if (!list) return;
 		const add = q('.rl-add', list);
+		if (getComputedStyle(list).flexDirection === 'row') {
+			if (list.scrollWidth <= list.clientWidth) return;
+			const room = list.clientWidth - (add ? add.offsetWidth : 0);
+			const left = row.offsetLeft;
+			if (left < list.scrollLeft) list.scrollLeft = left;
+			else if (left + row.offsetWidth > list.scrollLeft + room) list.scrollLeft = left + row.offsetWidth - room;
+			return;
+		}
+		if (list.scrollHeight <= list.clientHeight) return;
+		const top = row.offsetTop;
 		const room = list.clientHeight - (add ? add.offsetHeight : 0);
 		if (top < list.scrollTop) list.scrollTop = top;
 		else if (top + row.offsetHeight > list.scrollTop + room) list.scrollTop = top + row.offsetHeight - room;
@@ -250,49 +259,155 @@
 			draggable,
 			ghostClass: 'sortable-ghost',
 			emptyInsertThreshold: 28,
+			// Native drag-and-drop swallows the wheel, so a long rail could not be scrolled mid-drag.
+			// The fallback drag is plain mouse events, and carries on to the edges by itself.
+			forceFallback: true,
+			fallbackOnBody: true,
+			fallbackTolerance: 3,
+			scrollSensitivity: 80,
 			disabled: locked(),
 			onEnd: onDrop,
 		};
 	}
+
+	// Along the top the rail scrolls sideways, and a drag would fight the swipe.
+	const stacked = window.matchMedia('(max-width: 600px)');
+	const railDisabled = () => locked() || stacked.matches;
 
 	function bindRails() {
 		if (!window.Sortable) return;
 		zones().forEach((zone) => {
 			const el = rail(zone);
 			if (!el || el._sortable) return;
-			el._sortable = new window.Sortable(el, dragOptions('.rl-item'));
+			el._sortable = new window.Sortable(el, { ...dragOptions('.rl-item'), disabled: railDisabled() });
 		});
 	}
 
-	// A list of rows inside a block's form (a choice's options). Reordering changes the form, so it
-	// saves the way any other edit does: by telling the form it changed.
+	const rowsOf = (list) => qa(':scope > .rows-item', list);
+	const changed = (list) => list.closest('form')?.dispatchEvent(new Event('change'));
+
+	function syncMarks(list) {
+		const name = list.dataset.rowsMarks;
+		if (!name) return;
+		const many = !!q(`input[name="${name}"]`, list.closest('form'))?.checked;
+		qa('[data-rows-mark]', list).forEach((mark) => {
+			mark.type = many ? 'checkbox' : 'radio';
+			['', '-sm', '-success'].forEach((suffix) => {
+				mark.classList.toggle(`checkbox${suffix}`, many);
+				mark.classList.toggle(`radio${suffix}`, !many);
+			});
+		});
+	}
+
+	// A box that posts nothing when unticked is matched to its row by value, so values follow row order.
+	function tidyRows(list) {
+		const rows = rowsOf(list);
+		const least = parseInt(list.dataset.rowsMin || '0', 10);
+		rows.forEach((row, i) => {
+			qa('[data-rows-index]', row).forEach((el) => { el.value = (el.dataset.rowsIndex || '') + i; });
+			const rm = q('[data-rows-remove]', row);
+			if (rm) rm.style.visibility = rows.length > least ? '' : 'hidden';
+		});
+		syncMarks(list);
+	}
+
+	function addRow(list) {
+		const blank = document.getElementById(list.dataset.rowsTemplate);
+		if (!blank) return null;
+		list.append(blank.content.cloneNode(true));
+		const row = list.lastElementChild;
+		tidyRows(list);
+		q('.rows-cell', row)?.focus();
+		return row;
+	}
+
 	function bindRows() {
-		if (!window.Sortable) return;
 		qa('[data-rows]').forEach((list) => {
-			if (list._sortable) return;
+			tidyRows(list);
+			if (!window.Sortable || list._sortable) return;
 			list._sortable = new window.Sortable(list, {
 				animation: 150,
 				handle: '.rows-grip',
 				draggable: '.rows-item',
 				ghostClass: 'sortable-ghost',
+				forceFallback: true,
+				fallbackTolerance: 3,
 				disabled: locked(),
-				onEnd: () => list.closest('form').dispatchEvent(new Event('change')),
+				onEnd: () => { tidyRows(list); changed(list); },
 			});
 		});
 	}
 
-	// The handle is a button, so the keyboard can move the row it belongs to.
-	function moveRowWithKeys(evt) {
-		const grip = evt.target.closest?.('.rows-grip');
-		if (!grip || (evt.key !== 'ArrowUp' && evt.key !== 'ArrowDown')) return;
-		evt.preventDefault();
-		const row = grip.closest('.rows-item');
-		const swap = evt.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
-		if (!swap) return;
-		if (evt.key === 'ArrowUp') swap.before(row); else swap.after(row);
-		grip.focus();
-		row.closest('form').dispatchEvent(new Event('change'));
+	// One click only asks: a row holds typing that a stray click would lose. The button grows a word
+	// so it reads as a question, and spills left over the neighbouring cell because its own is narrow.
+	const ARM_MS = 3000;
+	const ARMED_STYLE = {
+		display: 'inline-flex', alignItems: 'center', gap: '.35rem', width: 'auto', padding: '0 .65rem',
+		justifySelf: 'end', position: 'relative', zIndex: '1', whiteSpace: 'nowrap',
+		fontSize: '.8rem', fontWeight: '700', background: 'var(--color-error)', color: 'var(--color-error-content)',
+	};
+	function disarm(rm) {
+		clearTimeout(rm._armTimer);
+		delete rm.dataset.armed;
+		Object.keys(ARMED_STYLE).forEach((key) => { rm.style[key] = ''; });
+		q('[data-arm-label]', rm)?.remove();
+		rm.setAttribute('aria-label', rm.dataset.label);
 	}
+	function arm(rm) {
+		rm.dataset.armed = '1';
+		rm.dataset.label = rm.getAttribute('aria-label');
+		Object.assign(rm.style, ARMED_STYLE);
+		const word = document.createElement('span');
+		word.dataset.armLabel = '';
+		word.textContent = 'Confirm';
+		rm.append(word);
+		rm.setAttribute('aria-label', 'Confirm delete');
+		rm._armTimer = setTimeout(() => disarm(rm), ARM_MS);
+	}
+
+	function onRowsClick(evt) {
+		const add = evt.target.closest?.('[data-rows-add]');
+		if (add) {
+			evt.preventDefault();
+			addRow(document.getElementById(add.dataset.rowsAdd));
+			return true;
+		}
+		const rm = evt.target.closest?.('[data-rows-remove]');
+		if (!rm) return false;
+		evt.preventDefault();
+		const row = rm.closest('.rows-item');
+		const empty = qa('.rows-cell', row).every((cell) => !cell.value.trim());
+		if (!empty && rm.dataset.armed !== '1') return arm(rm), true;
+		const list = rm.closest('[data-rows]');
+		row.remove();
+		tidyRows(list);
+		changed(list);
+		return true;
+	}
+
+	function rowsKeys(evt) {
+		const grip = evt.target.closest?.('.rows-grip');
+		if (grip && (evt.key === 'ArrowUp' || evt.key === 'ArrowDown')) {
+			evt.preventDefault();
+			const row = grip.closest('.rows-item');
+			const swap = evt.key === 'ArrowUp' ? row.previousElementSibling : row.nextElementSibling;
+			if (!swap) return;
+			if (evt.key === 'ArrowUp') swap.before(row); else swap.after(row);
+			grip.focus();
+			tidyRows(row.parentElement);
+			changed(row.parentElement);
+			return;
+		}
+		const cell = evt.target.closest?.('input.rows-cell');
+		if (!cell || evt.key !== 'Enter') return;
+		evt.preventDefault();
+		const row = cell.closest('.rows-item');
+		const next = row.nextElementSibling;
+		if (next) q('.rows-cell', next)?.focus();
+		else if (cell.value.trim()) addRow(row.parentElement);
+	}
+
+	window.RapuaRows = { add: addRow, tidy: tidyRows, changed };
 
 	function bindPhone(pane) {
 		const zone = pane.dataset.preview;
@@ -416,6 +531,12 @@
 			}
 		});
 
+		document.addEventListener('click', (evt) => { onRowsClick(evt); });
+		document.addEventListener('focusout', (evt) => {
+			const rm = evt.target.closest?.('[data-rows-remove][data-armed]');
+			if (rm) disarm(rm);
+		});
+
 		document.addEventListener('input', (evt) => {
 			const t = evt.target;
 			if (t.matches('[data-bsearch]')) return filterChooser(t);
@@ -424,7 +545,7 @@
 
 		document.addEventListener('keydown', (evt) => {
 			if (evt.key === 'Escape') qa('.pt-wrap.open').forEach((wrap) => wrap.classList.remove('open'));
-			moveRowWithKeys(evt);
+			rowsKeys(evt);
 		});
 
 		document.addEventListener('mouseover', (evt) => {
@@ -437,6 +558,9 @@
 		document.addEventListener('mouseout', (evt) => { if (!evt.relatedTarget) highlight(null); });
 
 		document.addEventListener('change', (evt) => {
+			qa('[data-rows-marks]').forEach((list) => {
+				if (evt.target.name === list.dataset.rowsMarks && list.closest('form')?.contains(evt.target)) syncMarks(list);
+			});
 			if (evt.target.matches?.('[data-frame-toggle]')) {
 				// Every preview on the page changes height, so what is above would carry the
 				// switch away from the pointer. Scroll by however far it was carried.
@@ -484,8 +608,12 @@
 			}
 		});
 
+		stacked.addEventListener('change', () => {
+			qa('[data-rail]').forEach((el) => el._sortable?.option('disabled', railDisabled()));
+		});
+
 		document.body.addEventListener('quest-lock-change', (evt) => {
-			qa('[data-rail]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
+			qa('[data-rail]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked || stacked.matches));
 			qa('[data-block-list]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
 			qa('[data-rows]').forEach((el) => el._sortable?.option('disabled', evt.detail.locked));
 		});

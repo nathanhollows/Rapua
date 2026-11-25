@@ -144,19 +144,6 @@ templ teamNameChangerAdmin(settings models.QuestSettings, block blocks.TeamNameC
 		hx-swap="none"
 	>
 		@TextInputField(teamNamePromptText.SetValue(block.BlockText))
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Options</legend>
-			<label class="label cursor-pointer justify-start gap-2">
-				<input
-					type="checkbox"
-					name="allow_changing"
-					class="checkbox checkbox-sm"
-					if block.AllowChanging {
-						checked
-					}
-				/>
-				<span class="label-text">Allow changing after set</span>
-			</label>
-		</fieldset>
+		@adminSwitch("allow_changing", "Allow changing after set", "Teams can rename themselves again later.", block.AllowChanging, templ.Attributes{})
 	</form>
 }

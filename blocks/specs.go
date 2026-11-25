@@ -187,11 +187,11 @@ func (b *ScanBlock) GetSpec() game.BlockSpec {
 					"A block with none can never be passed",
 				Fields: []game.FieldSpec{
 					{Name: "value", Type: "string", Required: true, Description: "The value the code carries"},
-					{
-						Name: "generate", Type: "bool", Default: "false",
-						Description: "Render as a printable QR. Off for codes already in the world, like an ISBN",
-					},
 				},
+			},
+			{
+				Name: "allow_typing", Type: "bool", Default: "false",
+				Description: "Let players type the code as well as scan it. Off means a code passed along in a message does not count",
 			},
 			{
 				Name: "match", Type: "string", Default: "exact",

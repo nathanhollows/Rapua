@@ -450,7 +450,7 @@ func TestClue_CostsAndRevealsInPlainText(t *testing.T) {
 
 // The scan card says what to do, and a wrong code says so without shouting.
 func TestScan_HintsThenSaysWrongThenIsSolved(t *testing.T) {
-	scan := &blocks.ScanBlock{BaseBlock: blocks.BaseBlock{ID: "scan", Points: 3}, Prompt: "Find the code."}
+	scan := &blocks.ScanBlock{BaseBlock: blocks.BaseBlock{ID: "scan", Points: 3}, Prompt: "Find the code.", AllowTyping: true}
 
 	first := player(t, templates.RenderPlayerView(withPoints, scan, open()))
 	assert.Contains(t, first, "Scan it, or type the code.")

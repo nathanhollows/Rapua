@@ -1069,14 +1069,14 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
               "type": "string",
               "description": "The value the code carries",
               "required": true
-            },
-            {
-              "name": "generate",
-              "type": "bool",
-              "description": "Render as a printable QR. Off for codes already in the world, like an ISBN",
-              "default": "false"
             }
           ]
+        },
+        {
+          "name": "allow_typing",
+          "type": "bool",
+          "description": "Let players type the code as well as scan it. Off means a code passed along in a message does not count",
+          "default": "false"
         },
         {
           "name": "match",

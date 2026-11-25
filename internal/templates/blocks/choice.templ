@@ -116,50 +116,34 @@ templ choiceAdmin(settings models.QuestSettings, block blocks.ChoiceBlock) {
 		}.SetValue(block.ButtonText))
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Choices</legend>
-			<div class="rows">
-				<div class="rows-head"><span></span><span>Label</span><span>Variable</span><span></span></div>
-				<div id={ fmt.Sprintf("choice-options-%s", block.ID) } data-rows>
-					for _, opt := range block.Options {
-						@choiceOptionItem(opt)
-					}
-					for i := 0; i < (2 - len(block.Options)); i++ {
-						@choiceOptionItem(blocks.ChoiceOption{})
-					}
-				</div>
-				<button type="button" class="rows-add" data-target={ fmt.Sprintf("choice-options-%s", block.ID) } data-template={ fmt.Sprintf("choice-row-%s", block.ID) } onclick="addChoiceOption(event)">
-					@icon("plus", templ.Attributes{"aria-hidden": "true"})
-					Add a choice
-				</button>
-			</div>
+			@adminRows(choiceRows(block.ID), nil) {
+				for _, opt := range block.Options {
+					@choiceOptionItem(opt)
+				}
+				for i := 0; i < (2 - len(block.Options)); i++ {
+					@choiceOptionItem(blocks.ChoiceOption{})
+				}
+			}
 			<p class="label">Each choice sets a variable when picked. Names use lowercase letters, digits and underscores.</p>
 		</fieldset>
 		@adminSwitch("multi_select", "Allow multiple selections", "Players can pick more than one choice.", block.MultiSelect, templ.Attributes{})
 	</form>
-	<script>
-		function addChoiceOption(event) {
-			event.preventDefault();
-			const btn = event.target.closest('button');
-			const container = document.getElementById(btn.dataset.target);
-			container.append(document.getElementById(btn.dataset.template).content.cloneNode(true));
-			container.lastElementChild.querySelector('input').focus();
-		}
-		function removeChoiceOption(event) {
-			event.preventDefault();
-			const form = event.target.closest('form');
-			event.target.closest('.rows-item').remove();
-			form.dispatchEvent(new Event('change'));
-		}
-	</script>
-	<template id={ fmt.Sprintf("choice-row-%s", block.ID) }>
+	<template id={ choiceRows(block.ID).TemplateID() }>
 		@choiceOptionItem(blocks.ChoiceOption{})
 	</template>
 }
 
+func choiceRows(blockID string) RowsParams {
+	return RowsParams{
+		ID:       "choice-options-" + blockID,
+		Heads:    []string{"Label", "Variable"},
+		AddLabel: "Add a choice",
+	}
+}
+
 templ choiceOptionItem(opt blocks.ChoiceOption) {
 	<div class="rows-item">
-		<button type="button" class="rows-grip" aria-label="Drag to reorder, or press the up and down arrow keys">
-			@icon("grip-vertical", templ.Attributes{"aria-hidden": "true"})
-		</button>
+		@rowGrip()
 		<input
 			type="text"
 			name="option_label"
@@ -177,8 +161,6 @@ templ choiceOptionItem(opt blocks.ChoiceOption) {
 			class="rows-cell code"
 			autocomplete="off"
 		/>
-		<button type="button" class="rows-rm" aria-label="Delete choice" onclick="removeChoiceOption(event)">
-			@icon("trash-2", templ.Attributes{"aria-hidden": "true"})
-		</button>
+		@rowRemove("choice")
 	</div>
 }

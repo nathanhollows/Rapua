@@ -160,19 +160,6 @@ templ gameStatusAlertAdmin(_ models.QuestSettings, block blocks.GameStatusAlertB
 				<span>Shown when game is scheduled</span>
 			</div>
 		</fieldset>
-		<fieldset class="fieldset mt-4">
-			<legend class="fieldset-legend">Options</legend>
-			<div class="form-control">
-				<label class="label cursor-pointer justify-start gap-2">
-					<input
-						type="checkbox"
-						name="show_countdown"
-						class="checkbox checkbox-sm"
-						checked?={ block.ShowCountdown }
-					/>
-					<span class="label-text">Show countdown timer</span>
-				</label>
-			</div>
-		</fieldset>
+		@adminSwitch("show_countdown", "Show countdown timer", "Counts down to the start while the game is scheduled.", block.ShowCountdown, templ.Attributes{})
 	</form>
 }

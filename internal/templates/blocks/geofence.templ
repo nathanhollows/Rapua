@@ -222,8 +222,7 @@ templ geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) {
 				}
 			</select>
 			<p class="label">
-				A reading vaguer than this is refused rather than guessed at. Pick the place players will be standing:
-				indoors a phone often cannot do better than 50 m, so a tighter limit there leaves them stuck.
+				Vaguer readings are refused. Indoors, phones often cannot beat 50 m.
 			</p>
 		</fieldset>
 		<fieldset class="fieldset">
@@ -234,8 +233,7 @@ templ geofenceAdmin(settings models.QuestSettings, block blocks.GeofenceBlock) {
 				<option value="map_area" selected?={ block.MapMode == blocks.GeofenceMapArea }>Live map with the target area shown</option>
 			</select>
 			<p class="fieldset-label">
-				"Just a button" keeps the target hidden, so finding it is part of the challenge. The map options turn
-				on the player's live GPS position; "with the target area" also draws the area itself, guiding them there.
+				The button keeps the target hidden. The maps show the player's live position.
 			</p>
 		</fieldset>
 	</form>
