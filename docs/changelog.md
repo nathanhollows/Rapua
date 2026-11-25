@@ -17,10 +17,11 @@ The [creators page](/creators) shows most of what's new in action: nesting, pass
 - **Nesting:** any objective becomes a section once something sits inside it.
 - **Pass-through:** a pass-through section hides itself and lets its children show in the section above. `A[B[C][D[E,F]]]` with D as pass-through plays as `A[B[C],E,F]`, with D's routing deciding which of E and F appear.
 - **Completion bands:** a section needs at least x and at most y of what's inside it.
-- **Event stream:** every player event is recorded.
+- **Event stream:** every player event is recorded, including a player entering a run code.
 - **Run page:** each team gets a timeline of what they opened, answered and uploaded, with a strip showing when they were playing, idle, stalled or gone, and a map of where they are in the quest.
 - **Public UI:** redesigned.
 - **Game spec:** updated for all of the above.
+- **Start and Complete pages:** an empty page now offers templates to start from. Start has a scavenger hunt intro, a short welcome, and rules and housekeeping. Complete has congratulations, with or without a short survey. An empty start page is flagged, because players cannot begin without a start button, and the Start and Complete rows on the quest page show what the checks say about them.
 
 ### Upgrading
 
