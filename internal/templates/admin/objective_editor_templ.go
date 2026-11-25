@@ -969,7 +969,7 @@ func objectiveBlockForm(settings models.QuestSettings, block blocks.Block, z zon
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</div></span> <span data-del-wrap><button type=\"button\" class=\"btn btn-ghost btn-sm btn-square\" data-del-ask aria-label=\"Delete block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 72, "</div></span> <button type=\"button\" class=\"btn btn-ghost btn-sm btn-square\" data-del aria-label=\"Delete block\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -977,7 +977,7 @@ func objectiveBlockForm(settings models.QuestSettings, block blocks.Block, z zon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</button></span></div><div class=\"cf-fields\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 73, "</button></div><div class=\"cf-fields\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1040,7 +1040,7 @@ func ObjectiveBlockAdded(settings models.QuestSettings, block blocks.Block, zone
 		var templ_7745c5c3_Var50 string
 		templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetID())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 283, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 281, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var50)
 		if templ_7745c5c3_Err != nil {
@@ -1053,7 +1053,7 @@ func ObjectiveBlockAdded(settings models.QuestSettings, block blocks.Block, zone
 		var templ_7745c5c3_Var51 string
 		templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue(z.Param)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 283, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 281, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
 		if templ_7745c5c3_Err != nil {
@@ -1113,7 +1113,7 @@ func objectiveChooser(ownerID string, zone blocks.BlockContext, z zoneWords) tem
 		var templ_7745c5c3_Var53 string
 		templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.ResolveAttributeValue(z.Param)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 289, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 287, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
 		if templ_7745c5c3_Err != nil {
@@ -1126,7 +1126,7 @@ func objectiveChooser(ownerID string, zone blocks.BlockContext, z zoneWords) tem
 		var templ_7745c5c3_Var54 string
 		templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(z.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 293, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 291, Col: 22}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 		if templ_7745c5c3_Err != nil {
@@ -1188,7 +1188,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 		var templ_7745c5c3_Var56 string
 		templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 309, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 307, Col: 29}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 		if templ_7745c5c3_Err != nil {
@@ -1207,7 +1207,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 				var templ_7745c5c3_Var57 string
 				templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.ResolveAttributeValue("#forms-" + z.Param)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 313, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 311, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var57)
 				if templ_7745c5c3_Err != nil {
@@ -1220,7 +1220,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 				var templ_7745c5c3_Var58 string
 				templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.ResolveAttributeValue(ownerID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 314, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 312, Col: 54}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var58)
 				if templ_7745c5c3_Err != nil {
@@ -1233,7 +1233,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 				var templ_7745c5c3_Var59 string
 				templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(zone))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 315, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 313, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var59)
 				if templ_7745c5c3_Err != nil {
@@ -1246,7 +1246,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 				var templ_7745c5c3_Var60 string
 				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.ResolveAttributeValue(block.GetType())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 316, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 314, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var60)
 				if templ_7745c5c3_Err != nil {
@@ -1259,7 +1259,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 				var templ_7745c5c3_Var61 string
 				templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprint(interactive))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 317, Col: 86}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 315, Col: 86}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var61)
 				if templ_7745c5c3_Err != nil {
@@ -1280,7 +1280,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 				var templ_7745c5c3_Var62 string
 				templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetName())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 320, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 318, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 				if templ_7745c5c3_Err != nil {
@@ -1293,7 +1293,7 @@ func objectivePickerGroup(ownerID string, zone blocks.BlockContext, z zoneWords,
 				var templ_7745c5c3_Var63 string
 				templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(block.GetDescription())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 321, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 319, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 				if templ_7745c5c3_Err != nil {
@@ -1343,7 +1343,7 @@ func objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords) 
 		var templ_7745c5c3_Var65 string
 		templ_7745c5c3_Var65, templ_7745c5c3_Err = templ.ResolveAttributeValue(z.Param)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 333, Col: 47}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 331, Col: 47}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var65)
 		if templ_7745c5c3_Err != nil {
@@ -1388,15 +1388,15 @@ func objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords) 
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitStartScavenger, "header", "Scavenger hunt intro", "The game's name, its status, how to play, a team name and the start button.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitStartScavenger, "header", "Scavenger hunt", "How to play, a team name and the start button.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitStartWelcome, "text", "Short welcome", "A name, the game's status, one line of welcome and the start button.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitStartWelcome, "text", "Short welcome", "One line of welcome and the start button.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitStartRules, "alert", "Rules and housekeeping", "Safety, respect for the place and what to bring, then the team name and start button.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitStartRules, "alert", "Rules and safety", "The ground rules, a team name and the start button.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1413,11 +1413,11 @@ func objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords) 
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitFinishCongrats, "header", "Congratulations", "A party popper, a heading and a few words of thanks.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitFinishCongrats, "header", "Congratulations", "A heading and a few words of thanks.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitFinishSurvey, "rating", "Congratulations and a survey", "The same, followed by a rating and an open question about how it went.").Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = objectiveKitCard(ownerID, zone, z, services.KitFinishSurvey, "rating", "With a survey", "The same, then a rating and a question.").Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1438,7 +1438,7 @@ func objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords) 
 			var templ_7745c5c3_Var66 string
 			templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.ResolveAttributeValue(z.Param)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 365, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 363, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var66)
 			if templ_7745c5c3_Err != nil {
@@ -1495,7 +1495,7 @@ func objectiveBuildCard(z zoneWords) templ.Component {
 		var templ_7745c5c3_Var68 string
 		templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.ResolveAttributeValue(z.Param)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 377, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 375, Col: 73}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var68)
 		if templ_7745c5c3_Err != nil {
@@ -1545,7 +1545,7 @@ func objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit
 		var templ_7745c5c3_Var70 string
 		templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.ResolveAttributeValue("#forms-" + z.Param)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 387, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 385, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var70)
 		if templ_7745c5c3_Err != nil {
@@ -1558,7 +1558,7 @@ func objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit
 		var templ_7745c5c3_Var71 string
 		templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.ResolveAttributeValue(ownerID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 388, Col: 51}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 386, Col: 51}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var71)
 		if templ_7745c5c3_Err != nil {
@@ -1571,7 +1571,7 @@ func objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit
 		var templ_7745c5c3_Var72 string
 		templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(zone))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 389, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 387, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var72)
 		if templ_7745c5c3_Err != nil {
@@ -1584,7 +1584,7 @@ func objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit
 		var templ_7745c5c3_Var73 string
 		templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(kit))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 390, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 388, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var73)
 		if templ_7745c5c3_Err != nil {
@@ -1597,7 +1597,7 @@ func objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit
 		var templ_7745c5c3_Var74 string
 		templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.ResolveAttributeValue(string(kit))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 391, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 389, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var74)
 		if templ_7745c5c3_Err != nil {
@@ -1618,7 +1618,7 @@ func objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit
 		var templ_7745c5c3_Var75 string
 		templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 394, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 392, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 		if templ_7745c5c3_Err != nil {
@@ -1631,7 +1631,7 @@ func objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit
 		var templ_7745c5c3_Var76 string
 		templ_7745c5c3_Var76, templ_7745c5c3_Err = templ.JoinStringErrs(text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 395, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 393, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var76))
 		if templ_7745c5c3_Err != nil {
@@ -1680,7 +1680,7 @@ func objectiveListPreview(data EditObjectiveData) templ.Component {
 			var templ_7745c5c3_Var78 string
 			templ_7745c5c3_Var78, templ_7745c5c3_Err = templ.JoinStringErrs(data.ParentTitle)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 408, Col: 22}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 406, Col: 22}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var78))
 			if templ_7745c5c3_Err != nil {
@@ -1698,7 +1698,7 @@ func objectiveListPreview(data EditObjectiveData) templ.Component {
 				var templ_7745c5c3_Var79 string
 				templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(data.ParentPill)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 410, Col: 45}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 408, Col: 45}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
 				if templ_7745c5c3_Err != nil {
@@ -1781,7 +1781,7 @@ func objectiveSiblingRow(row ListRow) templ.Component {
 		var templ_7745c5c3_Var81 string
 		templ_7745c5c3_Var81, templ_7745c5c3_Err = templ.JoinStringErrs(row.Title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 435, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 433, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var81))
 		if templ_7745c5c3_Err != nil {
@@ -1799,7 +1799,7 @@ func objectiveSiblingRow(row ListRow) templ.Component {
 			var templ_7745c5c3_Var82 string
 			templ_7745c5c3_Var82, templ_7745c5c3_Err = templ.JoinStringErrs(row.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 437, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/admin/objective_editor.templ`, Line: 435, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var82))
 			if templ_7745c5c3_Err != nil {

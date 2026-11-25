@@ -456,17 +456,6 @@
 		select(zone, chosen);
 	}
 
-	function askDelete(button) {
-		button.closest('[data-del-wrap]').innerHTML =
-			'<span class="del-ask">Delete this block? <button type="button" class="btn btn-sm" data-del-no>Keep</button><button type="button" class="btn btn-sm btn-error" data-del>Delete</button></span>';
-	}
-
-	function cancelDelete(button) {
-		const wrap = button.closest('[data-del-wrap]');
-		wrap.innerHTML = '<button type="button" class="btn btn-ghost btn-sm btn-square" data-del-ask aria-label="Delete block"></button>';
-		q('button', wrap).append(q('#rl-icon-trash').content.cloneNode(true));
-	}
-
 	function removeBlock(id) {
 		const zone = zoneOfItem(railItem(id));
 		const list = idsIn(zone);
@@ -502,13 +491,12 @@
 				wrap.classList.toggle('open');
 				return;
 			}
-			const ask = t.closest('[data-del-ask]');
-			if (ask) return askDelete(ask);
-			const keep = t.closest('[data-del-no]');
-			if (keep) return cancelDelete(keep);
+			// The same two clicks as a row's delete: the first only asks, the second deletes.
 			const del = t.closest('[data-del]');
 			if (del) {
+				if (del.dataset.armed !== '1') return arm(del);
 				const id = del.closest('[data-block-form]').dataset.blockForm;
+				disarm(del);
 				window.htmx.ajax('DELETE', `/admin/blocks/${id}`, { swap: 'none', values: {} });
 				return;
 			}
@@ -533,7 +521,7 @@
 
 		document.addEventListener('click', (evt) => { onRowsClick(evt); });
 		document.addEventListener('focusout', (evt) => {
-			const rm = evt.target.closest?.('[data-rows-remove][data-armed]');
+			const rm = evt.target.closest?.('[data-rows-remove][data-armed], [data-del][data-armed]');
 			if (rm) disarm(rm);
 		});
 

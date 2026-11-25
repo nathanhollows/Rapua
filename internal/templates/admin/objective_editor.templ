@@ -259,11 +259,9 @@ templ objectiveBlockForm(settings models.QuestSettings, block blocks.Block, z zo
 					}
 				</div>
 			</span>
-			<span data-del-wrap>
-				<button type="button" class="btn btn-ghost btn-sm btn-square" data-del-ask aria-label="Delete block">
-					@icon("trash-2", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
-				</button>
-			</span>
+			<button type="button" class="btn btn-ghost btn-sm btn-square" data-del aria-label="Delete block">
+				@icon("trash-2", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+			</button>
 		</div>
 		<div class="cf-fields">
 			@bTemplates.RenderAdminEdit(settings, block)
@@ -346,16 +344,16 @@ templ objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords)
 				if zone == blocks.ContextStart {
 					<p>Players cannot begin without a start button, so start from a template. Everything can be changed afterwards.</p>
 					<div class="st-grid">
-						@objectiveKitCard(ownerID, zone, z, services.KitStartScavenger, "header", "Scavenger hunt intro", "The game's name, its status, how to play, a team name and the start button.")
-						@objectiveKitCard(ownerID, zone, z, services.KitStartWelcome, "text", "Short welcome", "A name, the game's status, one line of welcome and the start button.")
-						@objectiveKitCard(ownerID, zone, z, services.KitStartRules, "alert", "Rules and housekeeping", "Safety, respect for the place and what to bring, then the team name and start button.")
+						@objectiveKitCard(ownerID, zone, z, services.KitStartScavenger, "header", "Scavenger hunt", "How to play, a team name and the start button.")
+						@objectiveKitCard(ownerID, zone, z, services.KitStartWelcome, "text", "Short welcome", "One line of welcome and the start button.")
+						@objectiveKitCard(ownerID, zone, z, services.KitStartRules, "alert", "Rules and safety", "The ground rules, a team name and the start button.")
 						@objectiveBuildCard(z)
 					</div>
 				} else {
 					<p>Say well done, and perhaps ask how it went. Everything can be changed afterwards.</p>
 					<div class="st-grid">
-						@objectiveKitCard(ownerID, zone, z, services.KitFinishCongrats, "header", "Congratulations", "A party popper, a heading and a few words of thanks.")
-						@objectiveKitCard(ownerID, zone, z, services.KitFinishSurvey, "rating", "Congratulations and a survey", "The same, followed by a rating and an open question about how it went.")
+						@objectiveKitCard(ownerID, zone, z, services.KitFinishCongrats, "header", "Congratulations", "A heading and a few words of thanks.")
+						@objectiveKitCard(ownerID, zone, z, services.KitFinishSurvey, "rating", "With a survey", "The same, then a rating and a question.")
 						@objectiveBuildCard(z)
 					</div>
 				}

@@ -1071,7 +1071,7 @@ li.nest-target > .objective-row::after {
 /* Block form fields. The templates keep daisyUI's names (fieldset, input, textarea, select), so one
    place restyles every block's form: a label row, a control, a hint, in the same rhythm. */
 .cf-fields .fieldset { display: block; margin: 0 0 1.05rem; padding: 0; border: 0; background: none; font-size: .9rem; }
-.cf-fields .fieldset-legend { display: flex; align-items: center; gap: .4rem; width: 100%; margin: 0 0 .35rem; padding: 0; font-size: .85rem; font-weight: 700; color: var(--color-base-content); }
+.cf-fields .fieldset-legend { display: flex; align-items: center; justify-content: flex-start; gap: .4rem; width: 100%; margin: 0 0 .35rem; padding: 0; font-size: .85rem; font-weight: 700; color: var(--color-base-content); }
 /* The Markdown glyph comes before the name in the markup and reads better after it. */
 .cf-fields .fieldset-legend > a { order: 1; display: inline-grid; place-items: center; color: var(--soft); }
 .cf-fields .fieldset-legend > a svg { width: .95rem; height: .95rem; }
@@ -1081,10 +1081,6 @@ li.nest-target > .objective-row::after {
 .cf-fields .textarea { padding: .65rem .85rem; line-height: 1.5; }
 .cf-fields .textarea.font-mono { font-size: .84rem; }
 .cf-fields .input input { font-weight: 500; }
-/* daisyUI's join is inline-flex, which stretched inside the grid a fieldset used to be and shrinks inside a block. */
-.cf-fields .join.join-vertical { display: flex; width: 100%; }
-/* A field inside a row that is itself styled as a field (quiz answers, checklist items) is not boxed twice. */
-.cf-fields .input .input, .cf-fields .input .textarea { min-height: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; outline: 0; }
 .cf-fields .input:focus-within, .cf-fields .select:focus, .cf-fields .textarea:focus { outline: 2px solid var(--color-base-content); outline-offset: 1px; }
 
 /* A switch with its own words and a line saying what it does. */
@@ -1115,7 +1111,6 @@ li.nest-target > .objective-row::after {
 .map-frame { overflow: hidden; border: 1.5px solid var(--line-strong); border-radius: 16px; }
 .map-chip { display: inline-block; margin-top: .5rem; padding: .15rem .65rem; border-radius: 999px; background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: var(--soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; font-weight: 600; }
 .cf-foot { margin-top: auto; padding: .8rem 1.4rem 1rem; border-top: 1px solid var(--line); }
-.del-ask { display: inline-flex; align-items: center; gap: .3rem; font-size: .85rem; font-weight: 700; }
 .cf-form .badge-neutral { border: 0; background: color-mix(in oklab, var(--color-base-content) 9%, var(--color-base-100)); color: var(--soft); }
 .cf-empty { display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; max-width: 30rem; padding: 2rem 1.4rem; }
 .cf-empty b { font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.025em; }

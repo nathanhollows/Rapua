@@ -885,9 +885,9 @@ func sectionChoicePad(depth int) string {
 // but no rail joins it: top-level routing governs what is between these pages,
 // not the pages. A pin rather than a padlock, because a padlock on this page
 // means an objective waiting on a variable.
-// objectiveSystemPageLink is the row that opens the start or complete page. It
-// carries that page's lint, because the page has no row of its own to mark: an
-// empty start page was only ever reported in a list above the tree.
+//
+// The row carries its page's lint, because the page has no objective row to
+// mark: an empty start page was only ever reported in a list above the tree.
 func objectiveSystemPageLink(label, href string, lint game.LintResult) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
