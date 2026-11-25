@@ -168,9 +168,10 @@ func journalEntryFor(
 	case models.EventSectionFinished:
 		return journalSection(event, byID, children, complete)
 
-	case models.EventRunNamed, models.EventObjectivesListed, models.EventObjectiveViewed,
+	case models.EventRunJoined, models.EventRunNamed, models.EventObjectivesListed, models.EventObjectiveViewed,
 		models.EventNotificationRead:
-		// Recorded, not shown. The name folds into the opening line; views and
+		// Recorded, not shown. A join is the admin's concern, not the player's
+		// own story; the name folds into the opening line; views and
 		// listings are cadence data; reads annotate their own message.
 		return JournalEntry{}, false
 	}

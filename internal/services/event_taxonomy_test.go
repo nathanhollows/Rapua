@@ -32,6 +32,16 @@ func TestEventTaxonomy_EveryTypeIsDecided(t *testing.T) {
 		journal bool
 	}{
 		{
+			// Joining is the admin's concern; the diary opens on the start.
+			name: "run joined",
+			event: models.RunEvent{
+				Type: models.EventRunJoined, CreatedAt: at,
+				Data: payload(models.RunJoinedData{Via: models.JoinViaForm}),
+			},
+			log:     true,
+			journal: false,
+		},
+		{
 			name:    "run started",
 			event:   models.RunEvent{Type: models.EventRunStarted, CreatedAt: at},
 			log:     true,

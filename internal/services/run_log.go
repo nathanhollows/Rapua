@@ -16,6 +16,7 @@ import (
 type RunLogKind string
 
 const (
+	RunLogJoined RunLogKind = "joined"
 	RunLogStart  RunLogKind = "start"
 	RunLogNamed  RunLogKind = "named"
 	RunLogListed RunLogKind = "listed"
@@ -493,6 +494,9 @@ func runLogEntryFor(
 	entry := RunLogEntry{Time: event.CreatedAt, Gap: gap, Points: event.Points}
 
 	switch event.Type {
+	case models.EventRunJoined:
+		entry.Kind = RunLogJoined
+
 	case models.EventRunStarted:
 		entry.Kind = RunLogStart
 

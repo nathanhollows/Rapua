@@ -15,6 +15,7 @@ import (
 	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/uptrace/bun"
 )
 
 func postPlayForm(code string) *http.Request {
@@ -164,4 +165,83 @@ func TestPlayerHandler_PlayPost_LookupErrorIsNotMislabelledAsBadCode(t *testing.
 	assert.NotContains(t, w.Body.String(), "Team not found",
 		"a DB-level failure must not be presented as a bad team code")
 	assert.Contains(t, w.Body.String(), "Could not join this game")
+}
+
+// joinedEvents reads back what the stream says about a run joining.
+func joinedEvents(t *testing.T, dbc *bun.DB, code string) []models.RunEvent {
+	t.Helper()
+	var events []models.RunEvent
+	require.NoError(t, dbc.NewSelect().Model(&events).
+		Where("run_code = ?", code).Where("type = ?", models.EventRunJoined).
+		Order("id ASC").Scan(context.Background()))
+	return events
+}
+
+// Entering a working code is the first thing a player does, and until it was
+// recorded a run nobody had started looked the same as one nobody had found.
+func TestPlayerHandler_PlayWithCode_RecordsTheJoin(t *testing.T) {
+	runService, dbc, cleanup := setupRunService(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	code := createTestRun(t, dbc, parents.QuestID)
+
+	handler := players.NewTestPlayerHandler(players.WithRunService(runService))
+	handler.PlayWithCode(httptest.NewRecorder(), requestWithCode(code))
+
+	events := joinedEvents(t, dbc, code)
+	require.Len(t, events, 1)
+	assert.Equal(t, parents.QuestID, events[0].QuestID)
+	assert.JSONEq(t, `{"via":"link"}`, string(events[0].Data))
+}
+
+func TestPlayerHandler_PlayPost_RecordsTheJoin(t *testing.T) {
+	runService, dbc, cleanup := setupRunService(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	code := createTestRun(t, dbc, parents.QuestID)
+
+	handler := players.NewTestPlayerHandler(players.WithRunService(runService))
+	handler.PlayPost(httptest.NewRecorder(), postPlayForm(code))
+	handler.PlayPost(httptest.NewRecorder(), postPlayForm(code))
+
+	events := joinedEvents(t, dbc, code)
+	require.Len(t, events, 2, "a code is not a login: a second device is a second arrival")
+	assert.JSONEq(t, `{"via":"form"}`, string(events[0].Data))
+}
+
+// A refresh, or a link opened again, is the same browser still in the same run.
+func TestPlayerHandler_RejoiningFromTheSameBrowserIsNotAnotherArrival(t *testing.T) {
+	runService, dbc, cleanup := setupRunService(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	code := createTestRun(t, dbc, parents.QuestID)
+	handler := players.NewTestPlayerHandler(players.WithRunService(runService))
+
+	first := httptest.NewRecorder()
+	handler.PlayWithCode(first, requestWithCode(code))
+	require.NotEmpty(t, first.Result().Cookies())
+
+	again := requestWithCode(code)
+	for _, cookie := range first.Result().Cookies() {
+		again.AddCookie(cookie)
+	}
+	handler.PlayWithCode(httptest.NewRecorder(), again)
+
+	assert.Len(t, joinedEvents(t, dbc, code), 1)
+}
+
+func TestPlayerHandler_PlayPost_AMissedCodeRecordsNothing(t *testing.T) {
+	runService, dbc, cleanup := setupRunService(t)
+	defer cleanup()
+
+	parents := createTestParents(t, dbc)
+	code := createTestRun(t, dbc, parents.QuestID)
+
+	handler := players.NewTestPlayerHandler(players.WithRunService(runService))
+	handler.PlayPost(httptest.NewRecorder(), postPlayForm("NOPE99"))
+
+	assert.Empty(t, joinedEvents(t, dbc, code))
 }

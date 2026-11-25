@@ -110,6 +110,7 @@ type RunService interface {
 	LoadRelations(ctx context.Context, run *models.Run) error
 	LoadQuest(ctx context.Context, run *models.Run) error
 	StartPlaying(ctx context.Context, runCode string) error
+	RecordJoined(ctx context.Context, team *models.Run, via string) error
 	FindAll(ctx context.Context, questID string) ([]models.Run, error)
 	GetQuestRunSummaries(ctx context.Context, questID string) (map[string]services.RunSummary, error)
 }
@@ -187,6 +188,18 @@ func (h PlayerHandler) redirect(w http.ResponseWriter, r *http.Request, path str
 		return
 	}
 	http.Redirect(w, r, path, http.StatusFound)
+}
+
+// sessionHoldsRun reports whether this browser is already attached to the run,
+// so a refresh or a revisited link is not counted as a second arrival. Read it
+// before startSession, which overwrites it.
+func (h *PlayerHandler) sessionHoldsRun(r *http.Request, runCode string) bool {
+	session, err := sessions.Get(r, "scanscout")
+	if err != nil {
+		return false
+	}
+	held, _ := session.Values["run"].(string)
+	return held == runCode
 }
 
 func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, teamCode string) error {

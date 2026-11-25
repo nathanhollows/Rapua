@@ -40,13 +40,25 @@ func (h *PlayerHandler) PlayWithCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rejoined := h.sessionHoldsRun(r, run.Code)
 	if err = h.startSession(w, r, run.Code); err != nil {
 		h.logger.ErrorContext(r.Context(), "PlayWithCode: starting session", "error", err, "runCode", runCode)
 		h.redirect(w, r, "/404")
 		return
 	}
+	if !rejoined {
+		h.recordJoined(r, run, models.JoinViaLink)
+	}
 
 	h.redirect(w, r, landingPageFor(run))
+}
+
+// recordJoined notes a join in the run's stream. A failure is logged and
+// ignored, so a missing row never turns a player away.
+func (h *PlayerHandler) recordJoined(r *http.Request, run *models.Run, via string) {
+	if err := h.runService.RecordJoined(r.Context(), run, via); err != nil {
+		h.logger.ErrorContext(r.Context(), "recording join", "error", err, "team", run.Code)
+	}
 }
 
 // landingPageFor sends an already-started team straight back into the quest
@@ -108,6 +120,7 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	rejoined := h.sessionHoldsRun(r, run.Code)
 	err = h.startSession(w, r, run.Code)
 	if err != nil {
 		h.handleError(
@@ -123,5 +136,8 @@ func (h *PlayerHandler) PlayPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !rejoined {
+		h.recordJoined(r, run, models.JoinViaForm)
+	}
 	h.redirect(w, r, landingPageFor(run))
 }

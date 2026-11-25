@@ -70,6 +70,7 @@ twice would double the sum. Every other event carries 0.
 
 | Type | Fires when | Carries | Pace |
 |---|---|---|---|
+| `run_joined` | a player enters a working run code, by form or by link | `{via}`: `form` or `link` | no |
 | `run_started` | a run consumes a credit and begins play | nothing | yes |
 | `run_named` | a player names or renames their run | `{name}` | no |
 | `objectives_listed` | a player opens the list of objectives | nothing | yes |

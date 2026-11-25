@@ -11,6 +11,9 @@ import (
 type EventType string
 
 const (
+	// EventRunJoined fires when a player enters a working run code. A run that
+	// only ever joined is the sign of a start page nobody could get through.
+	EventRunJoined EventType = "run_joined"
 	// EventRunStarted fires when a run starts.
 	EventRunStarted       EventType = "run_started"
 	EventRunNamed         EventType = "run_named"
@@ -42,6 +45,7 @@ const (
 //
 //nolint:gochecknoglobals // A definition, not state: one place lists the taxonomy.
 var AllEventTypes = []EventType{
+	EventRunJoined,
 	EventRunStarted,
 	EventRunNamed,
 	EventObjectivesListed,
@@ -91,6 +95,17 @@ type BlockAnsweredData struct {
 	// Sets lists the variables this answer set for the first time. One the run
 	// had already set is left out, so the stream adds up to run_variables.
 	Sets []string `json:"sets,omitempty"`
+}
+
+// How a player entered a run code.
+const (
+	JoinViaForm = "form"
+	JoinViaLink = "link"
+)
+
+// RunJoinedData is the payload of an EventRunJoined row.
+type RunJoinedData struct {
+	Via string `json:"via"`
 }
 
 // RunNamedData is the payload of an EventRunNamed row.

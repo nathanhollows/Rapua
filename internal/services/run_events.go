@@ -80,6 +80,13 @@ func notificationReadEvent(team *models.Run, notificationID string) *models.RunE
 	return event
 }
 
+// runJoinedEvent records a player entering the run's code.
+func runJoinedEvent(team *models.Run, via string) *models.RunEvent {
+	event := eventBase(team.Code, team.QuestID, models.EventRunJoined)
+	event.Data = eventPayload(models.RunJoinedData{Via: via})
+	return event
+}
+
 // runNamedEvent records a player naming or renaming their run.
 func runNamedEvent(team *models.Run, name string) *models.RunEvent {
 	event := eventBase(team.Code, team.QuestID, models.EventRunNamed)

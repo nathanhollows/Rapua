@@ -1039,6 +1039,10 @@ templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
 
 templ runLogIcon(entry services.RunLogEntry) {
 	switch entry.Kind {
+		case services.RunLogJoined:
+			<span class="run-ico">
+				@icon("log-in", templ.Attributes{"class": "w-4 h-4"})
+			</span>
 		case services.RunLogStart:
 			<span class="run-ico">
 				@icon("play", templ.Attributes{"class": "w-4 h-4"})
@@ -1094,6 +1098,8 @@ templ runLogIcon(entry services.RunLogEntry) {
 
 templ runLogBody(entry services.RunLogEntry) {
 	switch entry.Kind {
+		case services.RunLogJoined:
+			<span class="text-sm truncate">Entered the run code</span>
 		case services.RunLogStart:
 			<span class="text-sm truncate">Run started</span>
 		case services.RunLogNamed:

@@ -151,6 +151,13 @@ func (s *RunService) GetRunByCode(ctx context.Context, code string) (*models.Run
 	return s.teamRepo.GetByCode(ctx, models.NormaliseRunCode(code))
 }
 
+// RecordJoined notes that a player entered the run's code. Joining only attaches
+// a session, so without this row a run nobody has started leaves no trace of
+// anyone having arrived at it.
+func (s *RunService) RecordJoined(ctx context.Context, team *models.Run, via string) error {
+	return s.runEventRepo.Record(ctx, runJoinedEvent(team, via))
+}
+
 // AwardPoints awards points to a team.
 func (s *RunService) AwardPoints(ctx context.Context, team *models.Run, points int) error {
 	team.Points += points
