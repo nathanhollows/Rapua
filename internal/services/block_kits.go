@@ -16,6 +16,11 @@ import (
 // ErrUnknownBlockKit is returned for a kit name with no steps.
 var ErrUnknownBlockKit = errors.New("unknown section template")
 
+// ErrPageNotEmpty is returned when a page template is asked for on a page that
+// already has blocks. A page template builds a whole page, so on a page with
+// content it would add a second start button or a second heading.
+var ErrPageNotEmpty = errors.New("this page already has blocks")
+
 // DefaultKitPoints is large enough to be seen to count and easy to change.
 const DefaultKitPoints = 10
 
@@ -239,6 +244,15 @@ func (s *BlockService) CreatePageKit(
 	// a finish kit landing on the start page.
 	if want := kit.pageContext(); blockContext != want {
 		return nil, fmt.Errorf("%w: %q belongs on the %q page", ErrBlockNotValidForContext, kit, want)
+	}
+	// The editor only offers these on an empty page, but a request can be made by
+	// hand, and the page would be left with two of everything.
+	existing, err := s.FindByOwnerIDAndContext(ctx, questID, blockContext)
+	if err != nil {
+		return nil, fmt.Errorf("checking the page is empty: %w", err)
+	}
+	if len(existing) > 0 {
+		return nil, fmt.Errorf("%w: %q needs an empty %q page", ErrPageNotEmpty, kit, blockContext)
 	}
 	return s.createKit(ctx, questID, blockContext, kit, 0, questName)
 }

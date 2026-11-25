@@ -1046,6 +1046,21 @@ func TestBlockService_CreatePageKit(t *testing.T) {
 		require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
 	})
 
+	t.Run("a page that already has blocks is left alone", func(t *testing.T) {
+		quest := gofakeit.UUID()
+		_, err := svc.CreatePageKit(ctx, quest, blocks.ContextStart, services.KitStartWelcome, "Garden Trail")
+		require.NoError(t, err)
+		before, err := svc.FindByOwnerIDAndContext(ctx, quest, blocks.ContextStart)
+		require.NoError(t, err)
+
+		_, err = svc.CreatePageKit(ctx, quest, blocks.ContextStart, services.KitStartScavenger, "Garden Trail")
+		require.ErrorIs(t, err, services.ErrPageNotEmpty)
+
+		after, err := svc.FindByOwnerIDAndContext(ctx, quest, blocks.ContextStart)
+		require.NoError(t, err)
+		assert.Len(t, after, len(before), "a refused template adds nothing")
+	})
+
 	t.Run("an objective template is not a page template", func(t *testing.T) {
 		_, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitScan, "X")
 		require.ErrorIs(t, err, services.ErrUnknownBlockKit)

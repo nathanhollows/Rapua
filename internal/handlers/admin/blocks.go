@@ -165,6 +165,13 @@ func (h *Handler) BlockKit(w http.ResponseWriter, r *http.Request) {
 	} else {
 		made, err = h.blockService.CreateKit(r.Context(), ownerID, blockContext, kit, points)
 	}
+	if errors.Is(err, services.ErrPageNotEmpty) {
+		h.handleErrorWithStatus(
+			w, r, http.StatusConflict, "BlockKit: page not empty", "That page already has blocks, so a template can't be added",
+			"error", err,
+		)
+		return
+	}
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(err, services.ErrUnknownBlockKit) || errors.Is(err, services.ErrBlockNotValidForContext) {
