@@ -8,28 +8,40 @@ import (
 )
 
 // No footer: the header says the quest and score, and the code is on the You tab.
+//
+// What the page says is the author's to write. With no blocks the page says
+// "You finished" itself, so a quest nobody wrote a finish page for still
+// congratulates its players; once there are blocks, the author's words are the
+// heading and only the score stays, since it is the one thing the author cannot
+// write.
 templ Complete(
 	team models.Run, pageBlocks blocks.Blocks, blockStates map[string]blocks.PlayerState,
 	hidden map[string]bool, preview bool,
 ) {
+	{{ authored := len(pageBlocks) > 0 }}
+	{{ showScore := team.Quest.Settings.EnablePoints && team.Points > 0 }}
 	<div class="mt-6 mx-auto w-full max-w-md flex flex-col gap-8">
-		<header class="q-finish q-sec">
-			<span class="q-finish-ico">
-				@icon("trophy", templ.Attributes{})
-			</span>
-			<div class="min-w-0">
-				<h1 class="q-finish-title">
-					if team.Quest.Name != "" {
-						You finished { team.Quest.Name }.
-					} else {
-						You finished.
+		if !authored || showScore {
+			<header class="q-finish q-sec">
+				<span class="q-finish-ico">
+					@icon("trophy", templ.Attributes{})
+				</span>
+				<div class="min-w-0">
+					if !authored {
+						<h1 class="q-finish-title">
+							if team.Quest.Name != "" {
+								You finished { team.Quest.Name }.
+							} else {
+								You finished.
+							}
+						</h1>
 					}
-				</h1>
-				if team.Quest.Settings.EnablePoints && team.Points > 0 {
-					<p class="q-finish-pts">{ fmt.Sprint(team.Points) } points</p>
-				}
-			</div>
-		</header>
+					if showScore {
+						<p class="q-finish-pts">{ fmt.Sprint(team.Points) } points</p>
+					}
+				</div>
+			</header>
+		}
 		<div class="flex flex-col gap-8 empty:hidden" data-block-list>
 			for _, block := range pageBlocks {
 				@PlayerBlockSlot(team.Quest.Settings, block, blockStates[block.GetID()], hidden[block.GetID()], preview)

@@ -39,6 +39,19 @@ func TestComplete_SaysWhatWasFinishedAndTheScore(t *testing.T) {
 	assert.Contains(t, html, `href="/journal"`)
 }
 
+// Once the author has written the page, their words are the heading. The score
+// stays, because it is the one thing they cannot write; the fixed line does not.
+func TestComplete_AnAuthoredPageHasNoFixedHeading(t *testing.T) {
+	authored := blocks.Blocks{&blocks.MarkdownBlock{BaseBlock: blocks.BaseBlock{ID: "m1"}}}
+	html := render(t, Complete(finishedRun(80, true), authored, map[string]blocks.PlayerState{}, map[string]bool{}, false))
+
+	assert.NotContains(t, html, "You finished")
+	assert.Contains(t, html, "80 points")
+
+	unscored := render(t, Complete(finishedRun(0, false), authored, map[string]blocks.PlayerState{}, map[string]bool{}, false))
+	assert.NotContains(t, unscored, "q-finish", "nothing left to say above the author's blocks")
+}
+
 func TestComplete_OnlyAnnouncesAScoreThatExists(t *testing.T) {
 	assert.NotContains(t, renderComplete(t, finishedRun(0, true)), "points")
 	assert.NotContains(t, renderComplete(t, finishedRun(80, false)), "points")
