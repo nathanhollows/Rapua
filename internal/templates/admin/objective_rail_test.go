@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/nathanhollows/Rapua/v8/internal/services"
 
 	"github.com/nathanhollows/Rapua/v8/models"
@@ -134,7 +135,7 @@ func TestObjectiveTree_EveryChildListSharesTheSameSpacing(t *testing.T) {
 // Top-level routing does not govern the system pages, so no rail joins them.
 func TestSystemPageLink_HangsItsPinInTheGutter(t *testing.T) {
 	var out strings.Builder
-	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start").
+	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start", game.LintResult{}).
 		Render(context.Background(), &out))
 
 	html := out.String()
@@ -148,7 +149,7 @@ func TestSystemPageLink_HangsItsPinInTheGutter(t *testing.T) {
 // page: it reads as something to open, not a value to type.
 func TestSystemPageLink_IsARowNotAField(t *testing.T) {
 	var out strings.Builder
-	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start").
+	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start", game.LintResult{}).
 		Render(context.Background(), &out))
 
 	link := classContaining(t, out.String(), "rounded-xl")

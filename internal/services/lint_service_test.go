@@ -87,6 +87,18 @@ func (f lintFixture) insertBlock(t *testing.T, ownerID, blockType string, points
 	require.NoError(t, err)
 }
 
+// insertStartButton gives the quest what every quest the editor creates has: a
+// start page a player can get through.
+func (f lintFixture) insertStartButton(t *testing.T) {
+	t.Helper()
+	block := models.Block{
+		ID: gofakeit.UUID(), OwnerID: f.questID, Type: "start_button",
+		Context: game.ContextStart, Data: []byte("{}"),
+	}
+	_, err := f.dbc.NewInsert().Model(&block).Exec(context.Background())
+	require.NoError(t, err)
+}
+
 // lint flattens the run: most tests here ask whether a rule fired at all,
 // rather than which row it landed on. TestLintService_DiagnosticsLandOnTheirObjective
 // covers that.
@@ -271,6 +283,7 @@ func TestLintService_DefaultQuestIsClean(t *testing.T) {
 	f, cleanup := setupLintService(t)
 	defer cleanup()
 
+	f.insertStartButton(t)
 	root := f.insert(t, models.Objective{Slug: "root", Routing: models.RouteStrategyOrdered})
 	f.insert(t, models.Objective{Slug: "one", ParentID: root.ID, Position: 0, Routing: models.RouteStrategyOrdered})
 	f.insert(t, models.Objective{Slug: "two", ParentID: root.ID, Position: 1, Routing: models.RouteStrategyOrdered})
@@ -284,6 +297,23 @@ func TestLintService_DefaultQuestIsClean(t *testing.T) {
 	for _, w := range result.Warnings {
 		t.Errorf("unexpected warning %s at %s: %s", w.Code, w.Path, w.Message)
 	}
+}
+
+// An empty start page is the case that matters: nothing on it can start a run,
+// and the player is held on /start with a blank screen. It reaches the editor
+// through an import whose document has `start: []`, which creation's default
+// blocks never cover.
+func TestLintService_EmptyStartPageHasNoWayIn(t *testing.T) {
+	f, cleanup := setupLintService(t)
+	defer cleanup()
+
+	f.insert(t, models.Objective{Slug: "root", Routing: models.RouteStrategyOrdered})
+
+	result := f.lintQuest(t)
+	assert.True(t, result.Quest.HasWarning("NO_START_BUTTON"), "reported with the quest, on no row")
+
+	f.insertStartButton(t)
+	assert.False(t, f.lintQuest(t).HasWarning("NO_START_BUTTON"))
 }
 
 // Routing left empty is an unmade decision, not a default. It reached the

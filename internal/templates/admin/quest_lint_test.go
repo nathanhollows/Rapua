@@ -67,10 +67,26 @@ func TestSystemPageLint_ShowsOnlyItsOwnPage(t *testing.T) {
 	}
 
 	var out strings.Builder
-	require.NoError(t, SystemPageLint(lint, "start").Render(context.Background(), &out))
+	require.NoError(t, SystemPageLint(lint, "finish").Render(context.Background(), &out))
 	rendered := out.String()
-	assert.Contains(t, rendered, "no start button")
-	assert.NotContains(t, rendered, "finish page note")
+	assert.Contains(t, rendered, "finish page note")
+	assert.NotContains(t, rendered, "no start button")
+}
+
+// The start page offers its own fix for a missing start button, beside the
+// blocks, so the panel above them stays quiet about it. The quest page's row
+// still carries it, because nothing there offers one.
+func TestSystemPageLint_LeavesTheStartButtonToItsHint(t *testing.T) {
+	lint := services.QuestLint{
+		Quest: game.LintResult{
+			Warnings: []game.LintDiag{{Path: "start", Code: "NO_START_BUTTON", Message: "no start button"}},
+		},
+	}
+
+	var out strings.Builder
+	require.NoError(t, SystemPageLint(lint, "start").Render(context.Background(), &out))
+	assert.NotContains(t, out.String(), "no start button")
+	assert.NotContains(t, out.String(), "Worth a look", "an empty panel is not drawn")
 }
 
 // The out-of-band wrappers are how a panel refreshes after a save. Without the
@@ -130,4 +146,21 @@ func TestObjectiveTitleOrBlank(t *testing.T) {
 	assert.Equal(t, "Untitled task", objectiveTitleOrBlank(""))
 	assert.Equal(t, "Untitled task", objectiveTitleOrBlank("  "))
 	assert.Equal(t, "Find the chest", objectiveTitleOrBlank("Find the chest"))
+}
+
+// The start page has no row in the tree, so its row on the quest page is the
+// one place a problem with it can be marked where the author is looking.
+func TestSystemPageLink_MarksItsOwnPageOnly(t *testing.T) {
+	lint := game.LintResult{Warnings: []game.LintDiag{
+		{Path: "start", Code: "NO_START_BUTTON", Message: "start page has no start_button block"},
+	}}
+
+	var start, finish strings.Builder
+	require.NoError(t, objectiveSystemPageLink("Start", "/admin/quest/start", lint.Filter("start")).
+		Render(context.Background(), &start))
+	require.NoError(t, objectiveSystemPageLink("Complete", "/admin/quest/complete", lint.Filter("finish")).
+		Render(context.Background(), &finish))
+
+	assert.Contains(t, start.String(), "start page has no start_button block")
+	assert.NotContains(t, finish.String(), "start_button")
 }

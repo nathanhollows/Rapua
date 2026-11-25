@@ -238,6 +238,13 @@ func TestLint_InvalidContext(t *testing.T) {
 
 // --- Layer 3: Structural warnings ---
 
+func TestLint_EmptyStartPageIsNoWayIn(t *testing.T) {
+	doc := validDoc()
+	doc.Start = nil
+	result := game.Lint(doc, newTestRegistry())
+	assert.True(t, result.HasWarning("NO_START_BUTTON"))
+}
+
 func TestLint_NoStartButton(t *testing.T) {
 	doc := validDoc()
 	doc.Start = []game.BlockDoc{{"type": "text"}} // no start_button

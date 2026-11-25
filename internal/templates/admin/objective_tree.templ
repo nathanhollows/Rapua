@@ -491,7 +491,7 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 				</div>
 			</div>
 			<div class="py-2">
-				@objectiveSystemPageLink("Start", "/admin/quest/start")
+				@objectiveSystemPageLink("Start", "/admin/quest/start", lint.Quest.Filter("start"))
 				<div id="objective-tree" class="px-6" hx-boost="true">
 					if len(nodes) == 0 {
 						<div role="alert" class="alert">
@@ -507,7 +507,7 @@ templ ObjectiveTree(lint services.QuestLint, root models.Objective, nodes []*Obj
 						@objectiveSecretFooter(root.ID, secretChildren(nodes), settings.EnablePoints, 0)
 					}
 				</div>
-				@objectiveSystemPageLink("Complete", "/admin/quest/complete")
+				@objectiveSystemPageLink("Complete", "/admin/quest/complete", lint.Quest.Filter("finish"))
 			</div>
 		</section>
 	</div>
@@ -595,7 +595,10 @@ func sectionChoicePad(depth int) string {
 // but no rail joins it: top-level routing governs what is between these pages,
 // not the pages. A pin rather than a padlock, because a padlock on this page
 // means an objective waiting on a variable.
-templ objectiveSystemPageLink(label, href string) {
+// objectiveSystemPageLink is the row that opens the start or complete page. It
+// carries that page's lint, because the page has no row of its own to mark: an
+// empty start page was only ever reported in a list above the tree.
+templ objectiveSystemPageLink(label, href string, lint game.LintResult) {
 	<div class="px-6 py-3">
 		<div class="objective-outside relative pl-10">
 			<span class="objective-outside-mark tooltip tooltip-right" data-tip="System page: always shown, never routed">
@@ -611,6 +614,7 @@ templ objectiveSystemPageLink(label, href string) {
 			>
 				<span class="font-medium group-hover/system:underline">{ label }</span>
 				<div class="flex-grow"></div>
+				@objectiveLintBadge(lint)
 				<span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-base-content/70">System page</span>
 				@icon("chevron-right", templ.Attributes{"class": "w-4 h-4 shrink-0 text-base-content/50"})
 			</a>

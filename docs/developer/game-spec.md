@@ -39,7 +39,7 @@ These rules are enforced by the linter (`POST /api/v8/lint`). Errors block impor
 - Block `points` are ignored unless `settings.enable_points` is true, and are left alone rather than reported: the editor hides every points control while points are off, so nothing could be done about it from there. An objective has no `points` field of its own: its total point value is the sum of its blocks' points.
 
 **Start page**
-- A start page with blocks but no `start_button` block will not let players join. *(`NO_START_BUTTON` warning)*
+- A start page with no `start_button` block, empty or not, will not let players join. *(`NO_START_BUTTON` warning)*
 
 **Completion band**
 - `children_min` and `children_max` form a range over completed children. When they are equal the objective auto-completes at that count; when min is lower, reaching min reveals a finish button and the player's press completes the objective, which also auto-completes at max.

@@ -154,28 +154,39 @@ templ SystemPageLintOOB(lint services.QuestLint, pathPrefix string) {
 	</div>
 }
 
-// SystemPageLint shows the diagnostics about one system page. NO_START_BUTTON
-// is the whole reason: it is about the start page, so no row carries it, and
-// the page it is about was the one place it never appeared.
+// SystemPageLint shows the diagnostics about one system page, minus the missing
+// start button, which the page already offers a fix for as a hint. It sets no
+// side padding: the editor around it does.
 templ SystemPageLint(lint services.QuestLint, pathPrefix string) {
-	{{ result := lint.Quest.Filter(pathPrefix) }}
+	{{ result := withoutHintedDiagnostics(lint.Quest.Filter(pathPrefix)) }}
 	if lint.Unreadable() {
-		<div class="px-5">
-			<div role="alert" class="alert alert-outline alert-warning mb-3 items-start">
-				@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
-				<p class="text-sm">Checks could not run, so nothing on this page has been checked.</p>
-			</div>
+		<div role="alert" class="alert alert-outline alert-warning mb-3 items-start">
+			@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
+			<p class="text-sm">Checks could not run, so nothing on this page has been checked.</p>
 		</div>
 	} else if len(result.Errors) > 0 || len(result.Warnings) > 0 {
-		<div class="px-5">
-			if len(result.Errors) > 0 {
-				@questLintList("error", "circle-alert", "Needs fixing", result.Errors)
-			}
-			if len(result.Warnings) > 0 {
-				@questLintList("warning", "triangle-alert", "Worth a look", result.Warnings)
-			}
-		</div>
+		if len(result.Errors) > 0 {
+			@questLintList("error", "circle-alert", "Needs fixing", result.Errors)
+		}
+		if len(result.Warnings) > 0 {
+			@questLintList("warning", "triangle-alert", "Worth a look", result.Warnings)
+		}
 	}
+}
+
+// withoutHintedDiagnostics drops what the system page editor already offers a
+// fix for in place.
+func withoutHintedDiagnostics(result game.LintResult) game.LintResult {
+	keep := func(diagnostics []game.LintDiag) []game.LintDiag {
+		var kept []game.LintDiag
+		for _, diagnostic := range diagnostics {
+			if diagnostic.Code != "NO_START_BUTTON" {
+				kept = append(kept, diagnostic)
+			}
+		}
+		return kept
+	}
+	return game.LintResult{Errors: keep(result.Errors), Warnings: keep(result.Warnings)}
 }
 
 // ObjectiveLintPanelOOB re-renders every slot in place after a save. The

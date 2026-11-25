@@ -608,7 +608,9 @@ func (l *linter) checkStructural() {
 			break
 		}
 	}
-	if len(l.doc.Start) > 0 && !hasStartButton {
+	// An empty page is the worst case, not an exempt one: nothing on it can
+	// start a run, and the player is held on /start until something does.
+	if !hasStartButton {
 		l.warnf("start", "NO_START_BUTTON",
 			"start page has no start_button block; players won't be able to start the game")
 	}
