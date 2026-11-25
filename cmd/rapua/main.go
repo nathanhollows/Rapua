@@ -64,6 +64,7 @@ func main() {
 			newDBCommand(dbc, migrator, logger),
 			newCreditsCommand(dbc, logger),
 			newGenerateLoginCommand(dbc, logger),
+			newSeedCommand(dbc, migrator, logger),
 			newGenSpecCommand(),
 		},
 		Action: func(_ *cli.Context) error {
