@@ -131,7 +131,11 @@ func (h *Handler) BlockKit(w http.ResponseWriter, r *http.Request) {
 		)
 		return
 	}
-	if blockContext != blocks.ContextObjectiveProof && blockContext != blocks.ContextObjectiveReveal {
+	pageKit := kit.IsPageKit()
+	onSystemPage := blockContext == blocks.ContextStart || blockContext == blocks.ContextFinish
+	onObjective := blockContext == blocks.ContextObjectiveProof || blockContext == blocks.ContextObjectiveReveal
+	// A page template goes on a page and an objective template on an objective.
+	if !(pageKit && onSystemPage) && !(!pageKit && onObjective) {
 		h.handleErrorWithStatus(
 			w, r, http.StatusBadRequest, "BlockKit: invalid context", "Could not add the template",
 			"context", blockContext,
@@ -155,7 +159,12 @@ func (h *Handler) BlockKit(w http.ResponseWriter, r *http.Request) {
 	if user.CurrentQuest.Settings.EnablePoints {
 		points = services.DefaultKitPoints
 	}
-	made, err := h.blockService.CreateKit(r.Context(), ownerID, blockContext, kit, points)
+	var made []blocks.Block
+	if pageKit {
+		made, err = h.blockService.CreatePageKit(r.Context(), ownerID, blockContext, kit, user.CurrentQuest.Name)
+	} else {
+		made, err = h.blockService.CreateKit(r.Context(), ownerID, blockContext, kit, points)
+	}
 	if err != nil {
 		status := http.StatusInternalServerError
 		if errors.Is(err, services.ErrUnknownBlockKit) || errors.Is(err, services.ErrBlockNotValidForContext) {

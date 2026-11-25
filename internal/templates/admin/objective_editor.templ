@@ -339,21 +339,26 @@ templ objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords)
 					@objectiveKitCard(ownerID, zone, z, services.KitScan, "scan", "Scan a code", "A prompt and a scan block, with a QR code already made.")
 					@objectiveKitCard(ownerID, zone, z, services.KitLocation, "geofence", "Go to a place", "A location check, ready for you to choose the spot.")
 					@objectiveKitCard(ownerID, zone, z, services.KitQuiz, "quiz", "Answer a question", "Instructions and two quiz blocks to fill in.")
-					<button type="button" class="block-pick-item st-card" data-add={ z.Param }>
-						@icon("plus", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
-						<span>
-							<b>Build it yourself</b>
-							<small>Choose blocks one at a time.</small>
-						</span>
-					</button>
+					@objectiveBuildCard(z)
 				</div>
 			} else if z.system {
 				<b>Nothing on this page yet</b>
-				<p>Add blocks to build what players see. The preview on the right is the page as they will meet it.</p>
-				<button type="button" class="btn btn-primary" data-add={ z.Param }>
-					@icon("plus", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
-					Add a block
-				</button>
+				if zone == blocks.ContextStart {
+					<p>Players cannot begin without a start button, so start from a template. Everything can be changed afterwards.</p>
+					<div class="st-grid">
+						@objectiveKitCard(ownerID, zone, z, services.KitStartScavenger, "header", "Scavenger hunt intro", "The game's name, its status, how to play, a team name and the start button.")
+						@objectiveKitCard(ownerID, zone, z, services.KitStartWelcome, "text", "Short welcome", "A name, the game's status, one line of welcome and the start button.")
+						@objectiveKitCard(ownerID, zone, z, services.KitStartRules, "alert", "Rules and housekeeping", "Safety, respect for the place and what to bring, then the team name and start button.")
+						@objectiveBuildCard(z)
+					</div>
+				} else {
+					<p>Say well done, and perhaps ask how it went. Everything can be changed afterwards.</p>
+					<div class="st-grid">
+						@objectiveKitCard(ownerID, zone, z, services.KitFinishCongrats, "header", "Congratulations", "A party popper, a heading and a few words of thanks.")
+						@objectiveKitCard(ownerID, zone, z, services.KitFinishSurvey, "rating", "Congratulations and a survey", "The same, followed by a rating and an open question about how it went.")
+						@objectiveBuildCard(z)
+					</div>
+				}
 			} else {
 				<b>No reveal</b>
 				<p>A reveal is optional. Without one, players go straight back to the quest list once they clear the proof. Add blocks if you would like them to see something first.</p>
@@ -364,6 +369,18 @@ templ objectiveEmptyState(ownerID string, zone blocks.BlockContext, z zoneWords)
 			}
 		</div>
 	</div>
+}
+
+// objectiveBuildCard is the way out of the templates, drawn as one of them so
+// starting from nothing reads as a choice and not as the thing to press.
+templ objectiveBuildCard(z zoneWords) {
+	<button type="button" class="block-pick-item st-card" data-add={ z.Param }>
+		@icon("plus", templ.Attributes{"class": "w-4 h-4", "width": "16", "height": "16"})
+		<span>
+			<b>Build it yourself</b>
+			<small>Choose blocks one at a time.</small>
+		</span>
+	</button>
 }
 
 templ objectiveKitCard(ownerID string, zone blocks.BlockContext, z zoneWords, kit services.BlockKit, iconType, title, text string) {

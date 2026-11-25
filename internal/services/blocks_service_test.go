@@ -959,4 +959,96 @@ func TestBlockService_CreateKit(t *testing.T) {
 		_, err := svc.CreateKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitScan, 0)
 		require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
 	})
+
+// Every empty start page needs a way in, so every start kit ends on the button
+// that starts a run. These are what an import with `start: []` is offered.
+func TestBlockService_CreatePageKit(t *testing.T) {
+	svc, _, cleanup := setupBlocksService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	types := func(list []blocks.Block) []string {
+		out := make([]string, 0, len(list))
+		for _, b := range list {
+			out = append(out, b.GetType())
+		}
+		return out
+	}
+
+	t.Run("every start kit lets a player begin", func(t *testing.T) {
+		for _, kit := range []services.BlockKit{
+			services.KitStartScavenger, services.KitStartWelcome, services.KitStartRules,
+		} {
+			made, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextStart, kit, "Garden Trail")
+			require.NoError(t, err, kit)
+			assert.Equal(t, "start_button", types(made)[len(made)-1], kit)
+			assert.Contains(t, types(made), "game_status", kit)
+		}
+	})
+
+	t.Run("the header carries the game's name", func(t *testing.T) {
+		quest := gofakeit.UUID()
+		made, err := svc.CreatePageKit(ctx, quest, blocks.ContextStart, services.KitStartWelcome, "Garden Trail")
+		require.NoError(t, err)
+		header, ok := made[0].(*blocks.HeaderBlock)
+		require.True(t, ok)
+		assert.Equal(t, "Garden Trail", header.TitleText)
+
+		stored, err := svc.FindByOwnerIDAndContext(ctx, quest, blocks.ContextStart)
+		require.NoError(t, err)
+		assert.Len(t, stored, len(made))
+	})
+
+	t.Run("a nameless quest still gets a heading", func(t *testing.T) {
+		made, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitStartWelcome, "")
+		require.NoError(t, err)
+		header, ok := made[0].(*blocks.HeaderBlock)
+		require.True(t, ok)
+		assert.Equal(t, "Welcome", header.TitleText)
+	})
+
+	t.Run("the team name can be changed and the countdown shows", func(t *testing.T) {
+		made, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitStartScavenger, "X")
+		require.NoError(t, err)
+		for _, block := range made {
+			switch typed := block.(type) {
+			case *blocks.TeamNameChangerBlock:
+				assert.True(t, typed.AllowChanging)
+			case *blocks.GameStatusAlertBlock:
+				assert.True(t, typed.ShowCountdown)
+			}
+		}
+	})
+
+	t.Run("finish: congratulations with a party popper", func(t *testing.T) {
+		made, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextFinish, services.KitFinishCongrats, "X")
+		require.NoError(t, err)
+		assert.Equal(t, []string{"header", "text"}, types(made))
+		header, ok := made[0].(*blocks.HeaderBlock)
+		require.True(t, ok)
+		assert.Equal(t, "party-popper", header.Icon)
+		assert.Equal(t, "Congratulations!", header.TitleText)
+	})
+
+	t.Run("the survey asks, and pays nothing", func(t *testing.T) {
+		made, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextFinish, services.KitFinishSurvey, "X")
+		require.NoError(t, err)
+		assert.Equal(t, []string{"header", "text", "rating", "free_text"}, types(made))
+		for _, block := range made {
+			assert.Zero(t, block.GetPoints(), block.GetType())
+		}
+	})
+
+	t.Run("a kit stays on its own page", func(t *testing.T) {
+		_, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextFinish, services.KitStartWelcome, "X")
+		require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
+		_, err = svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitFinishCongrats, "X")
+		require.ErrorIs(t, err, services.ErrBlockNotValidForContext)
+	})
+
+	t.Run("an objective template is not a page template", func(t *testing.T) {
+		_, err := svc.CreatePageKit(ctx, gofakeit.UUID(), blocks.ContextStart, services.KitScan, "X")
+		require.ErrorIs(t, err, services.ErrUnknownBlockKit)
+	})
+}
 }

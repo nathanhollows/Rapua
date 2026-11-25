@@ -91,6 +91,10 @@ type BlockService interface {
 	ReorderBlocks(ctx context.Context, blockIDs []string) error
 	// MoveBlock puts a block in the other half of its objective and orders the list it joins
 	MoveBlock(ctx context.Context, blockID string, to blocks.BlockContext, order []string) error
+	// CreatePageKit fills the start or finish page from a template.
+	CreatePageKit(
+		ctx context.Context, questID string, blockContext blocks.BlockContext, kit services.BlockKit, questName string,
+	) ([]blocks.Block, error)
 	// CreateKit adds a section template's blocks to the end of a list, all or none
 	CreateKit(
 		ctx context.Context, ownerID string, blockContext blocks.BlockContext, kit services.BlockKit, points int,

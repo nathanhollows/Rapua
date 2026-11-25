@@ -124,6 +124,16 @@ func TestBlockKit_AddsTheTemplatesBlocks(t *testing.T) {
 	assert.Len(t, f.idsIn(t, f.rootID, blocks.ContextObjectiveProof), before+2)
 }
 
+func TestBlockKit_FillsAnEmptyStartPage(t *testing.T) {
+	f := setupBlockList(t)
+
+	w := f.post(t, f.h.BlockKit, "", kitForm(f.user.CurrentQuestID, "start", "start_welcome"))
+
+	require.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), "data-rail-for=")
+	assert.NotEmpty(t, f.idsIn(t, f.user.CurrentQuestID, blocks.ContextStart))
+}
+
 func TestBlockKit_RefusesWhatItCannotDo(t *testing.T) {
 	f := setupBlockList(t)
 	before := len(f.idsIn(t, f.rootID, blocks.ContextObjectiveProof))
@@ -137,6 +147,9 @@ func TestBlockKit_RefusesWhatItCannotDo(t *testing.T) {
 		{"no template named", kitForm(f.rootID, "objective_proof", ""), 400},
 		{"a page that is not an objective", kitForm(f.rootID, "start", "scan"), 400},
 		{"another author's objective", kitForm(f.foreignOwner, "objective_proof", "scan"), 403},
+		{"a page template on an objective", kitForm(f.rootID, "objective_proof", "start_welcome"), 400},
+		{"a page template on the wrong page", kitForm(f.user.CurrentQuestID, "finish", "start_welcome"), 400},
+		{"a finish template on the start page", kitForm(f.user.CurrentQuestID, "start", "finish_survey"), 400},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
