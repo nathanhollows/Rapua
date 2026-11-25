@@ -680,7 +680,7 @@ func scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</template><script>\n\t\tfunction syncScanQRLink(row) {\n\t\t\tconst link = row.querySelector('[data-qr-link]');\n\t\t\tif (!link) return;\n\t\t\tconst code = row.querySelector('input[name=\"code\"]').value.trim();\n\t\t\tconst wanted = code !== '';\n\t\t\tlink.style.display = wanted ? '' : 'none';\n\t\t\tif (wanted) link.href = '/admin/qr/' + encodeURIComponent(code) + '.png';\n\t\t}\n\t\tif (!window.__scanQRBound) {\n\t\t\twindow.__scanQRBound = true;\n\t\t\t['input', 'change'].forEach(function (name) {\n\t\t\t\tdocument.addEventListener(name, function (event) {\n\t\t\t\t\tconst row = event.target.closest && event.target.closest('.scan-code-item');\n\t\t\t\t\tif (row) syncScanQRLink(row);\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\t\tfunction mintScanCodeValue() {\n\t\t\tconst alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';\n\t\t\tlet out = '';\n\t\t\tfor (let i = 0; i < 8; i++) {\n\t\t\t\tif (i === 4) out += '-';\n\t\t\t\tout += alphabet[Math.floor(Math.random() * alphabet.length)];\n\t\t\t}\n\t\t\treturn out;\n\t\t}\n\t\t// A minted code arrives filled in, so adding it is already a change.\n\t\tfunction mintScanCode(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst list = document.getElementById(event.target.closest('button').dataset.target);\n\t\t\tconst row = window.RapuaRows.add(list);\n\t\t\trow.querySelector('input[name=\"code\"]').value = mintScanCodeValue();\n\t\t\tsyncScanQRLink(row);\n\t\t\twindow.RapuaRows.changed(list);\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, "</template><script>\n\t\tfunction syncScanQRLink(row) {\n\t\t\tconst link = row.querySelector('[data-qr-link]');\n\t\t\tif (!link) return;\n\t\t\tconst code = row.querySelector('input[name=\"code\"]').value.trim();\n\t\t\tconst wanted = code !== '';\n\t\t\tlink.style.display = wanted ? '' : 'none';\n\t\t\tif (wanted) link.href = '/admin/qr/' + encodeURIComponent(code) + '.png';\n\t\t}\n\t\tif (!window.__scanQRBound) {\n\t\t\twindow.__scanQRBound = true;\n\t\t\t['input', 'change'].forEach(function (name) {\n\t\t\t\tdocument.addEventListener(name, function (event) {\n\t\t\t\t\tconst row = event.target.closest && event.target.closest('.scan-code-item');\n\t\t\t\t\tif (row) syncScanQRLink(row);\n\t\t\t\t});\n\t\t\t});\n\t\t}\n\t\tfunction mintScanCodeValue() {\n\t\t\t// A code on a wall is a password to a stop, so it is drawn from the browser's secure\n\t\t\t// random source, not Math.random, which is predictable.\n\t\t\tconst alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';\n\t\t\tconst draw = crypto.getRandomValues(new Uint8Array(8));\n\t\t\tlet out = '';\n\t\t\tdraw.forEach((byte, i) => {\n\t\t\t\tif (i === 4) out += '-';\n\t\t\t\tout += alphabet[byte % alphabet.length];\n\t\t\t});\n\t\t\treturn out;\n\t\t}\n\t\t// A minted code arrives filled in, so adding it is already a change.\n\t\tfunction mintScanCode(event) {\n\t\t\tevent.preventDefault();\n\t\t\tconst list = document.getElementById(event.target.closest('button').dataset.target);\n\t\t\tconst row = window.RapuaRows.add(list);\n\t\t\trow.querySelector('input[name=\"code\"]').value = mintScanCodeValue();\n\t\t\tsyncScanQRLink(row);\n\t\t\twindow.RapuaRows.changed(list);\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -728,7 +728,7 @@ func scanMintButton(blockID string) templ.Component {
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(scanRows(blockID).ID)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 234, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 237, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 		if templ_7745c5c3_Err != nil {
@@ -778,7 +778,7 @@ func scanCodeRow(code blocks.ScanCode) templ.Component {
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templruntime.SanitizeStyleAttributeValues(gridCols(scanCols))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 243, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 246, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -799,7 +799,7 @@ func scanCodeRow(code blocks.ScanCode) templ.Component {
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(code.Value)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 248, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 251, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 		if templ_7745c5c3_Err != nil {
@@ -812,7 +812,7 @@ func scanCodeRow(code blocks.ScanCode) templ.Component {
 		var templ_7745c5c3_Var37 templ.SafeURL
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinURLErrs(scanQRHref(code.Value))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 255, Col: 32}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/templates/blocks/scan.templ`, Line: 258, Col: 32}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 		if templ_7745c5c3_Err != nil {

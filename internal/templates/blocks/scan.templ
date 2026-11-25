@@ -194,12 +194,15 @@ templ scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) {
 			});
 		}
 		function mintScanCodeValue() {
+			// A code on a wall is a password to a stop, so it is drawn from the browser's secure
+			// random source, not Math.random, which is predictable.
 			const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+			const draw = crypto.getRandomValues(new Uint8Array(8));
 			let out = '';
-			for (let i = 0; i < 8; i++) {
+			draw.forEach((byte, i) => {
 				if (i === 4) out += '-';
-				out += alphabet[Math.floor(Math.random() * alphabet.length)];
-			}
+				out += alphabet[byte % alphabet.length];
+			});
 			return out;
 		}
 		// A minted code arrives filled in, so adding it is already a change.
