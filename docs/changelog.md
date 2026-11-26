@@ -8,6 +8,16 @@ tag_until: 2026-12-23
 
 # Changelog
 
+## 8.0.1 (2026-11-26)
+
+### Changed
+
+- `make build` only compiles the binary. `make tailwind-build` and `make templ-generate` still run on their own.
+
+### Fixed
+
+- The player background stopped at the edge of the screen on pages taller than it, such as the start page.
+
 ## 8.0.0 (2026-11-26)
 
 v8.0.0 replaces Locations with Objectives. An objective is something for players to do. It can ask for proof, and can then reveal bonus content. An objective with other objectives inside it becomes a section, so one type replaces locations, groups, and the old game-structure blob.
