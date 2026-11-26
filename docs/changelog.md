@@ -8,102 +8,104 @@ tag_until: 2026-12-23
 
 # Changelog
 
-## 8.0.0
+## 8.0.0 (2026-11-26)
 
-v8.0.0 replaces Locations with Objectives, which changes how much of the system works. An Objective is a thing to do. It may need proof, and can then reveal bonus content. Objectives can be parents of other objectives, so one recursive type replaces locations, groups, and the old game-structure blob.
+v8.0.0 replaces Locations with Objectives. An objective is something for players to do. It can ask for proof, and can then reveal bonus content. An objective with other objectives inside it becomes a section, so one type replaces locations, groups, and the old game-structure blob.
 
-The [creators page](/creators) shows most of what's new in action: nesting, pass-through sections, keys and locks, the new blocks, and the run timeline.
+Every interface has been redesigned: the public site, the player, the admin (with a new objective editor), and the blocks that appear in both. The [creators page](/creators) shows the new features in action.
 
-- **Nesting:** any objective becomes a section once something sits inside it.
-- **Pass-through:** a pass-through section hides itself and lets its children show in the section above. `A[B[C][D[E,F]]]` with D as pass-through plays as `A[B[C],E,F]`, with D's routing deciding which of E and F appear.
-- **Completion bands:** a section needs at least x and at most y of what's inside it.
-- **Event stream:** every player event is recorded, including a player entering a run code.
-- **Run page:** each team gets a timeline of what they opened, answered and uploaded, with a strip showing when they were playing, idle, stalled or gone, and a map of where they are in the quest.
-- **Public UI:** redesigned.
-- **Game spec:** updated for all of the above.
-- **Start and Complete pages:** an empty page now offers templates to start from. Start has a scavenger hunt intro, a short welcome, and rules and housekeeping. Complete has congratulations, with or without a short survey. An empty start page is flagged, because players cannot begin without a start button, and the Start and Complete rows on the quest page show what the checks say about them.
-
-### Upgrading
-
-- Give every location a marker first. A location without one stops the upgrade.
-- Check-in history is dropped, along with the "must check out before finishing" setting. Back up first if you need it.
-- Game documents exported from v7 won't import. Export a fresh copy on v8.
-- Images can no longer be full width. Any image set to full width is now drawn like the rest, and a document that still sets `full_width` imports with a warning.
-- Toggle text blocks no longer have a small option, which never changed how they looked. A document that still sets `small` imports with a warning.
-- Ratings are always out of five. A longer scale cannot fit a phone in one row of stars big enough to tap. A document that still sets `max_rating` imports with a warning.
+A team is the people playing. A run is a recorded game: it exists once a team has joined, and is what the admin lists and reports on.
 
 ### Added
 
-- Draft objectives: hidden from players, with everything beneath them, until published. New objectives start as drafts.
-- Secret objectives: never listed, found by scanning their code from anywhere in the quest. Once found they count toward their section, and one with children opens as a side quest.
+**Structure**
+
+- **Nesting:** any objective becomes a section once something sits inside it.
+- **Pass-through:** a flag on a section. A pass-through section hides itself and shows its children in the section above, with its routing still deciding which children appear. Players only see two levels, so sections nested deeper are flattened the same way automatically.
+- **Completion bands:** a section needs at least x and at most y of the objectives inside it.
+- **Draft objectives:** hidden from players, with everything beneath them, until published. New objectives start as drafts.
+- **Secret objectives:** never listed, found by scanning their code from anywhere in the quest. A found secret counts toward its section, and one with children opens as a side quest.
+- **Keys and locks:** interactive blocks can set a variable, and objectives and content blocks can wait on variables.
+
+**Building a quest**
+
+- **Quest tree:** see, drag, publish and park the whole quest at once, with a rule pill on each section and a live lint panel that flags problems on the row they belong to.
+- **New blocks:** Choice, Scan, and Location check (stand inside an area you draw). A wrong Location check says roughly how far off it was.
+- **Section templates:** add the blocks for a Scan, Location or Quiz section in one click. Start and Complete pages also offer templates, and an empty Start page is flagged.
+- Adding an objective is one click, and copies a sibling's navigation block.
 - A running game can't be edited. Stop it first, or duplicate it and work on the copy.
-- Keys and locks: interactive blocks can set a variable, and objectives and content blocks can wait on variables. Locked content stays hidden until its variables are set, then appears on the page that unlocks it.
-- Quest tree: see, drag, publish and park the whole quest at once. Each section has a rule pill for its routing and completion band. A live lint panel flags problems on the row they belong to.
-- Players see at most two sections deep; anything deeper passes through.
-- New blocks: Map, Free Text, Choice, Scan, and Location check (stand inside an area you draw).
-- Redesigned blocks: every interactive block shares one raised card with a points and done pill, so a right answer, a wrong one, and a status message each look the same wherever they appear.
-- A wrong Location check says roughly how far off it was, in rounded steps ("about 100 m away"), so players can tell they are getting closer.
-- Free text answers can be edited after they are sent. Pincodes can be any length, and long ones wrap to two rows.
-- Any short code can be rendered as a QR image.
-- Join a run by opening a link with the run code in it.
-- The event stream also records what a failed attempt carried. The player's journal is built from it.
-- Players can finish a section from the quest screen, which shows their progress.
-- The quest screen leads with each objective's task and groups by section. Objectives can carry a description, and games that haven't started say when they will.
-- The You tab replaces Team, and shows the leaderboard and team name form.
-- A quest chooses what players see as progress: out of the total, a count only, or nothing.
-- Redesigned public site and player home, which offers a returning player their game back.
-- Redesigned admin: a new navigation bar, a game control card on Activity, redesigned Runs, Run, Quest and Settings pages, and a rebuilt objective editor with a plain card preview and an optional phone view. The Start and Complete pages are edited in the same block editor.
-- Section templates: add a Scan, Location or Quiz section's blocks in one click, already arranged. Blocks can also be moved between proof and reveal.
-- Facilitator dashboard rebuilt around "do I have to keep waiting?". A facilitator picks the stations they look after, and sees how long the game has left, which teams are still due, which are with them now, and which have stopped.
-- Run code lookups are limited to 10 a minute per client.
-- Adding an objective is one click. Next to a sibling with one navigation block, it copies that block.
-- More lint checks on import and live: missing routing, unreachable bands or finish labels, locks nothing can open, and sections the screen will flatten.
+- More lint checks: missing routing, unreachable bands or finish labels, locks nothing can open, and sections that will be flattened.
 - `/api/v8/spec` and `/api/v8/lint` are public and need no CSRF token.
+
+**Playing**
+
+- **Quest screen:** leads with each objective's task, shows progress, and lets players finish a section. A quest chooses whether progress shows as a total, a count, or nothing.
+- **You tab:** replaces Team, with the leaderboard and team name.
+- **Player journal:** a diary of what the team did, built from a record of every player event, including failed attempts.
+- Players can join by opening a link with the run code in it, and a returning player is offered their game back.
+- Free text answers can be edited after sending. Pincode is a single field of any length.
+- Any short code can be rendered as a QR image.
+- Run code lookups are limited to 10 a minute per client.
+
+**Running a game**
+
+- **Run page:** a timeline of what the team opened, answered and uploaded, when they were playing, idle, stalled or gone, and where they are in the quest.
+- **Facilitator dashboard:** rebuilt around "do I have to keep waiting?". Pick your stations to see time left, which teams are due, which are with you, and which have stopped.
 
 ### Changed
 
-- Block forms follow the new admin style. Points are set from the picker in each block's header, and a clue's picker offers its cost as negative values. A Location check's accuracy limit is a choice by where players will be standing (outdoors, indoors, deep inside), and Choice options are a list you drag to reorder.
-- **Breaking:** Location, Marker, and Check-in are gone. Locations with a marker convert to objectives on upgrade, and printed posters keep working.
-- **Breaking:** Navigation display modes (Map, Labelled Map, List, Custom Clues, Tasks) are gone. Every objective uses the same navigation and content blocks.
-- **Breaking:** There are no separate groups. A group's routing and completion rule is now what any objective does once it has children. "All" / "minimum required" becomes a completion band: equal bounds finish automatically, a range adds an optional finish button.
-- **Breaking:** Ending a section early is done by the player pressing finish, not by a facilitator skipping the team. Runs with a skipped section reopen as unfinished.
-- **Breaking:** Bonus points for early check-ins and the `show_team_count` setting are removed.
-- **Breaking:** Task blocks become one-item checklists on upgrade. Leftover Task List blocks are deleted.
-- **Breaking:** "Team" is now "Run" and "Instance"/"Game" is now "Quest" in admin routes (`/admin/quests/*`, `/admin/runs/*`). Old URLs no longer resolve.
+- **Breaking:** Players end a section early by pressing finish, not by a facilitator skipping the team. Runs with a skipped section reopen as unfinished.
+- **Breaking:** Admin routes say "Run" where they said "Team", and "Quest" where they said "Instance" or "Game" (`/admin/quests/*`, `/admin/runs/*`). Old URLs no longer resolve.
 - **Breaking:** The spec API moved from `/api/v7/*` to `/api/v8/*`, and documents must declare `"rapua": "v8"`.
+- **Breaking:** Task blocks become one-item checklists on upgrade. Leftover Task List blocks are deleted.
 - Routing is required on every objective and defaults to "ordered". Unset routing becomes free roam on upgrade, as it played in v7, and a secret group's locations become secret objectives in its parent.
-- Points live on blocks. An objective's total is the sum of its blocks.
-- The points toggle moved to the quest page; the Experience settings page is gone.
+- Points live on blocks, set from the picker in each block's header. An objective's total is the sum of its blocks.
+- The points toggle moved to the quest page, and the Experience settings page is gone.
 - A run is marked started, and its credit spent, when a player presses Start, not when they join.
-- Run codes are six letters, shown with a break in the middle (`ABC-DEF`), and are found however they are written. Runs made before keep their four-letter code.
-- Run, activity, and facilitator dashboards report progress in objectives.
-- Pincode is a single OTP-style field.
-- Importing applies everything in the document, drafts included.
+- Run codes are six letters, shown with a break in the middle (`ABC-DEF`), and are found however they are written. Existing runs keep their four-letter code.
+- Run, activity and facilitator dashboards report progress in objectives.
 - Random Clue is now Random Text. Existing blocks are renamed on upgrade.
 
 ### Fixed
 
-- A clue with a points cost was flagged as needing a fix, because its cost is negative. It no longer is, and an exported game with a clue imports again.
+- A clue with a points cost was flagged as needing a fix, and an exported game with a clue wouldn't import.
 - Stripe checkout no longer holds a write lock while fetching the receipt.
 - A failed upload no longer leaves its file behind.
 - The activity page's "last seen" showed when a run was created, not when the team last played.
-- The Stripe webhook and game import no longer read unbounded request bodies.
-- Scripts and stylesheets on the player and public pages are stamped with their version, so a browser fetches the new ones after an update instead of keeping the old.
+- The Stripe webhook and the game spec and import uploads no longer read unbounded request bodies.
+- Player and public scripts and stylesheets are versioned, so browsers fetch new ones after an update.
 
 ### Removed
 
-- Resetting a run. It wiped progress but kept the record, so the run read differently depending on who looked. Delete the run and add a new one instead.
+- **Breaking:** Location, Marker, and Check-in. Locations with a marker convert to objectives on upgrade, and printed posters keep working.
+- **Breaking:** Navigation display modes (Map, Labelled Map, List, Custom Clues, Tasks). Every objective uses the same navigation and content blocks.
+- **Breaking:** Groups. Any objective with children now has the group's routing and completion rule. "All" / "minimum required" becomes a completion band: equal bounds finish automatically, a range adds an optional finish button.
+- **Breaking:** Bonus points for early check-ins, and the `show_team_count` setting.
+- **Breaking:** The full-width option on image blocks, the small option on toggle text blocks, and the scale option on rating blocks. The upgrade clears each setting from existing blocks.
+- Resetting a run. Delete the run and add a new one instead.
 - The Broker block.
-- Per-block `when` conditions and the condition-builder sidebar. Use `depends`.
-- The "Unlocked" badge on the objective reveal view.
 - The "manage groups" editor, replaced by the quest tree.
+- The Quickstart bar and its guide, which no longer matched how the app works.
 - Creating an objective by duplicating a marker's coordinates from another quest.
-- The Quickstart bar and its guide. Its steps (create an instance, add a team, update settings) no longer matched how the app works. The upgrade drops the "dismissed" flag it kept on each quest.
-- **Breaking:** the full-width option on image blocks, added in 7.0.0. The upgrade clears the setting from existing images.
-- **Breaking:** the small option on toggle text blocks. The upgrade clears the setting from existing blocks.
-- **Breaking:** the scale option on rating blocks. Every rating is out of five, and the upgrade clears the setting from existing blocks.
 
-## 7.0.0
+## 7.1.0 (2026-04-11)
+
+### Added
+
+- [Free text block](/docs/user/blocks/free-text) for unconstrained text responses.
+
+## 7.0.1 (2026-04-11)
+
+### Changed
+
+- Split `./rapua` commands into separate files.
+- Update docs ordering and roadmap.
+
+### Fixed
+
+- Migration fixes orphaned team block states.
+
+## 7.0.0 (2026-04-11)
 
 v7.0.0 introduces games as code which lets me do fancy things like static game analysis (finding bugs in games without playing them), have AI write games using a [game specification](/docs/developer/game-spec), and store game templates with the code. 
 
@@ -119,7 +121,6 @@ Since games are now code, instead of database entities, it also means I can chan
 - Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
 - Image blocks can now be full width on mobile.
 - [Map block](/docs/user/blocks/map) to replace the `Map` and `Map and Names` navigation display mode.
-- [Free text block](/docs/user/blocks/free-text) for unconstrained text responses.
 
 ### Changed
 
@@ -128,8 +129,6 @@ Since games are now code, instead of database entities, it also means I can chan
 - New fields for blocks to support reports in the future.
 - **Breaking:** `config`, `db`, `filesystem`, `helpers`, `repositories`, and `security` packages moved to `internal/`.
 - **Breaking:** Database now uses foreign keys with cascading deletes to ensure data integrity and simplify cleanup. Services have been tidied up.
-- Split ./rapua commands into separate files.
-- Update docs ordering and roadmap.
 
 ### Fixed
 
