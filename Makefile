@@ -20,8 +20,6 @@ dev:
 
 .PHONY: build
 build:
-	make tailwind-build
-	make templ-generate
 	go build -ldflags "-s -w -X main.Environment=production" -o ./rapua ./cmd/rapua/
 
 .PHONY: vet
