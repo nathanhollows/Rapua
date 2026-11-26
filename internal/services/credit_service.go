@@ -7,9 +7,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 )
 
@@ -29,7 +29,9 @@ type CreditRepository interface {
 	// AddCreditsWithTx atomically increments credits without read-modify-write to prevent lost updates.
 	AddCreditsWithTx(ctx context.Context, tx *bun.Tx, userID string, freeCreditsToAdd int, paidCreditsToAdd int) error
 
-	// TryDeductOneCredit atomically deducts one credit from free first, then paid. Returns ErrInsufficientCredits if not possible.
+	// TryDeductOneCredit atomically deducts one credit from free first, then paid.
+	// Returns repositories.ErrInsufficientCredits when the balance cannot cover
+	// it; the service translates that into its own sentinel.
 	DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx, userID string) error
 }
 
@@ -39,23 +41,23 @@ const (
 )
 
 type CreditService struct {
-	transactor       db.Transactor
-	creditRepo       CreditRepository
-	teamStartLogRepo *repositories.TeamStartLogRepository
-	userRepo         repositories.UserRepository
+	transactor      db.Transactor
+	creditRepo      CreditRepository
+	runStartLogRepo *repositories.RunStartLogRepository
+	userRepo        repositories.UserRepository
 }
 
 func NewCreditService(
 	transactor db.Transactor,
 	creditRepo CreditRepository,
-	teamStartLogRepo *repositories.TeamStartLogRepository,
+	runStartLogRepo *repositories.RunStartLogRepository,
 	userRepo repositories.UserRepository,
 ) *CreditService {
 	return &CreditService{
-		transactor:       transactor,
-		creditRepo:       creditRepo,
-		teamStartLogRepo: teamStartLogRepo,
-		userRepo:         userRepo,
+		transactor:      transactor,
+		creditRepo:      creditRepo,
+		runStartLogRepo: runStartLogRepo,
+		userRepo:        userRepo,
 	}
 }
 
@@ -136,40 +138,41 @@ func (s *CreditService) AddCredits(
 	return nil
 }
 
-// DeductCreditForTeamStartWithTx handles credit deduction and team start logging within a transaction.
-func (s *CreditService) DeductCreditForTeamStartWithTx(
+// DeductCreditForRunStartWithTx handles credit deduction and run start logging within a transaction.
+func (s *CreditService) DeductCreditForRunStartWithTx(
 	ctx context.Context,
 	tx *bun.Tx,
-	userID, teamID, instanceID string,
+	userID, teamID, questID string,
 ) error {
 	// Step 1: Atomically deduct one credit (free first, then paid)
 	err := s.creditRepo.DeductOneCreditWithTx(ctx, tx, userID)
 	if err != nil {
-		// Convert repository error to service error for consistency
-		if err.Error() == "insufficient credits to start team" {
+		// The repository's sentinel, not its wording: a message that merely
+		// reads the same must not start meaning this.
+		if errors.Is(err, repositories.ErrInsufficientCredits) {
 			return ErrInsufficientCredits
 		}
 		return err
 	}
 
 	// Step 2: Log the team start
-	log := &models.TeamStartLog{
-		ID:         uuid.New().String(),
-		CreatedAt:  time.Now(),
-		UserID:     userID,
-		TeamID:     teamID,
-		InstanceID: instanceID,
+	log := &models.RunStartLog{
+		ID:        uuid.New().String(),
+		CreatedAt: time.Now(),
+		UserID:    userID,
+		RunID:     teamID,
+		QuestID:   questID,
 	}
-	return s.teamStartLogRepo.CreateWithTx(ctx, tx, log)
+	return s.runStartLogRepo.CreateWithTx(ctx, tx, log)
 }
 
-// TeamStartLogFilter defines filtering options for team start logs.
-type TeamStartLogFilter struct {
-	UserID     string
-	InstanceID string
-	StartTime  time.Time
-	EndTime    time.Time
-	GroupBy    string
+// RunStartLogFilter defines filtering options for run start logs.
+type RunStartLogFilter struct {
+	UserID    string
+	QuestID   string
+	StartTime time.Time
+	EndTime   time.Time
+	GroupBy   string
 }
 
 // CreditAdjustmentFilter defines filtering options for credit adjustments.
@@ -199,18 +202,18 @@ func (s *CreditService) GetCreditAdjustments(
 	return s.creditRepo.GetCreditAdjustmentsByUserID(ctx, filter.UserID)
 }
 
-// TeamStartSummary represents aggregated team start data for a time period.
-type TeamStartSummary struct {
+// RunStartSummary represents aggregated run start data for a time period.
+type RunStartSummary struct {
 	Date  time.Time `json:"date"`
 	Count int       `json:"count"`
 	Ratio float64   `json:"ratio,omitempty"` // Optional ratio for percentage calculations
 }
 
-// GetTeamStartLogsSummary returns team start logs aggregated by time periods with zero-filling.
-func (s *CreditService) GetTeamStartLogsSummary(
+// GetRunStartLogsSummary returns run start logs aggregated by time periods with zero-filling.
+func (s *CreditService) GetRunStartLogsSummary(
 	ctx context.Context,
-	filter TeamStartLogFilter,
-) ([]TeamStartSummary, error) {
+	filter RunStartLogFilter,
+) ([]RunStartSummary, error) {
 	// Validate GroupBy parameter
 	if filter.GroupBy == "" {
 		filter.GroupBy = day // Default to daily grouping
@@ -241,7 +244,7 @@ func (s *CreditService) GetTeamStartLogsSummary(
 }
 
 // calculateScaledRatios scales the ratios based on the maximum count in the summary data.
-func (s *CreditService) calculateScaledRatios(summaryData []TeamStartSummary) []TeamStartSummary {
+func (s *CreditService) calculateScaledRatios(summaryData []RunStartSummary) []RunStartSummary {
 	if len(summaryData) == 0 {
 		return summaryData // No data to scale
 	}
@@ -271,33 +274,33 @@ func (s *CreditService) calculateScaledRatios(summaryData []TeamStartSummary) []
 // getTeamStartLogsFiltered gets team start logs based on filter criteria.
 func (s *CreditService) getTeamStartLogsFiltered(
 	ctx context.Context,
-	filter TeamStartLogFilter,
-) ([]models.TeamStartLog, error) {
-	hasInstanceFilter := filter.InstanceID != ""
+	filter RunStartLogFilter,
+) ([]models.RunStartLog, error) {
+	hasInstanceFilter := filter.QuestID != ""
 	hasTimeFilter := !filter.StartTime.IsZero() && !filter.EndTime.IsZero()
 
 	switch {
 	case hasInstanceFilter && hasTimeFilter:
-		return s.teamStartLogRepo.GetByUserIDAndInstanceIDWithTimeframe(
+		return s.runStartLogRepo.GetByUserIDAndQuestIDWithTimeframe(
 			ctx,
 			filter.UserID,
-			filter.InstanceID,
+			filter.QuestID,
 			filter.StartTime,
 			filter.EndTime,
 		)
 	case hasInstanceFilter:
-		return s.teamStartLogRepo.GetByUserIDAndInstanceID(ctx, filter.UserID, filter.InstanceID)
+		return s.runStartLogRepo.GetByUserIDAndQuestID(ctx, filter.UserID, filter.QuestID)
 	case hasTimeFilter:
-		return s.teamStartLogRepo.GetByUserIDWithTimeframe(ctx, filter.UserID, filter.StartTime, filter.EndTime)
+		return s.runStartLogRepo.GetByUserIDWithTimeframe(ctx, filter.UserID, filter.StartTime, filter.EndTime)
 	default:
-		return s.teamStartLogRepo.GetByUserID(ctx, filter.UserID)
+		return s.runStartLogRepo.GetByUserID(ctx, filter.UserID)
 	}
 }
 
 // determineTimeRange calculates appropriate start/end times if not provided.
 func (s *CreditService) determineTimeRange(
-	filter TeamStartLogFilter,
-	logs []models.TeamStartLog,
+	filter RunStartLogFilter,
+	logs []models.RunStartLog,
 ) (time.Time, time.Time) {
 	// If time range is specified, use it
 	if !filter.StartTime.IsZero() && !filter.EndTime.IsZero() {
@@ -328,7 +331,7 @@ func (s *CreditService) determineTimeRange(
 }
 
 // groupTeamStartLogs groups logs by time period.
-func (s *CreditService) groupTeamStartLogs(logs []models.TeamStartLog, groupBy string) map[string]int {
+func (s *CreditService) groupTeamStartLogs(logs []models.RunStartLog, groupBy string) map[string]int {
 	grouped := make(map[string]int)
 
 	for _, log := range logs {
@@ -360,8 +363,8 @@ func (s *CreditService) fillZeroValues(
 	groupedData map[string]int,
 	startTime, endTime time.Time,
 	groupBy string,
-) []TeamStartSummary {
-	var result []TeamStartSummary
+) []RunStartSummary {
+	var result []RunStartSummary
 
 	current := s.truncateToGroupBy(startTime, groupBy)
 	end := s.truncateToGroupBy(endTime, groupBy)
@@ -370,7 +373,7 @@ func (s *CreditService) fillZeroValues(
 		key := s.formatDateKey(current, groupBy)
 		count := groupedData[key] // Will be 0 if key doesn't exist
 
-		result = append(result, TeamStartSummary{
+		result = append(result, RunStartSummary{
 			Date:  current,
 			Count: count,
 		})

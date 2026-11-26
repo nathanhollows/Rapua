@@ -118,7 +118,7 @@ When a request arrives at the application:
                                       │
                                       ▼
                                ┌─────────────┐
-                               │ Location    │
+                               │ Objective   │
                                │ Service     │
                                └─────────────┘
 ```
@@ -141,7 +141,7 @@ For operations that need to modify multiple entities atomically, Rapua uses a tr
                                    └────────────┘    └────────────┘
 ```
 
-This ensures operations like creating a new game instance, which affects multiple tables, either succeed completely or fail without partial updates.
+This ensures operations like creating a new quest, which affects multiple tables, either succeed completely or fail without partial updates.
 
 ## Block Content Flow
 

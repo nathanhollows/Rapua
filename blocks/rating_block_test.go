@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -23,8 +23,7 @@ func TestRatingBlock_Getters(t *testing.T) {
 			Order:   2,
 			Points:  10,
 		},
-		Prompt:    "Rate your experience",
-		MaxRating: 5,
+		Prompt: "Rate your experience",
 	}
 
 	assert.Equal(t, "Rating", block.GetName())
@@ -38,7 +37,7 @@ func TestRatingBlock_Getters(t *testing.T) {
 }
 
 func TestRatingBlock_ParseData(t *testing.T) {
-	data := `{"prompt":"How was the experience?","max_rating":7}`
+	data := `{"prompt":"How was the experience?"}`
 	block := blocks.RatingBlock{
 		BaseBlock: blocks.BaseBlock{
 			Data: json.RawMessage(data),
@@ -48,78 +47,33 @@ func TestRatingBlock_ParseData(t *testing.T) {
 	err := block.ParseData()
 	require.NoError(t, err)
 	assert.Equal(t, "How was the experience?", block.Prompt)
-	assert.Equal(t, 7, block.MaxRating)
-}
-
-func TestRatingBlock_ParseData_DefaultMaxRating(t *testing.T) {
-	// When max_rating is 0 (absent or zero in JSON), ParseData should default to 5.
-	data := `{"prompt":"Quick rating"}`
-	block := blocks.RatingBlock{
-		BaseBlock: blocks.BaseBlock{
-			Data: json.RawMessage(data),
-		},
-	}
-
-	err := block.ParseData()
-	require.NoError(t, err)
-	assert.Equal(t, 5, block.MaxRating)
 }
 
 func TestRatingBlock_UpdateBlockData(t *testing.T) {
 	tests := []struct {
-		name          string
-		input         map[string][]string
-		wantPrompt    string
-		wantMaxRating int
-		wantPoints    int
-		wantErr       bool
-		errContains   string
+		name        string
+		input       map[string][]string
+		wantPrompt  string
+		wantPoints  int
+		wantErr     bool
+		errContains string
 	}{
 		{
 			name: "all fields populated",
 			input: map[string][]string{
-				"prompt":     {"Rate your experience"},
-				"max_rating": {"5"},
-				"points":     {"10"},
+				"prompt": {"Rate your experience"},
+				"points": {"10"},
 			},
-			wantPrompt:    "Rate your experience",
-			wantMaxRating: 5,
-			wantPoints:    10,
+			wantPrompt: "Rate your experience",
+			wantPoints: 10,
 		},
 		{
-			name: "max_rating at minimum boundary",
-			input: map[string][]string{
-				"prompt":     {"Rate this"},
-				"max_rating": {"3"},
-			},
-			wantPrompt:    "Rate this",
-			wantMaxRating: 3,
-		},
-		{
-			name: "max_rating at maximum boundary",
+			name: "a leftover scale is ignored: every rating is out of five",
 			input: map[string][]string{
 				"prompt":     {"Rate this"},
 				"max_rating": {"10"},
 			},
-			wantPrompt:    "Rate this",
-			wantMaxRating: 10,
-		},
-		{
-			name: "max_rating absent defaults to 5",
-			input: map[string][]string{
-				"prompt": {"Quick rating"},
-			},
-			wantPrompt:    "Quick rating",
-			wantMaxRating: 5,
-		},
-		{
-			name: "max_rating empty string defaults to 5",
-			input: map[string][]string{
-				"prompt":     {"Quick rating"},
-				"max_rating": {""},
-			},
-			wantPrompt:    "Quick rating",
-			wantMaxRating: 5,
+			wantPrompt: "Rate this",
 		},
 		{
 			name: "zero points allowed",
@@ -127,9 +81,8 @@ func TestRatingBlock_UpdateBlockData(t *testing.T) {
 				"prompt": {"Rate this"},
 				"points": {"0"},
 			},
-			wantPrompt:    "Rate this",
-			wantMaxRating: 5,
-			wantPoints:    0,
+			wantPrompt: "Rate this",
+			wantPoints: 0,
 		},
 		{
 			name:        "missing prompt",
@@ -146,33 +99,6 @@ func TestRatingBlock_UpdateBlockData(t *testing.T) {
 			wantErr:     true,
 			errContains: "points must be an integer",
 		},
-		{
-			name: "max_rating below minimum",
-			input: map[string][]string{
-				"prompt":     {"Rate this"},
-				"max_rating": {"2"},
-			},
-			wantErr:     true,
-			errContains: "max_rating must be between 3 and 10",
-		},
-		{
-			name: "max_rating above maximum",
-			input: map[string][]string{
-				"prompt":     {"Rate this"},
-				"max_rating": {"11"},
-			},
-			wantErr:     true,
-			errContains: "max_rating must be between 3 and 10",
-		},
-		{
-			name: "max_rating not a number",
-			input: map[string][]string{
-				"prompt":     {"Rate this"},
-				"max_rating": {"five"},
-			},
-			wantErr:     true,
-			errContains: "max_rating must be an integer",
-		},
 	}
 
 	for _, tt := range tests {
@@ -188,7 +114,6 @@ func TestRatingBlock_UpdateBlockData(t *testing.T) {
 
 			require.NoError(t, err)
 			assert.Equal(t, tt.wantPrompt, block.Prompt)
-			assert.Equal(t, tt.wantMaxRating, block.MaxRating)
 			assert.Equal(t, tt.wantPoints, block.Points)
 		})
 	}
@@ -202,7 +127,6 @@ func TestRatingBlock_RequiresValidation(t *testing.T) {
 func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 	tests := []struct {
 		name         string
-		maxRating    int
 		points       int
 		input        map[string][]string
 		wantRating   int
@@ -213,7 +137,6 @@ func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 	}{
 		{
 			name:         "valid rating at minimum",
-			maxRating:    5,
 			points:       10,
 			input:        map[string][]string{"rating": {"1"}},
 			wantRating:   1,
@@ -222,7 +145,6 @@ func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 		},
 		{
 			name:         "valid rating at maximum",
-			maxRating:    5,
 			points:       10,
 			input:        map[string][]string{"rating": {"5"}},
 			wantRating:   5,
@@ -231,44 +153,38 @@ func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 		},
 		{
 			name:         "valid rating mid-range",
-			maxRating:    10,
 			points:       20,
-			input:        map[string][]string{"rating": {"7"}},
-			wantRating:   7,
+			input:        map[string][]string{"rating": {"3"}},
+			wantRating:   3,
 			wantComplete: true,
 			wantPoints:   20,
 		},
 		{
 			name:        "missing rating key",
-			maxRating:   5,
 			input:       map[string][]string{},
 			wantErr:     true,
 			errContains: "rating is required",
 		},
 		{
 			name:        "non-numeric rating",
-			maxRating:   5,
 			input:       map[string][]string{"rating": {"five"}},
 			wantErr:     true,
 			errContains: "rating must be a number",
 		},
 		{
 			name:        "rating below minimum",
-			maxRating:   5,
 			input:       map[string][]string{"rating": {"0"}},
 			wantErr:     true,
 			errContains: "rating must be between 1 and 5",
 		},
 		{
 			name:        "rating above max_rating",
-			maxRating:   5,
 			input:       map[string][]string{"rating": {"6"}},
 			wantErr:     true,
 			errContains: "rating must be between 1 and 5",
 		},
 		{
 			name:        "negative rating",
-			maxRating:   5,
 			input:       map[string][]string{"rating": {"-1"}},
 			wantErr:     true,
 			errContains: "rating must be between 1 and 5",
@@ -279,7 +195,6 @@ func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			block := blocks.RatingBlock{
 				BaseBlock: blocks.BaseBlock{Points: tt.points},
-				MaxRating: tt.maxRating,
 			}
 			state := &blocks.MockPlayerState{}
 
@@ -309,7 +224,7 @@ func TestRatingBlock_ValidatePlayerInput(t *testing.T) {
 }
 
 func TestRatingBlock_GetPlayerRating(t *testing.T) {
-	block := blocks.RatingBlock{MaxRating: 5}
+	block := blocks.RatingBlock{}
 
 	t.Run("valid player data", func(t *testing.T) {
 		state := &blocks.MockPlayerState{

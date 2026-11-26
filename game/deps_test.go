@@ -9,13 +9,13 @@ import (
 // TestNoDepsOnProjectPackages ensures the game package imports no project-internal packages.
 // game/ must remain a pure vocabulary leaf with zero project imports.
 func TestNoDepsOnProjectPackages(t *testing.T) {
-	cmd := exec.Command("go", "list", "-deps", "github.com/nathanhollows/Rapua/v7/game")
+	cmd := exec.Command("go", "list", "-deps", "github.com/nathanhollows/Rapua/v8/game")
 	out, err := cmd.Output()
 	if err != nil {
 		t.Fatalf("go list -deps failed: %v", err)
 	}
 
-	const modulePrefix = "github.com/nathanhollows/Rapua/v7/"
+	const modulePrefix = "github.com/nathanhollows/Rapua/v8/"
 	forbidden := []string{
 		modulePrefix + "blocks",
 		modulePrefix + "models",

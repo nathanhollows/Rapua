@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/uuid"
 	"net/mail"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/internal/config"
+	"github.com/google/uuid"
+
+	"github.com/nathanhollows/Rapua/v8/internal/config"
 	"github.com/uptrace/bun"
 )
 
@@ -54,18 +55,17 @@ type m20251017213848_User struct {
 	CreatedAt time.Time `bun:"created_at,nullzero,notnull,default:current_timestamp"`
 	UpdatedAt time.Time `bun:"updated_at,nullzero,notnull,default:current_timestamp"`
 
-	ID               string       `bun:"id,unique,pk,type:varchar(36)"`
-	Name             string       `bun:"name,type:varchar(255)"`
-	Email            string       `bun:"email,unique,pk"`
-	EmailVerified    bool         `bun:"email_verified,type:boolean"`
-	EmailToken       string       `bun:"email_token,type:varchar(36)"`
-	EmailTokenExpiry sql.NullTime `bun:"email_token_expiry,nullzero"`
-	Password         string       `bun:"password,type:varchar(255)"`
-	Provider         string       `bun:"provider,type:varchar(255)"`
-	// New fields:
-	FreeCredits        int            `bun:"free_credits,type:int,default:10"`         // Credits for team starts
-	PaidCredits        int            `bun:"paid_credits,type:int,default:0"`          // Purchased credits
-	MonthlyCreditLimit int            `bun:"monthly_credit_limit,type:int,default:10"` // Monthly credit allocation
+	ID                 string         `bun:"id,unique,pk,type:varchar(36)"`
+	Name               string         `bun:"name,type:varchar(255)"`
+	Email              string         `bun:"email,unique,pk"`
+	EmailVerified      bool           `bun:"email_verified,type:boolean"`
+	EmailToken         string         `bun:"email_token,type:varchar(36)"`
+	EmailTokenExpiry   sql.NullTime   `bun:"email_token_expiry,nullzero"`
+	Password           string         `bun:"password,type:varchar(255)"`
+	Provider           string         `bun:"provider,type:varchar(255)"`
+	FreeCredits        int            `bun:"free_credits,type:int,default:10"`
+	PaidCredits        int            `bun:"paid_credits,type:int,default:0"`
+	MonthlyCreditLimit int            `bun:"monthly_credit_limit,type:int,default:10"`
 	StripeCustomerID   sql.NullString `bun:"stripe_customer_id,type:varchar(255),nullzero"`
 
 	Instances         []m20241209083639_Instance          `bun:"rel:has-many,join:id=user_id"`
@@ -79,7 +79,6 @@ type m20251017213848_User struct {
 func init() {
 	Migrations.MustRegister(
 		func(ctx context.Context, db *bun.DB) error {
-			// Create the CreditAdjustments and TeamStartLog tables.
 			_, err := db.NewCreateTable().
 				Model(&m20251017213848_CreditAdjustments{}).
 				IfNotExists().
@@ -92,7 +91,6 @@ func init() {
 				return fmt.Errorf("create TeamStartLog table: %w", err)
 			}
 
-			// Create the CreditPurchases table for Stripe integration.
 			_, err = db.NewCreateTable().
 				Model(&m20251017213848_CreditPurchase{}).
 				IfNotExists().
@@ -101,8 +99,6 @@ func init() {
 				return fmt.Errorf("create CreditPurchases table: %w", err)
 			}
 
-			// Add the FreeCredits, PaidCredits, and MonthlyCreditLimit fields to the User struct.
-			// Ignore duplicate column errors if columns already exist
 			_, err = db.NewAddColumn().
 				Model((*m20251017213848_User)(nil)).
 				ColumnExpr("free_credits int default 10").
@@ -132,7 +128,6 @@ func init() {
 				return fmt.Errorf("add StripeCustomerID column: %w", err)
 			}
 
-			// Create indexes for lookups.
 			_, err = db.NewCreateIndex().Model((*m20251017213848_CreditAdjustments)(nil)).
 				Index("idx_credit_adjustments_user_id").Column("user_id").Exec(ctx)
 			if err != nil {
@@ -169,19 +164,15 @@ func init() {
 				return fmt.Errorf("create index idx_credit_purchases_status: %w", err)
 			}
 
-			// Fetch all existing users and set their monthly_credit_limit based on their email
 			var existingUsersForLimitUpdate []m20251017213848_User
 			err = db.NewSelect().Model(&existingUsersForLimitUpdate).Column("id", "email").Scan(ctx)
 			if err != nil {
 				return fmt.Errorf("get existing users for credit limit update: %w", err)
 			}
 
-			// Update each user's monthly_credit_limit based on their email
 			for _, user := range existingUsersForLimitUpdate {
-				// Determine the appropriate credit limit for this user's email
 				creditLimit := config.GetFreeCreditsForEmail(user.Email, isEducationalEmailHeuristic)
 
-				// Update this user's monthly_credit_limit
 				_, err = db.NewUpdate().Model((*m20251017213848_User)(nil)).
 					Set("monthly_credit_limit = ?", creditLimit).
 					Where("id = ?", user.ID).
@@ -191,41 +182,37 @@ func init() {
 				}
 			}
 
-			// Set all users' free_credits to their monthly_credit_limit
 			_, err = db.NewUpdate().Model((*m20251017213848_User)(nil)).
 				Set("free_credits = monthly_credit_limit").
-				Where("1 = 1"). // Match all users
+				Where("1 = 1"). // bun refuses an UPDATE with no WHERE.
 				Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("set free credits to monthly limit: %w", err)
 			}
 
-			// Add 500 paid credits to all existing users as a thank you gift
+			// A thank-you to existing users.
 			_, err = db.NewUpdate().Model((*m20251017213848_User)(nil)).
 				Set("paid_credits = paid_credits + 500").
-				Where("paid_credits < 500"). // Only update users with less than 500 paid credits
+				Where("paid_credits < 500").
 				Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("add 500 paid credits to existing users: %w", err)
 			}
 
-			// Get all existing users to create adjustment records
 			var existingUsers []m20251017213848_User
 			err = db.NewSelect().Model(&existingUsers).Column("id").Scan(ctx)
 			if err != nil {
 				return fmt.Errorf("get existing users for adjustment records: %w", err)
 			}
 
-			// Create adjustment records for each user
 			adjustments := make([]m20251017213848_CreditAdjustments, len(existingUsers))
 			for i, user := range existingUsers {
 				adjustments[i] = m20251017213848_CreditAdjustments{
 					ID:        uuid.New().String(),
 					CreatedAt: time.Now(),
 					UserID:    user.ID,
-					//nolint:mnd // 500 is the thank you gift amount
-					Credits: 500,
-					Reason:  "Gift: Founders pack - thank you for being an early user!",
+					Credits:   500,
+					Reason:    "Gift: Founders pack - thank you for being an early user!",
 				}
 			}
 
@@ -238,7 +225,6 @@ func init() {
 
 			return nil
 		}, func(ctx context.Context, db *bun.DB) error {
-			// Down migration: drop the CreditAdjustments, TeamStartLog, and CreditPurchases tables.
 			_, err := db.NewDropTable().Model(&m20251017213848_CreditPurchase{}).IfExists().Exec(context.Background())
 			if err != nil {
 				return fmt.Errorf("drop CreditPurchases table: %w", err)
@@ -252,7 +238,6 @@ func init() {
 				return fmt.Errorf("drop TeamStartLog table: %w", err)
 			}
 
-			// Remove the FreeCredits, PaidCredits, MonthlyCreditLimit, and StripeCustomerID fields from the User struct.
 			_, err = db.NewDropColumn().Model((*m20251017213848_User)(nil)).Column("stripe_customer_id").Exec(ctx)
 			if err != nil {
 				return fmt.Errorf("drop StripeCustomerID column: %w", err)
@@ -274,7 +259,6 @@ func init() {
 		})
 }
 
-// isEducationalEmailHeuristic checks if an email is educational using heuristics.
 func isEducationalEmailHeuristic(email string) bool {
 	parsedEmail, err := mail.ParseAddress(email)
 	if err != nil {

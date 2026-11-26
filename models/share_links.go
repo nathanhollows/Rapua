@@ -19,7 +19,7 @@ type ShareLink struct {
 	UsedCount       int          `bun:"used_count,type:int,default:0"`
 	RegenerateCodes bool         `bun:"regenerate_codes,type:bool"`
 
-	Template *Instance `bun:"rel:belongs-to,join:template_id=id"`
+	Template *Quest `bun:"rel:belongs-to,join:template_id=id"`
 }
 
 // IsExpired checks if the share link is expired.

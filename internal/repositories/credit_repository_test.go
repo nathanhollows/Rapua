@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -191,9 +191,9 @@ func TestCreditRepo_DeductOneCreditWithTx_InsufficientCredits(t *testing.T) {
 
 	err = repo.DeductOneCreditWithTx(ctx, &tx, user.ID)
 
-	// Should return an error for insufficient credits
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "insufficient credits")
+	// Should return the sentinel, so the layer above can map it without
+	// matching on a message.
+	require.ErrorIs(t, err, repositories.ErrInsufficientCredits)
 }
 
 func TestCreditRepo_CreateCreditAdjustmentWithTx(t *testing.T) {
@@ -476,4 +476,3 @@ func TestCreditRepo_GetMostRecentCreditAdjustmentByReasonPrefix(t *testing.T) {
 		})
 	}
 }
-

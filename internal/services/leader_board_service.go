@@ -3,8 +3,9 @@ package services
 import (
 	"context"
 	"sort"
+	"time"
 
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // LeaderBoardService handles team ranking and leaderboard logic.
@@ -15,11 +16,12 @@ func NewLeaderBoardService() *LeaderBoardService {
 	return &LeaderBoardService{}
 }
 
-// GetLeaderBoardData returns sorted and ranked leaderboard data.
+// GetLeaderBoardData returns sorted and ranked data. lastSeen and summaries are keyed by run code.
 func (s *LeaderBoardService) GetLeaderBoardData(
 	_ context.Context,
-	teams []models.Team,
-	locationCount int,
+	teams []models.Run,
+	lastSeen map[string]time.Time,
+	summaries map[string]RunSummary,
 	rankingScheme string,
 	sortField string,
 	sortOrder string,
@@ -36,7 +38,7 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 			continue
 		}
 
-		teamData := s.convertTeamToLeaderBoardData(team, locationCount)
+		teamData := s.convertTeamToLeaderBoardData(team, lastSeen[team.Code], summaries[team.Code])
 		leaderBoardData = append(leaderBoardData, teamData)
 	}
 
@@ -49,58 +51,48 @@ func (s *LeaderBoardService) GetLeaderBoardData(
 	return leaderBoardData, nil
 }
 
-// convertTeamToLeaderBoardData converts a models.Team to LeaderBoardTeamData.
-func (s *LeaderBoardService) convertTeamToLeaderBoardData(team models.Team, locationCount int) LeaderBoardTeamData {
-	checkInCount := len(team.CheckIns)
-
-	// Find the most recent check-in time for accurate tiebreaker
-	lastSeen := team.UpdatedAt
-	for _, checkIn := range team.CheckIns {
-		// Use TimeOut if available (completed check-in), otherwise TimeIn (current check-in)
-		checkInTime := checkIn.TimeIn
-		if !checkIn.TimeOut.IsZero() {
-			checkInTime = checkIn.TimeOut
-		}
-
-		// Keep the most recent check-in time
-		if checkInTime.After(lastSeen) {
-			lastSeen = checkInTime
-		}
+// convertTeamToLeaderBoardData converts a models.Run to LeaderBoardTeamData.
+// A run that has touched no block falls back to when it started, which is the
+// last thing known about it. A zero value there would read as older than every
+// other run and quietly win the ranking tiebreak.
+func (s *LeaderBoardService) convertTeamToLeaderBoardData(
+	team models.Run, lastSeen time.Time, summary RunSummary,
+) LeaderBoardTeamData {
+	lastSeen = LastSeenOrStarted(lastSeen, team)
+	if summary.Status == "" {
+		// A started run with an empty stream has no summary.
+		summary.Status = StatusStarted
 	}
 
 	return LeaderBoardTeamData{
-		ID:           team.ID,
-		Code:         team.Code,
-		Name:         team.Name,
-		Points:       team.Points,
-		LastSeen:     lastSeen,
-		Progress:     checkInCount,
-		Status:       s.determineTeamStatus(team, locationCount),
-		HasStarted:   team.HasStarted,
-		MustCheckOut: team.MustCheckOut,
-		CheckInCount: checkInCount,
+		ID:         team.ID,
+		Code:       team.Code,
+		Name:       team.Name,
+		Points:     team.Points,
+		LastSeen:   lastSeen,
+		Progress:   summary.Done,
+		Total:      summary.Total,
+		Status:     summary.Status,
+		HasStarted: team.HasStarted,
 	}
 }
 
-// determineTeamStatus determines the current status of a team.
-func (s *LeaderBoardService) determineTeamStatus(team models.Team, locationCount int) TeamStatus {
-	if team.MustCheckOut != "" {
-		return StatusOnsite
+// fractionBefore compares shares, not counts: a run that finished a cut-short
+// branch would otherwise rank below one halfway through a long one, against its bar.
+func fractionBefore(a, b LeaderBoardTeamData) bool {
+	if a.Total > 0 && b.Total > 0 {
+		return a.Progress*b.Total > b.Progress*a.Total
 	}
-
-	checkInCount := len(team.CheckIns)
-	if checkInCount > 0 {
-		if locationCount > 0 && checkInCount == locationCount {
-			return StatusFinished
-		}
-		return StatusTransit
-	}
-
-	return StatusStarted
+	return a.Progress > b.Progress
 }
 
-// applyRanking applies ranking based on the specified scheme
-// All ranking schemes use earliest last check-in time as tiebreaker to ensure no tied ranks.
+// fractionTied is defined through fractionBefore so the tie and order tests
+// cannot disagree, which would leave sort.Slice's result undefined.
+func fractionTied(a, b LeaderBoardTeamData) bool {
+	return !fractionBefore(a, b) && !fractionBefore(b, a)
+}
+
+// All ranking schemes use earliest last-updated time as tiebreaker to ensure no tied ranks.
 func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme RankingScheme) {
 	switch scheme {
 	case RankByProgress:
@@ -114,14 +106,13 @@ func (s *LeaderBoardService) applyRanking(data []LeaderBoardTeamData, scheme Ran
 	}
 }
 
-// rankByProgress ranks teams by their progress (number of check-ins).
 func (s *LeaderBoardService) rankByProgress(data []LeaderBoardTeamData) {
-	// Sort by progress descending, then by last seen ascending (earlier is better)
+	// Earlier last-seen wins a tie.
 	sort.Slice(data, func(i, j int) bool {
-		if data[i].Progress == data[j].Progress {
+		if fractionTied(data[i], data[j]) {
 			return data[i].LastSeen.Before(data[j].LastSeen)
 		}
-		return data[i].Progress > data[j].Progress
+		return fractionBefore(data[i], data[j])
 	})
 
 	// Assign sequential ranks - no ties allowed
@@ -159,10 +150,10 @@ func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData) {
 			return iFinished // Finished teams come first
 		}
 
-		if data[i].Progress == data[j].Progress {
+		if fractionTied(data[i], data[j]) {
 			return data[i].LastSeen.Before(data[j].LastSeen)
 		}
-		return data[i].Progress > data[j].Progress
+		return fractionBefore(data[i], data[j])
 	})
 
 	// Assign sequential ranks - no ties allowed
@@ -172,35 +163,67 @@ func (s *LeaderBoardService) rankByCompletion(data []LeaderBoardTeamData) {
 	}
 }
 
+// statusLadder is the statuses ordered by how much attention the run wants,
+// least first: a finished run wants none, a walk-off wants the most. Sorting by
+// status is only useful if the order follows this, and the alphabet does not.
+//
+//nolint:gochecknoglobals // A definition, not state: one place says the order.
+var statusLadder = []TeamStatus{
+	StatusFinished,
+	StatusNotStarted,
+	StatusStarted,
+	StatusPlaying,
+	StatusIdle,
+	StatusStalled,
+	StatusAbandoned,
+}
+
+// statusAttention is where a status sits on that ladder. An unknown status
+// wants nothing, the same as a finished run.
+func statusAttention(status TeamStatus) int {
+	for i, candidate := range statusLadder {
+		if candidate == status {
+			return i
+		}
+	}
+	return 0
+}
+
 // sortLeaderBoardData sorts the leaderboard data by the specified field and order.
 func (s *LeaderBoardService) sortLeaderBoardData(data []LeaderBoardTeamData, field SortField, order SortOrder) {
-	sort.Slice(data, func(i, j int) bool {
-		var result bool
-
-		switch field {
-		case SortByRank:
-			result = data[i].Rank < data[j].Rank
-		case SortByCode:
-			result = data[i].Code < data[j].Code
-		case SortByName:
-			result = data[i].Name < data[j].Name
-		case SortByPoints:
-			result = data[i].Points < data[j].Points
-		case SortByLastSeen:
-			result = data[i].LastSeen.Before(data[j].LastSeen)
-		case SortByProgress:
-			result = data[i].Progress < data[j].Progress
-		case SortByStatus:
-			result = string(data[i].Status) < string(data[j].Status)
-		default:
-			result = data[i].Rank < data[j].Rank
-		}
-
+	sort.SliceStable(data, func(i, j int) bool {
+		// Descending asks the same question the other way round rather than
+		// negating the answer: a negated less-than is true of both halves of a
+		// tie, which is not an order at all.
 		if order == SortDesc {
-			return !result
+			return sortBefore(data[j], data[i], field)
 		}
-		return result
+		return sortBefore(data[i], data[j], field)
 	})
+}
+
+// sortBefore is whether a comes before b under one field, ascending. Progress
+// reads by share, so its rule is the leaderboard's own order rather than a
+// comparison of the rows.
+func sortBefore(a, b LeaderBoardTeamData, field SortField) bool {
+	switch field {
+	case SortByRank:
+		return a.Rank < b.Rank
+	case SortByCode:
+		return a.Code < b.Code
+	case SortByName:
+		return a.Name < b.Name
+	case SortByPoints:
+		return a.Points < b.Points
+	case SortByLastSeen:
+		return a.LastSeen.Before(b.LastSeen)
+	case SortByProgress:
+		return fractionBefore(b, a)
+	case SortByStatus:
+		return statusAttention(a.Status) < statusAttention(b.Status)
+	default:
+		return a.Rank < b.Rank
+	}
 }
 
 // GetDefaultSortForRankingScheme returns the default sort field for a ranking scheme.

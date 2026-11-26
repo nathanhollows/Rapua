@@ -2,12 +2,12 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // Initial loading template - renders placeholder and triggers HTMX load
-templ startGameButtonPlayer(_ models.InstanceSettings, block blocks.StartGameButtonBlock) {
+templ startGameButtonPlayer(_ models.QuestSettings, block blocks.StartGameButtonBlock) {
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.GetID()) }
 		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
@@ -28,13 +28,14 @@ templ StartGameButtonScheduled(block blocks.StartGameButtonBlock) {
 		hx-swap="outerHTML"
 		class="text-center"
 	>
-		<button class="btn btn-neutral" disabled>
+		<div class="qb-wait" role="status">
+			@icon("clock", templ.Attributes{"aria-hidden": "true"})
 			if block.ScheduledButtonText != "" {
 				{ block.ScheduledButtonText }
 			} else {
-				Waiting for game to start
+				Waiting for the game to start
 			}
-		</button>
+		</div>
 	</div>
 }
 
@@ -45,19 +46,22 @@ templ StartGameButtonActive(block blocks.StartGameButtonBlock) {
 		hx-get={ fmt.Sprintf("/blocks/%s/start-game-button", block.GetID()) }
 		hx-trigger="every 20s"
 		hx-swap="outerHTML"
-		class="text-center"
+		class="qb-start text-center"
 	>
-		<a
-			href="/next"
-			hx-boost="true"
-			class={ fmt.Sprintf("btn btn-%s", block.ButtonStyle) }
-		>
-			if block.ActiveButtonText != "" {
-				{ block.ActiveButtonText }
-			} else {
-				Start Playing
-			}
-		</a>
+		<form action="/start" method="post">
+			<input type="hidden" name="csrf" value={ fmt.Sprintf("%s", ctx.Value("gorilla.csrf.Token")) }/>
+			<button
+				type="submit"
+				class={ fmt.Sprintf("btn btn-%s", block.ButtonStyle) }
+			>
+				if block.ActiveButtonText != "" {
+					{ block.ActiveButtonText }
+				} else {
+					Start playing
+				}
+				@icon("arrow-right", templ.Attributes{})
+			</button>
+		</form>
 	</div>
 }
 
@@ -73,7 +77,7 @@ templ StartGameButtonClosed(block blocks.StartGameButtonBlock) {
 }
 
 // Admin configuration form
-templ startGameButtonAdmin(_ models.InstanceSettings, block blocks.StartGameButtonBlock) {
+templ startGameButtonAdmin(_ models.QuestSettings, block blocks.StartGameButtonBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

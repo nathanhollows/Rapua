@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -106,4 +106,34 @@ func TestChecklistBlock_ValidatePlayerInput(t *testing.T) {
 	assert.Contains(t, playerData.CheckedItems, "item-2")
 	assert.True(t, newState.IsComplete())
 	assert.Equal(t, 10, newState.GetPointsAwarded())
+}
+
+// Ticking one item ticks one item. It only completes once every item is ticked.
+func TestChecklistBlock_TickingOneItemDoesNotTickTheRest(t *testing.T) {
+	block := &blocks.ChecklistBlock{
+		BaseBlock: blocks.BaseBlock{Points: 3},
+		List: []blocks.ChecklistItem{
+			{
+				ID:          "item_0",
+				Description: "A tree",
+			},
+			{ID: "item_1", Description: "A bench"},
+			{ID: "item_2", Description: "A bin"},
+		},
+	}
+
+	one, err := block.ValidatePlayerInput(
+		&blocks.MockPlayerState{},
+		map[string][]string{"checklist-item-ids": {"item_0"}},
+	)
+	require.NoError(t, err)
+	assert.False(t, one.IsComplete(), "one of three is not done")
+	assert.JSONEq(t, `{"checked_items":["item_0"]}`, string(one.GetPlayerData()))
+
+	all, err := block.ValidatePlayerInput(
+		&blocks.MockPlayerState{},
+		map[string][]string{"checklist-item-ids": {"item_0", "item_1", "item_2"}},
+	)
+	require.NoError(t, err)
+	assert.True(t, all.IsComplete())
 }

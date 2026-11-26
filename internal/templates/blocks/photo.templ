@@ -2,81 +2,77 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/config"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/config"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, data blocks.PlayerState) {
-	<div
-		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
-	>
-		@pointsBadge(settings.EnablePoints, block.GetPoints())
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+templ photoPlayer(settings models.QuestSettings, block blocks.PhotoBlock, data blocks.PlayerState) {
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="qb-card">
+		@qbTop("camera", "Photo", settings, block.GetPoints(), data)
+		<div class="qb-q">
 			@templ.Raw(stringToMarkdown(block.Prompt))
-			<div class="not-prose flex flex-col gap-5">
-				<!-- Display existing images -->
-				if len(block.GetImageURLs(data)) > 0 {
-					<div class="flex flex-col gap-5">
-						for _, imageURL := range block.GetImageURLs(data) {
-							<div class="indicator w-full flex items-center justify-center">
-								if !data.IsComplete() {
-									<button
-										class="indicator-item indicator-top indicator-end badge badge-error cursor-pointer z-10"
-										hx-post="/blocks/validate"
-										hx-vals={ fmt.Sprintf(`{"block": "%s", "delete": "%s"}`, block.ID, imageURL) }
-										hx-swap="outerHTML"
-										hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-									>
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-									</button>
-								}
-								<img
-									if config.IsLocalURL(imageURL) {
-										src={ imageURL + "?size=small" }
-									} else {
-										src={ imageURL }
-									}
-									alt="Uploaded photo"
-									class="rounded-lg max-w-full max-h-full object-contain"
-								/>
-							</div>
+		</div>
+		if block.MaxImages > 1 && !data.IsComplete() {
+			<p class="qb-hint">Add up to { fmt.Sprint(block.MaxImages) }.</p>
+		}
+		if len(block.GetImageURLs(data)) > 0 {
+			<div class="qb-shots">
+				for _, imageURL := range block.GetImageURLs(data) {
+					<div class="qb-shot">
+						if !data.IsComplete() {
+							<button
+								type="button"
+								class="qb-x"
+								aria-label="Remove this photo"
+								hx-post="/blocks/validate"
+								hx-vals={ fmt.Sprintf(`{"block": "%s", "delete": "%s"}`, block.ID, imageURL) }
+								hx-swap="outerHTML"
+								hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+							>
+								@icon("x", templ.Attributes{"aria-hidden": "true"})
+							</button>
 						}
+						<img
+							if config.IsLocalURL(imageURL) {
+								src={ imageURL + "?size=small" }
+							} else {
+								src={ imageURL }
+							}
+							alt="Uploaded photo"
+						/>
 					</div>
 				}
-				<!-- Upload button (only show if under limit and not complete) -->
-				if !data.IsComplete() && len(block.GetImageURLs(data)) < block.MaxImages {
-					<form
-						id={ fmt.Sprintf("photoForm-%s", block.ID) }
-						hx-post="/blocks/validate"
-						hx-swap="outerHTML"
-						hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-						data-block-id={ block.ID }
-						data-location-id={ block.OwnerID }
-						data-max-images={ fmt.Sprint(block.MaxImages) }
-					>
-						<input type="hidden" name="block" value={ block.ID }/>
-						<label
-							id={ fmt.Sprintf("uploadButton-%s", block.ID) }
-							for={ fmt.Sprintf("fileInput-%s", block.ID) }
-							class="btn btn-primary w-full cursor-pointer"
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera w-5 h-5"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"></path><circle cx="12" cy="13" r="3"></circle></svg>
-							Upload Photo
-							if block.MaxImages > 1 {
-								({ fmt.Sprint(len(block.GetImageURLs(data))) } of { fmt.Sprint(block.MaxImages) })
-							}
-						</label>
-						<input type="file" id={ fmt.Sprintf("fileInput-%s", block.ID) } class="hidden" accept="image/*"/>
-						<progress id={ fmt.Sprintf("progressBar-%s", block.ID) } class="progress progress-primary w-full mt-2 hidden" value="0" max="100"></progress>
-					</form>
+			</div>
+		}
+		if !data.IsComplete() && len(block.GetImageURLs(data)) < block.MaxImages {
+			<form
+				id={ fmt.Sprintf("photoForm-%s", block.ID) }
+				hx-post="/blocks/validate"
+				hx-swap="outerHTML"
+				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+				data-block-id={ block.ID }
+				data-max-images={ fmt.Sprint(block.MaxImages) }
+			>
+				<input type="hidden" name="block" value={ block.ID }/>
+				<label
+					id={ fmt.Sprintf("uploadButton-%s", block.ID) }
+					for={ fmt.Sprintf("fileInput-%s", block.ID) }
+					class="btn btn-primary qb-go"
+				>
+					@icon("camera", templ.Attributes{"aria-hidden": "true"})
+					Take a photo
+					if block.MaxImages > 1 {
+						({ fmt.Sprint(len(block.GetImageURLs(data))) } of { fmt.Sprint(block.MaxImages) })
+					}
+				</label>
+				<input type="file" id={ fmt.Sprintf("fileInput-%s", block.ID) } class="hidden" accept="image/*"/>
+				<progress id={ fmt.Sprintf("progressBar-%s", block.ID) } class="progress progress-primary w-full mt-2 hidden" value="0" max="100"></progress>
+			</form>
 					<script type="text/javascript">
 						(function() {
 							const form = document.currentScript.previousElementSibling;
 							const blockId = form.getAttribute('data-block-id');
-							const locationId = form.getAttribute('data-location-id');
 							const fileInput = document.getElementById('fileInput-' + blockId);
 							const progressBar = document.getElementById('progressBar-' + blockId);
 
@@ -95,9 +91,6 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 								const formData = new FormData();
 								formData.append('file', file);
 								formData.append('block_id', blockId);
-								if (locationId) {
-									formData.append('location_id', locationId);
-								}
 
 								try {
 									const uploadUrl = await uploadFile(formData);
@@ -158,13 +151,11 @@ templ photoPlayer(settings models.InstanceSettings, block blocks.PhotoBlock, dat
 							}
 						})();
 					</script>
-				}
-			</div>
-		</div>
+		}
 	</div>
 }
 
-templ photoPlayerUpdate(settings models.InstanceSettings, block blocks.PhotoBlock, data blocks.PlayerState) {
+templ photoPlayerUpdate(settings models.QuestSettings, block blocks.PhotoBlock, data blocks.PlayerState) {
 	@photoPlayer(settings, block, data)
 }
 
@@ -175,36 +166,31 @@ var photoTextarea = TextareaParams{
 	Markdown:    true,
 }
 
-templ photoAdmin(settings models.InstanceSettings, block blocks.PhotoBlock) {
+templ photoAdmin(settings models.QuestSettings, block blocks.PhotoBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, input from:#form-%s delay:500ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		@TextareaField(photoTextarea.SetValue(block.Prompt))
-		<fieldset class="fieldset max-w-xs">
-			<legend class="fieldset-legend">Max Images</legend>
-			<div class="flex items-center gap-2">
-				<input
-					type="range"
-					name="max_images"
-					id={ fmt.Sprintf("max-images-%s", block.ID) }
-					min="1"
-					max="5"
-					value={ fmt.Sprint(block.MaxImages) }
-					class="range range-primary flex-1"
-					step="1"
-					_={ fmt.Sprintf("on input set #max-images-output-%s.textContent to my.value", block.ID) }
-				/>
-				<output id={ fmt.Sprintf("max-images-output-%s", block.ID) } class="badge badge-sm badge-primary min-w-[3rem] text-center font-bold">
-					{ fmt.Sprint(block.MaxImages) }
-				</output>
-			</div>
-			<p class="label">Maximum number of photos that can be uploaded</p>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">
+				Max images
+				<output id={ fmt.Sprintf("max-images-output-%s", block.ID) } class="val-pill">{ fmt.Sprint(block.MaxImages) }</output>
+			</legend>
+			<input
+				type="range"
+				name="max_images"
+				id={ fmt.Sprintf("max-images-%s", block.ID) }
+				min="1"
+				max="5"
+				value={ fmt.Sprint(block.MaxImages) }
+				class="range range-primary range-sm w-full"
+				step="1"
+				_={ fmt.Sprintf("on input set #max-images-output-%s.textContent to my.value", block.ID) }
+			/>
+			<p class="label">The most photos a player can upload. They finish the block when they have sent this many.</p>
 		</fieldset>
 	</form>
 }

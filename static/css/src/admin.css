@@ -1,0 +1,19 @@
+/* Player last: the objective preview embeds player markup, which must win ties. */
+@import 'tailwindcss' source(none);
+@import './theme.css';
+@import './shared.css';
+@import './logo.css';
+@import './map.css';
+@import './editor.css';
+@import './shell.css';
+@import './run.css';
+@import './facilitator.css';
+@import './player.css';
+
+@source "../../../internal/templates/admin";
+@source "../../../internal/templates/brand";
+@source "../../../internal/templates/players";
+@source "../../../internal/templates/blocks";
+@source "../../../internal/handlers/admin";
+@source "../../../blocks";
+@source "../../js";

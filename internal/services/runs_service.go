@@ -1,0 +1,380 @@
+package services
+
+import (
+	"context"
+	"database/sql"
+	"errors"
+	"fmt"
+	"time"
+
+	"math/rand/v2"
+
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
+	"github.com/uptrace/bun"
+)
+
+type RunCreditService interface {
+	DeductCreditForRunStartWithTx(ctx context.Context, tx *bun.Tx, userID, teamID, questID string) error
+}
+
+// RunCodeLength is shared so the homepage draws one tile per letter.
+const RunCodeLength = 6
+
+// LegacyRunCodeLength is the length codes had before RunCodeLength grew. Runs made
+// then keep their code, so it still has to be accepted.
+const LegacyRunCodeLength = 4
+
+const (
+	batchSize = 100
+	// maxBatchRetries bounds how many times a batch is regenerated after a code
+	// collision, so an exhausted code space fails loudly instead of hanging.
+	maxBatchRetries = 10
+)
+
+type RunService struct {
+	transactor                     db.Transactor
+	teamRepo                       repositories.RunRepository
+	creditService                  RunCreditService
+	blockStateRepo                 repositories.BlockStateRepository
+	objectiveRepo                  repositories.ObjectiveRepository
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	sectionFinishRepo              repositories.SectionFinishRepository
+	runEventRepo                   repositories.RunEventRepository
+	loader                         runStateLoader
+	// stations is shared by every copy of the service.
+	stations  *stationCache
+	batchSize int
+}
+
+func NewRunService(
+	transactor db.Transactor,
+	tr repositories.RunRepository,
+	creditService RunCreditService,
+	bsr repositories.BlockStateRepository,
+	objectiveRepo repositories.ObjectiveRepository,
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
+	sectionFinishRepo repositories.SectionFinishRepository,
+	blockRepo repositories.BlockRepository,
+	runEventRepo repositories.RunEventRepository,
+	runVariableRepo repositories.RunVariableRepository,
+) *RunService {
+	return &RunService{
+		transactor:                     transactor,
+		teamRepo:                       tr,
+		creditService:                  creditService,
+		blockStateRepo:                 bsr,
+		objectiveRepo:                  objectiveRepo,
+		objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+		sectionFinishRepo:              sectionFinishRepo,
+		runEventRepo:                   runEventRepo,
+		loader: runStateLoader{
+			objectiveRepo:                  objectiveRepo,
+			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+			sectionFinishRepo:              sectionFinishRepo,
+			blockRepo:                      blockRepo,
+			runVariableRepo:                runVariableRepo,
+		},
+		batchSize: batchSize,
+		stations:  newStationCache(),
+	}
+}
+
+func (s *RunService) containsCode(teams []models.Run, code string) bool {
+	for _, team := range teams {
+		if team.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+// generateRuns builds size runs for the quest, with codes unique within the batch.
+func (s *RunService) generateRuns(questID string, size int) []models.Run {
+	teams := make([]models.Run, 0, size)
+	for range size {
+		for {
+			code := newCode(RunCodeLength)
+			if !s.containsCode(teams, code) {
+				teams = append(teams, models.Run{Code: code, QuestID: questID})
+				break
+			}
+		}
+	}
+	return teams
+}
+
+// AddTeams generates and inserts teams in batches, retrying with fresh codes if
+// a batch collides with codes already in the database.
+func (s *RunService) AddTeams(ctx context.Context, questID string, count int) ([]models.Run, error) {
+	var newTeams []models.Run
+	for i := 0; i < count; i += s.batchSize {
+		size := min(s.batchSize, count-i)
+
+		inserted := false
+		for range maxBatchRetries {
+			teams := s.generateRuns(questID, size)
+
+			err := s.teamRepo.InsertBatch(ctx, teams)
+			if err == nil {
+				newTeams = append(newTeams, teams...)
+				inserted = true
+				break
+			}
+			// Any error other than a code collision is not worth retrying.
+			if !errors.Is(err, repositories.ErrUniqueConstraint) {
+				return nil, err
+			}
+		}
+
+		if !inserted {
+			return nil, fmt.Errorf(
+				"generating %d unique run codes for quest %s: still colliding after %d attempts",
+				size, questID, maxBatchRetries,
+			)
+		}
+	}
+
+	return newTeams, nil
+}
+
+// FindAll returns all teams for an instance.
+func (s *RunService) FindAll(ctx context.Context, questID string) ([]models.Run, error) {
+	return s.teamRepo.FindAll(ctx, questID)
+}
+
+// GetRunByCode returns a run by code.
+func (s *RunService) GetRunByCode(ctx context.Context, code string) (*models.Run, error) {
+	return s.teamRepo.GetByCode(ctx, models.NormaliseRunCode(code))
+}
+
+// RecordJoined notes that a player entered the run's code. Joining only attaches
+// a session, so without this row a run nobody has started leaves no trace of
+// anyone having arrived at it.
+func (s *RunService) RecordJoined(ctx context.Context, team *models.Run, via string) error {
+	return s.runEventRepo.Record(ctx, runJoinedEvent(team, via))
+}
+
+// AwardPoints awards points to a team.
+func (s *RunService) AwardPoints(ctx context.Context, team *models.Run, points int) error {
+	team.Points += points
+	return s.teamRepo.Update(ctx, team)
+}
+
+// RenameRun sets a run's name and records the change in one transaction. Naming
+// is the first thing most teams do, so the stream should be able to say when.
+func (s *RunService) RenameRun(ctx context.Context, team *models.Run, name string) error {
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	team.Name = name
+	if err := s.teamRepo.UpdateWithTx(ctx, tx, team); err != nil {
+		return fmt.Errorf("saving run name: %w", err)
+	}
+
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, runNamedEvent(team, name)); err != nil {
+		return fmt.Errorf("recording run name: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+// LoadQuest loads the run's quest, along with its settings.
+func (s *RunService) LoadQuest(ctx context.Context, team *models.Run) error {
+	return s.teamRepo.LoadQuest(ctx, team)
+}
+
+// LoadMessages loads the run's notifications, most recent first.
+func (s *RunService) LoadMessages(ctx context.Context, team *models.Run) error {
+	return s.teamRepo.LoadMessages(ctx, team)
+}
+
+// LoadRelations loads all relations for a team.
+func (s *RunService) LoadRelations(ctx context.Context, team *models.Run) error {
+	if err := s.teamRepo.LoadRelations(ctx, team); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *RunService) StartPlaying(ctx context.Context, runCode string) error {
+	team, err := s.GetRunByCode(ctx, runCode)
+	if err != nil {
+		return ErrTeamNotFound
+	}
+
+	if team.HasStarted {
+		return nil
+	}
+
+	userID, err := s.teamRepo.GetUserIDByCode(ctx, runCode)
+	if err != nil {
+		return errors.New("getting user ID for team: " + err.Error())
+	}
+
+	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
+	if err != nil {
+		return errors.New("beginning transaction: " + err.Error())
+	}
+	// Runs on every exit, panic included, so no branch can leave the write lock
+	// held until the finaliser gets around to it.
+	defer func() { _ = tx.Rollback() }()
+
+	// The claim comes first: the HasStarted check above can be passed by two
+	// concurrent starts, and only one of them may charge and record.
+	claimed, err := s.teamRepo.UpdateTeamStartedWithTx(ctx, tx, team.Code)
+	if err != nil {
+		return fmt.Errorf("updating team as started: %w", err)
+	}
+	if !claimed {
+		return nil
+	}
+
+	if err := s.creditService.DeductCreditForRunStartWithTx(ctx, tx, userID, team.ID, team.QuestID); err != nil {
+		return fmt.Errorf("deducting credit for team start: %w", err)
+	}
+
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, runStartedEvent(team)); err != nil {
+		return fmt.Errorf("recording run start: %w", err)
+	}
+
+	return tx.Commit()
+}
+
+// GetIncompleteObjectives returns the quest's reveal-context objectives still
+// incomplete for this run: an unordered "what's outstanding" list for admin
+// dashboards.
+func (s *RunService) GetIncompleteObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error) {
+	objectives, _, completed, err := s.objectivesWithCompletion(ctx, questID, runCode)
+	if err != nil {
+		return nil, err
+	}
+
+	incomplete := make([]models.Objective, 0, len(objectives))
+	for _, objective := range objectives {
+		if !completed[objective.ID] {
+			incomplete = append(incomplete, objective)
+		}
+	}
+	return incomplete, nil
+}
+
+// objectivesWithCompletion fetches a quest's leaf objectives, alongside which
+// ones are complete for a run (both as a completion-order ID slice and a lookup
+// set): the shared core of GetIncompleteObjectives and GetCompletedObjectives,
+// so the definition of "complete" lives in one place instead of drifting
+// between them.
+//
+// Complete means the proof context has cleared, which is what the frontier
+// counts and what opens whatever the objective gates. The reveal is the payoff
+// afterwards and can sit unfinished behind an interactive block or a player who
+// navigated away, so counting it would tell a team it still has work it has
+// already done.
+//
+// Leaves only, because these are the counts of places a run has been. A section
+// completes through its band rather than by being visited, so it earns no
+// completion row: counting one would put a total in the denominator that the
+// numerator can never reach, and a finished run would read as unfinished
+// forever.
+func (s *RunService) objectivesWithCompletion(
+	ctx context.Context, questID, runCode string,
+) (objectives []models.Objective, completedIDsOrdered []string, completed map[string]bool, err error) {
+	all, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("finding objectives: %w", err)
+	}
+	objectives = leavesOf(navigation.InPlay(all))
+
+	completedIDsOrdered, err = s.objectiveContextCompletionRepo.FindCompletedObjectiveIDsOrdered(
+		ctx, runCode, game.ContextObjectiveProof,
+	)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("finding completed objectives: %w", err)
+	}
+
+	completed = make(map[string]bool, len(completedIDsOrdered))
+	for _, id := range completedIDsOrdered {
+		completed[id] = true
+	}
+	return objectives, completedIDsOrdered, completed, nil
+}
+
+// leavesOf returns the objectives with no children of their own: the ones a run
+// visits, as opposed to the sections that hold them.
+func leavesOf(objectives []models.Objective) []models.Objective {
+	hasChildren := make(map[string]bool, len(objectives))
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			hasChildren[obj.ParentID] = true
+		}
+	}
+
+	leaves := make([]models.Objective, 0, len(objectives))
+	for _, obj := range objectives {
+		if !hasChildren[obj.ID] {
+			leaves = append(leaves, obj)
+		}
+	}
+	return leaves
+}
+
+// GetCompletedObjectives is GetIncompleteObjectives' complement: the quest's
+// reveal-context objectives already completed for this run, for the player's
+// /journal, in completion order (most recent first).
+func (s *RunService) GetCompletedObjectives(ctx context.Context, questID, runCode string) ([]models.Objective, error) {
+	objectives, completedIDsOrdered, _, err := s.objectivesWithCompletion(ctx, questID, runCode)
+	if err != nil {
+		return nil, err
+	}
+
+	byID := make(map[string]models.Objective, len(objectives))
+	for _, objective := range objectives {
+		byID[objective.ID] = objective
+	}
+
+	result := make([]models.Objective, 0, len(completedIDsOrdered))
+	for _, id := range completedIDsOrdered {
+		if objective, ok := byID[id]; ok {
+			result = append(result, objective)
+		}
+	}
+	return result, nil
+}
+
+// LastSeenByRun reports each run's most recent block interaction, keyed by run code.
+func (s *RunService) LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error) {
+	return s.blockStateRepo.LastSeenByRun(ctx, questID)
+}
+
+func (s *RunService) GetRunLog(ctx context.Context, quest *models.Quest, team *models.Run) (RunLog, error) {
+	events, err := s.runEventRepo.ListByRun(ctx, team.Code)
+	if err != nil {
+		return RunLog{}, fmt.Errorf("loading run events: %w", err)
+	}
+
+	// Stands in for a run too young to have a pace.
+	times, err := s.runEventRepo.TimesByType(ctx, quest.ID, meaningfulTypes, time.Time{})
+	if err != nil {
+		return RunLog{}, fmt.Errorf("loading the quest's pace: %w", err)
+	}
+
+	return BuildRunLog(events, quest.Objectives, QuestBaseline(times), time.Now()), nil
+}
+
+// newCode generates an alpha string of easily recognisable characters.
+// Confusing letters such as I and L, O and Q have one pair removed.
+func newCode(length int) string {
+	symbols := []rune("ABCDEFGHJKLMNPRSTUVWXYZ")
+	b := make([]rune, length)
+	for i := range length {
+		b[i] = symbols[rand.IntN(len(symbols))] //nolint:gosec // Team codes do not need cryptographic randomness
+	}
+	return string(b)
+}

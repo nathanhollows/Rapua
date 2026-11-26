@@ -19,13 +19,15 @@ Welcome to the Rapua developer documentation. This section contains technical in
 
 ## Core Systems
 
-- [Navigation Logic Reference](navigation-logic) - Routing strategies, navigation modes, and completion settings
+- [Navigation Logic Reference](navigation-logic) - The frontier: how the game decides what a run can do next
+- [Run Events](run-events) - The append-only stream: what is recorded, what it carries, and who reads it
 - [Job Scheduler](job-scheduler) - Background job processing and scheduling
 - [Game Spec](game-spec) - Game specification format, authoring constraints, and import/export
 
 ## Development
 
 - [Contributing](contributing) - Guidelines for contributing to Rapua
+- [Comment Guidelines](comment-guidelines) - How comments are written, and what they are for
 - [Implementing Blocks](implementing-blocks) - How to create new block types
 
 ## Roadmap

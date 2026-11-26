@@ -8,59 +8,62 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 )
 
 // DuplicationService coordinates cascading duplications across related entities.
 type DuplicationService struct {
+	logger               *slog.Logger
 	transactor           db.Transactor
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
-	locationRepo         repositories.LocationRepository
+	instanceRepo         repositories.QuestRepository
+	instanceSettingsRepo repositories.QuestSettingsRepository
+	objectiveRepo        repositories.ObjectiveRepository
 	blockRepo            repositories.BlockRepository
 }
 
 // NewDuplicationService creates a new DuplicationService with the provided dependencies.
 func NewDuplicationService(
+	logger *slog.Logger,
 	transactor db.Transactor,
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
-	locationRepo repositories.LocationRepository,
+	instanceRepo repositories.QuestRepository,
+	instanceSettingsRepo repositories.QuestSettingsRepository,
+	objectiveRepo repositories.ObjectiveRepository,
 	blockRepo repositories.BlockRepository,
 ) *DuplicationService {
 	return &DuplicationService{
+		logger:               logger,
 		transactor:           transactor,
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
-		locationRepo:         locationRepo,
+		objectiveRepo:        objectiveRepo,
 		blockRepo:            blockRepo,
 	}
 }
 
-// DuplicateInstance duplicates a non-template instance and all its content with transaction safety.
+// DuplicateQuest duplicates a non-template quest and all its content with transaction safety.
 // Returns ErrUserNotAuthenticated if user doesn't own the source instance.
 // Returns error if source instance is a template (use CreateTemplateFromInstance instead).
-func (s *DuplicationService) DuplicateInstance(
+func (s *DuplicationService) DuplicateQuest(
 	ctx context.Context,
 	user *models.User,
 	sourceInstanceID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.duplicateInstanceOrCreateTemplate(ctx, user, sourceInstanceID, name, false)
 }
 
-// CreateTemplateFromInstance creates a template from an existing non-template instance.
+// CreateTemplateFromQuest creates a template from an existing non-template quest.
 // Returns ErrUserNotAuthenticated if user doesn't own the source instance.
 // Returns error if source instance is already a template.
-func (s *DuplicationService) CreateTemplateFromInstance(
+func (s *DuplicationService) CreateTemplateFromQuest(
 	ctx context.Context,
 	user *models.User,
 	sourceInstanceID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.duplicateInstanceOrCreateTemplate(ctx, user, sourceInstanceID, name, true)
 }
 
@@ -71,7 +74,7 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 	sourceInstanceID string,
 	name string,
 	asTemplate bool,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	if user == nil {
 		return nil, ErrUserNotAuthenticated
 	}
@@ -110,7 +113,7 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 	defer func() {
 		if p := recover(); p != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction rollback after panic", "error", rollbackErr)
+				s.logger.ErrorContext(ctx, "transaction rollback after panic", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -137,26 +140,26 @@ func (s *DuplicationService) duplicateInstanceOrCreateTemplate(
 	return newInstance, nil
 }
 
-// CreateInstanceFromTemplate creates a regular instance from a template.
+// CreateQuestFromTemplate creates a regular quest from a template.
 // Returns error if source is not a template.
-func (s *DuplicationService) CreateInstanceFromTemplate(
+func (s *DuplicationService) CreateQuestFromTemplate(
 	ctx context.Context,
 	user *models.User,
 	templateID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.createInstanceFromTemplate(ctx, user, templateID, name, false)
 }
 
-// CreateInstanceFromSharedTemplate creates a regular instance from a shared template.
+// CreateQuestFromSharedTemplate creates a regular quest from a shared template.
 // Bypasses ownership check for share link scenarios.
 // Returns error if source is not a template.
-func (s *DuplicationService) CreateInstanceFromSharedTemplate(
+func (s *DuplicationService) CreateQuestFromSharedTemplate(
 	ctx context.Context,
 	user *models.User,
 	templateID string,
 	name string,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	return s.createInstanceFromTemplate(ctx, user, templateID, name, false)
 }
 
@@ -167,7 +170,7 @@ func (s *DuplicationService) createInstanceFromTemplate(
 	templateID string,
 	name string,
 	checkOwnership bool,
-) (*models.Instance, error) {
+) (*models.Quest, error) {
 	if user == nil {
 		return nil, ErrUserNotAuthenticated
 	}
@@ -204,7 +207,7 @@ func (s *DuplicationService) createInstanceFromTemplate(
 	defer func() {
 		if p := recover(); p != nil {
 			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction rollback after panic", "error", rollbackErr)
+				s.logger.ErrorContext(ctx, "transaction rollback after panic", "error", rollbackErr)
 			}
 			panic(p)
 		}
@@ -226,67 +229,19 @@ func (s *DuplicationService) createInstanceFromTemplate(
 	return newInstance, nil
 }
 
-// DuplicateLocation duplicates a location and all its blocks with transaction safety.
-func (s *DuplicationService) DuplicateLocation(
-	ctx context.Context,
-	sourceLocation models.Location,
-	newInstanceID string,
-) (*models.Location, error) {
-	if newInstanceID == "" {
-		return nil, errors.New("newInstanceID cannot be empty")
-	}
-
-	if sourceLocation.ID == "" {
-		return nil, errors.New("sourceLocation.ID cannot be empty")
-	}
-
-	// Start transaction
-	tx, err := s.transactor.BeginTx(ctx, &sql.TxOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("beginning transaction: %w", err)
-	}
-
-	defer func() {
-		if p := recover(); p != nil {
-			if rollbackErr := tx.Rollback(); rollbackErr != nil {
-				slog.Error("transaction rollback after panic", "error", rollbackErr)
-			}
-			panic(p)
-		}
-	}()
-
-	newLocation, err := s.duplicateLocation(ctx, tx, sourceLocation, newInstanceID)
-	if err != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return nil, fmt.Errorf("duplicating location: %w; rollback failed: %w", err, rollbackErr)
-		}
-		return nil, fmt.Errorf("duplicating location: %w", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return nil, fmt.Errorf("committing transaction: %w", err)
-	}
-
-	return newLocation, nil
-}
-
 // duplicateInstance is the internal implementation that works within a transaction.
 func (s *DuplicationService) duplicateInstance(
 	ctx context.Context,
 	tx *bun.Tx,
-	sourceInstance *models.Instance,
+	sourceInstance *models.Quest,
 	userID string,
 	name string,
 	asTemplate bool,
-) (*models.Instance, error) {
-	// Create new instance with copied game structure
-	newInstance := &models.Instance{
-		Name:                  name,
-		UserID:                userID,
-		IsTemplate:            asTemplate,
-		IsQuickStartDismissed: true,
-		GameStructure:         sourceInstance.GameStructure,
+) (*models.Quest, error) {
+	newInstance := &models.Quest{
+		Name:       name,
+		UserID:     userID,
+		IsTemplate: asTemplate,
 	}
 
 	if err := s.instanceRepo.CreateTx(ctx, tx, newInstance); err != nil {
@@ -295,25 +250,25 @@ func (s *DuplicationService) duplicateInstance(
 
 	// Duplicate settings
 	settings := sourceInstance.Settings
-	settings.InstanceID = newInstance.ID // InstanceID is the primary key
+	settings.QuestID = newInstance.ID // QuestID is the primary key
 	if err := s.instanceSettingsRepo.CreateTx(ctx, tx, &settings); err != nil {
 		return nil, fmt.Errorf("creating instance settings: %w", err)
 	}
 
-	// Get all locations from source instance
-	locations, err := s.locationRepo.FindByInstance(ctx, sourceInstance.ID)
+	// Ordered parent-before-child, so a copy's parent always exists by the time
+	// the copy that names it is written.
+	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, sourceInstance.ID)
 	if err != nil {
-		return nil, fmt.Errorf("finding locations: %w", err)
+		return nil, fmt.Errorf("finding objectives: %w", err)
 	}
 
-	// Duplicate all locations and build ID mapping
-	locationIDMap := make(map[string]string, len(locations))
-	for _, location := range locations {
-		newLocation, dupErr := s.duplicateLocation(ctx, tx, location, newInstance.ID)
+	objectiveIDMap := make(map[string]string, len(objectives))
+	for _, objective := range objectives {
+		newObjective, dupErr := s.duplicateObjective(ctx, tx, objective, newInstance.ID)
 		if dupErr != nil {
-			return nil, fmt.Errorf("duplicating location %s: %w", location.ID, dupErr)
+			return nil, fmt.Errorf("duplicating objective %s: %w", objective.ID, dupErr)
 		}
-		locationIDMap[location.ID] = newLocation.ID
+		objectiveIDMap[objective.ID] = newObjective.ID
 	}
 
 	// Duplicate blocks that belong directly to the instance (e.g., ContextStart and ContextFinish)
@@ -322,60 +277,68 @@ func (s *DuplicationService) duplicateInstance(
 		return nil, fmt.Errorf("duplicating instance blocks: %w", err)
 	}
 
-	// Remap location IDs in the game structure
-	s.remapLocationIDs(&newInstance.GameStructure, locationIDMap)
-
-	// Update the instance with the remapped game structure
-	_, err = tx.NewUpdate().
-		Model(newInstance).
-		Column("game_structure").
-		WherePK().
-		Exec(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("updating game structure: %w", err)
+	if err := s.remapObjectiveParents(ctx, tx, objectives, objectiveIDMap); err != nil {
+		return nil, err
 	}
 
 	return newInstance, nil
 }
 
-// duplicateLocation is the internal implementation that works within a transaction.
-func (s *DuplicationService) duplicateLocation(
+// duplicateObjective runs within a transaction.
+func (s *DuplicationService) duplicateObjective(
 	ctx context.Context,
 	tx *bun.Tx,
-	sourceLocation models.Location,
+	sourceObjective models.Objective,
 	newInstanceID string,
-) (*models.Location, error) {
-	// Create new location (copy all fields except ID and InstanceID)
-	newLocation := sourceLocation
-	newLocation.ID = "" // Reset ID so a new one is generated
-	newLocation.InstanceID = newInstanceID
+) (*models.Objective, error) {
+	// Create new objective (copy all fields except ID, QuestID and placement).
+	newObjective := sourceObjective
+	newObjective.ID = "" // Reset ID so a new one is generated.
+	newObjective.QuestID = newInstanceID
+	// Placement names an objective in the source quest, and the copy has no
+	// business pointing there: carrying it over would leave the duplicate's
+	// rows parented across two quests.
+	newObjective.ParentID = ""
+	newObjective.Position = 0
 
-	err := s.locationRepo.CreateTx(ctx, tx, &newLocation)
+	err := s.objectiveRepo.CreateTx(ctx, tx, &newObjective)
 	if err != nil {
-		return nil, fmt.Errorf("creating location: %w", err)
+		return nil, fmt.Errorf("creating objective: %w", err)
 	}
 
-	// Duplicate all blocks from old location to new location
-	err = s.blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, sourceLocation.ID, newLocation.ID)
+	err = s.blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, sourceObjective.ID, newObjective.ID)
 	if err != nil {
 		return nil, fmt.Errorf("duplicating blocks: %w", err)
 	}
 
-	return &newLocation, nil
+	return &newObjective, nil
 }
 
-// remapLocationIDs recursively updates all location IDs in the game structure
-// using the provided mapping from old IDs to new IDs.
-func (s *DuplicationService) remapLocationIDs(group *models.GameStructure, idMap map[string]string) {
-	// Remap location IDs in this group
-	for i, oldID := range group.LocationIDs {
-		if newID, exists := idMap[oldID]; exists {
-			group.LocationIDs[i] = newID
+// remapObjectiveParents points each copy at the copy of its source's parent.
+// duplicateObjective clears placement precisely so it can be rewritten here in
+// the copy's own ids: carrying the source's over would parent the duplicate
+// across two quests.
+func (s *DuplicationService) remapObjectiveParents(
+	ctx context.Context, tx *bun.Tx, sources []models.Objective, idMap map[string]string,
+) error {
+	placements := make([]repositories.Placement, 0, len(sources))
+	for _, source := range sources {
+		if source.ParentID == "" {
+			continue
 		}
+		newID, ok := idMap[source.ID]
+		if !ok {
+			continue
+		}
+		newParentID, ok := idMap[source.ParentID]
+		if !ok {
+			// The source tree was already damaged; copying the damage forward
+			// is better than pointing the copy back into the original.
+			continue
+		}
+		placements = append(placements, repositories.Placement{
+			ObjectiveID: newID, ParentID: newParentID, Position: source.Position,
+		})
 	}
-
-	// Recursively remap in subgroups
-	for i := range group.SubGroups {
-		s.remapLocationIDs(&group.SubGroups[i], idMap)
-	}
+	return s.objectiveRepo.PlaceTx(ctx, tx, placements)
 }

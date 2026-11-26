@@ -1,0 +1,1204 @@
+package templates
+
+import (
+	"fmt"
+	"github.com/SerhiiCho/timeago/v3"
+	"github.com/nathanhollows/Rapua/v8/internal/config"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// Fixed, so the filter does not reorder between visits.
+var statusOrder = []services.TeamStatus{
+	services.StatusPlaying, services.StatusIdle, services.StatusStalled,
+	services.StatusAbandoned, services.StatusFinished, services.StatusStarted,
+}
+
+func statusLabel(status services.TeamStatus) string {
+	switch status {
+	case services.StatusFinished:
+		return "Complete"
+	case services.StatusPlaying:
+		return "Playing"
+	case services.StatusIdle:
+		return "Idle"
+	case services.StatusStalled:
+		return "Stalled"
+	case services.StatusAbandoned:
+		return "Abandoned"
+	}
+	return "Started"
+}
+
+// With no summary yet a run reads as started, not as a pace.
+func listStatus(team models.Run, summaries map[string]services.RunSummary) services.TeamStatus {
+	status := summaries[team.Code].Status
+	if status == "" && team.HasStarted {
+		return services.StatusStarted
+	}
+	return status
+}
+
+func presentStatuses(runs []models.Run, summaries map[string]services.RunSummary) []services.TeamStatus {
+	seen := map[services.TeamStatus]bool{}
+	for _, run := range runs {
+		seen[listStatus(run, summaries)] = true
+	}
+	var present []services.TeamStatus
+	for _, status := range statusOrder {
+		if seen[status] {
+			present = append(present, status)
+		}
+	}
+	return present
+}
+
+templ TeamsTable(teams []models.Run, summaries map[string]services.RunSummary) {
+	{{ started := filter(teams, func(team models.Run) bool { return team.HasStarted }) }}
+	{{ unused := filter(teams, func(team models.Run) bool { return !team.HasStarted }) }}
+	<div class="runs-grid grid gap-6 mx-5">
+		<section class="card panel">
+			<div class="flex flex-row flex-wrap items-center gap-3 px-5 pt-5 pb-2">
+				<h2 class="text-2xl font-extrabold mr-auto">Started</h2>
+				if len(presentStatuses(started, summaries)) > 1 {
+					<div class="filter">
+						<input
+							class="btn btn-sm filter-reset"
+							type="radio"
+							name="statusfilter"
+							aria-label="All"
+							_="on click remove .hidden from <#teams-ul > li/>"
+						/>
+						for _, status := range presentStatuses(started, summaries) {
+							<input
+								class="btn btn-sm"
+								type="radio"
+								name="statusfilter"
+								aria-label={ statusLabel(status) }
+								_={ fmt.Sprintf("on change if my checked remove .hidden from <#teams-ul > li/> then add .hidden to <#teams-ul > li:not([data-status='%s'])/> end", status) }
+							/>
+						}
+					</div>
+				}
+				<label class="input flex items-center gap-2 w-60">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
+					<input
+						id="search-teams"
+						type="text"
+						class="grow"
+						placeholder="Search"
+						_="
+				init send input to me
+				on input
+				show .team-item
+				when its textContent.toLowerCase().normalize('NFD')
+				contains my value.toLowerCase().normalize('NFD')
+				if my value's length > 0 then
+				remove .invisible from #clear-search
+				else
+				add .invisible to #clear-search
+				end
+				end
+				"
+					/>
+					<button
+						id="clear-search"
+						role="button"
+						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
+						type="reset"
+						_="
+				init if #search-teams's value's length > 0 then
+				remove .invisible from me
+				end
+				on click
+				set #search-teams's value to ''
+				add .invisible to me
+				send input to #search-teams
+				end
+				"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+					</button>
+				</label>
+			</div>
+			<ul id="teams-ul" class="runs" hx-boost="true">
+				for _, team := range started {
+					@startedRun(team, "active", summaries)
+				}
+				<li class="when-empty">
+					<span class="wh-codes">Nobody has started playing yet. Share one of the unused codes below, or <button type="button" class="link link-primary font-semibold" onclick="add_teams_modal.showModal()">add more runs</button>.</span>
+					<span class="wh-none">There are no runs yet. <button type="button" class="link link-primary font-semibold" onclick="add_teams_modal.showModal()">Add runs</button> to make codes players can join with.</span>
+				</li>
+			</ul>
+		</section>
+		<section class="card panel unused-card">
+			<div class="flex flex-row flex-wrap items-center gap-3 px-5 pt-5 pb-2">
+				<div class="mr-auto">
+					<h2 class="text-2xl font-extrabold">Unused codes</h2>
+					<p class="text-sm text-base-content/70">Codes nobody has played with yet.</p>
+				</div>
+				<button
+					type="button"
+					class="btn btn-sm copy-all"
+					_="on click
+						set list to []
+						repeat for x in <#unused-ul .code-chip/>
+							append x's textContent to list
+						end
+						writeText(list.join('\n')) on navigator.clipboard
+						set copyText to my innerHTML
+						set my textContent to 'Copied!'
+						wait 1.5s
+						set my innerHTML to copyText
+					"
+				>
+					@icon("clipboard-copy", templ.Attributes{"class": "w-4 h-4"})
+					Copy all codes
+				</button>
+			</div>
+			<ul id="unused-ul" class="runs">
+				for _, team := range unused {
+					@teamItem(team, "inactive", summaries)
+				}
+				<li class="when-empty">No unused codes left. <button type="button" class="link link-primary font-semibold" onclick="add_teams_modal.showModal()">Add runs</button> to make more.</li>
+			</ul>
+		</section>
+	</div>
+}
+
+templ TeamsList(teams []models.Run, summaries map[string]services.RunSummary) {
+	for _, team := range teams {
+		@teamItem(team, "inactive", summaries)
+	}
+}
+
+templ teamCode(code string) {
+	<div
+		class="tooltip cursor-pointer"
+		data-tip="Click to copy"
+		_="on click 
+			writeText(my textContent) on navigator.clipboard
+			set @data-tip to 'Copied!'
+			wait 2s
+			set @data-tip to 'Click to copy'
+			"
+	>
+		<span class="team-code code-chip">{ models.FormatRunCode(code) }</span>
+	</div>
+}
+
+templ teamItem(team models.Run, classes string, summaries map[string]services.RunSummary) {
+	if !team.HasStarted {
+		<li class="run-unused">
+			@teamCode(team.Code)
+		</li>
+	} else {
+		@startedRun(team, classes, summaries)
+	}
+}
+
+templ startedRun(team models.Run, classes string, summaries map[string]services.RunSummary) {
+	{{ summary := summaries[team.Code] }}
+	{{ status := listStatus(team, summaries) }}
+	<li data-status={ string(status) } class={ "team-item run-row", classes, templ.KV("run-row-live", status == services.StatusPlaying || status == services.StatusStarted || status == services.StatusFinished), templ.KV("run-row-stalled", status == services.StatusStalled) }>
+		<div class="flex flex-row items-center gap-3 px-4 py-2.5">
+			@teamCode(team.Code)
+			<a
+				href={ templ.URL(fmt.Sprintf("/admin/runs/%s", team.Code)) }
+				class="run-link truncate grow"
+				if team.Name == "" {
+					aria-label={ fmt.Sprintf("Open run %s", team.Code) }
+				}
+			>
+				if team.Name == "" {
+					<em class="opacity-50">No name set</em>
+				} else {
+					{ team.Name }
+				}
+			</a>
+			// Each trailing part keeps its width whether or not it has anything to
+			// show, so they line up as columns down the list. Sized by their
+			// contents, the bars and badges wandered with every "1 year ago" and
+			// every run without a progress bar.
+			<span class="hidden md:flex w-36 shrink-0">
+				if summary.Total > 0 {
+					@runProgressBar(summary.Done, summary.Total)
+				}
+			</span>
+			<span class="w-24 shrink-0">
+				@TeamStatusBadge(status, true, "sm")
+			</span>
+			<span class="hidden sm:block w-28 shrink-0 text-right">
+				// Relative, not elapsed: a stale run otherwise reads "111d 21h". When the run
+				// was last seen, as the activity page says it, not when it started.
+				{{ seen := services.LastSeenOrStarted(summary.LastSeen, team) }}
+				if team.HasStarted && !seen.IsZero() {
+					<span
+						class="text-xs whitespace-nowrap tooltip tooltip-left"
+						data-tip={ "Last seen " + seen.Local().Format("02 Jan 2006, 3:04 PM") }
+					>
+						<span class="opacity-50">{ timeago.Parse(seen) }</span>
+					</span>
+				}
+			</span>
+			<span class="w-5 shrink-0 text-base-content/50" aria-hidden="true">
+				@icon("chevron-right", templ.Attributes{"class": "w-5 h-5"})
+			</span>
+		</div>
+	</li>
+}
+
+const lowCredits = 5
+
+func creditsLow(credits int) bool { return credits > 0 && credits < lowCredits }
+
+func creditsLabel(credits int) string {
+	switch {
+	case credits <= 0:
+		return "No credits"
+	case credits < lowCredits:
+		return fmt.Sprintf("%d credits left", credits)
+	}
+	return fmt.Sprintf("%d credits", credits)
+}
+
+func creditPrice() string { return fmt.Sprintf("$%.2f", float64(config.CreditPriceCents())/100) }
+
+// Only low or none earns the extra button.
+templ CreditsControl(credits int) {
+	<div class="flex items-center gap-2">
+		if credits < lowCredits {
+			<a href="/admin/settings/credits#topup" class="btn btn-secondary">
+				@icon("coins", templ.Attributes{"class": "w-5 h-5"})
+				Get more credits
+			</a>
+		}
+		<div class="dropdown dropdown-end dropdown-bottom">
+			<button
+				type="button"
+				tabindex="0"
+				class={ "btn", templ.KV("credits-low", creditsLow(credits)), templ.KV("credits-none", credits <= 0) }
+				aria-label="Credits"
+			>
+				@icon("coins", templ.Attributes{"class": "w-5 h-5"})
+				<span class="tabular-nums">{ creditsLabel(credits) }</span>
+				@icon("chevron-down", templ.Attributes{"class": "w-4 h-4"})
+			</button>
+			<div tabindex="0" class="dropdown-content panel credits-pop z-10 top-full mt-2">
+				<b class="credits-big">
+					{ fmt.Sprint(max(credits, 0)) }
+					<span>
+						if credits == 1 {
+							credit left
+						} else {
+							credits left
+						}
+					</span>
+				</b>
+				if credits <= 0 {
+					<p class="alert alert-warning">No credits left. New teams cannot start until you add more.</p>
+				} else if creditsLow(credits) {
+					<p class="alert alert-warning">You are running low. Teams can still start for now.</p>
+				}
+				<p>Each team that starts playing uses one credit. Making run codes is free, and credits never expire.</p>
+				<div class="credits-foot">
+					<a href="/admin/settings/credits#topup" class="btn btn-primary">Get more credits</a>
+					<div class="credits-side">
+						<b>{ creditPrice() } each</b>
+						<a href="/admin/settings/credits" class="link text-sm">Usage history</a>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+templ Teams(teams []models.Run, credits int, summaries map[string]services.RunSummary) {
+	<span class="hidden bg-danger text-danger-content border-error border-warning"></span>
+	<div class="flex gap-3 flex-row justify-between items-center w-full p-5">
+		<div class="flex items-center gap-1">
+			<h1 class="text-4xl font-black">Runs</h1>
+			<div class="dropdown dropdown-hover">
+				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info"><svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24" fill="none" stroke="currentcolor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4 lucide lucide-info"><circle cx="12" cy="12" r="10"></circle><path d="m12 16v-4"></path><path d="m12 8h.01"></path></svg></div>
+				<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
+					<div tabindex="0" class="card-body">
+						<h2 class="card-title">Runs</h2>
+						<p>
+							A run is one playthrough. It can be played by an individual or by a group sharing a single device, using a unique run code.
+						</p>
+						<p>
+							Progress is tracked per run, whether played by an individual or a group.
+						</p>
+						<p>
+							Run codes are randomly generated. Players can name their run when they start playing.
+						</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="flex items-center gap-3">
+			@CreditsControl(credits)
+			<button
+				class="btn btn-primary"
+				onclick="add_teams_modal.showModal()"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-user-plus"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" x2="19" y1="8" y2="14"></line><line x1="22" x2="16" y1="11" y2="11"></line></svg>
+				Add runs
+			</button>
+		</div>
+	</div>
+	<div id="teams-table">
+		@TeamsTable(teams, summaries)
+	</div>
+	<!-- Modal for adding runs -->
+	<dialog
+		id="add_teams_modal"
+		class="modal modal-bottom sm:modal-middle"
+	>
+		<div class="modal-box">
+			<h3 class="font-bold text-lg">Quick add runs</h3>
+			<p class="py-4">How many runs would you like to add?</p>
+			<form
+				hx-post="/admin/runs/add"
+				hx-target="#unused-ul"
+				hx-swap="beforeend swap:0.5s"
+				class="join flex flex-row w-full"
+			>
+				<input
+					name="count"
+					type="number"
+					id="count"
+					class="input join-item flex-grow"
+					placeholder="1+"
+					min="1"
+					step="1"
+					value="10"
+				/>
+				<button class="btn btn-primary join-item" onclick="add_teams_modal.close()">Add runs</button>
+			</form>
+			<div class="modal-action">
+				<form method="dialog">
+					<button class="btn">Nevermind</button>
+				</form>
+			</div>
+			<form method="dialog">
+				<button
+					class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+				>✕</button>
+			</form>
+		</div>
+	</dialog>
+	<script>
+		if (new URLSearchParams(window.location.search).has("add")) {
+			document.getElementById("add_teams_modal").showModal();
+		}
+	</script>
+	@teamModal()
+}
+
+// TeamOverviewData contains all data needed to render the run overview page.
+type TeamOverviewData struct {
+	Quest         models.Quest
+	Run           models.Run
+	Notifications []models.Notification
+	Uploads       []*models.Upload
+	Progress      services.RunProgress
+	RunLog        services.RunLog
+	// Show is the active log filter; empty is everything.
+	Show string
+}
+
+templ TeamOverview(data TeamOverviewData) {
+	<div>
+		<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
+			<h1 class="text-4xl font-black mr-auto flex flex-wrap items-baseline gap-x-3">
+				<span>Run</span>
+				<span class="text-base-content/40 font-medium">›</span>
+				if data.Run.Name != "" {
+					<span class="font-medium">{ data.Run.Name }</span>
+				}
+				<span class="code-chip">{ models.FormatRunCode(data.Run.Code) }</span>
+			</h1>
+			<button
+				class="btn btn-error"
+				_="on click
+						confirm_delete_modal.showModal()
+					end
+				"
+			>
+				@icon("trash-2", templ.Attributes{"class": "w-5 h-5"})
+				Delete
+			</button>
+		</div>
+		<div class="px-5 mb-5">
+			@RunStatsCard(data.Quest.Settings, data.Run, data.RunLog, data.Progress)
+		</div>
+		<div class="relative flex flex-col-reverse lg:flex-row px-5 gap-5">
+			<!-- Sidebar -->
+			<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
+				@MessagesCard(data.Run, data.Notifications)
+				@QuestMapCard(data.Progress)
+			</div>
+			<!-- Main -->
+			<div class="w-full flex-1 min-w-0 space-y-5">
+				@RunLogCard(data.RunLog, data.Show, data.Run.Code)
+				if len(data.Uploads) > 0 {
+					@UploadedMediaCard(data.Uploads, data.Run.Code)
+				}
+			</div>
+		</div>
+	</div>
+	@TeamPageModals(data.Run.Code)
+	@cadenceScript()
+}
+
+templ TeamPageModals(teamCode string) {
+	<dialog id="confirm_delete_modal" class="modal">
+		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete run</h3>
+			<p class="pt-4">
+				You are about to delete this run. Doing this will wipe all data including:
+			</p>
+			<ul>
+				<li>the run</li>
+				<li>activity progress</li>
+				<li>any uploaded media</li>
+			</ul>
+			<p>Credits are not restored if a run is deleted.</p>
+			<p>This action cannot be undone.</p>
+			<form
+				hx-delete={ fmt.Sprintf("/admin/runs/%s", teamCode) }
+			>
+				<input type="hidden" name="id" value=""/>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick="confirm_delete_modal.close()">Nevermind</button>
+					<button id="delete-confirm" type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>
+				</div>
+			</form>
+		</div>
+	</dialog>
+}
+
+templ RunStatsCard(settings models.QuestSettings, run models.Run, log services.RunLog, progress services.RunProgress) {
+	<div class="panel stat-strip stat-strip-5">
+		<div class="stat-cell">
+			<span class="kicker">Status</span>
+			<span class="stat-badge">
+				@TeamStatusBadge(runStatus(run, log), false, "lg")
+			</span>
+			<small>{ runLogQuiet(log) }</small>
+		</div>
+		<div class="stat-cell">
+			<span class="kicker">Objectives</span>
+			<b class="stat-num">
+				{ fmt.Sprint(progress.Done) }<span class="text-xl text-base-content/50">∕{ fmt.Sprint(progress.Total) }</span>
+			</b>
+			<small>Completed</small>
+		</div>
+		if settings.EnablePoints {
+			<div class="stat-cell">
+				<span class="kicker">Points</span>
+				<b class="stat-num">{ fmt.Sprint(run.Points) }</b>
+				<small>Across all objectives</small>
+			</div>
+		} else {
+			<div class="stat-cell">
+				<span class="kicker">Progress</span>
+				<b class="stat-num">
+					if progress.Total > 0 {
+						{ fmt.Sprintf("%.0f%%", float64(progress.Done)/float64(progress.Total)*100) }
+					} else {
+						0%
+					}
+				</b>
+				<small>Towards completion</small>
+			</div>
+		}
+		<div class="stat-cell">
+			<span class="kicker">Pace</span>
+			<b class="stat-num">{ runLogPace(log) }</b>
+			<small>{ runLogPaceNote(log) }</small>
+		</div>
+		<div class="stat-cell">
+			<span class="kicker">Elapsed</span>
+			<b class="stat-num">
+				if elapsed := runElapsed(run); elapsed != "" {
+					{ elapsed }
+				} else {
+					—
+				}
+			</b>
+			<small>
+				if !run.StartedAt.IsZero() {
+					Started { run.StartedAt.Local().Format("3:04 PM") }
+				} else {
+					Not started
+				}
+			</small>
+		</div>
+	</div>
+}
+
+// QuestMapCard draws the quest as the run met it: the in-play tree, every node
+// marked by what the run did to it. Drafts are absent rather than greyed:
+// players never meet them, so a run neither owes them nor skipped them.
+templ QuestMapCard(progress services.RunProgress) {
+	<div class="panel">
+		<div class="px-5 pt-5 pb-3">
+			<div class="flex items-center justify-between gap-2">
+				<h2 class="text-2xl font-extrabold">The quest</h2>
+				<span class="badge badge-ghost badge-sm">{ fmt.Sprintf("%d ∕ %d", progress.Done, progress.Total) }</span>
+			</div>
+			<p class="text-sm text-base-content/70 mt-1">Drafts are not shown: players never meet them.</p>
+			if progress.Finished {
+				<p class="text-sm text-success">The run is complete.</p>
+			}
+		</div>
+		if len(progress.Nodes) > 0 {
+			<div class="map px-3 pb-4">
+				for _, node := range progress.Nodes {
+					<div
+						class="maprow"
+						style={ fmt.Sprintf("padding-left: %grem", 0.4+float64(node.Depth)*1.1) }
+					>
+						@questMapState(node)
+						<span class={ "mapname", templ.KV("excluded", node.RuledOut), templ.KV("todo", !node.Done && !node.RuledOut && !node.Started) }>
+							{ objectiveTitleOrBlank(node.Objective.Title) }
+						</span>
+						if node.Section {
+							<span class="maproute">
+								@icon(routingIcon(node.Objective.Routing), templ.Attributes{"class": "w-3.5 h-3.5"})
+							</span>
+						}
+						if node.Children > 0 {
+							<span class="maprole">{ fmt.Sprintf("%d ∕ %d", node.Found, node.Children) }</span>
+						}
+					</div>
+				}
+			</div>
+		} else {
+			<div class="px-5 pb-5">
+				<div class="alert alert-info">
+					@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+					<span>This quest has no objectives yet.</span>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+// questMapState is the leading mark: shape first, colour second, so the states
+// survive greyscale. Excluded has a shape of its own rather than a dimmer one:
+// the run is no longer owed it, because a band closed over it or the finish
+// passed it, and a player's choice is what usually did the closing.
+templ questMapState(node services.RunProgressNode) {
+	if node.Done {
+		<span class="mapstate" data-state="done">
+			@icon("circle-check", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+	} else if node.RuledOut {
+		<span class="mapstate tooltip" data-state="todo" data-tip="Excluded: a closed branch left it behind.">
+			@icon("circle-slash", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+	} else if node.Started {
+		<span class="mapstate" data-state="started">
+			@icon("circle-dot", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+	} else if node.Locked {
+		<span class="mapstate tooltip" data-state="locked" data-tip="Not available yet: the run cannot reach it from here.">
+			@icon("lock", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+	} else {
+		<span class="mapstate" data-state="todo">
+			@icon("circle", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+	}
+}
+
+templ UploadedMediaCard(uploads []*models.Upload, teamCode string) {
+	<div class="panel">
+		<div class="p-5">
+			<h2 class="text-2xl font-extrabold flex items-center gap-2">
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-images-icon lucide-images w-5 h-5"><path d="m22 11-1.296-1.296a2.4 2.4 0 0 0-3.408 0L11 16"></path><path d="M4 8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2"></path><circle cx="13" cy="7" r="1" fill="currentColor"></circle><rect x="8" y="2" width="14" height="14" rx="2"></rect></svg>
+				Uploaded media
+				<span class="badge badge-ghost badge-sm">{ fmt.Sprint(len(uploads)) }</span>
+			</h2>
+			<div class="mt-2 columns-1 sm:columns-2 lg:columns-3 gap-3 space-y-3">
+				for _, upload := range uploads {
+					if upload.Type == models.MediaTypeImage {
+						<a
+							if config.IsLocalURL(upload.OriginalURL) {
+								href={ templ.URL(upload.OriginalURL + "?size=large") }
+							} else {
+								href={ templ.URL(upload.OriginalURL) }
+							}
+							target="_blank"
+							class="block rounded-box overflow-hidden bg-base-300 transition-opacity duration-200 hover:opacity-80 group break-inside-avoid"
+						>
+							<img
+								if config.IsLocalURL(upload.OriginalURL) {
+									src={ upload.OriginalURL + "?size=small" }
+								} else {
+									src={ upload.OriginalURL }
+								}
+								alt={ fmt.Sprintf("Upload by team %s on %s", teamCode, upload.Timestamp.Format("Jan 2, 2006")) }
+								class="w-full h-auto object-cover"
+							/>
+						</a>
+					} else if upload.Type == models.MediaTypeVideo {
+						<a href={ templ.URL(upload.OriginalURL) } target="_blank" class="block rounded-box overflow-hidden bg-base-300 transition-opacity duration-200 hover:opacity-80 relative group break-inside-avoid">
+							<video src={ upload.OriginalURL } class="w-full h-auto object-cover"></video>
+							<div class="absolute inset-0 flex items-center justify-center bg-black/30 group-hover:bg-black/20 transition-colors">
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play w-12 h-12 text-white"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+							</div>
+						</a>
+					}
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ MessagesCard(run models.Run, notifications []models.Notification) {
+	<div class="panel overflow-hidden">
+		<div class="px-5 pt-5 pb-3">
+			<div class="flex items-center justify-between gap-2">
+				<h2 class="text-2xl font-extrabold">Messages</h2>
+				if showing := countUnread(notifications); showing > 0 {
+					<span class="badge badge-info badge-soft badge-sm">{ fmt.Sprint(showing) } showing</span>
+				}
+			</div>
+			<p class="text-sm text-base-content/70 mt-1">
+				Players see these as alerts at the top of every page until they dismiss them. They cannot reply.
+			</p>
+		</div>
+		<form
+			class="px-5 pb-4 grid gap-2"
+			hx-post="/admin/notify/team"
+			hx-target="#alerts-list"
+			hx-swap="innerHTML"
+			hx-on::after-request="if(event.detail.successful) this.reset()"
+		>
+			<input type="hidden" name="runCode" value={ run.Code }/>
+			<textarea
+				class="textarea w-full"
+				name="content"
+				rows="2"
+				maxlength="255"
+				placeholder="Message this run"
+				required
+				_="on keydown[key == 'Enter' and not shiftKey] halt the event then call closest <form/>.requestSubmit()"
+			></textarea>
+			<div class="flex items-center gap-3">
+				<span class="text-xs text-base-content/60 mr-auto">
+					To reach every run, announce from
+					<a href="/admin/" class="link">Activity</a>.
+				</span>
+				<button type="submit" class="btn btn-primary btn-sm">
+					@icon("send-horizontal", templ.Attributes{"class": "w-4 h-4"})
+					Send
+				</button>
+			</div>
+		</form>
+		<div id="alerts-list" class="px-5 pb-5 grid gap-2 max-h-80 overflow-y-auto">
+			@AlertsList(notifications)
+		</div>
+	</div>
+}
+
+// Newest first, so a sent message lands beside its form.
+templ AlertsList(notifications []models.Notification) {
+	if len(notifications) > 0 {
+		for i := len(notifications) - 1; i >= 0; i-- {
+			<div class={ "message", templ.KV("message-done", notifications[i].Dismissed) }>
+				<p>{ notifications[i].Content }</p>
+				<small>
+					{ notifications[i].CreatedAt.Local().Format("02 Jan 3:04 PM") }
+					·
+					if notifications[i].Dismissed {
+						Dismissed
+					} else {
+						Not dismissed yet
+					}
+				</small>
+			</div>
+		}
+	} else {
+		<p class="text-sm text-base-content/60 text-center py-2">No messages sent yet</p>
+	}
+}
+
+// cadenceScript keeps the window tied to the log's scroll. It goes at the end
+// of the page, after both the strip and the log exist.
+templ cadenceScript() {
+	<script>
+	/* The window is the span of time the visible entries cover, not a fixed
+	   slice sliding along the strip. Rows carry the interval they cover, so
+	   the marker is the union of what is on screen: it narrows through busy
+	   play, where a screenful is a couple of minutes, and widens across a
+	   quiet spell, where one entry can be half an hour.
+
+	   The filter tabs swap the whole card, strip and log with it, so the
+	   wiring below runs again on the elements that arrive in their place.
+	   bound marks the nodes already listening; the body-level hooks re-run
+	   the wiring after every swap on the page, the ones with nothing to do
+	   with the card included, and with the mark in place that costs a
+	   lookup and nothing else. */
+	(function () {
+		var latest = null;
+
+		function init() {
+			var log = document.getElementById('run-log');
+			var marker = document.getElementById('run-window');
+			var strip = document.getElementById('run-heat');
+			if (!log || !marker || !strip) {
+				/* A filter can swap in a card with nothing to draw, and the
+				   elements the last one left behind are gone with it. */
+				latest = null;
+				return;
+			}
+			if (log.dataset.cadenceBound) return;
+			log.dataset.cadenceBound = '1';
+
+			var rows = Array.prototype.slice.call(log.querySelectorAll('[data-t0]'));
+			if (!rows.length) {
+				latest = null;
+				return;
+			}
+			/* The axis runs to now, past the last row, so the scale comes from
+			   data-total rather than from the last row's end. */
+			var TOTAL = +(strip.dataset.total || 0) ||
+				rows.reduce(function (m, el) {
+					return Math.max(m, +el.dataset.t1);
+				}, 0) || 1;
+			var MIN = 1.2; /* so an empty stretch still shows a sliver */
+
+			function sync() {
+				var top = log.scrollTop, bottom = top + log.clientHeight;
+				var t0 = Infinity, t1 = -Infinity;
+				for (var i = 0; i < rows.length; i++) {
+					var el = rows[i], a = el.offsetTop, b = a + el.offsetHeight;
+					if (b <= top || a >= bottom) continue;
+					var s0 = +el.dataset.t0, s1 = +el.dataset.t1;
+					if (s0 < t0) t0 = s0;
+					if (s1 > t1) t1 = s1;
+				}
+				if (t0 > t1) return;
+				marker.style.left = (t0 / TOTAL * 100) + '%';
+				marker.style.width = Math.max(MIN, (t1 - t0) / TOTAL * 100) + '%';
+			}
+
+			/* Anchors let a scroll land between rows: each entry gives a time and
+			   the scrollTop that puts its foot at the foot of the viewport.
+			   Interpolating between them keeps a drag smooth where snapping to
+			   rows would step. */
+			var anchors = [];
+
+			function measure() {
+				anchors = rows.map(function (el) {
+					return [+el.dataset.t0, el.offsetTop + el.offsetHeight - log.clientHeight];
+				}).sort(function (a, b) {
+					return a[0] - b[0];
+				});
+				sync();
+			}
+
+			function scrollToTime(t) {
+				var n = anchors.length;
+				if (t <= anchors[0][0]) {
+					log.scrollTop = anchors[0][1];
+					return;
+				}
+				if (t >= anchors[n - 1][0]) {
+					log.scrollTop = anchors[n - 1][1];
+					return;
+				}
+				for (var i = 1; i < n; i++) {
+					if (anchors[i][0] >= t) {
+						var a = anchors[i - 1], b = anchors[i];
+						var f = (t - a[0]) / ((b[0] - a[0]) || 1);
+						log.scrollTop = a[1] + (b[1] - a[1]) * f;
+						return;
+					}
+				}
+			}
+
+			function frac(e) {
+				var r = strip.getBoundingClientRect();
+				return Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+			}
+
+			var dragging = false, grab = 0;
+
+			/* Dragging scrubs the log rather than moving the window by hand: the
+			   drag names a time, the log scrolls to it, and the window is
+			   recomputed from what that put on screen. Moving the window directly
+			   would let it drift away from the entries it claims to cover. */
+			marker.addEventListener('pointerdown', function (e) {
+				grab = frac(e) - (parseFloat(marker.style.left) / 100 || 0);
+				dragging = true;
+				marker.classList.add('dragging');
+				if (marker.setPointerCapture) marker.setPointerCapture(e.pointerId);
+				e.preventDefault();
+			});
+
+			marker.addEventListener('pointermove', function (e) {
+				if (!dragging) return;
+				var w = parseFloat(marker.style.width) / 100 || 0.1;
+				scrollToTime(Math.min(1 - w, Math.max(0, frac(e) - grab)) * TOTAL);
+			});
+
+			function stopDrag() {
+				if (!dragging) return;
+				dragging = false;
+				marker.classList.remove('dragging');
+			}
+			marker.addEventListener('pointerup', stopDrag);
+			marker.addEventListener('pointercancel', stopDrag);
+
+			var queued = false;
+			log.addEventListener('scroll', function () {
+				if (queued) return;
+				queued = true;
+				requestAnimationFrame(function () {
+					queued = false;
+					sync();
+				});
+			});
+
+			/* The first frames can land before the log has its final height (styles
+			   settling, an htmx swap, anything that reflows), and a window measured
+			   against a taller log claims the whole strip. Measuring again for a
+			   few frames costs nothing and leaves the window where it belongs. */
+			var settles = 0;
+			function settle() {
+				measure();
+				settles++;
+				if (settles < 5) requestAnimationFrame(settle);
+			}
+			latest = measure;
+			settle();
+		}
+
+		/* One listener per window event rather than one per card: the elements
+		   the wiring holds are replaced on a swap, and re-adding here would
+		   leave the old ones listening to nodes nobody can see. */
+		window.addEventListener('resize', function () {
+			if (latest) latest();
+		});
+		window.addEventListener('load', function () {
+			if (latest) latest();
+		});
+
+		init();
+		document.body.addEventListener('htmx:load', init);
+		document.body.addEventListener('htmx:afterSettle', init);
+	})();
+	</script>
+}
+
+templ RunLogCard(log services.RunLog, show, runCode string) {
+	{{ shown := runLogFilter(log.Entries, show) }}
+	<div id={ RunLogCardTarget } class="panel overflow-hidden">
+		<div class="px-5 pt-5 pb-3">
+			<div class="flex flex-wrap items-center justify-between gap-3">
+				<h2 class="text-2xl font-extrabold">Timeline</h2>
+				<div class="join">
+					<a
+						href={ templ.URL(runLogHref(runCode, "")) }
+						hx-get={ templ.URL(runLogHref(runCode, "")) }
+						hx-target={ "#" + RunLogCardTarget }
+						hx-swap="outerHTML"
+						hx-push-url="false"
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "") }
+					>All</a>
+					<a
+						href={ templ.URL(runLogHref(runCode, "progress")) }
+						hx-get={ templ.URL(runLogHref(runCode, "progress")) }
+						hx-target={ "#" + RunLogCardTarget }
+						hx-swap="outerHTML"
+						hx-push-url="false"
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "progress") }
+					>Progress</a>
+					<a
+						href={ templ.URL(runLogHref(runCode, "messages")) }
+						hx-get={ templ.URL(runLogHref(runCode, "messages")) }
+						hx-target={ "#" + RunLogCardTarget }
+						hx-swap="outerHTML"
+						hx-push-url="false"
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "messages") }
+					>Messages</a>
+					<a
+						href={ templ.URL(runLogHref(runCode, "navigation")) }
+						hx-get={ templ.URL(runLogHref(runCode, "navigation")) }
+						hx-target={ "#" + RunLogCardTarget }
+						hx-swap="outerHTML"
+						hx-push-url="false"
+						class={ "btn btn-sm join-item", templ.KV("btn-active", show == "navigation") }
+					>Navigation</a>
+				</div>
+			</div>
+			<p class="text-sm text-base-content/70 mt-1">
+				Newest first. The right-hand figure is the wait before that entry.
+			</p>
+		</div>
+		if len(log.Segments) > 0 {
+			<div class="px-5 pb-4">
+				<div class="flex flex-wrap items-center gap-3 text-xs text-base-content/70 mb-2">
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block w-3 h-2 rounded-sm h-playing"></span>Playing
+					</span>
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block w-3 h-2 rounded-sm h-idle"></span>Idle
+					</span>
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block w-3 h-2 rounded-sm h-stalled"></span>Stalled
+					</span>
+					<span class="flex items-center gap-1.5">
+						<span class="inline-block w-3 h-2 rounded-sm h-abandoned"></span>Abandoned
+					</span>
+				</div>
+				<div class="heat" id="run-heat" data-total={ fmt.Sprint(runLogAxis(log)) }>
+					for _, segment := range log.Segments {
+						<div
+							class={ "hseg h-" + string(segment.Class) }
+							style={ fmt.Sprintf("flex: 0 0 %.4f%%", runLogSegmentPercent(segment, log)) }
+							title={ runLogSegmentTitle(segment) }
+						></div>
+					}
+					<div
+						class="strip-window"
+						id="run-window"
+						title="Drag to scrub the log"
+						style="left: 0; width: 100%"
+					></div>
+				</div>
+				<div class="flex text-xs text-base-content/60 mt-1">
+					<span>{ runLogTime(log.From, log) }</span>
+					<span class="ml-auto">{ runLogTime(log.To, log) }</span>
+				</div>
+			</div>
+		}
+		if len(shown) > 0 {
+			<div class="runlog" id="run-log">
+				<ul class="grid gap-1 px-3 pb-3">
+					for i, entry := range shown {
+						@runLogRow(entry, i, log)
+					}
+				</ul>
+			</div>
+		} else {
+			<div class="px-5 pb-5">
+				<div class="alert alert-info">
+					@icon("info", templ.Attributes{"class": "w-5 h-5 shrink-0"})
+					<span>
+						if len(log.Entries) == 0 {
+							Nothing recorded yet.
+						} else {
+							Nothing in this filter.
+						}
+					</span>
+				</div>
+			</div>
+		}
+		<p class="px-5 py-3 border-t border-base-content/10 text-sm text-base-content/70">{ runLogFooter(len(shown), len(log.Entries)) }</p>
+	</div>
+}
+
+// runLogRow draws one entry. A quiet line is a stretch of nothing between the
+// events around it.
+templ runLogRow(entry services.RunLogEntry, index int, log services.RunLog) {
+	if entry.Kind == services.RunLogQuiet {
+		{{ t0, t1 := runLogSpan(entry, log) }}
+		<li
+			class="run-entry flex items-center gap-3 px-3 py-1.5 text-xs"
+			data-t0={ fmt.Sprint(t0) }
+			data-t1={ fmt.Sprint(t1) }
+		>
+			<span class="grow border-t border-dashed border-base-content/40"></span>
+			<span class={ runLogQuietTint(entry.Cadence) }>{ runLogQuietLine(entry) }</span>
+			<span class="grow border-t border-dashed border-base-content/40"></span>
+		</li>
+	} else {
+		{{ t0, t1 := runLogSpan(entry, log) }}
+		{{ multiline := entry.Kind == services.RunLogMessage || entry.Kind == services.RunLogUpload || entry.Submitted != "" }}
+		<li
+			class={ "run-entry", templ.KV("run-entry-ok", runEntryTone(entry) == "ok"), templ.KV("run-entry-info", runEntryTone(entry) == "info") }
+			data-t0={ fmt.Sprint(t0) }
+			data-t1={ fmt.Sprint(t1) }
+		>
+			<div class={ "px-3 py-2.5 flex gap-3", templ.KV("items-start", multiline), templ.KV("items-center", !multiline) }>
+				@runLogIcon(entry)
+				@runLogBody(entry)
+				<span class="text-xs text-base-content/70 ml-auto whitespace-nowrap">{ runLogWait(entry.Gap) }</span>
+				<span class="text-xs text-base-content/60 text-right shrink-0 whitespace-nowrap tabular-nums">{ runLogTime(entry.Time, log) }</span>
+			</div>
+		</li>
+	}
+}
+
+templ runLogIcon(entry services.RunLogEntry) {
+	switch entry.Kind {
+		case services.RunLogJoined:
+			<span class="run-ico">
+				@icon("log-in", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogStart:
+			<span class="run-ico">
+				@icon("play", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogNamed:
+			<span class="run-ico">
+				@icon("pen-line", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogListed:
+			<span class="run-ico">
+				@icon("list", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogViewed:
+			<span class="run-ico">
+				@icon("eye", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogAnswer:
+			if entry.Completed {
+				<span class="run-ico run-ico-ok">
+					@icon("check", templ.Attributes{"class": "w-4 h-4"})
+				</span>
+			} else {
+				<span class="run-ico run-ico-warn">
+					@icon("circle-x", templ.Attributes{"class": "w-4 h-4"})
+				</span>
+			}
+		case services.RunLogComplete:
+			<span class="run-ico run-ico-ok">
+				@icon("circle-check", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogSection:
+			<span class="run-ico run-ico-ok">
+				@icon("flag", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogUpload:
+			<span class="run-ico">
+				@icon("image", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogMessage:
+			<span class="run-ico run-ico-info">
+				@icon("megaphone", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogRead:
+			<span class="run-ico">
+				@icon("check-check", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+		case services.RunLogFinish:
+			<span class="run-ico run-ico-ok">
+				@icon("trophy", templ.Attributes{"class": "w-4 h-4"})
+			</span>
+	}
+}
+
+templ runLogBody(entry services.RunLogEntry) {
+	switch entry.Kind {
+		case services.RunLogJoined:
+			<span class="text-sm truncate">Entered the run code</span>
+		case services.RunLogStart:
+			<span class="text-sm truncate">Run started</span>
+		case services.RunLogNamed:
+			<span class="text-sm truncate">Named the run <span class="font-medium">{ entry.Title }</span></span>
+		case services.RunLogListed:
+			<span class="text-sm truncate">Opened the objectives list</span>
+		case services.RunLogViewed:
+			@runLogObjectiveLine("Opened", entry)
+		case services.RunLogComplete:
+			@runLogObjectiveLine("Completed", entry)
+		case services.RunLogSection:
+			@runLogObjectiveLine("Finished section", entry)
+		case services.RunLogAnswer:
+			@runLogAnswer(entry)
+		case services.RunLogUpload:
+			@runLogUpload(entry)
+		case services.RunLogMessage:
+			<div class="min-w-0">
+				<span class="text-sm truncate">Message received</span>
+				if entry.Message != "" {
+					<span class="text-xs text-base-content/70 block truncate">{ entry.Message }</span>
+				}
+			</div>
+		case services.RunLogRead:
+			<span class="text-sm truncate">Message read</span>
+		case services.RunLogFinish:
+			<span class="text-sm font-medium truncate">Finished the run</span>
+	}
+}
+
+templ runLogObjectiveLine(verb string, entry services.RunLogEntry) {
+	<span class="text-sm truncate">
+		{ verb + " " }
+		if entry.Slug != "" {
+			<a href={ templ.URL("/admin/objective/" + entry.Slug) } class="link">{ entry.Title }</a>
+		} else if entry.Title != "" {
+			{ entry.Title }
+		} else {
+			<span class="text-base-content/60">something the quest no longer names</span>
+		}
+	</span>
+}
+
+// runLogAnswer is one submission. It says completed or not, never right or
+// wrong: the log records completion and worth, and only the block knows what
+// right means.
+templ runLogAnswer(entry services.RunLogEntry) {
+	<div class="min-w-0">
+		<span class="text-sm truncate block">
+			{ entry.BlockName }
+			if entry.Title != "" {
+				<span class="text-base-content/70">on </span>
+				if entry.Slug != "" {
+					<a href={ templ.URL("/admin/objective/" + entry.Slug) } class="link">{ entry.Title }</a>
+				} else {
+					{ entry.Title }
+				}
+			}
+			if !entry.Completed {
+				<span class="text-base-content/60">— not completed</span>
+			}
+		</span>
+		if entry.Submitted != "" {
+			<span class="mt-0.5 block text-xs text-base-content/70 truncate">{ entry.Submitted }</span>
+		}
+	</div>
+	if entry.Points != 0 {
+		<span class={ "badge badge-sm shrink-0 font-semibold", templ.KV("badge-primary", entry.Points > 0), templ.KV("badge-error", entry.Points < 0) }>
+			{ fmt.Sprintf("%+d", entry.Points) }
+		</span>
+	}
+	if entry.Tries > 1 {
+		<span class="badge badge-ghost badge-sm shrink-0">{ fmt.Sprintf("attempt %d", entry.Tries) }</span>
+	}
+}
+
+templ runLogUpload(entry services.RunLogEntry) {
+	<div class="min-w-0 flex-1">
+		<span class="text-sm truncate block">{ runLogUploadLabel(entry.MediaType) }</span>
+		if entry.MediaURL != "" && runLogIsImage(entry.MediaType) {
+			<a
+				if config.IsLocalURL(entry.MediaURL) {
+					href={ templ.URL(entry.MediaURL + "?size=large") }
+				} else {
+					href={ templ.URL(entry.MediaURL) }
+				}
+				target="_blank"
+				class="inline-block mt-2"
+			>
+				<img
+					if config.IsLocalURL(entry.MediaURL) {
+						src={ entry.MediaURL + "?size=small" }
+					} else {
+						src={ entry.MediaURL }
+					}
+					alt=""
+					class="h-28 w-40 rounded-box object-cover border border-base-content/10"
+				/>
+			</a>
+		}
+	</div>
+}

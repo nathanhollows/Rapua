@@ -4,540 +4,304 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"maps"
-	"strings"
+	"log/slog"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/navigation"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
 var (
-	ErrAllLocationsVisited = errors.New("all locations visited")
-	ErrInstanceNotFound    = errors.New("instance not found")
+	ErrInstanceNotFound = errors.New("instance not found")
+	// ErrSectionNotFinishable means the run cannot end that section: its band
+	// has no range, its minimum is unmet, or it is finished already.
+	ErrSectionNotFinishable = errors.New("section is not finishable")
+	// ErrObjectiveNotInQuest means a request named an objective belonging to
+	// some other quest. Previewing takes an id from the URL, so the id alone
+	// proves nothing about who may see what it points at.
+	ErrObjectiveNotInQuest = errors.New("objective does not belong to this quest")
 )
 
 type NavigationService struct {
-	locationRepo         repositories.LocationRepository
-	teamRepo             repositories.TeamRepository
-	gameStructureService *GameStructureService
-	blockService         *BlockService
+	transactor        db.Transactor
+	loader            runStateLoader
+	objectiveRepo     repositories.ObjectiveRepository
+	sectionFinishRepo repositories.SectionFinishRepository
+	teamRepo          repositories.RunRepository
+	runEventRepo      repositories.RunEventRepository
+	logger            *slog.Logger
 }
 
-// PlayerNavigationView contains all data needed to render the player navigation UI.
-type PlayerNavigationView struct {
-	// Settings
-	Settings models.InstanceSettings // Global instance settings
-
-	// Current state
-	CurrentGroup     *models.GameStructure // Current group
-	CanAdvanceEarly  bool                  // Whether team can manually advance to next group (minimum met, AutoAdvance=false, not 100% complete)
-	MustCheckOut     bool                  // Whether team must check out before proceeding
-	BlockingLocation *models.Location      // Location team must check out from (nil if not blocked)
-
-	// Available locations
-	NextLocations []models.Location // Locations team can visit next
-	// Completed locations (for scavenger hunt mode or similar)
-	CompletedLocations []models.Location // Locations already visited (optional, for certain display modes)
-
-	// Navigation clues (for custom display mode)
-	Blocks      []blocks.Block                // All navigation clue blocks for next locations
-	BlockStates map[string]blocks.PlayerState // States for navigation clue blocks
+// PlayerObjectiveView is what the /objectives list renders: the frontier for
+// one run, and the settings the page reads. No blocks: the list shows titles.
+type PlayerObjectiveView struct {
+	Settings models.QuestSettings
+	Frontier navigation.Frontier
+	// Complete is true once the quest's root objective is complete, which is
+	// the only thing that means the run is finished. An empty available list
+	// does not: everything below may simply be waiting on a depends.
+	Complete bool
+	// Progress is how far the run has come and how much it still owes.
+	Progress navigation.Progress
+	// Objectives is the quest's whole tree. The frontier is flat by design, and
+	// a row in it carries only its parent's ID, so the player view needs this
+	// to draw the section a row came out of.
+	Objectives []models.Objective
+	// HasProof names the objectives whose proof gates them. One without has
+	// nothing to do but be opened, which the player view says rather than
+	// promising work that is not there.
+	HasProof map[string]bool
+	// FirstProofBlock names, per objective on offer, the first block in its
+	// proof that asks the player for something. The row draws that block's own
+	// icon, so a card says what is coming without anyone classifying
+	// objectives into kinds.
+	FirstProofBlock map[string]string
+	// CanDiscover is whether the quest holds anything a player proves by being
+	// there, a scan now and a geofence later, so the list offers a way to do it.
+	CanDiscover bool
 }
 
-// NewNavigationService creates a new instance of NavigationService.
+// canDiscover asks of the whole quest, not of what is on offer, so the button
+// holds still for the run and never marks where an unfound secret is.
+func (s *NavigationService) canDiscover(ctx context.Context, objectives []models.Objective) (bool, error) {
+	ids := make([]string, len(objectives))
+	for i, obj := range objectives {
+		ids[i] = obj.ID
+	}
+	return s.loader.blockRepo.AnyOfType(ctx, ids, game.ContextObjectiveProof, game.DiscoveryBlockTypes())
+}
+
+// NewNavigationService creates a NavigationService.
 func NewNavigationService(
-	locationRepo repositories.LocationRepository,
-	teamRepo repositories.TeamRepository,
-	gameStructureService *GameStructureService,
-	blockService *BlockService,
+	transactor db.Transactor,
+	objectiveRepo repositories.ObjectiveRepository,
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository,
+	sectionFinishRepo repositories.SectionFinishRepository,
+	blockRepo repositories.BlockRepository,
+	teamRepo repositories.RunRepository,
+	runEventRepo repositories.RunEventRepository,
+	runVariableRepo repositories.RunVariableRepository,
+	logger *slog.Logger,
 ) *NavigationService {
 	return &NavigationService{
-		locationRepo:         locationRepo,
-		teamRepo:             teamRepo,
-		gameStructureService: gameStructureService,
-		blockService:         blockService,
+		transactor: transactor,
+		loader: runStateLoader{
+			objectiveRepo:                  objectiveRepo,
+			objectiveContextCompletionRepo: objectiveContextCompletionRepo,
+			sectionFinishRepo:              sectionFinishRepo,
+			blockRepo:                      blockRepo,
+			runVariableRepo:                runVariableRepo,
+		},
+		objectiveRepo:     objectiveRepo,
+		sectionFinishRepo: sectionFinishRepo,
+		teamRepo:          teamRepo,
+		runEventRepo:      runEventRepo,
+		logger:            logger,
 	}
 }
 
-// IsValidLocation checks if the location code is valid for the team to check in to.
-// This includes both regular available locations AND accessible secret locations.
-func (s *NavigationService) IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error) {
-	if err := s.validateTeamState(team); err != nil {
+// GetQuestObjectives skips the run state GetPlayerObjectiveView loads.
+func (s *NavigationService) GetQuestObjectives(ctx context.Context, questID string) ([]models.Objective, error) {
+	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
+	if err != nil {
+		return nil, fmt.Errorf("loading objective tree: %w", err)
+	}
+	return objectives, nil
+}
+
+// GetPlayerObjectiveView computes the frontier for a run.
+func (s *NavigationService) GetPlayerObjectiveView(
+	ctx context.Context,
+	team *models.Run,
+) (*PlayerObjectiveView, error) {
+	if err := s.ensureObjectiveTeamRelationsLoaded(ctx, team); err != nil {
+		return nil, fmt.Errorf("loading team relations: %w", err)
+	}
+
+	objectives, state, complete, err := s.loader.load(ctx, team)
+	if err != nil {
+		return nil, err
+	}
+
+	frontier := navigation.ComputeFrontier(objectives, state, complete)
+
+	// Icons are looked up only for what is on offer. A missing icon costs a
+	// row its glyph and nothing else, so a failure here is logged rather than
+	// taken out on a page that is otherwise fine.
+	icons, err := s.proofIcons(ctx, frontier.Available, blocks.Registry())
+	if err != nil {
+		s.logger.WarnContext(ctx, "loading proof blocks", "error", err, "run", team.Code)
+	}
+	// Like the icons, a failure costs the page one control, not the page.
+	discover, err := s.canDiscover(ctx, objectives)
+	if err != nil {
+		s.logger.WarnContext(ctx, "checking for discovery blocks", "error", err, "run", team.Code)
+	}
+
+	return &PlayerObjectiveView{
+		Settings:        team.Quest.Settings,
+		Frontier:        frontier,
+		Complete:        rootComplete(objectives, frontier),
+		Progress:        navigation.ComputeProgress(objectives, complete, state.Discovered),
+		Objectives:      objectives,
+		HasProof:        state.HasProofBlocks,
+		FirstProofBlock: icons,
+		CanDiscover:     discover,
+	}, nil
+}
+
+// rootComplete reports whether every parentless objective is complete. A quest
+// has one root, so this is that root; a quest whose tree was never built has
+// none, and an empty quest is not a finished one.
+func rootComplete(objectives []models.Objective, frontier navigation.Frontier) bool {
+	roots := 0
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			continue
+		}
+		roots++
+		if frontier.StatusOf(obj.ID) != navigation.StatusComplete {
+			return false
+		}
+	}
+	return roots > 0
+}
+
+// rootsComplete asks rootComplete's question of the derived completion map
+// instead of the frontier, which is what the write paths hold: completion is a
+// pure function of the recorded facts, so one more fact answers it without a
+// second load.
+func rootsComplete(objectives []models.Objective, complete map[string]bool) bool {
+	roots := 0
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			continue
+		}
+		roots++
+		if !complete[obj.ID] {
+			return false
+		}
+	}
+	return roots > 0
+}
+
+// FinishSection records a player ending a section, and reports whether the
+// press was the one that recorded it.
+//
+// The frontier is recomputed from the stored facts rather than trusted from the
+// caller: finishing a section can complete an ancestor whose own band is now
+// met, so what the player last saw is not what decides this.
+func (s *NavigationService) FinishSection(
+	ctx context.Context, team *models.Run, objectiveID string,
+) (bool, error) {
+	objectives, state, complete, err := s.loader.load(ctx, team)
+	if err != nil {
 		return false, err
 	}
 
-	// Find valid locations (without loading full relations)
-	locations, err := s.determineNextLocations(ctx, team)
-	if err != nil {
-		return false, fmt.Errorf("determine next valid locations: %w", err)
+	frontier := navigation.ComputeFrontier(objectives, state, complete)
+	if frontier.StatusOf(objectiveID) != navigation.StatusFinishable {
+		return false, fmt.Errorf("%w: %q", ErrSectionNotFinishable, objectiveID)
 	}
 
-	// Check if the location code is valid in regular available locations
-	markerID = s.normalizeMarkerID(markerID)
-	for _, loc := range locations {
-		if loc.MarkerID == markerID {
-			return true, nil
+	// The insert's conflict clause decides whether this call finished the section,
+	// so it is also the one that records it: a double press gives one event.
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return false, fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	inserted, err := s.sectionFinishRepo.InsertWithTx(ctx, tx, team.Code, objectiveID)
+	if err != nil {
+		return false, err
+	}
+	if !inserted {
+		return false, nil
+	}
+
+	if err := s.runEventRepo.RecordWithTx(ctx, tx, sectionFinishedEvent(team, objectiveID)); err != nil {
+		return false, fmt.Errorf("recording section finish: %w", err)
+	}
+
+	// The press may be what tips the root over. The section closing is the only
+	// fact that changed, and the derivation is pure, so the answer comes from
+	// the state already in hand.
+	state.SectionFinished[objectiveID] = true
+	if rootsComplete(objectives, navigation.ComputeCompleted(objectives, state)) {
+		if err := recordRunCompleted(ctx, tx, s.runEventRepo, team); err != nil {
+			return false, fmt.Errorf("recording run completion: %w", err)
 		}
 	}
 
-	// Also check accessible secret locations
-	secretLocations, err := s.getAccessibleSecretLocations(ctx, team)
-	if err != nil {
-		return false, fmt.Errorf("determine accessible secret locations: %w", err)
-	}
-
-	for _, loc := range secretLocations {
-		if loc.MarkerID == markerID {
-			return true, nil
-		}
-	}
-
-	return false, fmt.Errorf("code %s is not a valid next location", markerID)
+	return true, tx.Commit()
 }
 
-// GetNextLocations returns the next locations for the team to visit with full relations loaded.
-func (s *NavigationService) GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
-	// Load team relations if not already loaded
-	if err := s.ensureTeamRelationsLoaded(ctx, team); err != nil {
+// RecordObjectiveView notes that a run opened an objective. Callers gate
+// reachability first, so a guessed slug never counts as a visit.
+func (s *NavigationService) RecordObjectiveView(
+	ctx context.Context, team *models.Run, objectiveID string,
+) error {
+	return s.recordPresence(ctx, team, objectiveViewedEvent(team, objectiveID))
+}
+
+// RecordObjectivesListed notes that a run opened the list of objectives.
+func (s *NavigationService) RecordObjectivesListed(ctx context.Context, team *models.Run) error {
+	return s.recordPresence(ctx, team, objectivesListedEvent(team))
+}
+
+// recordPresence skips a finished run: a team browsing its old objectives is
+// not playing, and rows past the finish fall outside the run's timeline.
+func (s *NavigationService) recordPresence(ctx context.Context, team *models.Run, event *models.RunEvent) error {
+	finished, err := s.runEventRepo.RunCompleted(ctx, team.Code)
+	if err != nil {
+		return fmt.Errorf("checking whether the run has finished: %w", err)
+	}
+	if finished {
+		return nil
+	}
+	return s.runEventRepo.Record(ctx, event)
+}
+
+// ensureObjectiveTeamRelationsLoaded loads the quest and messages: the player
+// handlers render team.Messages for the notification banner.
+func (s *NavigationService) ensureObjectiveTeamRelationsLoaded(ctx context.Context, team *models.Run) error {
+	if team.Quest.ID == "" {
+		if err := s.teamRepo.LoadQuest(ctx, team); err != nil {
+			return err
+		}
+	}
+	return s.teamRepo.LoadMessages(ctx, team)
+}
+
+// GetPreviewObjectiveView shows one objective as though it were the only thing
+// available, for an admin previewing it outside a real run.
+func (s *NavigationService) GetPreviewObjectiveView(
+	ctx context.Context,
+	team *models.Run,
+	objectiveID string,
+) (*PlayerObjectiveView, error) {
+	if err := s.ensureObjectiveTeamRelationsLoaded(ctx, team); err != nil {
 		return nil, fmt.Errorf("loading team relations: %w", err)
 	}
 
-	// Get the core locations
-	locations, err := s.determineNextLocations(ctx, team)
+	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("loading objective: %w", err)
+	}
+	if objective.QuestID != team.QuestID {
+		return nil, fmt.Errorf("%w: objective %q", ErrObjectiveNotInQuest, objectiveID)
 	}
 
-	// Load full relations for each location
-	for i := range locations {
-		if loadErr := s.locationRepo.LoadRelations(ctx, &locations[i]); loadErr != nil {
-			return nil, fmt.Errorf("loading relations for location: %w", loadErr)
-		}
-	}
-
-	return locations, nil
-}
-
-// GetPlayerNavigationView returns a complete view of navigation data for the player UI.
-func (s *NavigationService) GetPlayerNavigationView( //nolint:gocognit,gocyclo
-	ctx context.Context,
-	team *models.Team,
-) (*PlayerNavigationView, error) {
-	// Load team relations if not already loaded
-	if err := s.ensureTeamRelationsLoaded(ctx, team); err != nil {
-		return nil, fmt.Errorf("loading team relations: %w", err)
-	}
-
-	view := &PlayerNavigationView{
-		Settings:    team.Instance.Settings,
-		Blocks:      make([]blocks.Block, 0),
-		BlockStates: make(map[string]blocks.PlayerState),
-	}
-
-	// Check if team is blocked (must check out)
-	if team.MustCheckOut != "" {
-		view.MustCheckOut = true
-		// Load blocking location
-		blockingLocation, err := s.locationRepo.GetByID(ctx, team.MustCheckOut)
-		if err != nil {
-			return nil, fmt.Errorf("loading blocking location: %w", err)
-		}
-		view.BlockingLocation = blockingLocation
-		// Team is blocked, no next locations available
-		view.NextLocations = []models.Location{}
-		return view, nil
-	}
-
-	// Get current group (if using GameStructure)
-	var currentGroup *models.GameStructure
-	if team.Instance.GameStructure.ID != "" {
-		// Compute current group from completed locations
-		completedIDs := s.getCompletedLocationIDs(team.CheckIns)
-		currentGroupID := navigation.ComputeCurrentGroup(
-			&team.Instance.GameStructure,
-			completedIDs,
-			team.SkippedGroupIDs,
-		)
-
-		if currentGroupID != "" {
-			currentGroup = navigation.FindGroupByID(&team.Instance.GameStructure, currentGroupID)
-		}
-		view.CurrentGroup = currentGroup
-
-		// Check if team can advance early (minimum met, AutoAdvance=false, not 100% complete)
-		if currentGroup != nil && !currentGroup.AutoAdvance && len(currentGroup.LocationIDs) > 0 {
-			// Count completed locations in current group
-			completedSet := make(map[string]bool)
-			for _, id := range completedIDs {
-				completedSet[id] = true
-			}
-			completedCount := 0
-			for _, locID := range currentGroup.LocationIDs {
-				if completedSet[locID] {
-					completedCount++
-				}
-			}
-
-			// Check if minimum met but not all complete
-			isMinimumMet := false
-			switch currentGroup.CompletionType {
-			case models.CompletionAll:
-				isMinimumMet = completedCount == len(currentGroup.LocationIDs)
-			case models.CompletionMinimum:
-				isMinimumMet = completedCount >= currentGroup.MinimumRequired
-			}
-
-			allComplete := completedCount == len(currentGroup.LocationIDs)
-			view.CanAdvanceEarly = isMinimumMet && !allComplete
-		}
-	}
-
-	// For task mode, load all locations in the group and partition by completion
-	if currentGroup != nil && currentGroup.Navigation == models.NavigationTasks {
-		uncompleted, completed, err := s.getScavengerHuntLocations(ctx, team, currentGroup)
-		if err != nil {
-			return nil, fmt.Errorf("loading scavenger hunt locations: %w", err)
-		}
-		view.NextLocations = uncompleted
-		view.CompletedLocations = completed
-
-		// Load task blocks for all locations (both completed and uncompleted)
-		allLocations := make([]models.Location, 0, len(uncompleted)+len(completed))
-		allLocations = append(allLocations, uncompleted...)
-		allLocations = append(allLocations, completed...)
-		for _, location := range allLocations {
-			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
-				ctx,
-				location.ID,
-				team.Code,
-				blocks.ContextTask,
-			)
-			if blockErr != nil {
-				return nil, fmt.Errorf("loading task blocks: %w", blockErr)
-			}
-			view.Blocks = append(view.Blocks, locationBlocks...)
-			maps.Copy(view.BlockStates, blockStates)
-		}
-
-		return view, nil
-	}
-
-	// Get next locations (standard flow for other display modes)
-	locations, err := s.determineNextLocations(ctx, team)
-	if err != nil {
-		return nil, err
-	}
-
-	// Load full relations for each location
-	for i := range locations {
-		if loadErr := s.locationRepo.LoadRelations(ctx, &locations[i]); loadErr != nil {
-			return nil, fmt.Errorf("loading relations for location: %w", loadErr)
-		}
-	}
-	view.NextLocations = locations
-
-	// Load navigation blocks if using custom or tasks display mode
-	var viewContext blocks.BlockContext
-	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
-		viewContext = blocks.ContextTask
-	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationCustom {
-		viewContext = blocks.ContextLocationClues
-	}
-	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {
-		for _, location := range locations {
-			locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
-				ctx,
-				location.ID,
-				team.Code,
-				viewContext,
-			)
-			if blockErr != nil {
-				return nil, fmt.Errorf("loading navigation blocks: %w", blockErr)
-			}
-			view.Blocks = append(view.Blocks, locationBlocks...)
-			maps.Copy(view.BlockStates, blockStates)
-		}
-	}
-
-	return view, nil
-}
-
-// determineNextLocations is the core logic for finding next locations without relation loading.
-func (s *NavigationService) determineNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error) {
-	if err := s.validateTeamState(team); err != nil {
-		return nil, err
-	}
-
-	// All games use GameStructure (migration converts legacy games)
-	return s.getValidLocationsFromGameStructure(ctx, team)
-}
-
-// validateTeamState checks if team has required relations loaded.
-func (s *NavigationService) validateTeamState(team *models.Team) error {
-	if team.Instance.ID == "" {
-		return ErrInstanceNotFound
-	}
-	if team.Instance.Settings.InstanceID == "" {
-		return ErrInstanceSettingsNotFound
-	}
-	// Note: Locations are no longer required here since all games use GameStructure
-	// and locations are loaded on-demand by group
-	return nil
-}
-
-// ensureTeamRelationsLoaded loads team relations if not already loaded.
-func (s *NavigationService) ensureTeamRelationsLoaded(ctx context.Context, team *models.Team) error {
-	if team.Instance.ID == "" || len(team.CheckIns) == 0 {
-		return s.teamRepo.LoadRelations(ctx, team)
-	}
-	return nil
-}
-
-// normalizeMarkerID trims and uppercases marker ID.
-func (s *NavigationService) normalizeMarkerID(markerID string) string {
-	return strings.TrimSpace(strings.ToUpper(markerID))
-}
-
-// getValidLocationsFromGameStructure determines valid locations using the GameStructure system.
-func (s *NavigationService) getValidLocationsFromGameStructure(
-	ctx context.Context,
-	team *models.Team,
-) ([]models.Location, error) {
-	// 1. Check if team is locked at a location (MustCheckOut)
-	// Use existing Team.MustCheckOut field (single source of truth)
-	if team.MustCheckOut != "" {
-		return []models.Location{}, nil // No locations available until checkout
-	}
-
-	// 2. Get completed location IDs from CheckIns
-	completedIDs := s.getCompletedLocationIDs(team.CheckIns)
-
-	// 3. Compute current group from completed locations (pure function, deterministic)
-	currentGroupID := navigation.ComputeCurrentGroup(&team.Instance.GameStructure, completedIDs, team.SkippedGroupIDs)
-
-	if currentGroupID == "" {
-		// No valid group (either no groups configured or all completed)
-		return []models.Location{}, nil
-	}
-
-	// 4. Get available location IDs using navigation package
-	locationIDs := navigation.GetAvailableLocationIDs(
-		&team.Instance.GameStructure,
-		currentGroupID,
-		completedIDs,
-		team.Code,
-	)
-
-	if len(locationIDs) == 0 {
-		// Check if game is complete (no next group to advance to)
-		_, shouldAdvance, _ := navigation.GetNextGroup(&team.Instance.GameStructure, currentGroupID, completedIDs)
-		if !shouldAdvance {
-			return []models.Location{}, ErrAllLocationsVisited
-		}
-		return []models.Location{}, nil
-	}
-
-	// 5. Fetch only the needed locations from database
-	locations := make([]models.Location, 0, len(locationIDs))
-	for _, id := range locationIDs {
-		location, err := s.locationRepo.GetByID(ctx, id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load location %s: %w", id, err)
-		}
-		locations = append(locations, *location)
-	}
-
-	return locations, nil
-}
-
-// GetPreviewNavigationView creates a simplified navigation view showing only
-// the specified location within its containing group for preview mode.
-func (s *NavigationService) GetPreviewNavigationView(
-	ctx context.Context,
-	team *models.Team,
-	locationID string,
-) (*PlayerNavigationView, error) {
-	// Load team relations if not already loaded
-	if err := s.ensureTeamRelationsLoaded(ctx, team); err != nil {
-		return nil, fmt.Errorf("loading team relations: %w", err)
-	}
-
-	// Find the group containing this location
-	group := navigation.FindGroupContainingLocation(&team.Instance.GameStructure, locationID)
-	if group == nil {
-		return nil, errors.New("location not found in game structure")
-	}
-
-	// Load the location
-	location, err := s.locationRepo.GetByID(ctx, locationID)
-	if err != nil {
-		return nil, fmt.Errorf("loading location: %w", err)
-	}
-
-	// Load location relations (including blocks)
-	err = s.locationRepo.LoadRelations(ctx, location)
-	if err != nil {
-		return nil, fmt.Errorf("loading location relations: %w", err)
-	}
-
-	view := &PlayerNavigationView{
-		Settings:        team.Instance.Settings,
-		CurrentGroup:    group,
-		NextLocations:   []models.Location{*location},
-		MustCheckOut:    false,
-		CanAdvanceEarly: false,
-		Blocks:          make([]blocks.Block, 0),
-		BlockStates:     make(map[string]blocks.PlayerState),
-	}
-
-	// Load navigation blocks if using custom or tasks display mode
-	var viewContext blocks.BlockContext
-	if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationTasks {
-		viewContext = blocks.ContextTask
-	} else if view.CurrentGroup != nil && view.CurrentGroup.Navigation == models.NavigationCustom {
-		viewContext = blocks.ContextLocationClues
-	}
-	if viewContext == blocks.ContextLocationClues || viewContext == blocks.ContextTask {
-		locationBlocks, blockStates, blockErr := s.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
-			ctx,
-			location.ID,
-			team.Code,
-			viewContext,
-		)
-		if blockErr != nil {
-			return nil, fmt.Errorf("loading navigation blocks: %w", blockErr)
-		}
-		view.Blocks = append(view.Blocks, locationBlocks...)
-		maps.Copy(view.BlockStates, blockStates)
-	}
-
-	return view, nil
-}
-
-// getCompletedLocationIDs extracts location IDs from check-ins where blocks are completed.
-// A location is only considered complete when BlocksCompleted is true.
-func (s *NavigationService) getCompletedLocationIDs(checkIns []models.CheckIn) []string {
-	completed := make([]string, 0, len(checkIns))
-	for _, checkIn := range checkIns {
-		if checkIn.BlocksCompleted {
-			completed = append(completed, checkIn.LocationID)
-		}
-	}
-	return completed
-}
-
-// getScavengerHuntLocations returns locations for task display mode.
-// Uncompleted locations use the same routing logic as other modes (guided, random, free roam).
-// Completed locations are all locations in the group where BlocksCompleted is true.
-// Both lists preserve the order defined by group.LocationIDs.
-func (s *NavigationService) getScavengerHuntLocations( //nolint:gocognit
-	ctx context.Context,
-	team *models.Team,
-	group *models.GameStructure,
-) ([]models.Location, []models.Location, error) {
-	if len(group.LocationIDs) == 0 {
-		return []models.Location{}, []models.Location{}, nil
-	}
-
-	// Get uncompleted locations using the same routing logic as other modes
-	// This respects guided/random/free roam strategies
-	uncompleted, err := s.determineNextLocations(ctx, team)
-	if err != nil {
-		// ErrAllLocationsVisited is expected when all tasks are complete
-		if errors.Is(err, ErrAllLocationsVisited) {
-			uncompleted = []models.Location{}
-		} else {
-			return nil, nil, fmt.Errorf("determining next locations: %w", err)
-		}
-	}
-
-	// Load relations for uncompleted locations
-	for i := range uncompleted {
-		if loadErr := s.locationRepo.LoadRelations(ctx, &uncompleted[i]); loadErr != nil {
-			return nil, nil, fmt.Errorf("loading location relations: %w", loadErr)
-		}
-	}
-
-	// Get completed locations: all locations in group where BlocksCompleted is true
-	// Build completion map from check-ins
-	completionMap := make(map[string]bool)
-	for _, checkIn := range team.CheckIns {
-		if checkIn.BlocksCompleted {
-			completionMap[checkIn.LocationID] = true
-		}
-	}
-
-	// Build set of group location IDs for filtering
-	groupLocationSet := make(map[string]bool)
-	for _, locID := range group.LocationIDs {
-		groupLocationSet[locID] = true
-	}
-
-	// Collect completed locations in group order
-	completed := make([]models.Location, 0)
-	for _, locID := range group.LocationIDs {
-		if !completionMap[locID] {
-			continue // Not completed
-		}
-		if !groupLocationSet[locID] {
-			continue // Not in this group
-		}
-
-		loc, loadErr := s.locationRepo.GetByID(ctx, locID)
-		if loadErr != nil {
-			return nil, nil, fmt.Errorf("loading completed location: %w", loadErr)
-		}
-		loadErr = s.locationRepo.LoadRelations(ctx, loc)
-		if loadErr != nil {
-			return nil, nil, fmt.Errorf("loading location relations: %w", loadErr)
-		}
-		completed = append(completed, *loc)
-	}
-
-	return uncompleted, completed, nil
-}
-
-// getAccessibleSecretLocations returns secret locations that are accessible from the team's current position.
-// Secret locations are never displayed to players but are valid for check-in via QR code, link, or GPS.
-func (s *NavigationService) getAccessibleSecretLocations(
-	ctx context.Context,
-	team *models.Team,
-) ([]models.Location, error) {
-	if err := s.validateTeamState(team); err != nil {
-		return nil, err
-	}
-
-	// Get completed location IDs
-	completedIDs := s.getCompletedLocationIDs(team.CheckIns)
-
-	// Compute current group
-	currentGroupID := navigation.ComputeCurrentGroup(&team.Instance.GameStructure, completedIDs, team.SkippedGroupIDs)
-	if currentGroupID == "" {
-		return []models.Location{}, nil
-	}
-
-	// Get accessible secret location IDs from navigation package
-	secretLocationIDs := navigation.GetAccessibleSecretLocationIDs(
-		&team.Instance.GameStructure,
-		currentGroupID,
-		completedIDs,
-	)
-
-	if len(secretLocationIDs) == 0 {
-		return []models.Location{}, nil
-	}
-
-	// Fetch actual location objects
-	locations := make([]models.Location, 0, len(secretLocationIDs))
-	for _, id := range secretLocationIDs {
-		location, err := s.locationRepo.GetByID(ctx, id)
-		if err != nil {
-			return nil, fmt.Errorf("failed to load secret location %s: %w", id, err)
-		}
-		locations = append(locations, *location)
-	}
-
-	return locations, nil
+	return &PlayerObjectiveView{
+		Settings: team.Quest.Settings,
+		Frontier: navigation.Frontier{
+			Status:    map[string]navigation.Status{objective.ID: navigation.StatusAvailable},
+			Available: []models.Objective{*objective},
+		},
+	}, nil
 }

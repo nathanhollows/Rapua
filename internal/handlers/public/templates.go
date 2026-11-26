@@ -4,8 +4,8 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
 )
 
 func (h *Handler) TemplatesPreview(w http.ResponseWriter, r *http.Request) {
@@ -22,7 +22,7 @@ func (h *Handler) TemplatesPreview(w http.ResponseWriter, r *http.Request) {
 		c := templates.TemplateNotFound()
 		err = templates.PublicLayout(c, "Template not found", authed).Render(r.Context(), w)
 		if err != nil {
-			h.logger.Error("Contact: rendering template", "error", err)
+			h.logger.ErrorContext(r.Context(), "Contact: rendering template", "error", err)
 		}
 		return
 	}
@@ -31,6 +31,6 @@ func (h *Handler) TemplatesPreview(w http.ResponseWriter, r *http.Request) {
 	c := templates.TemplatePeview(*shareLink, authed)
 	err = templates.PublicLayout(c, "Template: "+shareLink.Template.Name, authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Contact: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Contact: rendering template", "error", err)
 	}
 }

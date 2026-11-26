@@ -1,0 +1,151 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+templ freeTextPlayer(settings models.QuestSettings, block blocks.FreeTextBlock, data blocks.PlayerState) {
+	@freeTextCard(settings, block, data, false)
+}
+
+templ freeTextPlayerUpdate(settings models.QuestSettings, block blocks.FreeTextBlock, data blocks.PlayerState) {
+	@freeTextCard(settings, block, data, true)
+}
+
+// freeTextCard takes a written answer and gives it back as a quote. It can be edited
+// afterwards: what was sent is not final, and saving again changes the answer.
+templ freeTextCard(settings models.QuestSettings, block blocks.FreeTextBlock, data blocks.PlayerState, update bool) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class={ "qb-card", templ.KV("is-fresh", update) }
+		if update {
+			hx-swap-oob="true"
+		}
+	>
+		@qbTop("pencil", "Free text", settings, block.GetPoints(), data)
+		<div class="qb-q">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+		</div>
+		if data.IsComplete() {
+			<div id={ fmt.Sprintf("ft-view-%s", block.ID) } class="qb-form">
+				<div>
+					<p class="qb-quote-cap">Your answer</p>
+					<blockquote class="qb-quote">{ block.GetResponse(data) }</blockquote>
+				</div>
+				<button
+					type="button"
+					class="qb-btn2"
+					_={ fmt.Sprintf("on click add .hidden to #ft-view-%s then remove .hidden from #ft-edit-%s then call (the first <textarea/> in #ft-edit-%s).focus()", block.ID, block.ID, block.ID) }
+				>
+					@icon("pencil", templ.Attributes{"aria-hidden": "true"})
+					Edit answer
+				</button>
+			</div>
+			<form
+				id={ fmt.Sprintf("ft-edit-%s", block.ID) }
+				class="qb-form hidden"
+				hx-post="/blocks/validate"
+				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+			>
+				<input type="hidden" name="block" value={ block.ID }/>
+				<textarea
+					name="response"
+					class="qb-text"
+					style="field-sizing: content;"
+					aria-label="Your answer"
+					required
+				>{ block.GetResponse(data) }</textarea>
+				<button
+					type="submit"
+					class="btn btn-primary qb-go"
+					disabled
+					_="
+						on input from (closest <form />).querySelector('textarea')
+							set :ta to (closest <form />).querySelector('textarea')
+							set my.disabled to (:ta.value.trim() is '' or :ta.value is :ta.defaultValue)
+						end
+					"
+				>
+					<span class="qb-idle">Change your answer to save</span>
+					<span class="qb-ready">
+						Save changes
+						@icon("check", templ.Attributes{"aria-hidden": "true"})
+					</span>
+				</button>
+				<button
+					type="button"
+					class="qb-btn2"
+					_={ fmt.Sprintf("on click add .hidden to #ft-edit-%s then remove .hidden from #ft-view-%s then set (the first <textarea/> in #ft-edit-%s).value to (the first <textarea/> in #ft-edit-%s).defaultValue", block.ID, block.ID, block.ID, block.ID) }
+				>
+					Cancel
+				</button>
+			</form>
+		} else {
+			<form
+				class="qb-form"
+				hx-post="/blocks/validate"
+				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+			>
+				<input type="hidden" name="block" value={ block.ID }/>
+				<p class="qb-hint">There is no wrong answer.</p>
+				<textarea
+					name="response"
+					class="qb-text"
+					style="field-sizing: content;"
+					aria-label="Your answer"
+					if block.Placeholder != "" {
+						placeholder={ block.Placeholder }
+					} else {
+						placeholder="Type your answer here…"
+					}
+					required
+				></textarea>
+				<button
+					type="submit"
+					class="btn btn-primary qb-go"
+					disabled
+					_="
+						on input from (closest <form />).querySelector('textarea')
+							set my.disabled to ((closest <form />).querySelector('textarea').value.trim() is '')
+						end
+					"
+				>
+					<span class="qb-idle">Write an answer</span>
+					<span class="qb-ready">
+						Send answer
+						@icon("send-horizontal", templ.Attributes{"aria-hidden": "true"})
+					</span>
+				</button>
+			</form>
+		}
+	</div>
+}
+
+var freeTextPromptTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "Describe what you see, smell, or think about this location.",
+	Markdown:    true,
+	HelpText:    "The question or instruction shown to the player.",
+}
+
+var freeTextPlaceholderInput = TextInputParams{
+	Name:        "placeholder",
+	Title:       "Placeholder",
+	Placeholder: "Type your response here...",
+	HelpText:    "Placeholder text shown in the empty text field.",
+}
+
+templ freeTextAdmin(settings models.QuestSettings, block blocks.FreeTextBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input) delay:1000ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		@TextareaField(freeTextPromptTextarea.SetValue(block.Prompt))
+		@TextInputField(freeTextPlaceholderInput.SetValue(block.Placeholder))
+	</form>
+}

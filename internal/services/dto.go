@@ -1,6 +1,8 @@
 package services
 
-import "time"
+import (
+	"time"
+)
 
 const (
 	always = "always"
@@ -10,39 +12,77 @@ const (
 	year   = "year"
 )
 
-// LocationUpdateData is the data required to update a new location. Blank
-// fields are ignored, with the exception of Clues and ClueIDs which
-// are always required.
-type LocationUpdateData struct {
-	Name      string
-	Latitude  float64
-	Longitude float64
-	Points    int
+// BandUpdate carries the completion band as the form submitted it. An explicit
+// 0 differs from an omitted bound (see game.FillBand), so both are pointers.
+type BandUpdate struct {
+	Min *int
+	Max *int
+}
+
+// ObjectiveUpdateData holds the fields an update names. A nil field means
+// "leave unchanged," which is what lets a control that touches one setting,
+// like the tree's eye toggle, submit without clearing everything it does not
+// name.
+type ObjectiveUpdateData struct {
+	Title string
+	// Draft publishes or parks the objective. A pointer because the form may
+	// not be offering the control at all, and "not mentioned" has to differ
+	// from "publish this".
+	Draft *bool
+	// PassThrough marks the objective as a section the player never stands in.
+	// A pointer for the same reason Draft is one.
+	PassThrough *bool
+	// Secret keeps the objective unlisted until found. A pointer for the same
+	// reason Draft is one.
+	Secret *bool
+	// Routing names the route strategy. Nil leaves it alone; a set value is
+	// validated before it is applied.
+	Routing *string
+	// MaxNext caps how many children a randomised node offers at once.
+	MaxNext *int
+	// Band carries the completion band. Nil is "the form did not offer it",
+	// which is how the eye toggle leaves a section's band alone. A non-nil
+	// Band with nil bounds is the author clearing it, which the UI offers as
+	// "leave both blank to require all children" and a bare *int pair could
+	// not express: nil meant both "unchanged" and "cleared".
+	Band        *BandUpdate
+	FinishLabel *string
+	// Description is the detail shown under the title. A pointer, because a
+	// form that does not offer the field must leave one written on a form that
+	// did alone, and an author clearing it means it.
+	Description *string
+	// Depends replaces the variables the objective waits on. Nil leaves them
+	// alone; an empty slice removes the gate.
+	Depends *[]string
 }
 
 // LeaderBoardTeamData represents a team's data for leaderboard display.
 type LeaderBoardTeamData struct {
-	ID           string
-	Code         string
-	Name         string
-	Points       int
-	LastSeen     time.Time
-	Progress     int
-	Status       TeamStatus
-	Rank         int
-	HasStarted   bool
-	MustCheckOut string
-	CheckInCount int
+	ID       string
+	Code     string
+	Name     string
+	Points   int
+	LastSeen time.Time
+	// Total makes Progress a share: raw counts mislead once runs differ in length.
+	Progress   int
+	Total      int
+	Status     TeamStatus
+	Rank       int
+	HasStarted bool
 }
 
 // TeamStatus represents the current status of a team.
 type TeamStatus string
 
 const (
-	StatusStarted  TeamStatus = "started"
-	StatusOnsite   TeamStatus = "onsite"
-	StatusTransit  TeamStatus = "transit"
-	StatusFinished TeamStatus = "finished"
+	StatusNotStarted TeamStatus = "not_started"
+	// StatusStarted has too little history for a pace.
+	StatusStarted   TeamStatus = "started"
+	StatusPlaying   TeamStatus = "playing"
+	StatusIdle      TeamStatus = "idle"
+	StatusStalled   TeamStatus = "stalled"
+	StatusAbandoned TeamStatus = "abandoned"
+	StatusFinished  TeamStatus = "finished"
 )
 
 // SortField represents the field to sort by.

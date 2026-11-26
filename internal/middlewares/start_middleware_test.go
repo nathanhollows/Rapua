@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun/schema"
 )
 
@@ -86,7 +86,7 @@ func TestStartMiddleware_InvalidTeamType(t *testing.T) {
 
 	// Create a request with wrong team type in context
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, "not a team object")
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, "not a team object")
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -119,8 +119,8 @@ func TestStartMiddleware_NilTeamOrEmptyCode(t *testing.T) {
 
 	// Create a request with team having empty code
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
-	team := &models.Team{Code: ""}
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	team := &models.Run{Code: ""}
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -155,13 +155,13 @@ func TestStartMiddleware_ScheduledGameRedirectsToStart(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
 
 	// Mock instance with non-active status
-	instance := models.Instance{Status: models.Scheduled}
-	team := &models.Team{
-		Code:     "team123",
-		Instance: instance,
+	instance := models.Quest{Status: models.Scheduled}
+	team := &models.Run{
+		Code:  "team123",
+		Quest: instance,
 	}
 
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -196,13 +196,13 @@ func TestStartMiddleware_AlreadyInStart(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/start", nil)
 
 	// Mock instance with non-active status
-	instance := models.Instance{Status: models.Scheduled}
-	team := &models.Team{
-		Code:     "team123",
-		Instance: instance,
+	instance := models.Quest{Status: models.Scheduled}
+	team := &models.Run{
+		Code:  "team123",
+		Quest: instance,
 	}
 
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
@@ -233,26 +233,75 @@ func TestStartMiddleware_ActiveGameProceedsNormally(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "http://example.com/next", nil)
 
 	// Mock instance with active status
-	instance := models.Instance{
+	instance := models.Quest{
 		StartTime: schema.NullTime{Time: time.Now()},
 		EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
 	}
-	team := &models.Team{
-		Code:     "team123",
-		Instance: instance,
+	team := &models.Run{
+		Code:       "team123",
+		Quest:      instance,
+		HasStarted: true,
 	}
 
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	rr := httptest.NewRecorder()
 	middleware.ServeHTTP(rr, req)
 
 	if !nextCalled {
-		t.Error("expected next handler to be called for active game")
+		t.Error("expected next handler to be called for an active game the team has started")
 	}
 
 	if rr.Code != http.StatusOK {
 		t.Errorf("expected status code %d, got %d", http.StatusOK, rr.Code)
+	}
+}
+
+// TestStartMiddleware_ActiveGameButNotStartedRedirectsToStart is the
+// regression test for the bug this gate exists to close: PlayPost/
+// PlayWithCode attach a session without marking the run started, so a team
+// that joined an already-active game but hasn't pressed the start button yet
+// must still be sent to /start, not waved through to whatever route it asked
+// for (e.g. /objectives).
+func TestStartMiddleware_ActiveGameButNotStartedRedirectsToStart(t *testing.T) {
+	nextCalled := false
+
+	nextHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		nextCalled = true
+		w.WriteHeader(http.StatusOK)
+	})
+
+	dummyService := &dummyTeamService{}
+	middleware := StartMiddleware(dummyService, nextHandler)
+
+	req := httptest.NewRequest(http.MethodGet, "http://example.com/objectives", nil)
+
+	instance := models.Quest{
+		StartTime: schema.NullTime{Time: time.Now()},
+		EndTime:   schema.NullTime{Time: time.Now().Add(1 * time.Hour)},
+	}
+	team := &models.Run{
+		Code:       "team123",
+		Quest:      instance,
+		HasStarted: false,
+	}
+
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
+	req = req.WithContext(ctx)
+
+	rr := httptest.NewRecorder()
+	middleware.ServeHTTP(rr, req)
+
+	if nextCalled {
+		t.Error("expected next handler not to be called for a team that hasn't started")
+	}
+
+	if rr.Code != http.StatusFound {
+		t.Errorf("expected status code %d, got %d", http.StatusFound, rr.Code)
+	}
+
+	if location := rr.Header().Get("Location"); location != "/start" {
+		t.Errorf("expected redirect to /start, got %s", location)
 	}
 }

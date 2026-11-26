@@ -14,9 +14,9 @@ Control when your game starts and ends. You can run games manually or schedule t
 
 Use the **Start** and **Stop** buttons on the Activity Tracker to control the game manually.
 
-**Start** — Opens the game immediately. Teams can begin playing.
+**Start**: Opens the game immediately. Teams can begin playing.
 
-**Stop** — Closes the game immediately. Teams can no longer check in.
+**Stop** - Closes the game immediately. Teams can no longer play, and the quest becomes editable again.
 
 Manual buttons override any scheduled times.
 
@@ -34,7 +34,7 @@ Click the **Schedule** button (calendar icon) on the Activity Tracker to set aut
 **Scheduled End**
 - Tick the checkbox and set a date and time
 - Game automatically closes at that time
-- Teams in progress can finish their current location
+- Teams in progress can finish their current objective
 
 You can schedule just a start time, just an end time, or both. Start time must be before end time.
 
@@ -42,11 +42,11 @@ You can schedule just a start time, just an end time, or both. Start time must b
 
 ## Game States
 
-**Closed** — No schedule set or game has ended. Teams see a closed message and cannot start.
+**Closed**: No schedule set or game has ended. Teams see a closed message and cannot start.
 
-**Scheduled** — Start time is set but hasn't been reached. Teams see a countdown and the start button is disabled.
+**Scheduled**: Start time is set but hasn't been reached. Teams see a countdown and the start button is disabled.
 
-**Active** — Game is running. Teams can start playing.
+**Active**: Game is running. Teams can start playing.
 
 Configure what teams see for each state in the [Game Status Alert block](/docs/user/blocks/game-status-alert).
 

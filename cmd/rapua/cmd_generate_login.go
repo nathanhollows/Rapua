@@ -7,8 +7,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/uptrace/bun"
 	"github.com/urfave/cli/v2"
 )

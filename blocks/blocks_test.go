@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // Test that each registered block can be created from a base block.
 func TestCreateFromBaseBlock(t *testing.T) {
-	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextObjectiveProof) {
 		t.Run("creates "+block.GetName()+" from base block", func(t *testing.T) {
 			baseBlock := blocks.BaseBlock{
 				ID:      "1",
@@ -27,7 +28,12 @@ func TestCreateFromBaseBlock(t *testing.T) {
 			assert.IsType(t, block, newBlock)
 			assert.Equal(t, block.GetType(), newBlock.GetType())
 			assert.Equal(t, "1", newBlock.GetID())
-			assert.Equal(t, 10, newBlock.GetPoints())
+			// A clue is paid for, so what it holds is a cost however it was written.
+			want := 10
+			if block.GetType() == "clue" {
+				want = -10
+			}
+			assert.Equal(t, want, newBlock.GetPoints())
 		})
 	}
 }
@@ -57,7 +63,7 @@ func TestBlockUniqueness(t *testing.T) {
 	icons := make(map[string]bool)
 	descriptions := make(map[string]bool)
 
-	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextObjectiveProof) {
 		t.Run("block uniqueness", func(t *testing.T) {
 			assert.False(t, types[block.GetType()], "duplicate type: "+block.GetType())
 			types[block.GetType()] = true
@@ -74,21 +80,63 @@ func TestBlockUniqueness(t *testing.T) {
 	}
 }
 
-// Ensure that all blocks registered for ContextCheckpoint are interactive (require validation).
-func TestCheckpointBlocksAreInteractive(t *testing.T) {
-	checkpointBlocks := blocks.GetBlocksForContext(blocks.ContextCheckpoint)
+// Sets and depends ride in every block's data, so a save that goes through a
+// block type's own marshalling must not drop them.
+func TestBlockDataKeepsVars(t *testing.T) {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextObjectiveProof) {
+		t.Run(block.GetType(), func(t *testing.T) {
+			newBlock, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
+				ID:   "1",
+				Type: block.GetType(),
+				Data: json.RawMessage(`{"sets":"met_guide","depends":["a","b"]}`),
+			})
+			require.NoError(t, err)
+			require.NoError(t, newBlock.ParseData())
+			assert.Equal(t, "met_guide", newBlock.GetSets())
+			assert.Equal(t, []string{"a", "b"}, []string(newBlock.GetDepends()))
 
-	for _, block := range checkpointBlocks {
-		t.Run(block.GetName()+" requires validation", func(t *testing.T) {
-			assert.True(t, block.RequiresValidation(),
-				"Checkpoint block %s (%s) must require validation to ensure player interaction",
-				block.GetName(), block.GetType())
+			var data map[string]any
+			require.NoError(t, json.Unmarshal(newBlock.GetData(), &data))
+			assert.Equal(t, "met_guide", data["sets"])
+			assert.Equal(t, []any{"a", "b"}, data["depends"])
 		})
 	}
+}
 
-	// If no blocks are registered for checkpoint context, this test still passes
-	// but will provide coverage when blocks are added in the future.
-	if len(checkpointBlocks) == 0 {
-		t.Log("No blocks registered for ContextCheckpoint - test will validate them when added")
+// The editor's ordinary autosave goes through UpdateBlockData, which knows
+// nothing of variables and must leave them be.
+func TestBlockAutosaveKeepsVars(t *testing.T) {
+	cases := []struct {
+		blockType string
+		form      map[string][]string
+	}{
+		{"text", map[string][]string{"content": {"Welcome"}}},
+		{"free_text", map[string][]string{"prompt": {"Who?"}, "points": {"5"}}},
 	}
+	for _, c := range cases {
+		t.Run(c.blockType, func(t *testing.T) {
+			block, err := blocks.CreateFromBaseBlock(blocks.BaseBlock{
+				ID: "1", Type: c.blockType, Data: json.RawMessage(`{"sets":"met_guide","depends":["a"]}`),
+			})
+			require.NoError(t, err)
+			require.NoError(t, block.ParseData())
+			require.NoError(t, block.UpdateBlockData(c.form))
+
+			var data map[string]any
+			require.NoError(t, json.Unmarshal(block.GetData(), &data))
+			assert.Equal(t, "met_guide", data["sets"])
+			assert.Equal(t, []any{"a"}, data["depends"])
+		})
+	}
+}
+
+// Naming a team completes through its own endpoint, never check-in, so a key
+// on it would never turn.
+func TestTeamNameCannotSetVars(t *testing.T) {
+	block := &blocks.TeamNameChangerBlock{BaseBlock: blocks.BaseBlock{Sets: "named"}}
+	assert.False(t, game.CanSetVars(block))
+	assert.Nil(t, game.DeclaredVars(block))
+	assert.True(t, game.CanSetVars(&blocks.FreeTextBlock{}))
+	assert.False(t, game.CanSetVars(&blocks.ChoiceBlock{}))
+	assert.False(t, game.CanSetVars(&blocks.MarkdownBlock{}))
 }

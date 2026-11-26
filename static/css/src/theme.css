@@ -1,0 +1,116 @@
+@plugin '@tailwindcss/typography';
+@plugin 'daisyui' {}
+
+@plugin "daisyui/theme" {
+  name: "cupcake";
+  default: true;
+  prefersdark: false;
+  color-scheme: "light";
+  /* Cupcake's ground, lifted a step so the accents can be lighter, under
+     dracula's hues, so both themes say the same thing in the same colours:
+     guided green, open cyan, random purple. Warning and error are plain
+     yellow and red rather than dracula's orange and pink, so neither needs
+     learning. The yellow is gold, because a brighter one vanishes on white.
+     Guided leans from dracula's lime toward green and open from cyan toward
+     azure, because a lime or a cyan dark enough to read on white is olive or
+     a dull teal. Each accent is as light as 3:1 on the ground allows, the
+     least an outline or an icon needs to be seen, and as saturated as sRGB
+     holds there. Error is held to 3.5:1, a step darker, and warning goes to
+     the lightest the theme test allows, so the two stay apart: at one
+     lightness they read as one alarm. As in dracula, each content is a dark
+     tint of its own hue, so a filled button is a bright colour under dark
+     text. */
+  --color-base-100: oklch(99.3% 0.003 56.375);
+  --color-base-200: oklch(96.5% 0.006 61.449);
+  --color-base-300: oklch(93.5% 0.006 53.44);
+  --color-base-content: oklch(23.574% 0.066 313.189);
+  --color-primary: oklch(64.8% 0.186 135);
+  --color-primary-content: oklch(22.8% 0.061 135);
+  --color-secondary: oklch(64.6% 0.159 154.35);
+  --color-secondary-content: oklch(22.6% 0.051 154.35);
+  --color-accent: oklch(69.2% 0.233 314.595);
+  --color-accent-content: oklch(27.2% 0.1 314.595);
+  --color-neutral: oklch(14% 0.005 285.823);
+  --color-neutral-content: oklch(92% 0.004 286.32);
+  --color-info: oklch(65.5% 0.122 225);
+  --color-info-content: oklch(23.5% 0.04 225);
+  --color-success: oklch(64.4% 0.183 148.024);
+  --color-success-content: oklch(22.4% 0.059 148.024);
+  --color-warning: oklch(73.8% 0.148 90);
+  --color-warning-content: oklch(31.8% 0.059 90);
+  --color-error: oklch(65.2% 0.229 27);
+  --color-error-content: oklch(23.2% 0.086 27);
+  --radius-selector: 1rem;
+  --radius-field: 2rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 2px;
+  --depth: 1;
+  --noise: 0;
+}
+
+@plugin "daisyui/theme" {
+  name: "dracula";
+  default: false;
+  prefersdark: true;
+  color-scheme: "dark";
+  --color-base-100: oklch(28.822% 0.022 277.508);
+  --color-base-200: oklch(26.805% 0.02 277.508);
+  --color-base-300: oklch(24.787% 0.019 277.508);
+  --color-base-content: oklch(97.747% 0.007 106.545);
+  --color-primary: oklch(75.46% 0.183 122.31);
+  --color-primary-content: oklch(15.46% 0.183 122.31);
+  --color-secondary: oklch(75.46% 0.183 154.35);
+  --color-secondary-content: oklch(15.46% 0.183 154.35);
+  --color-accent: oklch(75.46% 0.183 314.595);
+  --color-accent-content: oklch(15.46% 0.183 314.595);
+  --color-neutral: oklch(39.445% 0.032 275.524);
+  --color-neutral-content: oklch(87.889% 0.006 275.524);
+  --color-info: oklch(88.263% 0.093 212.846);
+  --color-info-content: oklch(17.652% 0.018 212.846);
+  --color-success: oklch(87.099% 0.219 148.024);
+  --color-success-content: oklch(17.419% 0.043 148.024);
+  --color-error: oklch(75.46% 0.183 5.895);
+  --color-error-content: oklch(15.46% 0.183 5.895);
+  --color-warning: oklch(75.46% 0.183 61.425);
+  --color-warning-content: oklch(15.46% 0.183 61.425);
+  --radius-selector: 1rem;
+  --radius-field: 1rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 1;
+}
+
+@custom-variant dark (&:where([data-theme=dracula], [data-theme=dracula] *));
+
+@theme {
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+
+  @keyframes wobble {
+    from {
+      transform: translate3d(0, 0, 0);
+    }
+    15% {
+      transform: translate3d(-25%, 0, 0) rotate3d(0, 0, 1, -5deg);
+    }
+    30% {
+      transform: translate3d(20%, 0, 0) rotate3d(0, 0, 1, 3deg);
+    }
+    45% {
+      transform: translate3d(-15%, 0, 0) rotate3d(0, 0, 1, -3deg);
+    }
+    60% {
+      transform: translate3d(10%, 0, 0) rotate3d(0, 0, 1, 2deg);
+    }
+    75% {
+      transform: translate3d(-5%, 0, 0) rotate3d(0, 0, 1, -1deg);
+    }
+    to {
+      transform: translate3d(0, 0, 0);
+    }
+  }
+}

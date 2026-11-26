@@ -1,0 +1,481 @@
+package templates
+
+import (
+	"fmt"
+	"unicode/utf8"
+
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+type EditObjectiveData struct {
+	Settings     models.QuestSettings
+	Objective    models.Objective
+	ProofBlocks  blocks.Blocks
+	RevealBlocks blocks.Blocks
+	// ChildCount: routing/band/max_next mean nothing without children, but a
+	// leaf can gain them later, so they're shown regardless.
+	ChildCount int
+	// ParentTitle and ParentPill describe the containing section, drawn around
+	// the preview row. Empty when the parent is the root.
+	ParentTitle string
+	ParentPill  string
+	// SiblingsBefore and SiblingsAfter are the rows beside this objective in
+	// its list, so its own row can be judged among them. A few, not all.
+	SiblingsBefore []ListRow
+	SiblingsAfter  []ListRow
+	// Lint is the whole quest's run, not this objective's slice of it: the
+	// root's diagnostics live with the quest and this is the only page that
+	// can act on them.
+	Lint services.QuestLint
+}
+
+// TotalPoints is the objective's point value: the sum of its proof and reveal
+// blocks' points, not a field of its own.
+func (data EditObjectiveData) TotalPoints() int {
+	total := 0
+	for _, b := range data.ProofBlocks {
+		total += b.GetPoints()
+	}
+	for _, b := range data.RevealBlocks {
+		total += b.GetPoints()
+	}
+	return total
+}
+
+// FirstProofIcon is the icon of the first proof block that asks the player for
+// something, matching the player's own row. Empty when none does.
+func (data EditObjectiveData) FirstProofIcon() string {
+	for _, block := range data.ProofBlocks {
+		if block.RequiresValidation() {
+			return block.GetIconSVG()
+		}
+	}
+	return ""
+}
+
+// zoneWords holds a zone's labels. Param is the zone's key in the editor script.
+type zoneWords struct {
+	Name  string
+	Why   string
+	Param string
+	// PhoneEmpty is said inside the phone when the zone has no blocks.
+	PhoneEmpty string
+	proof      bool
+	system     bool
+	// dock is whether the player's navigation shows on this screen. Pre-game
+	// pages have none: a dock of tabs that go nowhere is worse than none.
+	dock bool
+}
+
+func zoneWordsFor(zone blocks.BlockContext) zoneWords {
+	switch zone {
+	case blocks.ContextObjectiveReveal:
+		return zoneWords{
+			Name:       "Reveal",
+			Why:        "what they get once the proof is cleared",
+			Param:      "reveal",
+			PhoneEmpty: "No reveal. Players go straight back to the quest list.",
+			dock:       true,
+		}
+	case blocks.ContextStart:
+		return zoneWords{
+			Name:       "Content",
+			Why:        "what players see before they begin",
+			Param:      "start",
+			PhoneEmpty: "Nothing here yet. Players see a blank page.",
+			system:     true,
+		}
+	case blocks.ContextFinish:
+		return zoneWords{
+			Name:       "Content",
+			Why:        "what players see when they finish",
+			Param:      "finish",
+			PhoneEmpty: "Nothing here yet. Players see only the finish banner.",
+			system:     true,
+			dock:       true,
+		}
+	}
+	return zoneWords{
+		Name:       "Proof",
+		Why:        "what they do here to complete it",
+		Param:      "proof",
+		PhoneEmpty: "No proof. Players open straight to the reveal.",
+		proof:      true,
+		dock:       true,
+	}
+}
+
+func (z zoneWords) Blocks(data EditObjectiveData) blocks.Blocks {
+	if z.proof {
+		return data.ProofBlocks
+	}
+	return data.RevealBlocks
+}
+
+// visibilityBtnTip names what a click on the visibility button does.
+func visibilityBtnTip(draft bool) string {
+	if draft {
+		return "Draft: click to publish"
+	}
+	return "Published: click to park"
+}
+
+// bandValueStr renders nil as blank, so the input's own placeholder shows
+// through instead of a literal "0".
+func bandValueStr(bound *int) string {
+	if bound == nil {
+		return ""
+	}
+	return fmt.Sprint(*bound)
+}
+
+// MaxNextBound renders 0 as nil: 0 means no limit, not an explicit cap.
+func (data EditObjectiveData) MaxNextBound() *int {
+	if data.Objective.MaxNext == 0 {
+		return nil
+	}
+	v := data.Objective.MaxNext
+	return &v
+}
+
+// objectiveSecretListPreview draws what a player has instead of the card: a
+// secret is never in the list, and the quest page's scan control is the only
+// way in.
+templ objectiveSecretListPreview() {
+	<div class="flex flex-col gap-3 items-stretch">
+		<div class="q-alt" aria-hidden="true">
+			@icon("scan-qr-code", templ.Attributes{"class": "w-6 h-6"})
+			Scan a code
+		</div>
+		<p class="q-soft text-sm text-center text-pretty">
+			Not in the list. Players open this by scanning its code, from the quest page or with their phone's camera.
+		</p>
+	</div>
+}
+
+// objectiveCardRow is the row itself, drawn the same whether or not it sits
+// inside a container.
+// ListRow is a neighbouring objective as the player's list draws it.
+type ListRow struct {
+	Title       string
+	Description string
+	// IconSVG is empty when the proof asks nothing.
+	IconSVG string
+	// IsDoor is an objective with no proof, so its row must not promise work.
+	IsDoor bool
+}
+
+// listRowIcon is the player's rule: what the proof asks for, else a door when
+// there is no proof, else a plain marker.
+templ listRowIcon(iconSVG string, isDoor bool) {
+	if iconSVG != "" {
+		@templ.Raw(iconSVG)
+	} else if isDoor {
+		@icon("book-open", templ.Attributes{})
+	} else {
+		@icon("circle-dot", templ.Attributes{})
+	}
+}
+
+templ objectiveCardRow(data EditObjectiveData) {
+	<!-- The player's own tile classes, not a copy: a preview that differs from
+	the game previews something else. -->
+	<div id="objective-card" class="q-tile">
+		<span class="q-ico">
+			@listRowIcon(data.FirstProofIcon(), len(data.ProofBlocks) == 0)
+		</span>
+		<span class="grow min-w-0 flex flex-col gap-1">
+			<span id="objective-card-title" class="q-title">
+				{ data.Objective.Title }
+			</span>
+			<span
+				id="objective-card-description"
+				class={ "q-desc q-soft", templ.KV("hidden", data.Objective.Description == "") }
+			>
+				{ data.Objective.Description }
+			</span>
+		</span>
+		@icon("chevron-right", templ.Attributes{"class": "w-5 h-5 shrink-0 opacity-60"})
+	</div>
+}
+
+// objectiveDescription is the second half of the task: the detail a player
+// needs once they are there. Called description rather than context, this
+// codebase's word for proof and reveal, and rather than instruction, which is
+// what the title is.
+templ objectiveDescription(data EditObjectiveData) {
+	<fieldset class="fieldset w-full">
+		<legend class="fieldset-legend">
+			Description
+			<span id="description-count" class="obj-count">{ fmt.Sprintf("%d / 280", utf8.RuneCountInString(data.Objective.Description)) }</span>
+		</legend>
+		<textarea
+			id="description"
+			name="description"
+			form="edit-objective"
+			rows="2"
+			maxlength="280"
+			class="textarea w-full"
+			placeholder="Second bed on the left, past the glasshouse. The label is on a metal stake."
+			_="on input
+				set #objective-card-description's textContent to my value
+				then set #description-count's textContent to my value.length + ' / 280'
+				then if my value is '' then
+					add .hidden to #objective-card-description
+				else
+					remove .hidden from #objective-card-description
+				end"
+		>{ data.Objective.Description }</textarea>
+		<p class="label text-xs">Shown under the task when they open it, and on the quest list.</p>
+	</fieldset>
+}
+
+// objectiveLinkRow shows the objective's URL and makes changing it explicit.
+// The slug is visible to players, and a title that names the task would give
+// the answer away in the address bar. Scan codes belong to the scan block, so
+// printed QRs survive a slug change.
+templ objectiveLinkRow(data EditObjectiveData) {
+	<div class="obj-link">
+		@icon("link", templ.Attributes{"class": "w-4 h-4 shrink-0 text-(--soft)"})
+		<code>{ fmt.Sprint("/objective/", data.Objective.Slug) }</code>
+		<button
+			type="button"
+			class="btn btn-sm btn-square tooltip"
+			data-tip="Copy link"
+			data-path={ fmt.Sprint("/objective/", data.Objective.Slug) }
+			data-ignore-lock
+			aria-label="Copy link"
+			_="on click
+				call navigator.clipboard.writeText(window.location.origin + my @data-path)
+				then set my @data-tip to 'Copied'
+				then wait 1.5s
+				then set my @data-tip to 'Copy link'"
+		>
+			@icon("copy", templ.Attributes{"class": "w-4 h-4"})
+		</button>
+		<small>Players can see this. Keep it vague if the task name would give the answer away.</small>
+	</div>
+}
+
+// objectiveSaveState confirms an autosave landed, since there is no save button.
+templ objectiveSaveState() {
+	<span
+		id="save-state"
+		class="text-xs opacity-0 transition-opacity flex items-center gap-1.5"
+		_="on htmx:beforeRequest from #edit-objective
+			set my textContent to 'Saving'
+			then remove .opacity-0 from me
+		on htmx:afterRequest from #edit-objective
+			set my textContent to 'Saved'
+			then wait 2s
+			then add .opacity-0 to me"
+	></span>
+}
+
+// EditObjective autosaves: there is no save button.
+templ EditObjective(data EditObjectiveData) {
+	<!-- Typing waits a second because every save re-lints the whole quest.
+	Discrete changes fire sooner. -->
+	<form
+		id="edit-objective"
+		hx-post={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
+		hx-trigger="keyup from:[form=edit-objective] delay:1s, change from:[form=edit-objective] delay:500ms"
+		hx-swap="none"
+	></form>
+	<div class="obj-page" data-objective-editor data-points-enabled={ fmt.Sprint(data.Settings.EnablePoints) }>
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-5 pb-4">
+			<h1 class="text-4xl font-black mr-auto">Objective</h1>
+			@objectiveSaveState()
+			<!-- In a menu so an irreversible action is not at primary weight. -->
+			<details class="dropdown dropdown-end">
+				<summary class="btn btn-sm btn-square" aria-label="More actions">
+					@icon("ellipsis", templ.Attributes{"class": "w-4 h-4"})
+				</summary>
+				<ul class="dropdown-content menu bg-base-100 rounded-box z-20 w-56 p-2 shadow-lg border border-base-300">
+					<li>
+						<button type="button" class="text-error" onclick="confirm_delete_modal.showModal();">
+							@icon("trash-2", templ.Attributes{"class": "w-4 h-4"})
+							Delete objective
+						</button>
+					</li>
+				</ul>
+			</details>
+		</div>
+		<div class="panel obj-strip">
+			<div id="visibility-control" class="contents">
+				@objectiveVisibilityControl(data.Objective.Draft)
+			</div>
+			<div id="secret-control" class="contents">
+				@objectiveSecretControl(data.Objective)
+			</div>
+			@ObjectiveDependsButton(data.Objective)
+			<span class="grow"></span>
+			if data.Settings.EnablePoints {
+				<span class="obj-worth">Worth <b data-total-all>{ fmt.Sprintf("%d points", data.TotalPoints()) }</b></span>
+			}
+		</div>
+		<div id="objective-depends-edit" class="empty:hidden mb-3.5"></div>
+		<section id="zone-card" data-sec="task" data-zone="card" class="cs">
+			<div class="cs-head">
+				<span class="obj-num">1</span>
+				<span class="obj-title">
+					<h2>The task</h2>
+					<small>what the player is asked to do</small>
+				</span>
+			</div>
+			@objectiveLintSlot(data.Lint, data.Objective.ID, "task", false)
+			<div class="panel cs-panel cs-task">
+				<div class="ct-panel cf-fields">
+					<fieldset class="fieldset w-full">
+						<legend class="fieldset-legend">Task</legend>
+						<input
+							type="text"
+							id="title"
+							name="title"
+							form="edit-objective"
+							class="input input-lg w-full font-semibold"
+							value={ data.Objective.Title }
+							required
+							placeholder="Find the plan chest in the Architecture Library"
+							_="on input set #objective-card-title's textContent to my value"
+						/>
+						<p class="label text-xs">Say what they have to do, not where it is. The place can go in the words.</p>
+					</fieldset>
+					@objectiveDescription(data)
+					@objectiveLinkRow(data)
+				</div>
+				<aside class="cs-phonecol cs-prevcol">
+					@objectiveListPreview(data)
+				</aside>
+			</div>
+		</section>
+		@objectiveSection(data, blocks.ContextObjectiveProof, "2")
+		@objectiveSection(data, blocks.ContextObjectiveReveal, "3")
+		@objectiveEditorAssets()
+	</div>
+	<dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box prose outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete this objective?</h3>
+			<p class="pt-4">You are about to delete this objective. Are you sure?</p>
+			<div class="modal-action">
+				<button
+					type="button"
+					class="btn"
+					onclick="confirm_delete_modal.close()"
+				>Nevermind</button>
+				<button
+					type="button"
+					class="btn btn-error"
+					hx-delete={ fmt.Sprint("/admin/objective/", data.Objective.Slug) }
+					hx-trigger="click"
+					onclick="confirm_delete_modal.close()"
+				>Delete</button>
+			</div>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
+	</dialog>
+}
+
+// objectiveVisibilityControl is the switch and the checkbox the form actually
+// submits. Factored out so the server can send it back when it refuses a
+// change: the switch flips optimistically, and a refused park would otherwise
+// leave the form describing a state the database rejected, with every later
+// autosave resubmitting that same refusal.
+templ objectiveVisibilityControl(draft bool) {
+	<button
+		id="visibility-btn"
+		type="button"
+		role="switch"
+		class="obj-switch tooltip tooltip-bottom"
+		aria-checked={ fmt.Sprint(!draft) }
+		data-tip={ visibilityBtnTip(draft) }
+		_="on click
+			set cb to #published-checkbox
+			set cb.checked to not cb.checked
+			send change to cb
+			if cb.checked
+				add .hidden to #visibility-eye-off
+				remove .hidden from #visibility-eye
+				set #visibility-label's textContent to 'Published'
+				set my @aria-checked to 'true'
+			else
+				add .hidden to #visibility-eye
+				remove .hidden from #visibility-eye-off
+				set #visibility-label's textContent to 'Draft'
+				set my @aria-checked to 'false'
+			end"
+	>
+		<span id="visibility-eye" class={ templ.KV("hidden", draft) }>
+			@icon("eye", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+		<span id="visibility-eye-off" class={ templ.KV("hidden", !draft) }>
+			@icon("eye-closed", templ.Attributes{"class": "w-4 h-4"})
+		</span>
+		<span id="visibility-label">
+			if draft {
+				Draft
+			} else {
+				Published
+			}
+		</span>
+		<i aria-hidden="true"></i>
+	</button>
+	<input
+		type="checkbox"
+		id="published-checkbox"
+		name="published"
+		value="true"
+		form="edit-objective"
+		class="hidden"
+		checked?={ !draft }
+	/>
+}
+
+// objectiveSecretControl posts on its own rather than through the autosaving
+// form: secrecy is one action, and the server sends the control back with the
+// stored state either way. The root has none, since it cannot be secret.
+templ objectiveSecretControl(objective models.Objective) {
+	if objective.ParentID != "" {
+		<button
+			id="secret-btn"
+			type="button"
+			role="switch"
+			class="obj-switch tooltip tooltip-bottom"
+			data-tip={ secretBtnTip(objective.Secret) }
+			aria-checked={ fmt.Sprint(objective.Secret) }
+			hx-post={ "/admin/objective/" + objective.Slug + "/secret" }
+			hx-vals={ fmt.Sprintf(`{"secret":"%t","surface":"edit"}`, !objective.Secret) }
+			hx-swap="none"
+		>
+			@icon("hat-glasses", templ.Attributes{"class": "w-4 h-4"})
+			Secret
+			<i aria-hidden="true"></i>
+		</button>
+	}
+}
+
+func secretBtnTip(secret bool) string {
+	if secret {
+		return "Secret: unlisted until a player scans it. Click to list it"
+	}
+	return "Make secret: unlisted until a player scans it"
+}
+
+// ObjectiveSecretOOB puts the stored secrecy back on screen after a toggle.
+templ ObjectiveSecretOOB(objective models.Objective) {
+	<div id="secret-control" class="contents" hx-swap-oob="true">
+		@objectiveSecretControl(objective)
+	</div>
+}
+
+// ObjectiveVisibilityOOB puts the stored visibility back on screen after a
+// refusal, so the form stops offering a state the database will not take.
+templ ObjectiveVisibilityOOB(draft bool) {
+	<div id="visibility-control" class="contents" hx-swap-oob="true">
+		@objectiveVisibilityControl(draft)
+	</div>
+}

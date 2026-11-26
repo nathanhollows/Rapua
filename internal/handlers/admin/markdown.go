@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/render"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/internal/render"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
 )
 
 // PreviewMarkdown takes markdown from a form and renders it for htmx.
@@ -33,6 +33,6 @@ func (h *Handler) PreviewMarkdown(w http.ResponseWriter, r *http.Request) {
 
 	err = templates.MarkdownPreview(md).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("markdown preview: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "markdown preview: rendering template", "error", err)
 	}
 }

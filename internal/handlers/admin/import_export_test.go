@@ -1,10 +1,8 @@
-//nolint:testpackage // Tests need access to unexported parseUploadedDoc
 package admin
 
 import (
 	"bytes"
 	"context"
-	"io"
 	"log/slog"
 	"mime/multipart"
 	"net/http"
@@ -12,15 +10,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-// validImportDocJSON returns a minimal valid v7 game document as JSON.
 func validImportDocJSON() string {
-	return `{"rapua":"v7","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","navigation":"map","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","navigation":"map","completion":"all","children":[{"location":{"slug":"a","name":"A","content":[]}}]}}]}}`
+	return `{"rapua":"v8","name":"Test Game","settings":{},"start":[{"type":"start_button"}],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[{"group":{"name":"G","routing":"free_roam","completion":"all","children":[{"objective":{"slug":"a","title":"A","proof":{},"reveal":{}}}]}}]}}`
 }
 
 func withImportUser(r *http.Request) *http.Request {
@@ -30,7 +27,7 @@ func withImportUser(r *http.Request) *http.Request {
 
 func newImportHandler() *Handler {
 	return &Handler{
-		logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
+		logger: slog.New(slog.DiscardHandler),
 	}
 }
 
@@ -40,10 +37,10 @@ func TestParseUploadedDoc_JSONBody(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(validImportDocJSON()))
 	req.Header.Set("Content-Type", "application/json")
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
 	require.NoError(t, err)
-	assert.Equal(t, "v7", doc.Rapua)
+	assert.Equal(t, "v8", doc.Rapua)
 	assert.Equal(t, "Test Game", doc.Name)
 }
 
@@ -59,10 +56,10 @@ func TestParseUploadedDoc_MultipartFile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
 	require.NoError(t, err)
-	assert.Equal(t, "v7", doc.Rapua)
+	assert.Equal(t, "v8", doc.Rapua)
 	assert.Equal(t, "Test Game", doc.Name)
 }
 
@@ -70,9 +67,9 @@ func TestParseUploadedDoc_InvalidJSON(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`not json`))
 	req.Header.Set("Content-Type", "application/json")
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Nil(t, doc)
 }
 
@@ -84,9 +81,23 @@ func TestParseUploadedDoc_MultipartMissingFile(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 
-	doc, err := parseUploadedDoc(req)
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
 
-	assert.Error(t, err)
+	require.Error(t, err)
+	assert.Nil(t, doc)
+}
+
+// An import past the cap is refused with the size named, rather than being
+// shortened by a limit reader and read back as malformed JSON.
+func TestParseUploadedDoc_OversizedIsRefused(t *testing.T) {
+	padded := append([]byte(validImportDocJSON()), bytes.Repeat([]byte(" "), maxDocBytes)...)
+	req := httptest.NewRequest(http.MethodPost, "/", bytes.NewReader(padded))
+	req.Header.Set("Content-Type", "application/json")
+
+	doc, err := parseUploadedDoc(httptest.NewRecorder(), req)
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "too large")
 	assert.Nil(t, doc)
 }
 
@@ -94,7 +105,7 @@ func TestParseUploadedDoc_MultipartMissingFile(t *testing.T) {
 
 func TestImportCheck_MalformedUpload(t *testing.T) {
 	h := newImportHandler()
-	req := httptest.NewRequest(http.MethodPost, "/admin/instances/import/check",
+	req := httptest.NewRequest(http.MethodPost, "/admin/quests/import/check",
 		strings.NewReader(`not json`))
 	req.Header.Set("Content-Type", "application/json")
 	req = withImportUser(req)
@@ -110,8 +121,8 @@ func TestImportCheck_MalformedUpload(t *testing.T) {
 func TestImportCheck_InvalidDoc_LintFails(t *testing.T) {
 	h := newImportHandler()
 	// Missing required "name" field → lint error
-	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","navigation":"map","completion":"all","children":[]}}`
-	req := httptest.NewRequest(http.MethodPost, "/admin/instances/import/check",
+	body := `{"rapua":"v8","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
+	req := httptest.NewRequest(http.MethodPost, "/admin/quests/import/check",
 		strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	req = withImportUser(req)
@@ -125,9 +136,9 @@ func TestImportCheck_InvalidDoc_LintFails(t *testing.T) {
 }
 
 func TestImportCheck_ValidDoc_NoDocID(t *testing.T) {
-	// A valid doc without an ID — skips the instanceService lookup entirely.
+	// A valid doc without an ID — skips the questService lookup entirely.
 	h := newImportHandler()
-	req := httptest.NewRequest(http.MethodPost, "/admin/instances/import/check",
+	req := httptest.NewRequest(http.MethodPost, "/admin/quests/import/check",
 		strings.NewReader(validImportDocJSON()))
 	req.Header.Set("Content-Type", "application/json")
 	req = withImportUser(req)

@@ -1,28 +1,16 @@
 package templates
 
 import (
-	"fmt"
 	"html/template"
-	"os"
-	"sync"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/render"
+	"github.com/a-h/templ"
+	lucide "github.com/kaugesaar/lucide-go"
+	"github.com/nathanhollows/Rapua/v8/internal/render"
 )
 
-var cssVersion string
-var cssVersionOnce sync.Once
-
-// getCSSVersion returns the CSS version, ensuring it is only set once.
-func getCSSVersion() string {
-	cssVersionOnce.Do(func() {
-		if stat, err := os.Stat("static/css/tailwind.css"); err == nil {
-			cssVersion = fmt.Sprintf("?v=%d", stat.ModTime().Unix())
-		} else {
-			cssVersion = "&v=1"
-		}
-	})
-	return cssVersion
+func icon(name string, attrs templ.Attributes) templ.Component {
+	return templ.Raw(lucide.Icon(name, attrs))
 }
 
 func currYear() string {

@@ -2,175 +2,78 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	bTemplates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type EditPageData struct {
-	Settings   models.InstanceSettings
+	Settings   models.QuestSettings
 	PageBlocks blocks.Blocks
 	PageTitle  string
 	PageType   string
 }
 
-templ EditPage(data EditPageData) {
-	<!-- Header -->
-	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">{ data.PageTitle } Page</h1>
-		<div class="tooltip" data-tip="System page - cannot be deleted">
-			<div class="badge badge-ghost gap-1">
-				<svg class="w-3 h-3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-					<rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect>
-					<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-				</svg>
-				System Page
+// SystemPageEditor is the Start or Complete page: what the linter says about it,
+// then its blocks in the same editor an objective's proof and reveal use.
+templ SystemPageEditor(lint services.QuestLint, pathPrefix string, data EditPageData) {
+	{{ zone := getContextForPageType(data.PageType) }}
+	<div class="obj-page" data-objective-editor data-points-enabled={ fmt.Sprint(data.Settings.EnablePoints) }>
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-1 pt-5 pb-3">
+			<h1 class="text-4xl font-black mr-auto">{ data.PageTitle } page</h1>
+			<div class="tooltip tooltip-left" data-tip="System page. It cannot be deleted.">
+				<span class="badge badge-ghost gap-1.5">
+					@icon("lock", templ.Attributes{"class": "w-3 h-3", "width": "12", "height": "12"})
+					System page
+				</span>
 			</div>
 		</div>
-	</div>
-	<div class="flex flex-col lg:flex-row w-full gap-8 p-5 pt-0">
-		<div class="flex flex-col flex-grow min-w-0">
-			<!-- Blocks -->
-			<section>
-				@blockAddButton(data.Settings.InstanceID, getContextForPageType(data.PageType), ".blocks")
-				<!-- Hidden alert templates -->
-				<div id="missing-game-status-template" class="alert alert-warning" style="display: none;">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-						<path d="M12 9v4"></path>
-						<path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z"></path>
-						<path d="M12 16h.01"></path>
-					</svg>
-					<span class="flex-1">Recommended: Add a <strong>Game Status</strong> block to show game state to players</span>
-					<form
-						hx-post="/admin/blocks/"
-						hx-target="closest .blocks"
-						hx-swap="beforeend"
-					>
-						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
-						<input type="hidden" name="context" value={ string(getContextForPageType(data.PageType)) }/>
-						<input type="hidden" name="type" value="game_status"/>
-						<button type="submit" class="btn btn-sm btn-warning">Add block</button>
-					</form>
-				</div>
-				<div id="missing-start-button-template" class="alert alert-warning" style="display: none;">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-						<path d="M12 9v4"></path>
-						<path d="M10.363 3.591l-8.106 13.534a1.914 1.914 0 0 0 1.636 2.871h16.214a1.914 1.914 0 0 0 1.636-2.87L13.637 3.59a1.914 1.914 0 0 0-3.274 0z"></path>
-						<path d="M12 16h.01"></path>
-					</svg>
-					<span class="flex-1">Recommended: Add a <strong>Start Button</strong> block so players can begin the game</span>
-					<form
-						hx-post="/admin/blocks/"
-						hx-target="closest .blocks"
-						hx-swap="beforeend"
-					>
-						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
-						<input type="hidden" name="context" value="start"/>
-						<input type="hidden" name="type" value="start_button"/>
-						<button type="submit" class="btn btn-sm btn-warning">Add block</button>
-					</form>
-				</div>
-				<div id="missing-game-status-complete-template" class="alert alert-info" style="display: none;">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6">
-						<circle cx="12" cy="12" r="10"></circle>
-						<path d="M12 16v-4"></path>
-						<path d="M12 8h.01"></path>
-					</svg>
-					<span class="flex-1">Optional: Add a <strong>Game Status</strong> block to show game completion</span>
-					<form
-						hx-post="/admin/blocks/"
-						hx-target="closest .blocks"
-						hx-swap="beforeend"
-					>
-						<input type="hidden" name="owner" value={ data.Settings.InstanceID }/>
-						<input type="hidden" name="context" value={ string(getContextForPageType(data.PageType)) }/>
-						<input type="hidden" name="type" value="game_status"/>
-						<button type="submit" class="btn btn-sm btn-info">Add block</button>
-					</form>
-				</div>
-				<div
-					id="blocks-container"
-					class="blocks flex flex-col gap-5"
-					data-page-type={ data.PageType }
-				>
-					for _, block := range data.PageBlocks {
-						@bTemplates.RenderAdminBlock(data.Settings, block, len(data.PageBlocks) < 4)
-					}
-				</div>
-				<script>
-				function checkMissingBlocks() {
-					const container = document.getElementById('blocks-container');
-					const pageType = container.dataset.pageType;
-
-					// Remove existing alerts
-					document.querySelectorAll('#missing-game-status, #missing-start-button').forEach(el => el.remove());
-
-					const blocks = container.querySelectorAll('.content-block');
-					let hasGameStatus = false;
-					let hasStartButton = false;
-
-					blocks.forEach(block => {
-						const blockType = block.dataset.blockType;
-						if (blockType === 'game_status') hasGameStatus = true;
-						if (blockType === 'start_button') hasStartButton = true;
-					});
-
-					const firstBlock = container.querySelector('.content-block');
-
-					function insertAlert(templateId, alertId, ref) {
-						const el = document.getElementById(templateId).cloneNode(true);
-						el.id = alertId;
-						el.style.display = '';
-						if (ref) {
-							container.insertBefore(el, ref);
-						} else {
-							container.appendChild(el);
-						}
-						htmx.process(el);
-					}
-
-					if (pageType === 'start') {
-						if (!hasGameStatus) insertAlert('missing-game-status-template', 'missing-game-status', firstBlock);
-						if (!hasStartButton) insertAlert('missing-start-button-template', 'missing-start-button', firstBlock);
-					} else if (pageType === 'end') {
-						if (!hasGameStatus) insertAlert('missing-game-status-complete-template', 'missing-game-status', firstBlock);
-					}
-				}
-
-				// Run on load
-				checkMissingBlocks();
-
-				// Run after HTMX swaps
-				document.getElementById('blocks-container').addEventListener('htmx:afterSwap', checkMissingBlocks);
-				</script>
-			</section>
+		<div id="system-page-lint">
+			@SystemPageLint(lint, pathPrefix)
 		</div>
-		<!-- Preview -->
-		<div class="h-min sticky top-3">
-			<div class="mockup-phone bg-black h-min shadow-2xl">
-				<div class="mockup-phone-display overflow-y-scroll overflow-x-hidden bg-base-100 w-96">
-					<div
-						id="mobile-preview-container"
-						class="sm:mx-auto sm:w-full sm:max-w-sm block overflow-y-scroll px-6 py-12 bg-base-200/50 min-h-full"
-						hx-get={ getPreviewURLForPageType(data.PageType) }
-						hx-trigger="load, htmx:afterSwap from:.blocks"
-						hx-vals={ fmt.Sprint(`{"instanceID": "`, data.Settings.InstanceID, `"}`) }
-						hx-swap="innerHTML"
-						_="on changePreviewPage from <body/> 
-					set @hx-get to event.detail.sender.dataset.url
-					then call htmx.process(me)
-					then trigger load"
-					></div>
-				</div>
-			</div>
-		</div>
+		@systemPageHints(data, zone)
+		@blockSection(blockSectionData{
+			Settings:   data.Settings,
+			Zone:       zone,
+			Blocks:     data.PageBlocks,
+			OwnerID:    data.Settings.QuestID,
+			PreviewURL: getPreviewURLForPageType(data.PageType),
+		})
+		@objectiveEditorAssets()
 	</div>
-	<!-- Hidden form for block reordering via HTMX -->
-	@blockReorderForm()
-	@deleteBlockModal()
-	@previewSortableScript()
-	@blockMoveScript()
-	@sortableStyles()
+}
+
+// systemPageHints offers the blocks a page usually wants. The editor script
+// shows each only while the page has no block of that type, so adding one
+// makes its hint go away without asking the server.
+templ systemPageHints(data EditPageData, zone blocks.BlockContext) {
+	<div class="flex flex-col gap-2" data-hints>
+		if data.PageType == "start" {
+			@systemPageHint(data, zone, "game_status", "alert-warning", "Recommended: add a Game Status block to show game state to players.")
+			@systemPageHint(data, zone, "start_button", "alert-warning", "Recommended: add a Start Button block so players can begin the game.")
+		}
+	</div>
+}
+
+// systemPageHint is only offered for a block the page can hold: a button that
+// the server would refuse is worse than no hint.
+templ systemPageHint(data EditPageData, zone blocks.BlockContext, blockType, tone, text string) {
+	if blocks.CanBlockBeUsedInContext(blockType, zone) {
+		@systemPageHintAlert(data, zone, blockType, tone, text)
+	}
+}
+
+templ systemPageHintAlert(data EditPageData, zone blocks.BlockContext, blockType, tone, text string) {
+	<div class={ "alert", tone } data-hint-for={ blockType } hidden>
+		@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
+		<span class="flex-1">{ text }</span>
+		<form hx-post="/admin/blocks/" hx-target={ "#forms-" + zoneWordsFor(zone).Param } hx-swap="beforeend">
+			<input type="hidden" name="owner" value={ data.Settings.QuestID }/>
+			<input type="hidden" name="context" value={ string(zone) }/>
+			<input type="hidden" name="type" value={ blockType }/>
+			<button type="submit" class="btn btn-sm">Add block</button>
+		</form>
+	</div>
 }
 
 func getContextForPageType(pageType string) blocks.BlockContext {

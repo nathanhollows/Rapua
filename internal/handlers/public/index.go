@@ -3,16 +3,20 @@ package public
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	"github.com/a-h/templ"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func (h *Handler) Index(w http.ResponseWriter, r *http.Request) {
-	c := templates.Index()
-	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	err := templates.PublicLayout(c, "Home", authed).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("Error rendering index", "err", err)
-		return
+	// A closed quest has nothing to resume.
+	run, _ := r.Context().Value(contextkeys.RunKey).(*models.Run)
+	if run != nil && run.Quest.GetStatus() == models.Closed {
+		run = nil
 	}
+	h.renderPage(w, r, "home", func(authed bool) templ.Component {
+		return templates.Home(run, services.RunCodeLength, services.LegacyRunCodeLength, authed)
+	})
 }

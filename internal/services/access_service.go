@@ -4,38 +4,35 @@ import (
 	"context"
 	"errors"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 )
 
 type AccessService struct {
-	blockRepo    repositories.BlockRepository
-	instanceRepo repositories.InstanceRepository
-	locationRepo repositories.LocationRepository
-	markerRepo   repositories.MarkerRepository
+	blockRepo     repositories.BlockRepository
+	instanceRepo  repositories.QuestRepository
+	objectiveRepo repositories.ObjectiveRepository
 }
 
-// NewAccessService creates a new instance of accessService.
+// NewAccessService creates an accessService.
 func NewAccessService(
 	blockRepository repositories.BlockRepository,
-	instanceRepository repositories.InstanceRepository,
-	locationRepository repositories.LocationRepository,
-	markerRepository repositories.MarkerRepository,
+	questRepository repositories.QuestRepository,
+	objectiveRepository repositories.ObjectiveRepository,
 ) *AccessService {
 	return &AccessService{
-		blockRepo:    blockRepository,
-		instanceRepo: instanceRepository,
-		locationRepo: locationRepository,
-		markerRepo:   markerRepository,
+		blockRepo:     blockRepository,
+		instanceRepo:  questRepository,
+		objectiveRepo: objectiveRepository,
 	}
 }
 
-// CanAdminAccessInstance checks if the user can access the instance.
-func (s *AccessService) CanAdminAccessInstance(ctx context.Context, userID, instanceID string) (bool, error) {
+// CanAdminAccessQuest checks if the user can access the quest.
+func (s *AccessService) CanAdminAccessQuest(ctx context.Context, userID, questID string) (bool, error) {
 	if userID == "" {
 		return false, ErrUserNotAuthenticated
 	}
-	if instanceID == "" {
+	if questID == "" {
 		return false, errors.New("instance ID cannot be empty")
 	}
 
@@ -45,7 +42,7 @@ func (s *AccessService) CanAdminAccessInstance(ctx context.Context, userID, inst
 	}
 
 	for _, instance := range instanceIDs {
-		if instance.ID == instanceID {
+		if instance.ID == questID {
 			return true, nil
 		}
 	}
@@ -53,13 +50,12 @@ func (s *AccessService) CanAdminAccessInstance(ctx context.Context, userID, inst
 	return false, nil
 }
 
-// CanAdminAccessLocation checks if the user can access the location in the given instance.
-func (s *AccessService) CanAdminAccessLocation(ctx context.Context, userID, locationID string) (bool, error) {
+func (s *AccessService) CanAdminAccessObjective(ctx context.Context, userID, objectiveID string) (bool, error) {
 	if userID == "" {
 		return false, errors.New("user ID cannot be empty")
 	}
-	if locationID == "" {
-		return false, errors.New("location ID cannot be empty")
+	if objectiveID == "" {
+		return false, errors.New("objective ID cannot be empty")
 	}
 
 	instanceIDs, err := s.instanceRepo.FindByUserID(ctx, userID)
@@ -67,31 +63,16 @@ func (s *AccessService) CanAdminAccessLocation(ctx context.Context, userID, loca
 		return false, err
 	}
 
-	location, err := s.locationRepo.GetByID(ctx, locationID)
+	objective, err := s.objectiveRepo.GetByID(ctx, objectiveID)
 	if err != nil {
 		return false, err
 	}
 	for _, instance := range instanceIDs {
-		if instance.ID == location.InstanceID {
+		if instance.ID == objective.QuestID {
 			return true, nil
 		}
 	}
 	return false, nil
-}
-
-// CanAdminAccessMarker checks if the user can access the marker in the given instance.
-func (s *AccessService) CanAdminAccessMarker(ctx context.Context, userID, markerID string) (bool, error) {
-	if userID == "" {
-		return false, errors.New("user ID cannot be empty")
-	}
-	if markerID == "" {
-		return false, errors.New("marker ID cannot be empty")
-	}
-	access, err := s.markerRepo.UserOwnsMarker(ctx, userID, markerID)
-	if err != nil {
-		return false, err
-	}
-	return access, nil
 }
 
 // CanAdminAccessBlock checks if the user can access the block in the given instance.
@@ -119,11 +100,14 @@ func (s *AccessService) CanAdminAccessBlockOwner(
 		return false, errors.New("owner ID cannot be empty")
 	}
 
-	// For start/complete blocks, owner is instanceID/complete
-	if blockContext == blocks.ContextStart || blockContext == blocks.ContextFinish {
-		return s.CanAdminAccessInstance(ctx, userID, ownerID)
+	switch blockContext {
+	case blocks.ContextStart, blocks.ContextFinish:
+		// For start/complete blocks, owner is questID/complete.
+		return s.CanAdminAccessQuest(ctx, userID, ownerID)
+	case blocks.ContextObjectiveProof, blocks.ContextObjectiveReveal:
+		return s.CanAdminAccessObjective(ctx, userID, ownerID)
+	default:
+		// No other contexts own blocks, so deny access.
+		return false, nil
 	}
-
-	// For location blocks, owner is locationID
-	return s.CanAdminAccessLocation(ctx, userID, ownerID)
 }

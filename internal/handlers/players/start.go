@@ -1,14 +1,17 @@
 package players
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	blockstemplates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	blockstemplates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 const (
@@ -17,15 +20,15 @@ const (
 
 // Start is where teams wait for the game to begin.
 func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
 	}
 
-	err = h.teamService.LoadRelations(r.Context(), team)
+	err = h.runService.LoadRelations(r.Context(), team)
 	if err != nil {
-		h.logger.Error("loading check ins", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "loading check ins", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
@@ -38,33 +41,69 @@ func (h *PlayerHandler) Start(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value(contextkeys.PreviewKey) != nil {
 		teamCode = ""
 	}
-	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	pageBlocks, blockStates, err := h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 		r.Context(),
-		team.InstanceID,
+		team.QuestID,
 		teamCode,
+		team.QuestID,
 		blocks.ContextStart,
 	)
 	if err != nil {
-		h.logger.Error("getting start blocks", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "getting start blocks", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
 
 	// If the user is in preview mode, only render the template, not the full layout.
-	template := templates.Start(*team, pageBlocks, blockStates)
+	template := templates.Start(
+		*team, pageBlocks, blockStates,
+		h.hiddenBlocks(r.Context(), team, pageBlocks), isPreview(r.Context()),
+	)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
 		template = templates.Layout(template, "Start", team.Messages)
 	}
 
 	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering start", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering start", "error", err.Error())
 	}
+}
+
+// StartGame marks the run started (deducting a host credit and stamping
+// StartedAt) when the player presses the start button, then sends them into
+// the quest. This is the only place a run is ever marked started: joining
+// (PlayPost/PlayWithCode) deliberately does not, so every team sees the
+// start page's content before StartMiddleware lets them past it.
+func (h *PlayerHandler) StartGame(w http.ResponseWriter, r *http.Request) {
+	team, err := h.getRunFromContext(r.Context())
+	if err != nil {
+		h.redirect(w, r, "/play")
+		return
+	}
+
+	if team.Quest.GetStatus() != models.Active {
+		h.handleError(w, r, "StartGame: quest not active", "This game isn't open yet.")
+		return
+	}
+
+	err = h.runService.StartPlaying(r.Context(), team.Code)
+	if err != nil {
+		if errors.Is(err, services.ErrInsufficientCredits) {
+			h.handleError(w, r, "StartGame: insufficient credits",
+				"Unable to start game. The host has been notified.", "error", err, "team", team.Code)
+			return
+		}
+		h.handleError(w, r, "StartGame: starting game", "Could not start the game. Please try again.",
+			"error", err, "team", team.Code)
+		return
+	}
+
+	h.redirect(w, r, "/objectives")
 }
 
 // GetTeamNameValue returns just the team name value for auto-population.
 func (h *PlayerHandler) GetTeamNameValue(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
@@ -73,13 +112,13 @@ func (h *PlayerHandler) GetTeamNameValue(w http.ResponseWriter, r *http.Request)
 	w.Header().Set("Content-Type", "text/plain")
 	_, err = w.Write([]byte(team.Name))
 	if err != nil {
-		h.logger.Error("writing team name value", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "writing team name value", "error", err.Error())
 	}
 }
 
 // GetTeamNameForm returns the team name form fragment.
 func (h *PlayerHandler) GetTeamNameForm(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -87,13 +126,13 @@ func (h *PlayerHandler) GetTeamNameForm(w http.ResponseWriter, r *http.Request) 
 
 	err = templates.TeamNameForm(*team).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering team name form", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering team name form", "error", err.Error())
 	}
 }
 
 // SetTeamName sets the team name and returns completion status.
 func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -145,8 +184,7 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	team.Name = teamName
-	err = h.teamService.Update(r.Context(), team)
+	err = h.runService.RenameRun(r.Context(), team, teamName)
 	if err != nil {
 		h.handleError(w, r, "Error updating team", "Error updating team", "error", err)
 		return
@@ -156,6 +194,6 @@ func (h *PlayerHandler) SetTeamName(w http.ResponseWriter, r *http.Request) {
 	err = blockstemplates.TeamNameChangerComplete(*teamNameBlock, team.Name, teamNameBlock.AllowChanging).
 		Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering team name complete", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering team name complete", "error", err.Error())
 	}
 }

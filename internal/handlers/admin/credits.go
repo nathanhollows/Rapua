@@ -8,9 +8,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stripe/stripe-go/v83"
 )
 
@@ -65,12 +65,17 @@ func (h *Handler) CreateCheckoutSession(w http.ResponseWriter, r *http.Request) 
 	h.redirect(w, r, session.URL)
 }
 
+// maxWebhookBytes caps a webhook body before it is read. The route is public
+// and answers to a signature rather than a session, so the size is the only
+// thing the caller cannot choose: Stripe's largest events are a fraction of it.
+const maxWebhookBytes = 1 << 20 // 1 MB
+
 // StripeWebhook handles Stripe webhook events.
 func (h *Handler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
-	// Read request body
+	r.Body = http.MaxBytesReader(w, r.Body, maxWebhookBytes)
 	payload, err := io.ReadAll(r.Body)
 	if err != nil {
-		h.logger.Error("StripeWebhook: read body", "error", err)
+		h.logger.ErrorContext(r.Context(), "StripeWebhook: read body", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -78,7 +83,7 @@ func (h *Handler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
 	// Get Stripe signature header
 	signature := r.Header.Get("Stripe-Signature")
 	if signature == "" {
-		h.logger.Error("StripeWebhook: missing signature")
+		h.logger.ErrorContext(r.Context(), "StripeWebhook: missing signature")
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -88,12 +93,12 @@ func (h *Handler) StripeWebhook(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, services.ErrPurchaseAlreadyProcessed) {
 			// Idempotency: return 200 for already processed events
-			h.logger.Warn("StripeWebhook: purchase already processed")
+			h.logger.WarnContext(r.Context(), "StripeWebhook: purchase already processed")
 			w.WriteHeader(http.StatusOK)
 			return
 		}
 
-		h.logger.Error("StripeWebhook: process webhook", "error", err)
+		h.logger.ErrorContext(r.Context(), "StripeWebhook: process webhook", "error", err)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
@@ -115,7 +120,7 @@ func (h *Handler) CreditPurchaseSuccess(w http.ResponseWriter, r *http.Request) 
 	// SECURITY: Verify session belongs to authenticated user
 	purchase, err := h.creditPurchaseRepo.GetByStripeSessionID(r.Context(), sessionID)
 	if err != nil {
-		h.logger.Error("failed to get purchase by session ID",
+		h.logger.ErrorContext(r.Context(), "failed to get purchase by session ID",
 			"error", err,
 			"session_id", sessionID,
 		)
@@ -124,7 +129,7 @@ func (h *Handler) CreditPurchaseSuccess(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if purchase == nil || purchase.UserID != user.ID {
-		h.logger.Warn("unauthorized access to purchase success page",
+		h.logger.WarnContext(r.Context(), "unauthorized access to purchase success page",
 			"user_id", user.ID,
 			"session_id", sessionID,
 			"purchase_user_id", func() string {
@@ -142,7 +147,7 @@ func (h *Handler) CreditPurchaseSuccess(w http.ResponseWriter, r *http.Request) 
 	c := templates.Settings(templates.CreditPurchaseSuccessContent(sessionID))
 	err = templates.Layout(c, *user, "Purchase Successful", "Purchase Successful").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering credit purchase success page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering credit purchase success page", "error", err.Error())
 	}
 }
 
@@ -154,6 +159,6 @@ func (h *Handler) CreditPurchaseCancel(w http.ResponseWriter, r *http.Request) {
 	c := templates.Settings(templates.CreditPurchaseCancelContent())
 	err := templates.Layout(c, *user, "Purchase Cancelled", "Purchase Successful").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering credit purchase cancel page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering credit purchase cancel page", "error", err.Error())
 	}
 }

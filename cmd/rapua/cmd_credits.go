@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 	"github.com/urfave/cli/v2"
 )
@@ -109,10 +109,10 @@ func newCreditsCommand(dbc *bun.DB, logger *slog.Logger) *cli.Command {
 
 					ctx := c.Context
 					creditRepo := repositories.NewCreditRepository(dbc)
-					teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+					runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 					userRepo := repositories.NewUserRepository(dbc)
 					transactor := db.NewTransactor(dbc)
-					creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+					creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 
 					params := addCreditsParams{
 						Email:        email,

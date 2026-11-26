@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 type PincodeBlock struct {
@@ -80,7 +81,6 @@ func (b *PincodeBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // Validation and Points Calculation
 
 func (b *PincodeBlock) RequiresValidation() bool { return true }
@@ -90,21 +90,14 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 		return state, errors.New("pincode is a required field")
 	}
 
-	if len(input["pincode"]) == 0 {
+	// One box per digit posts one value each, in order; a single field posts one.
+	pincodeGuess := strings.Join(input["pincode"], "")
+	if pincodeGuess == "" {
 		return state, errors.New("pincode cannot be empty")
 	}
 
-	if len(input["pincode"]) < len(b.Pincode) {
+	if len(pincodeGuess) != len(b.Pincode) {
 		return state, errors.New("pincode length does not match the required length")
-	}
-
-	// Construct the pincode from individual characters
-	var pincodeChars string
-	for _, char := range input["pincode"] {
-		if len(char) != 1 {
-			return state, errors.New("pincode must be a single character per input")
-		}
-		pincodeChars += char
 	}
 
 	newPlayerData := pincodeBlockData{}
@@ -117,9 +110,9 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 
 	// Increment the number of attempts and save guesses
 	newPlayerData.Attempts++
-	newPlayerData.Guesses = append(newPlayerData.Guesses, pincodeChars)
+	newPlayerData.Guesses = append(newPlayerData.Guesses, pincodeGuess)
 
-	if pincodeChars != b.Pincode {
+	if pincodeGuess != b.Pincode {
 		// Incorrect pincode, save player data and return an error
 		playerData, err := json.Marshal(newPlayerData)
 		if err != nil {
@@ -140,3 +133,10 @@ func (b *PincodeBlock) ValidatePlayerInput(state PlayerState, input map[string][
 	return state, nil
 }
 
+// Submission returns the guess when it was wrong.
+func (b *PincodeBlock) Submission(input map[string][]string, state PlayerState) json.RawMessage {
+	if state.IsComplete() {
+		return nil
+	}
+	return marshalSubmission(map[string]string{"pincode": reportText(input["pincode"][0])})
+}

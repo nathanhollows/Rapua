@@ -1,0 +1,273 @@
+package blocks
+
+import (
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// Matches the wildcard route at /admin/qr/*, which splits the extension off the end.
+func scanQRHref(code string) templ.SafeURL {
+	return templ.SafeURL("/admin/qr/" + url.PathEscape(strings.TrimSpace(code)) + ".png")
+}
+
+templ scanPlayer(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState) {
+	<div id={ fmt.Sprintf("player-block-%s", block.ID) } class="qb-card">
+		@scanCard(settings, block, data, false)
+	</div>
+}
+
+// Re-rendered after an attempt, so an incomplete block here means the code was
+// wrong. Without that distinction a failed scan looks like a dropped request.
+templ scanPlayerUpdate(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class={ "qb-card", "is-fresh", templ.KV("is-wrong", !data.IsComplete()) }
+		hx-swap-oob="true"
+	>
+		@scanCard(settings, block, data, true)
+	</div>
+}
+
+templ scanCard(settings models.QuestSettings, block blocks.ScanBlock, data blocks.PlayerState, attempted bool) {
+	@qbTop("scan-qr-code", "Scan", settings, block.GetPoints(), data)
+	if block.Prompt != "" {
+		<div class="qb-q">
+			@templ.Raw(stringToMarkdown(block.Prompt))
+		</div>
+	}
+	if data.IsComplete() {
+		@qbDoneMessage("Code scanned.")
+	} else {
+		<p class="qb-hint">
+			if block.AllowTyping {
+				Scan it, or type the code.
+			} else {
+				Scan the code.
+			}
+		</p>
+		if attempted {
+			<p class="qb-msg no" role="status">
+				@icon("circle-x", templ.Attributes{"aria-hidden": "true"})
+				<span>That is not the right code. Have another look.</span>
+			</p>
+		}
+		@scanForm(block, attempted)
+	}
+}
+
+// The camera posts "scanned" and the box posts "code" so the server can tell a
+// scan from a code someone was told.
+//
+// The code box stays closed at rest: most players scan, so an open one is a
+// choice they are not making.
+templ scanForm(block blocks.ScanBlock, attempted bool) {
+	<form
+		id={ fmt.Sprintf("scan-form-%s", block.ID) }
+		hx-post="/blocks/validate"
+		hx-swap="none"
+	>
+		<input type="hidden" name="block" value={ block.ID }/>
+		<input type="hidden" name="scanned" value=""/>
+		<div
+			class="flex flex-col gap-3"
+		>
+			<div id={ fmt.Sprintf("scan-controls-%s", block.ID) } class="flex flex-col gap-3 not-prose">
+				<button
+					type="button"
+					class="q-act"
+					data-scan-open={ block.ID }
+				>
+					@icon("scan-qr-code", templ.Attributes{"class": "w-7 h-7"})
+					Scan a code
+				</button>
+				if block.AllowTyping {
+					@scanTypeBox(block, attempted)
+				}
+			</div>
+			<div id={ fmt.Sprintf("scan-viewport-%s", block.ID) } class="hidden not-prose">
+				<div class="flex flex-col gap-3">
+					<div class="relative rounded-2xl overflow-hidden bg-base-300">
+						<video id={ fmt.Sprintf("scan-video-%s", block.ID) } class="w-full" muted autoplay playsinline></video>
+					</div>
+					<button type="button" class="q-alt" data-scan-close={ block.ID }>
+						Stop
+					</button>
+				</div>
+			</div>
+			<p id={ fmt.Sprintf("scan-status-%s", block.ID) } class="text-base text-center q-soft hidden"></p>
+		</div>
+	</form>
+}
+
+// Open after a miss: a second tap would tax a wrong answer.
+templ scanTypeBox(block blocks.ScanBlock, attempted bool) {
+	<button
+		type="button"
+		id={ fmt.Sprintf("scan-type-open-%s", block.ID) }
+		class={ "q-alt", templ.KV("hidden", attempted) }
+		_={ fmt.Sprintf("on click add .hidden to me then remove .hidden from #scan-type-%s then call #code-%s.focus()", block.ID, block.ID) }
+	>
+		Or type it
+	</button>
+	<div id={ fmt.Sprintf("scan-type-%s", block.ID) } class={ templ.KV("hidden", !attempted) }>
+		<div class="flex gap-2">
+			<input
+				id={ fmt.Sprintf("code-%s", block.ID) }
+				name="code"
+				type="text"
+				placeholder="Code"
+				class="q-input grow min-w-0"
+				autocomplete="off"
+				required
+			/>
+			<button type="submit" class="q-act q-act-fit">Check</button>
+		</div>
+	</div>
+}
+
+var scanPromptTextarea = TextareaParams{
+	Name:        "prompt",
+	Title:       "Prompt",
+	Placeholder: "Find the sign by the totara",
+	Markdown:    true,
+}
+
+templ scanAdmin(settings models.QuestSettings, block blocks.ScanBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		@TextareaField(scanPromptTextarea.SetValue(block.Prompt))
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Codes</legend>
+			@adminRows(scanRows(block.ID), scanMintButton(block.ID)) {
+				if len(block.Codes) == 0 {
+					@scanCodeRow(blocks.ScanCode{})
+				} else {
+					for _, code := range block.Codes {
+						@scanCodeRow(code)
+					}
+				}
+			}
+			<p class="label">
+				Any one of these passes. Generate a code to print as a QR, or type one that already exists, like a book's barcode. The download icon saves it as a QR image to print.
+			</p>
+		</fieldset>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Matching</legend>
+			<select name="match" class="select w-full">
+				<option value="exact" selected?={ block.Match == blocks.MatchExact || block.Match == "" }>Exact</option>
+				<option value="ci" selected?={ block.Match == blocks.MatchCaseInsensitive }>Ignore case</option>
+				<option value="contains" selected?={ block.Match == blocks.MatchContains }>
+					Contains the code
+				</option>
+			</select>
+			<p class="fieldset-label">Contains suits a QR that encodes a URL with the code inside it.</p>
+		</fieldset>
+		@adminSwitch("allow_typing", "Allow typing the code", "Off means players must scan, so a code passed along in a message does not count.", block.AllowTyping, templ.Attributes{})
+	</form>
+	<template id={ scanRows(block.ID).TemplateID() }>
+		@scanCodeRow(blocks.ScanCode{})
+	</template>
+	<script>
+		function syncScanQRLink(row) {
+			const link = row.querySelector('[data-qr-link]');
+			if (!link) return;
+			const code = row.querySelector('input[name="code"]').value.trim();
+			const wanted = code !== '';
+			link.style.display = wanted ? '' : 'none';
+			if (wanted) link.href = '/admin/qr/' + encodeURIComponent(code) + '.png';
+		}
+		if (!window.__scanQRBound) {
+			window.__scanQRBound = true;
+			['input', 'change'].forEach(function (name) {
+				document.addEventListener(name, function (event) {
+					const row = event.target.closest && event.target.closest('.scan-code-item');
+					if (row) syncScanQRLink(row);
+				});
+			});
+		}
+		function mintScanCodeValue() {
+			// A code on a wall is a password to a stop, so it is drawn from the browser's secure
+			// random source, not Math.random, which is predictable.
+			const alphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
+			const draw = crypto.getRandomValues(new Uint8Array(8));
+			let out = '';
+			draw.forEach((byte, i) => {
+				if (i === 4) out += '-';
+				out += alphabet[byte % alphabet.length];
+			});
+			return out;
+		}
+		// A minted code arrives filled in, so adding it is already a change.
+		function mintScanCode(event) {
+			event.preventDefault();
+			const list = document.getElementById(event.target.closest('button').dataset.target);
+			const row = window.RapuaRows.add(list);
+			row.querySelector('input[name="code"]').value = mintScanCodeValue();
+			syncScanQRLink(row);
+			window.RapuaRows.changed(list);
+		}
+	</script>
+}
+
+const scanCols = "1.4rem 1fr 2.1rem 2.1rem"
+
+func scanRows(blockID string) RowsParams {
+	return RowsParams{
+		ID:       "scan-codes-" + blockID,
+		Cols:     scanCols,
+		Heads:    []string{"Code", ""},
+		Min:      1,
+		AddLabel: "Add a code",
+	}
+}
+
+templ scanMintButton(blockID string) {
+	<button
+		type="button"
+		class="rows-add"
+		style="border-left: 1.5px dashed var(--line-strong);"
+		data-target={ scanRows(blockID).ID }
+		onclick="mintScanCode(event)"
+	>
+		@icon("qr-code", templ.Attributes{"aria-hidden": "true"})
+		Generate a code
+	</button>
+}
+
+templ scanCodeRow(code blocks.ScanCode) {
+	<div class="rows-item scan-code-item" style={ gridCols(scanCols) }>
+		@rowGrip()
+		<input
+			type="text"
+			name="code"
+			value={ code.Value }
+			placeholder="ABCDE"
+			class="rows-cell code"
+			autocomplete="off"
+		/>
+		<a
+			data-qr-link
+			href={ scanQRHref(code.Value) }
+			download
+			title="Download the QR code"
+			class="btn btn-ghost btn-square"
+			if strings.TrimSpace(code.Value) == "" {
+				style="display: none; width: 2rem; height: 2rem; min-height: 0; padding: 0;"
+			} else {
+				style="width: 2rem; height: 2rem; min-height: 0; padding: 0;"
+			}
+			aria-label="Download the QR code"
+		>
+			@icon("image-down", templ.Attributes{"aria-hidden": "true", "class": "w-4 h-4"})
+		</a>
+		@rowRemove("code")
+	</div>
+}

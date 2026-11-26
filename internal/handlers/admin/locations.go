@@ -1,707 +1,286 @@
 package admin
 
 import (
-	"context"
-	"encoding/json"
-	"fmt"
 	"net/http"
-	"strconv"
 
-	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
 )
 
-// Locations shows admin the locations.
+// Locations shows admin the quest builder: the game structure with its
+// objectives and their blocks loaded.
 func (h *Handler) Locations(w http.ResponseWriter, r *http.Request) {
 	user := h.UserFromContext(r.Context())
 
-	// Load locations and their relations into the game structure recursively
-	err := h.gameStructureService.LoadWithRelations(
-		r.Context(),
-		user.CurrentInstanceID,
-		&user.CurrentInstance.GameStructure,
-		true, // recursive
+	objectives, err := h.objectiveService.FindTree(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.handleError(
+			w, r, "Locations: loading objective tree", "Error loading quest",
+			"error", err, "quest_id", user.CurrentQuestID,
+		)
+		return
+	}
+
+	objectiveIDs := make([]string, len(objectives))
+	for i, obj := range objectives {
+		objectiveIDs[i] = obj.ID
+	}
+	points, err := h.blockService.FindPointsByOwnerIDs(r.Context(), objectiveIDs)
+	if err != nil {
+		h.handleError(
+			w, r, "Locations: loading objective points", "Error loading point badges",
+			"error", err, "quest_id", user.CurrentQuestID,
+		)
+		return
+	}
+
+	// A lint failure is not a reason to withhold the builder: an author whose
+	// quest is in a state lint cannot read is exactly the author who needs the
+	// screen that lets them fix it.
+	lintResult, err := h.lintService.LintQuest(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "Locations: linting quest",
+			"error", err, "quest_id", user.CurrentQuestID)
+		// Said out loud rather than swallowed: the zero value is a clean
+		// quest, so a failure here would otherwise tell an author their quest
+		// is sound when nothing checked it.
+		lintResult = services.QuestLint{Unavailable: true}
+	}
+
+	root, nodes := buildObjectiveTree(objectives, points, lintResult)
+
+	// Badges only: a tree without them is still the tree an author needs.
+	usage, err := h.variableService.UsageByOwner(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "Locations: loading block variables",
+			"error", err, "quest_id", user.CurrentQuestID)
+	}
+	attachBlockVars(nodes, usage)
+
+	c := templates.LockedEditor(
+		user.CurrentQuest,
+		templates.QuestBuilder(lintResult, root, nodes, user.CurrentQuest.Settings),
 	)
+	err = templates.Layout(c, *user, "Quest", "Quest").Render(r.Context(), w)
 	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"Locations: loading game structure",
-			"Error loading locations",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
+		h.logger.ErrorContext(r.Context(), "Locations: rendering template", "error", err)
+	}
+}
+
+// attachBlockVars gives each row what its own blocks set and wait on.
+func attachBlockVars(nodes []*templates.ObjectiveTreeNode, usage map[string]services.VarUsage) {
+	for _, node := range nodes {
+		node.BlockVars = usage[node.Objective.ID]
+		attachBlockVars(node.Children, usage)
+	}
+}
+
+// buildObjectiveTree nests FindTree's flat, parent-first rows by pointer, so
+// a parent built early still picks up children appended later in the same
+// pass. Root is returned separately: it's the quest itself, not a row, but
+// still needs somewhere to carry its own settings.
+//
+// Draft is split from OutOfPlay because a row hidden only by an ancestor
+// must still look hidden, or edits below a parked section go blind to what
+// players can see.
+func buildObjectiveTree(
+	objectives []models.Objective, points map[string]int, lint services.QuestLint,
+) (models.Objective, []*templates.ObjectiveTreeNode) {
+	nodes := make(map[string]*templates.ObjectiveTreeNode, len(objectives))
+	byID := make(map[string]models.Objective, len(objectives))
+	for i := range objectives {
+		byID[objectives[i].ID] = objectives[i]
+	}
+	for i := range objectives {
+		nodes[objectives[i].ID] = &templates.ObjectiveTreeNode{
+			Objective: objectives[i],
+			Points:    points[objectives[i].ID],
+			Lint:      lint.For(objectives[i].ID),
+			// The same cut the player's screen makes, so the author sees which
+			// levels are flattened rather than finding out from a player.
+			Kind: navigation.KindOf(byID, objectives[i]),
+		}
 	}
 
-	// Load blocks for all locations (needed for displaying clues/marker indicators)
-	err = h.gameStructureService.LoadBlocksForStructure(
-		r.Context(),
-		&user.CurrentInstance.GameStructure,
-		true, // recursive
+	var root models.Objective
+	hasParent := make(map[string]bool, len(objectives))
+	for _, obj := range objectives {
+		node := nodes[obj.ID]
+		// Every row's own flag, before anything about where it sits: a row
+		// whose parent is missing is still drafted or not, and skipping this
+		// with the attach step drew a parked orphan as though it were live.
+		node.Draft = obj.Draft
+		node.OutOfPlay = obj.Draft
+
+		if obj.ParentID == "" {
+			root = obj
+			continue
+		}
+		parent, ok := nodes[obj.ParentID]
+		if !ok {
+			continue
+		}
+		node.OutOfPlay = obj.Draft || parent.OutOfPlay
+		parent.Children = append(parent.Children, node)
+		hasParent[obj.ID] = true
+	}
+
+	cutCycleEdges(objectives, nodes, hasParent)
+
+	// After assembly: both are facts about a node's children, not the node.
+	for _, node := range nodes {
+		node.PublishedChildren = 0
+		for _, child := range node.Children {
+			// A band never needs a find, so its picker never counts a secret.
+			if !child.Draft && !child.Objective.Secret {
+				node.PublishedChildren++
+			}
+		}
+		templates.MarkChildren(node.Objective, node.Children)
+	}
+
+	var topLevel []*templates.ObjectiveTreeNode
+	if node, ok := nodes[root.ID]; ok {
+		topLevel = node.Children
+	}
+	// A row nothing reaches would otherwise vanish with its subtree, and
+	// damage nobody can see is damage nobody can mend: it is shown at the top
+	// level instead, so the operator can drag it back where it belongs.
+	//
+	// Rows with no parent edge, not rows the root cannot reach: an orphan's
+	// children are unreachable too, and appending those as well would draw the
+	// same card once here and again nested under its parent.
+	for _, obj := range objectives {
+		if obj.ID == root.ID || hasParent[obj.ID] {
+			continue
+		}
+		// Propagate down from here, since the attach loop ran in query order
+		// and could not: a stranded row's own subtree was assembled before
+		// anyone knew the row itself was parked.
+		markOutOfPlay(nodes[obj.ID], nodes[obj.ID].Draft)
+		topLevel = append(topLevel, nodes[obj.ID])
+	}
+	// Last, because strays are appended to topLevel after the root's children.
+	templates.MarkChildren(root, topLevel)
+	return root, topLevel
+}
+
+// markOutOfPlay carries a parked ancestor's state down a subtree.
+func markOutOfPlay(node *templates.ObjectiveTreeNode, outOfPlay bool) {
+	node.OutOfPlay = node.Draft || outOfPlay
+	for _, child := range node.Children {
+		markOutOfPlay(child, node.OutOfPlay)
+	}
+}
+
+// cutCycleEdges removes the edges that close a loop, so what reaches the
+// renderer is a tree.
+//
+// objectiveNode caps its own recursion depth, but a cycle would still draw the
+// same rows over and over until it hit that cap. Dropping a back edge costs
+// one nesting relationship and buys a graph that terminates on its own; lint
+// still reports the cycle, and the row it frees becomes draggable at the top
+// level.
+//
+// Walked in row order rather than map order so the edge that gets cut is the
+// same one on every render.
+func cutCycleEdges(
+	objectives []models.Objective,
+	nodes map[string]*templates.ObjectiveTreeNode,
+	hasParent map[string]bool,
+) {
+	const (
+		unvisited = 0
+		onPath    = 1
+		done      = 2
 	)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"Locations: loading blocks",
-			"Error loading location blocks",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
+	state := make(map[string]int, len(nodes))
+
+	var walk func(node *templates.ObjectiveTreeNode)
+	walk = func(node *templates.ObjectiveTreeNode) {
+		state[node.Objective.ID] = onPath
+		kept := node.Children[:0]
+		for _, child := range node.Children {
+			if state[child.Objective.ID] == onPath {
+				delete(hasParent, child.Objective.ID)
+				continue
+			}
+			kept = append(kept, child)
+			if state[child.Objective.ID] == unvisited {
+				walk(child)
+			}
+		}
+		node.Children = kept
+		state[node.Objective.ID] = done
 	}
 
-	c := templates.LocationGroupList(user.CurrentInstance.Settings, user.CurrentInstance.GameStructure)
-	err = templates.Layout(c, *user, "Locations", "Locations").Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("Locations: rendering template", "error", err)
-	}
-}
-
-// LocationNew shows the form to create a new location.
-func (h *Handler) LocationNew(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	instances, err := h.instanceService.FindInstanceIDsForUser(r.Context(), user.ID)
-	if err != nil {
-		h.handleError(w, r, "LocationNew: getting instances", "Error getting instances", "error", err)
-		return
-	}
-
-	duplicatable, err := h.markerService.FindMarkersNotInInstance(r.Context(), user.CurrentInstanceID, instances)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNew: getting markers",
-			"Error getting markers",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	targetGroupID := r.URL.Query().Get("groupId")
-	afterLocationID := r.URL.Query().Get("afterLocationId")
-	beforeLocationID := r.URL.Query().Get("beforeLocationId")
-
-	var targetGroupName string
-	if targetGroupID != "" {
-		group := h.gameStructureService.FindGroupByID(&user.CurrentInstance.GameStructure, targetGroupID)
-		if group != nil {
-			targetGroupName = group.Name
+	for _, obj := range objectives {
+		if state[obj.ID] == unvisited {
+			walk(nodes[obj.ID])
 		}
 	}
-
-	data := templates.AddLocationData{
-		Settings:         user.CurrentInstance.Settings,
-		Neighbouring:     user.CurrentInstance.Locations,
-		Duplicatable:     duplicatable,
-		TargetGroupID:    targetGroupID,
-		AfterLocationID:  afterLocationID,
-		BeforeLocationID: beforeLocationID,
-		TargetGroupName:  targetGroupName,
-	}
-
-	c := templates.AddLocation(data)
-	err = templates.Layout(c, *user, "Locations", "New Location").Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("LocationNew: rendering template", "error", err)
-	}
-}
-
-// LocationNewPost handles creating a new location.
-func (h *Handler) LocationNewPost(w http.ResponseWriter, r *http.Request) { //nolint:funlen
-	user := h.UserFromContext(r.Context())
-
-	err := r.ParseForm()
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNewPost: parsing form",
-			"Error parsing form",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	if !r.Form.Has("name") || r.FormValue("name") == "" {
-		h.handleError(w, r, "LocationNewPost: missing name", "Location name is required")
-		return
-	}
-
-	var lat, lng float64
-	if r.FormValue("latitude") != "" {
-		lat, err = strconv.ParseFloat(r.FormValue("latitude"), 64)
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: converting latitude",
-				"Error converting latitude",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return
-		}
-		lng, err = strconv.ParseFloat(r.FormValue("longitude"), 64)
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: converting longitude",
-				"Error converting longitude",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return
-		}
-	}
-
-	points := 0
-	if user.CurrentInstance.Settings.EnablePoints && r.FormValue("points") != "" {
-		points, err = strconv.Atoi(r.FormValue("points"))
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: converting points",
-				"Error converting points",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return
-		}
-	}
-
-	marker := r.FormValue("marker")
-	location, err := h.createLocationWithOrWithoutMarker(w, r, user, marker, lat, lng, points)
-	if err != nil {
-		return
-	}
-
-	groupID := r.FormValue("groupId")
-	afterLocationID := r.FormValue("afterLocationId")
-	beforeLocationID := r.FormValue("beforeLocationId")
-
-	if groupID != "" {
-		if err = h.gameStructureService.InsertLocationIntoGroup(
-			r.Context(), user.CurrentInstanceID, location.ID, groupID, afterLocationID, beforeLocationID,
-		); err != nil {
-			h.logger.Error("LocationNewPost: inserting location into group", "error", err, "location_id", location.ID)
-			// Non-fatal: orphan detection in Save will catch this
-		}
-	} else {
-		if err = h.addLocationToRootGroup(r.Context(), user.CurrentInstanceID, location.ID); err != nil {
-			h.logger.Error("LocationNewPost: adding location to root group", "error", err, "location_id", location.ID)
-			// Don't fail the request - the location was created successfully
-		}
-	}
-
-	editPath := "/admin/locations/" + location.Slug
-	if r.Header.Get("Hx-Request") == "true" {
-		w.Header().Set("Hx-Location", editPath)
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-	http.Redirect(w, r, editPath, http.StatusFound)
-}
-
-// createLocationWithOrWithoutMarker creates a location either from coordinates or from an existing marker.
-func (h *Handler) createLocationWithOrWithoutMarker(
-	w http.ResponseWriter,
-	r *http.Request,
-	user *models.User,
-	marker string,
-	lat, lng float64,
-	points int,
-) (models.Location, error) {
-	if marker == "" {
-		location, err := h.locationService.CreateLocation(
-			r.Context(),
-			user.CurrentInstanceID,
-			r.FormValue("name"),
-			lat,
-			lng,
-			points,
-		)
-		if err != nil {
-			h.handleError(
-				w,
-				r,
-				"LocationNewPost: creating location without marker",
-				"Error creating location without marker",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-			)
-			return models.Location{}, err
-		}
-		return location, nil
-	}
-
-	access, accessErr := h.accessService.CanAdminAccessMarker(r.Context(), user.ID, marker)
-	if accessErr != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNewPost: checking marker access",
-			"Error checking marker access",
-			"error",
-			accessErr,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return models.Location{}, accessErr
-	}
-	if !access {
-		h.handleError(w, r, "LocationNewPost: no access to marker", "You do not have access to this marker")
-		return models.Location{}, accessErr
-	}
-
-	location, err := h.locationService.CreateLocationFromMarker(
-		r.Context(),
-		user.CurrentInstanceID,
-		r.FormValue("name"),
-		points,
-		marker,
-	)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"LocationNewPost: creating location from marker",
-			"Error creating location from marker",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return models.Location{}, err
-	}
-	return location, nil
-}
-
-// ReorderLocations handles reordering locations.
-// Returns a 200 status code if successful,
-// Otherwise, returns a 500 status code.
-func (h *Handler) ReorderLocations(w http.ResponseWriter, r *http.Request) {
-	// Check HTMX headers
-	if r.Header.Get("Hx-Request") != htmxHeaderTrue {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-
-	user := h.UserFromContext(r.Context())
-
-	err := r.ParseForm()
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"ReorderLocations: parsing form",
-			"Error parsing form",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	locations := r.Form["location"]
-	err = h.locationService.ReorderLocations(r.Context(), user.CurrentInstanceID, locations)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"ReorderLocations: reordering locations",
-			"Error reordering locations",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	h.handleSuccess(w, r, "Order updated")
-}
-
-// LocationEdit shows the form to edit a location.
-func (h *Handler) LocationEdit(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseForm()
-	if err != nil {
-		h.handleError(w, r, "parsing form", "Error parsing form", "error", err)
-		return
-	}
-
-	// Get the location from the chi context
-	slug := chi.URLParam(r, "slug")
-	user := h.UserFromContext(r.Context())
-
-	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, slug)
-	if err != nil {
-		h.logger.Error(
-			"LocationEdit: finding location",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-			"location_slug",
-			slug,
-		)
-		h.redirect(w, r, "/admin/locations")
-		return
-	}
-
-	contentBlocks, err := h.blockService.FindByOwnerIDAndContext(
-		r.Context(),
-		location.ID,
-		blocks.ContextLocationContent,
-	)
-	if err != nil {
-		h.logger.Error(
-			"LocationEdit: getting blocks",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-			"location_id",
-			location.ID,
-		)
-		h.redirect(w, r, "/admin/locations")
-		return
-	}
-
-	// Find the parent group to get navigation settings
-	parentGroup := h.gameStructureService.FindGroupByLocationID(&user.CurrentInstance.GameStructure, location.ID)
-	navigationMode := models.NavigationCustom // Default to custom
-	if parentGroup != nil {
-		navigationMode = parentGroup.Navigation
-	} else {
-		h.logger.Warn(
-			"LocationEdit: no parent group found",
-			"location_id",
-			location.ID,
-			"using_default",
-			navigationMode,
-		)
-	}
-
-	// Load blocks based on the navigation mode of the parent group
-	var navigationContext blocks.BlockContext
-	var navigationBlocks []blocks.Block
-	switch parentGroup.Navigation {
-	case models.NavigationCustom:
-		navigationContext = blocks.ContextLocationClues
-	case models.NavigationTasks:
-		navigationContext = blocks.ContextTask
-	case models.NavigationMap, models.NavigationLabelledMap,
-		models.NavigationList:
-		// These navigation modes don't use blocks
-	}
-	if navigationContext != "" {
-		navigationBlocks, err = h.blockService.FindByOwnerIDAndContext(
-			r.Context(),
-			location.ID,
-			navigationContext,
-		)
-		if err != nil {
-			h.logger.Error(
-				"LocationEdit: getting blocks",
-				"error",
-				err,
-				"instance_id",
-				user.CurrentInstanceID,
-				"location_id",
-				location.ID,
-			)
-			h.redirect(w, r, "/admin/locations")
-			return
-		}
-	}
-
-	data := templates.EditLocationData{
-		Settings:         user.CurrentInstance.Settings,
-		Location:         *location,
-		ContentBlocks:    contentBlocks,
-		NavigationBlocks: navigationBlocks,
-		NavigationMode:   navigationMode,
-	}
-
-	c := templates.EditLocation(data)
-	err = templates.Layout(c, *user, "Locations", "Edit Location").Render(r.Context(), w)
-	if err != nil {
-		h.handleError(w, r, "LocationEdit: rendering template", "Error rendering template", "error", err)
-	}
-}
-
-// LocationEditPost handles updating a location.
-func (h *Handler) LocationEditPost(w http.ResponseWriter, r *http.Request) {
-	if err := r.ParseForm(); err != nil {
-		h.handleError(w, r, "LocationEditPost: parsing form", "Error parsing form", "error", err)
-		return
-	}
-
-	user := h.UserFromContext(r.Context())
-	locationSlug := chi.URLParam(r, "slug")
-
-	var points int
-	var err error
-	if r.FormValue("points") == "" {
-		points = -1
-	} else {
-		points, err = strconv.Atoi(r.FormValue("points"))
-		if err != nil {
-			h.handleError(w, r, "LocationEditPost: converting points", "Error converting points", "error", err)
-			return
-		}
-	}
-
-	var lat, lng float64
-	if r.FormValue("latitude") != "" {
-		lat, err = strconv.ParseFloat(r.FormValue("latitude"), 64)
-		if err != nil {
-			h.handleError(w, r, "LocationEditPost: converting latitude", "Error converting latitude", "error", err)
-			return
-		}
-	}
-
-	if r.FormValue("longitude") != "" {
-		lng, err = strconv.ParseFloat(r.FormValue("longitude"), 64)
-		if err != nil {
-			h.handleError(w, r, "LocationEditPost: converting longitude", "Error converting longitude", "error", err)
-			return
-		}
-	}
-
-	data := services.LocationUpdateData{
-		Name:      r.FormValue("name"),
-		Latitude:  lat,
-		Longitude: lng,
-		Points:    points,
-	}
-
-	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, locationSlug)
-	if err != nil {
-		h.handleError(w, r, "LocationEditPost: finding location", "Error finding location", "error", err)
-		return
-	}
-
-	err = h.locationService.UpdateLocation(r.Context(), location, data)
-	if err != nil {
-		h.handleError(w, r, "LocationEditPost: updating location", "Error updating location", "error", err)
-		return
-	}
-
-	if location.Slug != locationSlug {
-		h.redirect(w, r, "/admin/locations/"+location.Slug)
-		return
-	}
-
-	h.handleSuccess(w, r, "Location updated")
-}
-
-// LocationDelete handles deleting a location.
-func (h *Handler) LocationDelete(w http.ResponseWriter, r *http.Request) {
-	locationSlug := chi.URLParam(r, "slug")
-
-	user := h.UserFromContext(r.Context())
-
-	location, err := h.locationService.GetByInstanceAndSlug(r.Context(), user.CurrentInstanceID, locationSlug)
-	if err != nil {
-		h.handleError(w, r, "LocationDelete: finding location", "Error finding location", "error", err)
-		return
-	}
-
-	if location.ID == "" {
-		h.handleError(w, r, "LocationDelete: location not found", "Location not found")
-		return
-	}
-
-	if err = h.deleteService.DeleteLocation(r.Context(), location.ID); err != nil {
-		h.handleError(w, r, "LocationDelete: deleting location", "Error deleting location", "error", err)
-		return
-	}
-
-	h.redirect(w, r, "/admin/locations")
-}
-
-// SaveGameStructure handles saving the game structure from the browser.
-func (h *Handler) SaveGameStructure(w http.ResponseWriter, r *http.Request) {
-	// Check HTMX headers
-	if r.Header.Get("Hx-Request") != htmxHeaderTrue {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
-
-	user := h.UserFromContext(r.Context())
-
-	// Parse form data
-	if err := r.ParseForm(); err != nil {
-		h.handleError(
-			w,
-			r,
-			"SaveGameStructure: parsing form",
-			"Error parsing form",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	// Get the structure JSON from form
-	structureJSON := r.FormValue("structure")
-	if structureJSON == "" {
-		h.handleError(w, r, "SaveGameStructure: missing structure", "Missing structure data")
-		return
-	}
-
-	// Parse the JSON
-	var structure models.GameStructure
-	if err := json.Unmarshal([]byte(structureJSON), &structure); err != nil {
-		h.handleError(
-			w,
-			r,
-			"SaveGameStructure: decoding JSON",
-			"Invalid JSON: "+err.Error(),
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	// Validate and save using the service
-	if err := h.gameStructureService.Save(r.Context(), user.CurrentInstanceID, &structure); err != nil {
-		h.handleError(
-			w,
-			r,
-			"SaveGameStructure: saving structure",
-			"Validation failed: "+err.Error(),
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	h.handleSuccess(w, r, "Game structure saved")
-}
-
-// addLocationToRootGroup adds a newly created location to the root group (unassigned area).
-func (h *Handler) addLocationToRootGroup(ctx context.Context, instanceID, locationID string) error {
-	// Load the current instance
-	instance, err := h.instanceService.GetByID(ctx, instanceID)
-	if err != nil {
-		return fmt.Errorf("loading instance: %w", err)
-	}
-
-	// Add the location to the root group
-	instance.GameStructure.LocationIDs = append(instance.GameStructure.LocationIDs, locationID)
-
-	// Save the updated structure
-	if err = h.gameStructureService.Save(ctx, instanceID, &instance.GameStructure); err != nil {
-		return fmt.Errorf("saving structure: %w", err)
-	}
-
-	return nil
 }
 
 // StartPageEdit shows the start page editor.
 func (h *Handler) StartPageEdit(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	// Get blocks for the start page.
-	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
-		r.Context(),
-		user.CurrentInstanceID,
-		blocks.ContextStart,
-	)
-	if err != nil {
-		h.logger.Error(
-			"StartPageEdit: getting blocks",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		h.redirect(w, r, "/admin/locations")
-		return
-	}
-
-	data := templates.EditPageData{
-		Settings:   user.CurrentInstance.Settings,
-		PageBlocks: pageBlocks,
-		PageTitle:  "Start",
-		PageType:   "start",
-	}
-
-	c := templates.EditPage(data)
-	err = templates.Layout(c, *user, "Locations", "Edit Start Page").Render(r.Context(), w)
-	if err != nil {
-		h.handleError(w, r, "StartPageEdit: rendering template", "Error rendering template", "error", err)
-	}
+	h.systemPageEdit(w, r, blocks.ContextStart, "Start", "start")
 }
 
 // CompletePageEdit shows the complete page editor.
 func (h *Handler) CompletePageEdit(w http.ResponseWriter, r *http.Request) {
+	h.systemPageEdit(w, r, blocks.ContextFinish, "Complete", "complete")
+}
+
+// systemPageEdit covers Start and Complete: they differ only in block
+// context and naming.
+func (h *Handler) systemPageEdit(
+	w http.ResponseWriter,
+	r *http.Request,
+	blockContext blocks.BlockContext,
+	pageTitle, pageType string,
+) {
 	user := h.UserFromContext(r.Context())
 
-	// Get blocks for the complete page
-	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(
-		r.Context(),
-		user.CurrentInstanceID,
-		blocks.ContextFinish,
-	)
+	pageBlocks, err := h.blockService.FindByOwnerIDAndContext(r.Context(), user.CurrentQuestID, blockContext)
 	if err != nil {
-		h.logger.Error(
-			"completePageEdit: getting blocks",
-			"error",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		h.redirect(w, r, "/admin/locations")
+		h.logger.ErrorContext(r.Context(), pageType+"PageEdit: getting blocks",
+			"error", err, "quest_id", user.CurrentQuestID)
+		h.redirect(w, r, "/admin/quest")
 		return
 	}
 
-	data := templates.EditPageData{
-		Settings:   user.CurrentInstance.Settings,
-		PageBlocks: pageBlocks,
-		PageTitle:  "Complete",
-		PageType:   "complete",
+	// NO_START_BUTTON is about this page and belongs to no row, so the builder
+	// tree had nowhere to show it and this was the one screen where it
+	// mattered.
+	lintResult, err := h.lintService.LintQuest(r.Context(), user.CurrentQuestID)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), pageType+"PageEdit: linting quest",
+			"error", err, "quest_id", user.CurrentQuestID)
+		lintResult = services.QuestLint{Unavailable: true}
 	}
 
-	c := templates.EditPage(data)
-	err = templates.Layout(c, *user, "Locations", "Edit Complete Page").Render(r.Context(), w)
-	if err != nil {
-		h.handleError(w, r, "CompletePageEdit: rendering template", "Error rendering template", "error", err)
+	c := templates.LockedEditor(user.CurrentQuest, templates.SystemPageEditor(
+		lintResult, systemPageLintPrefix(blockContext), templates.EditPageData{
+			Settings:   user.CurrentQuest.Settings,
+			PageBlocks: pageBlocks,
+			PageTitle:  pageTitle,
+			PageType:   pageType,
+		}))
+	if err := templates.Layout(c, *user, "Quest", "Edit "+pageTitle+" Page").Render(r.Context(), w); err != nil {
+		h.handleError(w, r, pageType+"PageEdit: rendering template", "Error rendering template", "error", err)
 	}
+}
+
+// systemPageLintPrefix maps a page's block context to the path the linter
+// addresses that page by.
+func systemPageLintPrefix(blockContext game.BlockContext) string {
+	if blockContext == game.ContextFinish {
+		return "finish"
+	}
+	return "start"
 }

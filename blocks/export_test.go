@@ -9,6 +9,7 @@ import "encoding/json"
 type MockPlayerState struct {
 	BlockID       string
 	PlayerID      string
+	QuestID       string
 	PlayerData    json.RawMessage
 	IsCompleteVal bool
 	PointsAwarded int
@@ -16,6 +17,7 @@ type MockPlayerState struct {
 
 func (m *MockPlayerState) GetBlockID() string                 { return m.BlockID }
 func (m *MockPlayerState) GetPlayerID() string                { return m.PlayerID }
+func (m *MockPlayerState) GetQuestID() string                 { return m.QuestID }
 func (m *MockPlayerState) GetPlayerData() json.RawMessage     { return m.PlayerData }
 func (m *MockPlayerState) SetPlayerData(data json.RawMessage) { m.PlayerData = data }
 func (m *MockPlayerState) IsComplete() bool                   { return m.IsCompleteVal }
@@ -25,10 +27,10 @@ func (m *MockPlayerState) SetPointsAwarded(points int)        { m.PointsAwarded 
 
 type PincodeBlockData = pincodeBlockData
 type ChecklistPlayerData = checklistPlayerData
-type BrokerBlockData = brokerBlockData
 type ClueBlockData = clueBlockData
 type PhotoBlockData = photoBlockData
 type RatingBlockData = ratingBlockData
+type FreeTextPlayerData = freeTextPlayerData
 
 // Export unexported functions for testing.
 var DeterministicShuffle = deterministicShuffle

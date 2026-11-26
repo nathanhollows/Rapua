@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -130,6 +130,23 @@ func TestClueBlock_UpdateBlockData_InvalidPoints(t *testing.T) {
 func TestClueBlock_RequiresValidation(t *testing.T) {
 	block := blocks.ClueBlock{}
 	assert.True(t, block.RequiresValidation())
+}
+
+// A clue always takes points off. An imported game can write the cost positive,
+// and that must not turn revealing a clue into a reward.
+func TestClueBlock_RevealAlwaysDeducts(t *testing.T) {
+	for _, stored := range []int{-15, 15} {
+		block := blocks.ClueBlock{BaseBlock: blocks.BaseBlock{Points: stored}, ClueText: "x"}
+		assert.Equal(t, -15, block.GetPoints(), "stored %d", stored)
+
+		state := &blocks.MockPlayerState{BlockID: "b", PlayerID: "p"}
+		result, err := block.ValidatePlayerInput(state, map[string][]string{"reveal_clue": {"true"}})
+		require.NoError(t, err)
+		assert.Equal(t, -15, result.GetPointsAwarded(), "stored %d", stored)
+	}
+
+	free := blocks.ClueBlock{ClueText: "x"}
+	assert.Zero(t, free.GetPoints())
 }
 
 func TestClueBlock_ValidatePlayerInput(t *testing.T) {

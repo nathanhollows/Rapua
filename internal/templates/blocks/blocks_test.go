@@ -3,24 +3,19 @@ package blocks_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func TestBlocks_MethodsExist(t *testing.T) {
-	instanceSettings := models.InstanceSettings{}
+	instanceSettings := models.QuestSettings{}
 	// This tests that all blocks have matching views
 	// This does *not* test for correctness of the views
-	for _, block := range blocks.GetBlocksForContext(blocks.ContextLocationContent) {
+	for _, block := range blocks.GetBlocksForContext(blocks.ContextObjectiveProof) {
 		template := templates.RenderAdminEdit(instanceSettings, block)
 		if template == nil {
 			t.Errorf("Block %s is missing a RenderAdminEdit view", block.GetName())
-		}
-
-		template = templates.RenderAdminBlock(instanceSettings, block, true)
-		if template == nil {
-			t.Errorf("Block %s is missing a RenderAdminBlock view", block.GetName())
 		}
 
 		template = templates.RenderPlayerView(instanceSettings, block, nil)

@@ -2,25 +2,22 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/config"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/config"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
+templ imagePlayer(_ models.QuestSettings, block blocks.ImageBlock) {
 	<figure
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		if block.FullWidth {
-			class="flex flex-col w-[calc(100%+3rem)] -mx-6"
-		} else {
-			class="flex flex-col items-center"
-		}
+		class="flex flex-col items-center"
 	>
 		if block.Link != "" {
 			<a
 				href={ templ.SafeURL(block.Link) }
 				target="_blank"
 				rel="noopener"
+				class="qb-imglink"
 			>
 				<img
 					if config.IsLocalURL(block.URL) {
@@ -30,12 +27,12 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 					}
 					alt={ block.Caption }
 					title={ block.Caption }
-					if block.FullWidth {
-						class="w-full"
-					} else {
-						class="rounded-2xl shadow-lg"
-					}
+					class="rounded-2xl shadow-lg"
 				/>
+				<span class="qb-out">
+					@icon("arrow-up-right", templ.Attributes{})
+					Opens in a new tab
+				</span>
 			</a>
 		} else {
 			<img
@@ -45,20 +42,31 @@ templ imagePlayer(_ models.InstanceSettings, block blocks.ImageBlock) {
 					src={ block.URL }
 				}
 				alt={ block.Caption }
-				if block.FullWidth {
-					class="w-full"
-				} else {
-					class="rounded-2xl shadow-lg"
-				}
+				class="rounded-2xl shadow-lg"
 			/>
 		}
 		if block.Caption != "" {
-			<figcaption class="text-sm text-center mt-2">{ block.Caption }</figcaption>
+			<figcaption>{ block.Caption }</figcaption>
 		}
 	</figure>
 }
 
-templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
+var imageCaptionInput = TextInputParams{
+	Name:         "caption",
+	Title:        "Caption",
+	Placeholder:  "Caption for image",
+	ExtraClasses: "w-full",
+}
+
+var imageLinkInput = TextInputParams{
+	Name:         "link",
+	Title:        "Link",
+	Placeholder:  "https://...",
+	HelpText:     "Where the image goes when it is clicked.",
+	ExtraClasses: "w-full",
+}
+
+templ imageAdmin(_ models.QuestSettings, block blocks.ImageBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s-upload", block.ID) }
 		class="hidden"
@@ -67,7 +75,6 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 		hx-trigger={ fmt.Sprintf("change from:#file-%s delay:500ms", block.ID) }
 		hx-swap="none"
 	>
-		<input type="hidden" name="location_id" value={ fmt.Sprint(block.OwnerID) }/>
 		<input type="hidden" name="block_id" value={ fmt.Sprint(block.ID) }/>
 		<input type="hidden" name="context" value="image_block"/>
 		<input
@@ -127,44 +134,10 @@ templ imageAdmin(_ models.InstanceSettings, block blocks.ImageBlock) {
 				max="100"
 			></progress>
 		</fieldset>
-		<div class="flex flex-col md:flex-row gap-5">
-			<fieldset class="fieldset w-full">
-				<legend class="fieldset-legend">Caption</legend>
-				<input
-					type="text"
-					name="caption"
-					class="input w-full"
-					placeholder="Caption for image"
-					value={ block.Caption }
-				/>
-				<p class="label">Optional</p>
-			</fieldset>
-			<fieldset class="fieldset w-full">
-				<legend class="fieldset-legend">Image Link</legend>
-				<input
-					type="text"
-					name="link"
-					class="input w-full"
-					placeholder="Link to image"
-					value={ block.Link }
-				/>
-				<p class="label">Optional</p>
-			</fieldset>
+		<div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+			@TextInputField(imageCaptionInput.SetValue(block.Caption))
+			@TextInputField(imageLinkInput.SetValue(block.Link))
 		</div>
-		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Options</legend>
-			<div class="form-control">
-				<label class="label cursor-pointer justify-start gap-2">
-					<input
-						type="checkbox"
-						name="full_width"
-						class="checkbox checkbox-sm"
-						checked?={ block.FullWidth }
-					/>
-					<span class="label-text">Full width on mobile</span>
-				</label>
-			</div>
-		</fieldset>
 	</form>
 }
 

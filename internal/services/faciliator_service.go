@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type FacilitatorService struct {
@@ -34,8 +34,8 @@ func (s *FacilitatorService) generateToken() string {
 // CreateFacilitatorToken generates and stores a facilitator access token.
 func (s *FacilitatorService) CreateFacilitatorToken(
 	ctx context.Context,
-	instanceID string,
-	locations []string,
+	questID string,
+	objectives []string,
 	duration time.Duration,
 ) (string, error) {
 	token := s.generateToken()
@@ -43,8 +43,8 @@ func (s *FacilitatorService) CreateFacilitatorToken(
 
 	newToken := models.FacilitatorToken{
 		Token:      token,
-		InstanceID: instanceID,
-		Locations:  locations,
+		QuestID:    questID,
+		Objectives: objectives,
 		ExpiresAt:  expiry,
 	}
 

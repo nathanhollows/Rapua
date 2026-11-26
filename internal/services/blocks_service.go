@@ -4,10 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/uptrace/bun"
 )
 
 type BlockService struct {
@@ -30,6 +34,10 @@ func (s *BlockService) GetByBlockID(ctx context.Context, blockID string) (blocks
 	return s.blockRepo.GetByID(ctx, blockID)
 }
 
+func (s *BlockService) GetBlockContext(ctx context.Context, blockID string) (blocks.BlockContext, error) {
+	return s.blockRepo.GetContext(ctx, blockID)
+}
+
 // FindByOwnerID fetches all content blocks for an owner (context agnostic).
 func (s *BlockService) FindByOwnerID(ctx context.Context, ownerID string) (blocks.Blocks, error) {
 	if ownerID == "" {
@@ -50,6 +58,27 @@ func (s *BlockService) FindByOwnerIDAndContext(
 	return s.blockRepo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
 }
 
+// FindPointsByOwnerIDs sums each owner's block points in one query, to avoid
+// an N+1 fetch per row. An owner whose blocks carry no points is absent from
+// the map, not present with 0: the badge renders only for a nonzero total,
+// and membership by block row alone would claim one anyway.
+func (s *BlockService) FindPointsByOwnerIDs(ctx context.Context, ownerIDs []string) (map[string]int, error) {
+	blockModels, err := s.blockRepo.FindModelsByOwnerIDs(ctx, ownerIDs)
+	if err != nil {
+		return nil, fmt.Errorf("finding blocks: %w", err)
+	}
+	points := make(map[string]int, len(ownerIDs))
+	for _, b := range blockModels {
+		points[b.OwnerID] += b.Points
+	}
+	for ownerID, total := range points {
+		if total == 0 {
+			delete(points, ownerID)
+		}
+	}
+	return points, nil
+}
+
 // NewBlockWithOwnerAndContext creates a new block for an owner with specific context.
 func (s *BlockService) NewBlockWithOwnerAndContext(
 	ctx context.Context,
@@ -62,6 +91,18 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 	}
 	if blockType == "" {
 		return nil, errors.New("blockType cannot be empty")
+	}
+	// The admin "add block" dropdown only ever offers blocks valid for the
+	// zone it's rendered in, but that's a client-side filter, not enforcement:
+	// a direct POST (or a stale form after a block's registered contexts
+	// change) could still ask to create e.g. a start-only block inside an
+	// objective's proof/reveal zone. Reject it here, not just at import/lint
+	// time (game.Lint via blocks.Registry already covers that separate path).
+	if !blocks.CanBlockBeUsedInContext(blockType, blockContext) {
+		return nil, fmt.Errorf(
+			"%w: block type %q cannot be used in context %q",
+			ErrBlockNotValidForContext, blockType, blockContext,
+		)
 	}
 	// Use the blocks package to create the appropriate block based on the type.
 	baseBlock := blocks.BaseBlock{
@@ -85,14 +126,16 @@ func (s *BlockService) NewBlockWithOwnerAndContext(
 }
 
 // NewBlockState creates a new block state.
-func (s *BlockService) NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
+func (s *BlockService) NewBlockState(
+	ctx context.Context, blockID, runCode, questID string,
+) (blocks.PlayerState, error) {
 	if blockID == "" {
 		return nil, errors.New("blockID cannot be empty")
 	}
-	if teamCode == "" {
-		return nil, errors.New("teamCode cannot be empty")
+	if runCode == "" {
+		return nil, errors.New("runCode cannot be empty")
 	}
-	state, err := s.blockStateRepo.NewBlockState(ctx, blockID, teamCode)
+	state, err := s.blockStateRepo.NewBlockState(ctx, blockID, runCode, questID)
 	if err != nil {
 		return nil, fmt.Errorf("creating new block state: %w", err)
 	}
@@ -104,12 +147,14 @@ func (s *BlockService) NewBlockState(ctx context.Context, blockID, teamCode stri
 }
 
 // NewMockBlockState creates a new mock block state.
-func (s *BlockService) NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error) {
+func (s *BlockService) NewMockBlockState(
+	ctx context.Context, blockID, runCode, questID string,
+) (blocks.PlayerState, error) {
 	if blockID == "" {
 		return nil, errors.New("blockID cannot be empty")
 	}
-	// teamCode may be blank
-	state, err := s.blockStateRepo.NewBlockState(ctx, blockID, teamCode)
+	// runCode may be blank
+	state, err := s.blockStateRepo.NewBlockState(ctx, blockID, runCode, questID)
 	if err != nil {
 		return nil, fmt.Errorf("creating new block state: %w", err)
 	}
@@ -126,6 +171,50 @@ func (s *BlockService) UpdateBlock(
 	if err != nil {
 		return nil, fmt.Errorf("updating block data: %w", err)
 	}
+
+	return s.blockRepo.Update(ctx, block)
+}
+
+// ErrVarsNotAllowed is returned when a block is given a variable its kind
+// cannot carry. Lint refuses the same shapes in a document.
+var ErrVarsNotAllowed = errors.New("this block cannot carry that variable")
+
+// UpdateBlockVars replaces what a block sets and what it waits on. Nil leaves
+// a field alone; an empty value clears it. Only a block game.CanSetVars allows
+// sets a variable; only a content block waits on one.
+func (s *BlockService) UpdateBlockVars(
+	ctx context.Context,
+	block blocks.Block,
+	sets *string,
+	depends *[]string,
+) (blocks.Block, error) {
+	newSets := block.GetSets()
+	newDepends := block.GetDepends()
+
+	if sets != nil {
+		switch {
+		case *sets == "":
+		case !game.CanSetVars(block):
+			return nil, fmt.Errorf("%w: %s cannot set a variable", ErrVarsNotAllowed, block.GetName())
+		case !game.ValidVarName(*sets):
+			return nil, fmt.Errorf("%w: %q", ErrInvalidVarName, *sets)
+		}
+		newSets = *sets
+	}
+	if depends != nil {
+		normalised := game.NormaliseDepends(*depends)
+		if len(normalised) > 0 && block.RequiresValidation() {
+			return nil, fmt.Errorf("%w: %s cannot wait on a variable", ErrVarsNotAllowed, block.GetName())
+		}
+		for _, name := range normalised {
+			if !game.ValidVarName(name) {
+				return nil, fmt.Errorf("%w: %q", ErrInvalidVarName, name)
+			}
+		}
+		newDepends = normalised
+	}
+
+	block.SetVars(newSets, newDepends)
 	return s.blockRepo.Update(ctx, block)
 }
 
@@ -134,16 +223,59 @@ func (s *BlockService) ReorderBlocks(ctx context.Context, blockIDs []string) err
 	return s.blockRepo.Reorder(ctx, blockIDs)
 }
 
-// FindByOwnerIDAndTeamCodeWithState fetches blocks and their states by owner and team code.
+// MoveBlock puts a block in the other half of its objective, then numbers the
+// list it joined in the order given. Only an objective's proof and reveal trade
+// blocks: the start and finish pages belong to the quest, not an objective.
+func (s *BlockService) MoveBlock(
+	ctx context.Context, blockID string, to blocks.BlockContext, order []string,
+) error {
+	isHalf := func(c blocks.BlockContext) bool {
+		return c == blocks.ContextObjectiveProof || c == blocks.ContextObjectiveReveal
+	}
+	if !isHalf(to) {
+		return fmt.Errorf("%w: %q is not part of an objective", ErrBlockNotMovable, to)
+	}
+	from, err := s.blockRepo.GetContext(ctx, blockID)
+	if err != nil {
+		return fmt.Errorf("finding the block's context: %w", err)
+	}
+	if !isHalf(from) {
+		return fmt.Errorf("%w: it is on a %q page", ErrBlockNotMovable, from)
+	}
+	block, err := s.blockRepo.GetByID(ctx, blockID)
+	if err != nil {
+		return fmt.Errorf("finding the block: %w", err)
+	}
+	if !blocks.CanBlockBeUsedInContext(block.GetType(), to) {
+		return fmt.Errorf("%w: %q in %q", ErrBlockNotValidForContext, block.GetType(), to)
+	}
+	// The order numbers a list, and a list belongs to one objective: an id from
+	// another would renumber blocks that have nothing to do with this move.
+	for _, id := range order {
+		other, getErr := s.blockRepo.GetByID(ctx, id)
+		if getErr != nil {
+			return fmt.Errorf("finding block %s in the order: %w", id, getErr)
+		}
+		if other.GetOwnerID() != block.GetOwnerID() {
+			return fmt.Errorf("%w: block %s belongs to another objective", ErrBlockNotMovable, id)
+		}
+	}
+	if !slices.Contains(order, blockID) {
+		order = append(order, blockID)
+	}
+	return s.blockRepo.Move(ctx, blockID, to, order)
+}
+
+// FindByOwnerIDAndRunCodeWithState fetches blocks and their states by owner and run code.
 // Creates missing states for blocks that require validation.
-func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
+func (s *BlockService) FindByOwnerIDAndRunCodeWithState(
 	ctx context.Context,
-	ownerID, teamCode string,
+	ownerID, runCode, questID string,
 ) ([]blocks.Block, map[string]blocks.PlayerState, error) {
 	if ownerID == "" {
 		return nil, nil, errors.New("ownerID must be set")
 	}
-	foundBlocks, states, err := s.blockRepo.FindBlocksAndStatesByOwnerIDAndTeamCode(ctx, ownerID, teamCode)
+	foundBlocks, states, err := s.blockRepo.FindBlocksAndStatesByOwnerIDAndRunCode(ctx, ownerID, runCode)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -155,7 +287,7 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
 	}
 
 	// Populate missing states
-	blockStates, err = s.populateMissingStates(ctx, foundBlocks, blockStates, teamCode)
+	blockStates, err = s.populateMissingStates(ctx, foundBlocks, blockStates, runCode, questID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -163,13 +295,13 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithState(
 	return foundBlocks, blockStates, nil
 }
 
-// FindByOwnerIDAndTeamCodeWithStateAndContext fetches blocks and their states by owner, team code, and context.
+// FindByOwnerIDAndRunCodeWithStateAndContext fetches blocks and their states by owner, run code, and context.
 // Creates missing states for blocks that require validation.
-// When teamCode is empty (e.g. preview mode), blocks are fetched without DB states and all
+// When runCode is empty (e.g. preview mode), blocks are fetched without DB states and all
 // states are created as in-memory mocks — no rows are written to team_block_states.
-func (s *BlockService) FindByOwnerIDAndTeamCodeWithStateAndContext(
+func (s *BlockService) FindByOwnerIDAndRunCodeWithStateAndContext(
 	ctx context.Context,
-	ownerID, teamCode string,
+	ownerID, runCode, questID string,
 	blockContext blocks.BlockContext,
 ) ([]blocks.Block, map[string]blocks.PlayerState, error) {
 	if ownerID == "" {
@@ -179,7 +311,7 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithStateAndContext(
 	var foundBlocks []blocks.Block
 	blockStates := make(map[string]blocks.PlayerState)
 
-	if teamCode == "" {
+	if runCode == "" {
 		// No real team (e.g. preview): fetch blocks only; states are all mocked below.
 		var err error
 		foundBlocks, err = s.blockRepo.FindByOwnerIDAndContext(ctx, ownerID, blockContext)
@@ -189,7 +321,9 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithStateAndContext(
 	} else {
 		var states []blocks.PlayerState
 		var err error
-		foundBlocks, states, err = s.blockRepo.FindBlocksAndStatesByOwnerIDAndTeamCodeWithContext(ctx, ownerID, teamCode, blockContext)
+		foundBlocks, states, err = s.blockRepo.FindBlocksAndStatesByOwnerIDAndRunCodeWithContext(
+			ctx, ownerID, runCode, blockContext,
+		)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -200,7 +334,7 @@ func (s *BlockService) FindByOwnerIDAndTeamCodeWithStateAndContext(
 
 	// Populate missing states
 	var err error
-	blockStates, err = s.populateMissingStates(ctx, foundBlocks, blockStates, teamCode)
+	blockStates, err = s.populateMissingStates(ctx, foundBlocks, blockStates, runCode, questID)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -212,7 +346,7 @@ func (s *BlockService) populateMissingStates(
 	ctx context.Context,
 	blocks blocks.Blocks,
 	existingStates map[string]blocks.PlayerState,
-	teamCode string,
+	runCode, questID string,
 ) (map[string]blocks.PlayerState, error) {
 	// Populate missing states - service layer responsibility
 	for _, block := range blocks {
@@ -220,7 +354,7 @@ func (s *BlockService) populateMissingStates(
 			continue
 		}
 
-		newState, stateErr := s.createStateForBlock(ctx, block, teamCode)
+		newState, stateErr := s.createStateForBlock(ctx, block, runCode, questID)
 		if stateErr != nil {
 			return nil, stateErr
 		}
@@ -232,12 +366,16 @@ func (s *BlockService) populateMissingStates(
 func (s *BlockService) createStateForBlock(
 	ctx context.Context,
 	block blocks.Block,
-	teamCode string,
+	runCode, questID string,
 ) (blocks.PlayerState, error) {
+	// A preview carries the run code "preview", which has no row in runs, so
+	// persisting against it trips the foreign key.
+	isPreview := ctx.Value(contextkeys.PreviewKey) != nil
+
 	// Create new state based on block validation requirements
-	if block.RequiresValidation() && teamCode != "" {
+	if block.RequiresValidation() && runCode != "" && !isPreview {
 		// Persist state for validation-required blocks
-		newState, err := s.NewBlockState(ctx, block.GetID(), teamCode)
+		newState, err := s.NewBlockState(ctx, block.GetID(), runCode, questID)
 		if err != nil {
 			return nil, fmt.Errorf("creating block state for %s: %w", block.GetID(), err)
 		}
@@ -245,26 +383,26 @@ func (s *BlockService) createStateForBlock(
 	}
 
 	// Mock state for non-validation blocks
-	newState, err := s.NewMockBlockState(ctx, block.GetID(), "")
+	newState, err := s.NewMockBlockState(ctx, block.GetID(), "", questID)
 	if err != nil {
 		return nil, fmt.Errorf("creating mock block state for %s: %w", block.GetID(), err)
 	}
 	return newState, nil
 }
 
-func (s *BlockService) GetBlockWithStateByBlockIDAndTeamCode(
+func (s *BlockService) GetBlockWithStateByBlockIDAndRunCode(
 	ctx context.Context,
-	blockID, teamCode string,
+	blockID, runCode, questID string,
 ) (blocks.Block, blocks.PlayerState, error) {
-	if blockID == "" || teamCode == "" {
+	if blockID == "" || runCode == "" {
 		return nil, nil, fmt.Errorf(
-			"blockID and teamCode must be set, got blockID: %s, teamCode: %s",
+			"blockID and runCode must be set, got blockID: %s, runCode: %s",
 			blockID,
-			teamCode,
+			runCode,
 		)
 	}
 
-	return s.blockRepo.GetBlockAndStateByBlockIDAndTeamCode(ctx, blockID, teamCode)
+	return s.blockRepo.GetBlockAndStateByBlockIDAndRunCode(ctx, blockID, runCode, questID)
 }
 
 // ConvertBlockToModel converts a block to its model representation.
@@ -280,40 +418,44 @@ func (s *BlockService) ConvertBlockToModel(block blocks.Block) models.Block {
 	}
 }
 
-// CheckValidationRequiredForLocation checks if any blocks in a location require validation.
-func (s *BlockService) CheckValidationRequiredForLocation(ctx context.Context, locationID string) (bool, error) {
-	blocks, err := s.FindByOwnerID(ctx, locationID)
-	if err != nil {
-		return false, err
-	}
-
-	for _, block := range blocks {
-		if block.RequiresValidation() {
-			return true, nil
-		}
-	}
-
-	return false, nil
-}
-
-// CheckValidationRequiredForCheckIn checks if any blocks still require validation for a check in.
-func (s *BlockService) CheckValidationRequiredForCheckIn(
+// checkValidationRequiredForCheckIn checks whether any blocks in an objective
+// context still require validation.
+func (s *BlockService) checkValidationRequiredForCheckIn(
 	ctx context.Context,
-	locationID, teamCode string,
+	ownerID, runCode, questID string,
+	blockContext game.BlockContext,
 ) (bool, error) {
-	blocks, state, err := s.FindByOwnerIDAndTeamCodeWithState(ctx, locationID, teamCode)
+	return s.checkValidationRequiredExcluding(ctx, ownerID, runCode, questID, blockContext, "")
+}
+
+// checkValidationRequiredExcluding is the same check with one block treated as
+// done: a completion is planned before its own state is written, so the block
+// asking would otherwise read as outstanding and its context could never finish.
+func (s *BlockService) checkValidationRequiredExcluding(
+	ctx context.Context,
+	ownerID, runCode, questID string,
+	blockContext game.BlockContext,
+	excludingBlockID string,
+) (bool, error) {
+	blocks, state, err := s.FindByOwnerIDAndRunCodeWithStateAndContext(
+		ctx,
+		ownerID,
+		runCode,
+		questID,
+		blockContext,
+	)
 	if err != nil {
 		return false, err
 	}
 
 	for _, block := range blocks {
-		if block.RequiresValidation() {
-			if state[block.GetID()] == nil {
-				return true, nil
-			}
-			if state[block.GetID()].IsComplete() {
-				continue
-			}
+		if !block.RequiresValidation() {
+			continue
+		}
+		if block.GetID() == excludingBlockID {
+			continue
+		}
+		if state[block.GetID()] == nil || !state[block.GetID()].IsComplete() {
 			return true, nil
 		}
 	}
@@ -321,7 +463,12 @@ func (s *BlockService) CheckValidationRequiredForCheckIn(
 	return false, nil
 }
 
-// UpdateState updates the player state for a block.
-func (s *BlockService) UpdateState(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
-	return s.blockStateRepo.Update(ctx, state)
+// UpdateStateIfIncompleteWithTx writes the state only if the stored row is still
+// incomplete, and reports whether this call is the one that wrote it. Two
+// submissions can both read a block as incomplete, and only one of them may be
+// the one that completes it, so the guard has to live in the write.
+func (s *BlockService) UpdateStateIfIncompleteWithTx(
+	ctx context.Context, tx *bun.Tx, state blocks.PlayerState,
+) (bool, error) {
+	return s.blockStateRepo.UpdateIfIncompleteWithTx(ctx, tx, state)
 }

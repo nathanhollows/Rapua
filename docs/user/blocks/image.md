@@ -1,12 +1,12 @@
 ---
 title: "Image"
 sidebar: true
-order: 8
+order: 10
 ---
 
 # Image Block
 
-An image block is a simple way to add images to a location page. This block is not interactive and does not award points.
+An image block is a simple way to add images to an objective. This block is not interactive and does not award points.
 
 You could use the image block with a URL as a fancy button.
 

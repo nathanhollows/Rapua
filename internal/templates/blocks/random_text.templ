@@ -1,0 +1,57 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+templ randomTextPlayer(_ models.QuestSettings, block blocks.RandomTextBlock, state blocks.PlayerState) {
+	if len(block.Texts) > 0 {
+		<div class="prose">
+			@templ.Raw(stringToMarkdown(block.GetText(state.GetPlayerID())))
+		</div>
+	}
+}
+
+func randomTextRows(blockID string) RowsParams {
+	return RowsParams{
+		ID:       "random-texts-" + blockID,
+		Cols:     textRowCols,
+		Heads:    []string{"Texts"},
+		Min:      1,
+		AddLabel: "Add a text",
+	}
+}
+
+templ randomTextAdmin(_ models.QuestSettings, block blocks.RandomTextBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">
+				@markdownBadge()
+				Texts
+			</legend>
+			@adminRows(randomTextRows(block.ID), nil) {
+				for _, text := range block.Texts {
+					@textItem(text)
+				}
+				if len(block.Texts) == 0 {
+					@textItem("")
+				}
+			}
+			<p class="label">Each team is shown one of these texts.</p>
+		</fieldset>
+	</form>
+	<template id={ randomTextRows(block.ID).TemplateID() }>
+		@textItem("")
+	</template>
+}
+
+templ textItem(text string) {
+	@rowText("texts", "", "", text, "Add a text...", "text")
+}

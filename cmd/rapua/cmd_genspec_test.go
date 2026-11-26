@@ -54,13 +54,11 @@ func TestWriteGameSpec_ContainsAuthConstraints(t *testing.T) {
 	s := string(content)
 
 	checks := []string{
-		"ROOT_LOCATION_HIDDEN",
-		"EMPTY_GROUP",
 		"SLUG_DUPLICATE",
 		"BLOCK_ID_DUPLICATE",
 		"NO_START_BUTTON",
-		"MINIMUM_REQUIRED_MISMATCH",
-		"POINTS_DISABLED",
+		"BAND_MIN_EXCEEDS_MAX",
+		"BAND_OUT_OF_RANGE",
 	}
 	for _, code := range checks {
 		if !strings.Contains(s, code) {
@@ -128,14 +126,34 @@ func TestWriteGameSpec_AllRegisteredBlocksPresent(t *testing.T) {
 
 	// Every registered block type should appear in the output
 	knownTypes := []string{
-		"alert", "broker", "button", "checklist", "clue", "divider",
+		"alert", "button", "checklist", "clue", "divider",
 		"game_status", "header", "image", "password", "photo", "pincode",
-		"quiz", "random_clue", "rating", "sorting", "start_button", "task",
+		"quiz", "random_text", "rating", "sorting", "start_button",
 		"team_name", "text", "toggle_text", "youtube",
 	}
 	for _, bt := range knownTypes {
 		if !strings.Contains(s, `"`+bt+`"`) {
 			t.Errorf("output missing block type %q", bt)
 		}
+	}
+}
+
+// The checked-in spec is generated from code, so a change to the code that is
+// not followed by `rapua genspec` leaves the docs describing something else.
+func TestGameSpec_CheckedInCopyIsFresh(t *testing.T) {
+	out := filepath.Join(t.TempDir(), "game-spec.md")
+	if _, err := writeGameSpec(out); err != nil {
+		t.Fatalf("writeGameSpec() error: %v", err)
+	}
+	want, err := os.ReadFile(out)
+	if err != nil {
+		t.Fatalf("ReadFile() error: %v", err)
+	}
+	got, err := os.ReadFile(filepath.Join("..", "..", "docs", "developer", "game-spec.md"))
+	if err != nil {
+		t.Fatalf("reading checked-in spec: %v", err)
+	}
+	if string(got) != string(want) {
+		t.Error("docs/developer/game-spec.md is stale: run `go run ./cmd/rapua genspec`")
 	}
 }

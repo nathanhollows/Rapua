@@ -14,32 +14,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// validSpecDoc returns a minimal valid v7 game document as JSON.
 func validSpecDoc() string {
 	return `{
-		"rapua":"v7",
+		"rapua":"v8",
 		"name":"Test Game",
 		"settings":{},
 		"start":[{"type":"start_button"}],
 		"finish":[],
 		"structure":{
+			"slug":"root",
+			"title":"Test Game",
 			"routing":"free_roam",
-			"navigation":"map",
-			"completion":"all",
+			"proof":{},
+			"reveal":{},
 			"children":[{
-				"group":{
-					"name":"Stage One",
-					"routing":"free_roam",
-					"navigation":"map",
-					"completion":"all",
-					"children":[{
-						"location":{
-							"slug":"loc-a",
-							"name":"Location A",
-							"content":[]
-						}
-					}]
-				}
+				"slug":"stage-one",
+				"title":"Stage One",
+				"routing":"free_roam",
+				"proof":{},
+				"reveal":{},
+				"children":[{
+					"slug":"obj-a",
+					"title":"Objective A",
+					"proof":{},
+					"reveal":{}
+				}]
 			}]
 		}
 	}`
@@ -47,7 +46,7 @@ func validSpecDoc() string {
 
 func TestSpecJSON(t *testing.T) {
 	h := &Handler{}
-	req := httptest.NewRequest(http.MethodGet, "/api/v7/spec", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v8/spec", nil)
 	w := httptest.NewRecorder()
 
 	h.SpecJSON(w, req)
@@ -58,13 +57,13 @@ func TestSpecJSON(t *testing.T) {
 	var result map[string]any
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
-	assert.Equal(t, "v7", result["version"])
+	assert.Equal(t, "v8", result["version"])
 	assert.NotEmpty(t, result["blocks"])
 }
 
 func TestLintDoc_ValidDoc_JSONBody(t *testing.T) {
 	h := &Handler{}
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", strings.NewReader(validSpecDoc()))
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", strings.NewReader(validSpecDoc()))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -75,15 +74,15 @@ func TestLintDoc_ValidDoc_JSONBody(t *testing.T) {
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
 	// LintResult.Errors should be empty (or nil/null)
-	errs, _ := result["Errors"].([]any)
+	errs, _ := result["errors"].([]any)
 	assert.Empty(t, errs)
 }
 
 func TestLintDoc_InvalidDoc_JSONBody(t *testing.T) {
 	h := &Handler{}
 	// Missing required "name" field
-	body := `{"rapua":"v7","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","navigation":"map","completion":"all","children":[]}}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", strings.NewReader(body))
+	body := `{"rapua":"v8","settings":{},"start":[],"finish":[],"structure":{"routing":"free_roam","completion":"all","children":[]}}`
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -93,13 +92,13 @@ func TestLintDoc_InvalidDoc_JSONBody(t *testing.T) {
 	var result map[string]any
 	err := json.Unmarshal(w.Body.Bytes(), &result)
 	require.NoError(t, err)
-	errs, _ := result["Errors"].([]any)
+	errs, _ := result["errors"].([]any)
 	assert.NotEmpty(t, errs)
 }
 
 func TestLintDoc_MalformedJSON(t *testing.T) {
 	h := &Handler{}
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", strings.NewReader(`not json`))
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", strings.NewReader(`not json`))
 	req.Header.Set("Content-Type", "application/json")
 	w := httptest.NewRecorder()
 
@@ -119,7 +118,7 @@ func TestLintDoc_MultipartUpload_Valid(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, mw.Close())
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	w := httptest.NewRecorder()
 
@@ -135,7 +134,7 @@ func TestLintDoc_MultipartUpload_MissingFile(t *testing.T) {
 	mw := multipart.NewWriter(body)
 	require.NoError(t, mw.Close())
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v7/lint", body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", body)
 	req.Header.Set("Content-Type", mw.FormDataContentType())
 	w := httptest.NewRecorder()
 
@@ -144,58 +143,47 @@ func TestLintDoc_MultipartUpload_MissingFile(t *testing.T) {
 	assert.Equal(t, http.StatusBadRequest, w.Code)
 }
 
-// --- parseGameDoc unit tests ---
+// --- body cap ---
 
-func TestParseGameDoc_JSONBody(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(validSpecDoc()))
-	req.Header.Set("Content-Type", "application/json")
+// A body past the cap is refused before anything reads it whole. This route is
+// public and the multipart parse spills to disk, so the cap is what keeps one
+// caller from deciding how much of the server's memory and disk to spend.
+//
+// The payload is a valid document padded past the cap with trailing whitespace,
+// which JSON allows: without a cap it would lint cleanly, so a 400 here says
+// the size was the reason rather than the content.
+func TestLintDoc_OversizedBodiesAreRefused(t *testing.T) {
+	oversized := append([]byte(validSpecDoc()), bytes.Repeat([]byte(" "), maxDocBytes)...)
 
-	doc, err := parseGameDoc(req)
+	t.Run("JSON body", func(t *testing.T) {
+		h := &Handler{}
+		req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", bytes.NewReader(oversized))
+		req.Header.Set("Content-Type", "application/json")
+		w := httptest.NewRecorder()
 
-	require.NoError(t, err)
-	assert.Equal(t, "v7", doc.Rapua)
-	assert.Equal(t, "Test Game", doc.Name)
-}
+		h.LintDoc(w, req)
 
-func TestParseGameDoc_MultipartFile(t *testing.T) {
-	body := &bytes.Buffer{}
-	mw := multipart.NewWriter(body)
-	fw, err := mw.CreateFormFile("file", "game.json")
-	require.NoError(t, err)
-	_, err = fw.Write([]byte(validSpecDoc()))
-	require.NoError(t, err)
-	require.NoError(t, mw.Close())
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "too large")
+	})
 
-	req := httptest.NewRequest(http.MethodPost, "/", body)
-	req.Header.Set("Content-Type", mw.FormDataContentType())
+	t.Run("multipart file", func(t *testing.T) {
+		h := &Handler{}
+		body := &bytes.Buffer{}
+		mw := multipart.NewWriter(body)
+		fw, err := mw.CreateFormFile("file", "game.json")
+		require.NoError(t, err)
+		_, err = fw.Write(oversized)
+		require.NoError(t, err)
+		require.NoError(t, mw.Close())
 
-	doc, err := parseGameDoc(req)
+		req := httptest.NewRequest(http.MethodPost, "/api/v8/lint", body)
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		w := httptest.NewRecorder()
 
-	require.NoError(t, err)
-	assert.Equal(t, "v7", doc.Rapua)
-	assert.Equal(t, "Test Game", doc.Name)
-}
+		h.LintDoc(w, req)
 
-func TestParseGameDoc_InvalidJSON(t *testing.T) {
-	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`not json`))
-	req.Header.Set("Content-Type", "application/json")
-
-	doc, err := parseGameDoc(req)
-
-	assert.Error(t, err)
-	assert.Nil(t, doc)
-}
-
-func TestParseGameDoc_MultipartMissingFileField(t *testing.T) {
-	body := &bytes.Buffer{}
-	mw := multipart.NewWriter(body)
-	require.NoError(t, mw.Close())
-
-	req := httptest.NewRequest(http.MethodPost, "/", body)
-	req.Header.Set("Content-Type", mw.FormDataContentType())
-
-	doc, err := parseGameDoc(req)
-
-	assert.Error(t, err)
-	assert.Nil(t, doc)
+		assert.Equal(t, http.StatusBadRequest, w.Code)
+		assert.Contains(t, w.Body.String(), "too large")
+	})
 }

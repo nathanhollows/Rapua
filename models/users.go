@@ -23,8 +23,8 @@ type User struct {
 	MonthlyCreditLimit int            `bun:"monthly_credit_limit,type:int,default:10"` // Monthly free credit allocation
 	StripeCustomerID   sql.NullString `bun:"stripe_customer_id,type:varchar(255),nullzero"`
 
-	Instances         []Instance       `bun:"rel:has-many,join:id=user_id"`
-	CurrentInstanceID string           `bun:"-"`
-	CurrentInstance   Instance         `bun:"-"`
-	CreditPurchases   []CreditPurchase `bun:"rel:has-many,join:id=user_id"`
+	Quests          []Quest          `bun:"rel:has-many,join:id=user_id"`
+	CurrentQuestID  string           `bun:"-"`
+	CurrentQuest    Quest            `bun:"-"`
+	CreditPurchases []CreditPurchase `bun:"rel:has-many,join:id=user_id"`
 }

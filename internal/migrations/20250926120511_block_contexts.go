@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
+	"github.com/nathanhollows/Rapua/v8/blocks"
 	"github.com/uptrace/bun"
 )
 
@@ -42,8 +42,6 @@ type m20250926120511_Location struct {
 	AvgDuration  float64 `bun:"avg_duration,type:float"`
 	Points       int     `bun:"points,"`
 
-	// Removed
-	// Clues     []m20241209083639_Clue   `bun:"rel:has-many,join:id=location_id"`
 	Instance m20241209083639_Instance `bun:"rel:has-one,join:instance_id=id"`
 	Marker   m20241209083639_Marker   `bun:"rel:has-one,join:marker_id=code"`
 	Blocks   []m20250926120511_Block  `bun:"rel:has-many,join:id=location_id"`
@@ -51,21 +49,19 @@ type m20250926120511_Location struct {
 
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-		// Add context column to blocks table
 		_, err := db.ExecContext(ctx, `
 			ALTER TABLE blocks
 			ADD COLUMN context VARCHAR(50) DEFAULT ?;
 		`,
-			blocks.ContextLocationContent,
+			"location_content",
 		)
 		if err != nil {
 			return fmt.Errorf("add context column to blocks: %w", err)
 		}
 
-		// Set all existing blocks to 'content' context
 		_, err = db.NewUpdate().
 			Model((*m20250926120511_Block)(nil)).
-			Set("context = ?", blocks.ContextLocationContent).
+			Set("context = ?", "location_content").
 			Where("context IS NULL OR context = ''").
 			Exec(ctx)
 		if err != nil {
@@ -74,7 +70,6 @@ func init() {
 
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
-		// Drop context column from blocks table
 		_, err := db.ExecContext(ctx, `
 			ALTER TABLE blocks
 			DROP COLUMN context;

@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 )
 
@@ -69,7 +69,7 @@ func TestInstance_GetStatus(t *testing.T) {
 		t.Run(
 			tt.name,
 			func(t *testing.T) {
-				instance := &models.Instance{
+				instance := &models.Quest{
 					StartTime: tt.startTime,
 					EndTime:   tt.endTime,
 				}

@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/specgen"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/specgen"
 )
 
 // TestSpecStaleness ensures every JSON-tagged field on each block struct has a
@@ -17,7 +17,7 @@ func TestSpecStaleness(t *testing.T) {
 	registered := blocks.GetRegisteredBlocks()
 
 	for _, reg := range registered {
-		sp, ok := reg.Instance.(game.SpecProvider)
+		sp, ok := reg.Prototype.(game.SpecProvider)
 		if !ok {
 			t.Errorf("block type %q does not implement game.SpecProvider", reg.BlockType)
 			continue
@@ -38,8 +38,8 @@ func TestSpecStaleness(t *testing.T) {
 		}
 
 		// Reflect-walk the block struct's exported JSON-tagged fields
-		blockType := reflect.TypeOf(reg.Instance)
-		if blockType.Kind() == reflect.Ptr {
+		blockType := reflect.TypeOf(reg.Prototype)
+		if blockType.Kind() == reflect.Pointer {
 			blockType = blockType.Elem()
 		}
 
@@ -103,11 +103,11 @@ func TestGenerateJSON(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_Version checks that the generated spec reports version "v7".
+// TestGenerateFullSpec_Version checks that the generated spec reports version "v8".
 func TestGenerateFullSpec_Version(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
-	if spec.Version != "v7" {
-		t.Errorf("GenerateFullSpec().Version = %q, want %q", spec.Version, "v7")
+	if spec.Version != "v8" {
+		t.Errorf("GenerateFullSpec().Version = %q, want %q", spec.Version, "v8")
 	}
 }
 
@@ -121,8 +121,7 @@ func TestGenerateFullSpec_HasAllContexts(t *testing.T) {
 	}
 
 	expected := []string{
-		"location_content", "location_clues", "task",
-		"checkpoint", "start", "finish",
+		"start", "finish", "objective_proof", "objective_reveal",
 	}
 	for _, ctx := range expected {
 		if !contextValues[ctx] {
@@ -131,17 +130,41 @@ func TestGenerateFullSpec_HasAllContexts(t *testing.T) {
 	}
 }
 
-// TestGenerateFullSpec_HasEnums checks routing, navigation, and completion enums are non-empty.
+// TestGenerateBlockSpecs_ContextsMatchRegistry proves each block's generated
+// Contexts comes from the live registry (blocks.block.go's registerBlock
+// calls), not a hand-maintained copy that can drift out of sync with it.
+func TestGenerateBlockSpecs_ContextsMatchRegistry(t *testing.T) {
+	registered := blocks.GetRegisteredBlocks()
+	byType := make(map[string][]game.BlockContext, len(registered))
+	for _, reg := range registered {
+		byType[reg.BlockType] = reg.SupportedContexts
+	}
+
+	for _, spec := range specgen.GenerateBlockSpecs() {
+		want := byType[spec.Type]
+		if len(spec.Contexts) != len(want) {
+			t.Errorf("block %q: Contexts = %v, want %v", spec.Type, spec.Contexts, want)
+			continue
+		}
+		for i, c := range want {
+			if spec.Contexts[i] != string(c) {
+				t.Errorf("block %q: Contexts[%d] = %q, want %q", spec.Type, i, spec.Contexts[i], string(c))
+			}
+		}
+		for _, c := range spec.Contexts {
+			if c == "location_content" || c == "navigation" {
+				t.Errorf("block %q: Contexts still lists dead context %q", spec.Type, c)
+			}
+		}
+	}
+}
+
+// TestGenerateFullSpec_HasEnums checks the routing enum is non-empty. Routing
+// is the only enum left: the completion enum went with the band that replaced it.
 func TestGenerateFullSpec_HasEnums(t *testing.T) {
 	spec := specgen.GenerateFullSpec()
 	if len(spec.Enums.Routing) == 0 {
 		t.Error("GenerateFullSpec().Enums.Routing is empty")
-	}
-	if len(spec.Enums.Navigation) == 0 {
-		t.Error("GenerateFullSpec().Enums.Navigation is empty")
-	}
-	if len(spec.Enums.Completion) == 0 {
-		t.Error("GenerateFullSpec().Enums.Completion is empty")
 	}
 }
 
@@ -196,26 +219,71 @@ func TestGenerateFullSpec_AllBlocksHaveNonEmptyType(t *testing.T) {
 	}
 }
 
-// TestSpecStaleness_IgnoresBaseBlockFields verifies that the staleness check
-// does not flag the anonymous BaseBlock fields as missing from specs.
-func TestSpecStaleness_IgnoresBaseBlockFields(t *testing.T) {
+func TestGenerateBlockSpecs_PointsOnlyOnInteractiveBlocks(t *testing.T) {
 	registered := blocks.GetRegisteredBlocks()
+	wantPoints := make(map[string]bool, len(registered))
 	for _, reg := range registered {
-		sp, ok := reg.Instance.(game.SpecProvider)
-		if !ok {
+		wantPoints[reg.BlockType] = reg.Prototype.RequiresValidation()
+	}
+
+	for _, spec := range specgen.GenerateBlockSpecs() {
+		hasPoints := false
+		for _, f := range spec.SharedFields {
+			if f == "points" {
+				hasPoints = true
+			}
+		}
+		if want := wantPoints[spec.Type]; hasPoints != want {
+			t.Errorf("block %q: SharedFields has points=%v, want %v (RequiresValidation)",
+				spec.Type, hasPoints, want)
+		}
+	}
+}
+
+func jsonFieldNames(t reflect.Type) map[string]bool {
+	names := make(map[string]bool, t.NumField())
+	for i := range t.NumField() {
+		field := t.Field(i)
+		if field.Anonymous {
 			continue
 		}
-		spec := sp.GetSpec()
-		specFields := make(map[string]bool, len(spec.Fields))
-		for _, f := range spec.Fields {
-			specFields[f.Name] = true
+		name := strings.Split(field.Tag.Get("json"), ",")[0]
+		if name == "" || name == "-" {
+			continue
 		}
-		// BaseBlock fields "id" and "type" are promoted — they must NOT be in spec.Fields.
-		if specFields["id"] {
-			t.Errorf("block %q: GetSpec().Fields should not include promoted field \"id\"", reg.BlockType)
+		names[name] = true
+	}
+	return names
+}
+
+// TestSpecStaleness_ObjectiveFields checks both directions because the spec's
+// field list is hand-written and drifts when ObjectiveDoc changes.
+func TestSpecStaleness_ObjectiveFields(t *testing.T) {
+	spec := specgen.GenerateFullSpec()
+
+	var documented map[string]bool
+	for _, field := range spec.Document.Fields {
+		if field.Name != "objective" {
+			continue
 		}
-		if specFields["type"] {
-			t.Errorf("block %q: GetSpec().Fields should not include promoted field \"type\"", reg.BlockType)
+		documented = make(map[string]bool, len(field.Fields))
+		for _, f := range field.Fields {
+			documented[f.Name] = true
+		}
+	}
+	if documented == nil {
+		t.Fatal(`GenerateFullSpec().Document.Fields has no "objective" entry`)
+	}
+
+	actual := jsonFieldNames(reflect.TypeOf(game.ObjectiveDoc{}))
+	for name := range actual {
+		if !documented[name] {
+			t.Errorf("ObjectiveDoc has field %q, which the objective spec does not document", name)
+		}
+	}
+	for name := range documented {
+		if !actual[name] {
+			t.Errorf("the objective spec documents %q, which ObjectiveDoc no longer has", name)
 		}
 	}
 }

@@ -8,7 +8,6 @@ type ToggleTextBlock struct {
 	BaseBlock
 	Title   string `json:"title"`
 	Content string `json:"content"`
-	Small   bool   `json:"small"`
 }
 
 // Basic Attributes Getters
@@ -43,7 +42,6 @@ func (b *ToggleTextBlock) UpdateBlockData(input map[string][]string) error {
 	if content, exists := input["content"]; exists && len(content) > 0 {
 		b.Content = content[0]
 	}
-	_, b.Small = input["small"]
 	return nil
 }
 
@@ -53,12 +51,8 @@ func (b *ToggleTextBlock) ToYAML() map[string]any {
 		"title":   b.Title,
 		"content": b.Content,
 	}
-	if b.Small {
-		m["small"] = true
-	}
 	return m
 }
-
 
 // Validation and Points Calculation
 
@@ -70,4 +64,3 @@ func (b *ToggleTextBlock) ValidatePlayerInput(state PlayerState, _ map[string][]
 	state.SetComplete(true)
 	return state, nil
 }
-

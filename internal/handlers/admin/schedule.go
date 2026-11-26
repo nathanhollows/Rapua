@@ -1,73 +1,64 @@
 package admin
 
 import (
+	"context"
 	"net/http"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // StartGame starts the game immediately.
 func (h *Handler) StartGame(w http.ResponseWriter, r *http.Request) {
-	user := h.UserFromContext(r.Context())
-
-	err := h.gameScheduleService.Start(r.Context(), &user.CurrentInstance)
-	if err != nil {
-		h.handleError(
-			w,
-			r,
-			"starting game",
-			"Error starting game",
-			"Could not start game",
-			err,
-			"instance_id",
-			user.CurrentInstanceID,
-		)
-		return
-	}
-
-	msg := *flash.NewSuccess("Game started!")
-	err = templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("StartGame: rendering GameScheduleStatus template", "error", err)
-		return
-	}
-	err = templates.ActivityStatusBadgeOOB(user.CurrentInstance).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("StartGame: rendering ActivityStatusBadgeOOB template", "error", err)
-	}
+	h.toggleGameStatus(w, r, "starting", "Game started!", h.gameScheduleService.Start)
 }
 
 // StopGame stops the game immediately.
 func (h *Handler) StopGame(w http.ResponseWriter, r *http.Request) {
+	h.toggleGameStatus(w, r, "stopping", "Game stopped!", h.gameScheduleService.Stop)
+}
+
+// toggleGameStatus is a helper for StartGame and StopGame that avoids duplicating
+// the context lookup, error handling, flash message, and template rendering.
+func (h *Handler) toggleGameStatus(
+	w http.ResponseWriter,
+	r *http.Request,
+	action string,
+	successMsg string,
+	serviceFn func(context.Context, *models.Quest) error,
+) {
 	user := h.UserFromContext(r.Context())
 
-	err := h.gameScheduleService.Stop(r.Context(), &user.CurrentInstance)
+	err := serviceFn(r.Context(), &user.CurrentQuest)
 	if err != nil {
 		h.handleError(
 			w,
 			r,
-			"stopping game",
-			"Error stopping game",
-			"Could not stop game",
+			action+" game",
+			"Error "+action+" game",
+			"Could not "+action+" game",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	msg := *flash.NewSuccess("Game stopped!")
-	err = templates.GameScheduleStatus(user.CurrentInstance, msg).Render(r.Context(), w)
+	msg := *flash.NewSuccess(successMsg)
+	err = templates.GameControl(user.CurrentQuest, msg).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("StopGame: rendering GameScheduleStatus template", "error", err)
+		h.logger.ErrorContext(r.Context(), action+" game: rendering GameControl template", "error", err)
 		return
 	}
-	err = templates.ActivityStatusBadgeOOB(user.CurrentInstance).Render(r.Context(), w)
+	err = templates.QuestSwitcherOOB(*user, "Activity").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("StopGame: rendering ActivityStatusBadgeOOB template", "error", err)
+		h.logger.ErrorContext(r.Context(), action+" game: rendering QuestSwitcherOOB template", "error", err)
+	}
+	err = templates.JustNowSlot(user.CurrentQuest, true).Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), action+" game: rendering JustNowSlot template", "error", err)
 	}
 }
 
@@ -99,13 +90,13 @@ func (h *Handler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 			"Error scheduling game",
 			"Start time must be before end time",
 			nil,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	err = h.gameScheduleService.ScheduleGame(r.Context(), &user.CurrentInstance, sTime, eTime)
+	err = h.gameScheduleService.ScheduleGame(r.Context(), &user.CurrentQuest, sTime, eTime)
 	if err != nil {
 		h.handleError(
 			w,
@@ -114,21 +105,25 @@ func (h *Handler) ScheduleGame(w http.ResponseWriter, r *http.Request) {
 			"Error scheduling game",
 			"Could not schedule game",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return
 	}
 
-	err = templates.GameScheduleStatus(user.CurrentInstance, *flash.NewSuccess("Schedule updated!")).
+	err = templates.GameControl(user.CurrentQuest, *flash.NewSuccess("Schedule updated!")).
 		Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ScheduleGame: rendering GameScheduleStatus template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering GameControl template", "error", err)
 		return
 	}
-	err = templates.ActivityStatusBadgeOOB(user.CurrentInstance).Render(r.Context(), w)
+	err = templates.QuestSwitcherOOB(*user, "Activity").Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ScheduleGame: rendering ActivityStatusBadgeOOB template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering QuestSwitcherOOB template", "error", err)
+	}
+	err = templates.JustNowSlot(user.CurrentQuest, true).Render(r.Context(), w)
+	if err != nil {
+		h.logger.ErrorContext(r.Context(), "ScheduleGame: rendering JustNowSlot template", "error", err)
 	}
 }
 
@@ -157,8 +152,8 @@ func (h *Handler) parseScheduleTime(
 			"Error parsing "+timeType+" date and time",
 			timeType+" date and time are required",
 			nil,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return time.Time{}, false
 	}
@@ -172,8 +167,8 @@ func (h *Handler) parseScheduleTime(
 			"Error parsing "+timeType+" date and time",
 			"Could not parse date and time",
 			err,
-			"instance_id",
-			user.CurrentInstanceID,
+			"quest_id",
+			user.CurrentQuestID,
 		)
 		return time.Time{}, false
 	}
@@ -204,5 +199,14 @@ func parseDateTime(dateString, timeString string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	return time.Date(d.Year(), d.Month(), d.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), t.UTC().Location()), nil
+	return time.Date(
+		d.Year(),
+		d.Month(),
+		d.Day(),
+		t.Hour(),
+		t.Minute(),
+		t.Second(),
+		t.Nanosecond(),
+		t.UTC().Location(),
+	), nil
 }

@@ -7,18 +7,40 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 // GenerateBlockSpecs returns the BlockSpec for every registered block type, sorted by type name.
+// Interactive block specs (RequiresValidation) receive `points`, and `sets`
+// where game.CanSetVars allows; content blocks receive `depends` instead.
 func GenerateBlockSpecs() []game.BlockSpec {
 	registered := blocks.GetRegisteredBlocks()
 
 	specs := make([]game.BlockSpec, 0, len(registered))
 	for _, reg := range registered {
-		if sp, ok := reg.Instance.(game.SpecProvider); ok {
-			specs = append(specs, sp.GetSpec())
+		if sp, ok := reg.Prototype.(game.SpecProvider); ok {
+			spec := sp.GetSpec()
+			// Contexts comes from the registry, not the block's own GetSpec
+			// literal: SupportedContexts is what BlockCreate actually enforces,
+			// so it can't drift out of sync with reality the way a
+			// hand-maintained duplicate list already had.
+			contexts := make([]string, len(reg.SupportedContexts))
+			for i, c := range reg.SupportedContexts {
+				contexts[i] = string(c)
+			}
+			spec.Contexts = contexts
+			// Asked of the block rather than listed here, so a new interactive
+			// block cannot ship with the spec hiding a field the runtime honours.
+			if reg.Prototype.RequiresValidation() {
+				spec.SharedFields = append(spec.SharedFields, "points")
+				if game.CanSetVars(reg.Prototype) {
+					spec.SharedFields = append(spec.SharedFields, "sets")
+				}
+			} else {
+				spec.SharedFields = append(spec.SharedFields, "depends")
+			}
+			specs = append(specs, spec)
 		}
 	}
 
@@ -29,7 +51,7 @@ func GenerateBlockSpecs() []game.BlockSpec {
 	return specs
 }
 
-// GenerateJSON returns the complete v7 spec serialised as indented JSON.
+// GenerateJSON returns the complete v8 spec serialised as indented JSON.
 func GenerateJSON() ([]byte, error) {
 	return json.MarshalIndent(GenerateFullSpec(), "", "  ")
 }

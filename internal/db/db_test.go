@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
 	"github.com/stretchr/testify/require"
 )
 

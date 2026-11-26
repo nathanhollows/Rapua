@@ -211,7 +211,6 @@ func (b *QuizBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // RequiresValidation returns whether this block requires player input validation.
 func (b *QuizBlock) RequiresValidation() bool {
 	return true
@@ -392,3 +391,12 @@ func NewQuizBlock(base BaseBlock) *QuizBlock {
 	}
 }
 
+// Submission returns the options chosen when they were wrong. A quiz without
+// retries completes on a wrong answer, so this cannot go by completion.
+func (b *QuizBlock) Submission(_ map[string][]string, state PlayerState) json.RawMessage {
+	var data QuizPlayerData
+	if err := json.Unmarshal(state.GetPlayerData(), &data); err != nil || data.IsCorrect {
+		return nil
+	}
+	return marshalSubmission(map[string][]string{"selected_options": data.SelectedOptions})
+}

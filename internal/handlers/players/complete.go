@@ -1,18 +1,16 @@
 package players
 
 import (
-	"errors"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
-	team, err := h.getTeamFromContext(r.Context())
+	team, err := h.getRunFromContext(r.Context())
 	if err != nil {
 		h.redirect(w, r, "/play")
 		return
@@ -20,27 +18,32 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 
 	// Skip redirect logic in preview mode
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		var locations []models.Location
-		locations, err = h.navigationService.GetNextLocations(r.Context(), team)
-		if err != nil {
-			if !errors.Is(err, services.ErrAllLocationsVisited) {
-				h.handleError(
-					w,
-					r,
-					"Next: getting next locations",
-					"Error getting next locations",
-					"Could not load data",
-					err,
-				)
-				return
-			}
+		// Use the same objective view as /objectives so both handlers agree.
+		view, objErr := h.navigationService.GetPlayerObjectiveView(r.Context(), team)
+		if objErr != nil {
+			h.handleError(
+				w,
+				r,
+				"Complete: getting objective view",
+				"Error getting objective view",
+				"Could not load data",
+				objErr,
+			)
+			return
 		}
-		if len(locations) > 0 {
-			h.redirect(w, r, "/next")
+		if !view.Complete {
+			h.redirect(w, r, "/objectives")
 			return
 		}
 	}
 
+	h.renderComplete(w, r, team)
+}
+
+// Split from Complete so the objectives list can draw it in place: a redirect
+// from a boosted request becomes an Hx-Redirect, which reloads the whole
+// document and refetches every script.
+func (h *PlayerHandler) renderComplete(w http.ResponseWriter, r *http.Request, team *models.Run) {
 	// Get blocks for the complete page
 	var pageBlocks []blocks.Block
 	var blockStates map[string]blocks.PlayerState
@@ -49,26 +52,33 @@ func (h *PlayerHandler) Complete(w http.ResponseWriter, r *http.Request) {
 	if r.Context().Value(contextkeys.PreviewKey) != nil {
 		teamCode = ""
 	}
-	pageBlocks, blockStates, err = h.blockService.FindByOwnerIDAndTeamCodeWithStateAndContext(
+	var err error
+	pageBlocks, blockStates, err = h.blockService.FindByOwnerIDAndRunCodeWithStateAndContext(
 		r.Context(),
-		team.InstanceID,
+		team.QuestID,
 		teamCode,
+		team.QuestID,
 		blocks.ContextFinish,
 	)
 	if err != nil {
-		h.logger.Error("getting 'complete' page blocks", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "getting 'complete' page blocks", "error", err.Error())
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusFound)
 		return
 	}
 
 	// If the user is in preview mode, only render the template, not the full layout.
-	template := templates.Complete(*team, pageBlocks, blockStates)
+	template := templates.Complete(
+		*team, pageBlocks, blockStates,
+		h.hiddenBlocks(r.Context(), team, pageBlocks), isPreview(r.Context()),
+	)
 	if r.Context().Value(contextkeys.PreviewKey) == nil {
-		template = templates.Layout(template, "Complete", team.Messages)
+		template = templates.AppLayout(
+			template, templates.AppChrome{Run: *team, Active: "quest"}, "Complete", team.Messages,
+		)
 	}
 
 	err = template.Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("rendering 'complete' page", "error", err.Error())
+		h.logger.ErrorContext(r.Context(), "rendering 'complete' page", "error", err.Error())
 	}
 }

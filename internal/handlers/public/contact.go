@@ -3,17 +3,11 @@ package public
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
 )
 
 func (h *Handler) Contact(w http.ResponseWriter, r *http.Request) {
-	c := templates.Contact()
-	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	err := templates.PublicLayout(c, "Contact", authed).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("Contact: rendering template", "error", err)
-	}
+	h.renderPage(w, r, "contact", templates.ContactPage)
 }
 
 func (h *Handler) ContactPost(w http.ResponseWriter, r *http.Request) {
@@ -38,10 +32,8 @@ func (h *Handler) ContactPost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	c := templates.ContactSuccess()
-	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	err = templates.PublicLayout(c, "Contact", authed).Render(r.Context(), w)
+	err = templates.ContactSuccess().Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ContactPost: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ContactPost: rendering template", "error", err)
 	}
 }

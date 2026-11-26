@@ -3,7 +3,7 @@ package game_test
 import (
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +18,6 @@ func TestRouteStrategy_String(t *testing.T) {
 		{game.RouteStrategyRandomised, "Randomised Route"},
 		{game.RouteStrategyFreeRoam, "Open Exploration"},
 		{game.RouteStrategyOrdered, "Guided Path"},
-		{game.RouteStrategySecret, "Secret"},
 		{game.RouteStrategy("unknown"), "unknown"},
 	}
 	for _, c := range cases {
@@ -34,7 +33,6 @@ func TestRouteStrategy_Description(t *testing.T) {
 		{game.RouteStrategyRandomised, false},
 		{game.RouteStrategyFreeRoam, false},
 		{game.RouteStrategyOrdered, false},
-		{game.RouteStrategySecret, false},
 		{game.RouteStrategy("unknown"), true},
 	}
 	for _, c := range cases {
@@ -55,7 +53,6 @@ func TestParseRouteStrategy(t *testing.T) {
 		{"randomised", game.RouteStrategyRandomised},
 		{"free_roam", game.RouteStrategyFreeRoam},
 		{"ordered", game.RouteStrategyOrdered},
-		{"secret", game.RouteStrategySecret},
 	}
 	for _, c := range valid {
 		got, err := game.ParseRouteStrategy(c.input)
@@ -67,74 +64,12 @@ func TestParseRouteStrategy(t *testing.T) {
 	assert.Error(t, err)
 }
 
-// --- NavigationMode ---
-
-func TestNavigationMode_String(t *testing.T) {
-	cases := []struct {
-		input game.NavigationMode
-		want  string
-	}{
-		{game.NavigationMap, "Map Only"},
-		{game.NavigationLabelledMap, "Labelled Map"},
-		{game.NavigationList, "Location List"},
-		{game.NavigationCustom, "Custom Clues"},
-		{game.NavigationTasks, "Tasks"},
-		{game.NavigationMode("unknown"), "unknown"},
-	}
-	for _, c := range cases {
-		assert.Equal(t, c.want, c.input.String(), "NavigationMode(%q).String()", c.input)
-	}
-}
-
-func TestNavigationMode_Description(t *testing.T) {
-	cases := []struct {
-		input game.NavigationMode
-		empty bool
-	}{
-		{game.NavigationMap, false},
-		{game.NavigationLabelledMap, false},
-		{game.NavigationList, false},
-		{game.NavigationCustom, false},
-		{game.NavigationTasks, false},
-		{game.NavigationMode("unknown"), true},
-	}
-	for _, c := range cases {
-		desc := c.input.Description()
-		if c.empty {
-			assert.Empty(t, desc)
-		} else {
-			assert.NotEmpty(t, desc)
-		}
-	}
-}
-
-func TestParseNavigationMode(t *testing.T) {
-	valid := []struct {
-		input string
-		want  game.NavigationMode
-	}{
-		{"map", game.NavigationMap},
-		{"labelled_map", game.NavigationLabelledMap},
-		{"location_list", game.NavigationList},
-		{"custom", game.NavigationCustom},
-		{"tasks", game.NavigationTasks},
-	}
-	for _, c := range valid {
-		got, err := game.ParseNavigationMode(c.input)
-		require.NoError(t, err, "input %q", c.input)
-		assert.Equal(t, c.want, got)
-	}
-
-	_, err := game.ParseNavigationMode("bogus")
-	assert.Error(t, err)
-}
-
 func TestCompletionType_String(t *testing.T) {
 	cases := []struct {
 		input game.CompletionType
 		want  string
 	}{
-		{game.CompletionAll, "All Locations"},
+		{game.CompletionAll, "All Objectives"},
 		{game.CompletionMinimum, "Minimum Required"},
 		{game.CompletionType("unknown"), "unknown"},
 	}
@@ -160,4 +95,19 @@ func TestCompletionType_Description(t *testing.T) {
 			assert.NotEmpty(t, desc)
 		}
 	}
+}
+
+func TestProgressFeedback_NormalisedReadsAnythingUnknownAsFraction(t *testing.T) {
+	assert.Equal(t, game.ProgressFeedbackFraction, game.ProgressFeedback("").Normalised(), "a row from before the column")
+	assert.Equal(t, game.ProgressFeedbackFraction, game.ProgressFeedback("timer").Normalised(), "a value this build does not know")
+	assert.Equal(t, game.ProgressFeedbackCount, game.ProgressFeedback("count").Normalised())
+	assert.Equal(t, game.ProgressFeedbackNone, game.ProgressFeedback("none").Normalised())
+}
+
+func TestParseProgressFeedback_RejectsWhatIsNotOneOfThree(t *testing.T) {
+	_, err := game.ParseProgressFeedback("sparkle")
+	assert.Error(t, err)
+	got, err := game.ParseProgressFeedback("none")
+	assert.NoError(t, err)
+	assert.Equal(t, game.ProgressFeedbackNone, got)
 }

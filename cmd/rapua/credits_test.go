@@ -6,11 +6,11 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/migrations"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/migrations"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -49,11 +49,11 @@ func setupCreditsTest(t *testing.T) (*services.CreditService, repositories.UserR
 	dbc, cleanup := setupTestDB(t)
 
 	creditRepo := repositories.NewCreditRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	transactor := db.NewTransactor(dbc)
 
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 
 	return creditService, userRepo, cleanup
 }

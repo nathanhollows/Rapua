@@ -3,14 +3,16 @@ package services_test
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -19,9 +21,9 @@ import (
 func setupDuplicationService(t *testing.T) (
 	*services.DuplicationService,
 	db.Transactor,
-	repositories.InstanceRepository,
-	repositories.InstanceSettingsRepository,
-	repositories.LocationRepository,
+	repositories.QuestRepository,
+	repositories.QuestSettingsRepository,
+	repositories.ObjectiveRepository,
 	repositories.BlockRepository,
 	*bun.DB,
 	func(),
@@ -32,33 +34,35 @@ func setupDuplicationService(t *testing.T) (
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
 	duplicationService := services.NewDuplicationService(
+		slog.Default(),
 		transactor,
 		instanceRepo,
 		instanceSettingsRepo,
-		locationRepo,
+		objectiveRepo,
 		blockRepo,
 	)
 
-	return duplicationService, transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
+	return duplicationService, transactor, instanceRepo, instanceSettingsRepo,
+		objectiveRepo, blockRepo, dbc, cleanup
 }
 
-func TestDuplicationService_DuplicateInstance(t *testing.T) {
-	svc, transactor, instanceRepo, settingsRepo, locationRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
+func TestDuplicationService_DuplicateQuest(t *testing.T) {
+	svc, transactor, instanceRepo, settingsRepo, objectiveRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 
-	t.Run("successfully duplicates instance with locations and blocks", func(t *testing.T) {
+	t.Run("successfully duplicates instance with objectives and blocks", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance
-		sourceInstance := &models.Instance{
+		sourceInstance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -67,37 +71,37 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create settings
-		settings := &models.InstanceSettings{
-			InstanceID:      sourceInstance.ID,
-			EnablePoints:    true,
-			ShowLeaderboard: true,
+		settings := &models.QuestSettings{
+			QuestID:          sourceInstance.ID,
+			EnablePoints:     true,
+			ShowLeaderboard:  true,
+			ProgressFeedback: game.ProgressFeedbackCount,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
-		// Create location with blocks
-		markerCode := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, markerCode)
-		location := &models.Location{
-			Name:       gofakeit.Word(),
-			InstanceID: sourceInstance.ID,
-			MarkerID:   markerCode,
-			Points:     100,
+		objective := &models.Objective{
+			QuestID: sourceInstance.ID,
+			Slug:    gofakeit.Word() + "-objective",
+			Title:   gofakeit.Sentence(3),
 		}
-		err = locationRepo.Create(ctx, location)
-		require.NoError(t, err)
-
-		// Create blocks for the location
 		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 		require.NoError(t, err)
-		err = blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, "template-id", location.ID)
+		err = objectiveRepo.CreateTx(ctx, tx, objective)
+		require.NoError(t, err)
+		err = tx.Commit()
+		require.NoError(t, err)
+
+		tx, err = transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		err = blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, "template-id", objective.ID)
 		require.NoError(t, err)
 		err = tx.Commit()
 		require.NoError(t, err)
 
 		// Duplicate the instance
 		newName := gofakeit.Word()
-		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, newName)
+		duplicated, err := svc.DuplicateQuest(ctx, user, sourceInstance.ID, newName)
 		require.NoError(t, err)
 
 		// Verify instance was duplicated
@@ -107,143 +111,81 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		assert.False(t, duplicated.IsTemplate)
 
 		// Verify settings were duplicated
-		duplicatedSettings, err := settingsRepo.GetByInstanceID(ctx, duplicated.ID)
+		duplicatedSettings, err := settingsRepo.GetByQuestID(ctx, duplicated.ID)
 		require.NoError(t, err)
 		assert.Equal(t, settings.EnablePoints, duplicatedSettings.EnablePoints)
 		assert.Equal(t, settings.ShowLeaderboard, duplicatedSettings.ShowLeaderboard)
+		assert.Equal(t, settings.ProgressFeedback, duplicatedSettings.ProgressFeedback)
 
-		// Verify locations were duplicated
-		duplicatedLocations, err := locationRepo.FindByInstance(ctx, duplicated.ID)
+		duplicatedObjectives, err := objectiveRepo.FindByQuestID(ctx, duplicated.ID)
 		require.NoError(t, err)
-		assert.Len(t, duplicatedLocations, 1)
-		assert.NotEqual(t, location.ID, duplicatedLocations[0].ID)
-		assert.Equal(t, location.Name, duplicatedLocations[0].Name)
-		assert.Equal(t, location.Points, duplicatedLocations[0].Points)
+		assert.Len(t, duplicatedObjectives, 1)
+		assert.NotEqual(t, objective.ID, duplicatedObjectives[0].ID)
+		assert.Equal(t, objective.Title, duplicatedObjectives[0].Title)
 	})
 
-	t.Run("duplicates game structure with remapped location IDs", func(t *testing.T) {
+	t.Run("duplicates the tree with parents remapped to the copies", func(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		// Create source instance with game structure
-		sourceInstance := &models.Instance{
-			Name:       gofakeit.Word(),
-			UserID:     user.ID,
-			IsTemplate: false,
-		}
-		err := instanceRepo.Create(ctx, sourceInstance)
+		sourceInstance := &models.Quest{Name: gofakeit.Word(), UserID: user.ID}
+		require.NoError(t, instanceRepo.Create(ctx, sourceInstance))
+
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		root := &models.Objective{QuestID: sourceInstance.ID, Slug: "root", Title: "Root"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, root))
+		section := &models.Objective{QuestID: sourceInstance.ID, ParentID: root.ID, Slug: "sec", Title: "Section"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, section))
+		leaf := &models.Objective{QuestID: sourceInstance.ID, ParentID: section.ID, Slug: "leaf", Title: "Leaf"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, leaf))
+		require.NoError(t, tx.Commit())
+
+		require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: sourceInstance.ID}))
+
+		duplicated, err := svc.DuplicateQuest(ctx, user, sourceInstance.ID, gofakeit.Word())
 		require.NoError(t, err)
 
-		// Create locations
-		marker1 := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, marker1)
-		location1 := &models.Location{
-			Name:       "Location 1",
-			InstanceID: sourceInstance.ID,
-			MarkerID:   marker1,
-		}
-		err = locationRepo.Create(ctx, location1)
+		copies, err := objectiveRepo.FindTreeByQuestID(ctx, duplicated.ID)
 		require.NoError(t, err)
+		require.Len(t, copies, 3)
 
-		marker2 := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, marker2)
-		location2 := &models.Location{
-			Name:       "Location 2",
-			InstanceID: sourceInstance.ID,
-			MarkerID:   marker2,
-		}
-		err = locationRepo.Create(ctx, location2)
-		require.NoError(t, err)
-
-		marker3 := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, marker3)
-		location3 := &models.Location{
-			Name:       "Location 3",
-			InstanceID: sourceInstance.ID,
-			MarkerID:   marker3,
-		}
-		err = locationRepo.Create(ctx, location3)
-		require.NoError(t, err)
-
-		// Create game structure with subgroups
-		gameStructure := models.GameStructure{
-			ID:          gofakeit.UUID(),
-			IsRoot:      true,
-			LocationIDs: []string{location1.ID},
-			SubGroups: []models.GameStructure{
-				{
-					ID:          gofakeit.UUID(),
-					Name:        "Group 1",
-					Color:       "primary",
-					LocationIDs: []string{location2.ID},
-				},
-				{
-					ID:          gofakeit.UUID(),
-					Name:        "Group 2",
-					Color:       "secondary",
-					LocationIDs: []string{location3.ID},
-				},
-			},
-		}
-		sourceInstance.GameStructure = gameStructure
-
-		// Update instance with game structure
-		err = instanceRepo.Update(ctx, sourceInstance)
-		require.NoError(t, err)
-
-		// Create settings
-		settings := &models.InstanceSettings{
-			InstanceID: sourceInstance.ID,
-		}
-		err = settingsRepo.Create(ctx, settings)
-		require.NoError(t, err)
-
-		// Duplicate the instance
-		newName := gofakeit.Word()
-		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, newName)
-		require.NoError(t, err)
-
-		// Verify game structure was copied
-		assert.NotEmpty(t, duplicated.GameStructure.ID)
-		assert.True(t, duplicated.GameStructure.IsRoot)
-		assert.Len(t, duplicated.GameStructure.SubGroups, 2)
-
-		// Get duplicated locations
-		duplicatedLocations, err := locationRepo.FindByInstance(ctx, duplicated.ID)
-		require.NoError(t, err)
-		require.Len(t, duplicatedLocations, 3)
-
-		// Build a map of duplicated locations by name for verification
-		locationsByName := make(map[string]string)
-		for _, loc := range duplicatedLocations {
-			locationsByName[loc.Name] = loc.ID
+		byTitle := make(map[string]models.Objective, len(copies))
+		for _, obj := range copies {
+			byTitle[obj.Title] = obj
+			assert.Equal(t, duplicated.ID, obj.QuestID)
 		}
 
-		// Verify location IDs were remapped in root group
-		assert.Len(t, duplicated.GameStructure.LocationIDs, 1)
-		assert.Equal(t, locationsByName["Location 1"], duplicated.GameStructure.LocationIDs[0])
-		assert.NotEqual(t, location1.ID, duplicated.GameStructure.LocationIDs[0], "Location ID should be remapped")
+		assert.Empty(t, byTitle["Root"].ParentID, "the copy has its own root")
+		assert.Equal(t, byTitle["Root"].ID, byTitle["Section"].ParentID,
+			"the section hangs off the copied root, not the source's")
+		assert.Equal(t, byTitle["Section"].ID, byTitle["Leaf"].ParentID)
+		assert.NotEqual(t, section.ID, byTitle["Section"].ID, "ids are remapped")
+	})
 
-		// Verify location IDs were remapped in subgroups
-		assert.Equal(t, "Group 1", duplicated.GameStructure.SubGroups[0].Name)
-		assert.Len(t, duplicated.GameStructure.SubGroups[0].LocationIDs, 1)
-		assert.Equal(t, locationsByName["Location 2"], duplicated.GameStructure.SubGroups[0].LocationIDs[0])
-		assert.NotEqual(
-			t,
-			location2.ID,
-			duplicated.GameStructure.SubGroups[0].LocationIDs[0],
-			"Location ID should be remapped",
-		)
+	t.Run("does not move the source's own objectives", func(t *testing.T) {
+		user := &models.User{ID: gofakeit.UUID()}
+		insertTestUser(t, dbc, user.ID)
 
-		assert.Equal(t, "Group 2", duplicated.GameStructure.SubGroups[1].Name)
-		assert.Len(t, duplicated.GameStructure.SubGroups[1].LocationIDs, 1)
-		assert.Equal(t, locationsByName["Location 3"], duplicated.GameStructure.SubGroups[1].LocationIDs[0])
-		assert.NotEqual(
-			t,
-			location3.ID,
-			duplicated.GameStructure.SubGroups[1].LocationIDs[0],
-			"Location ID should be remapped",
-		)
+		sourceInstance := &models.Quest{Name: gofakeit.Word(), UserID: user.ID}
+		require.NoError(t, instanceRepo.Create(ctx, sourceInstance))
+
+		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
+		require.NoError(t, err)
+		root := &models.Objective{QuestID: sourceInstance.ID, Slug: "root", Title: "Root"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, root))
+		child := &models.Objective{QuestID: sourceInstance.ID, ParentID: root.ID, Slug: "child", Title: "Child"}
+		require.NoError(t, objectiveRepo.CreateTx(ctx, tx, child))
+		require.NoError(t, tx.Commit())
+
+		require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: sourceInstance.ID}))
+
+		_, err = svc.DuplicateQuest(ctx, user, sourceInstance.ID, gofakeit.Word())
+		require.NoError(t, err)
+
+		reloaded, err := objectiveRepo.GetByID(ctx, child.ID)
+		require.NoError(t, err)
+		assert.Equal(t, root.ID, reloaded.ParentID, "the source keeps its own tree")
 	})
 
 	t.Run("rejects template duplication", func(t *testing.T) {
@@ -251,7 +193,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create template instance
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: true,
@@ -260,7 +202,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to duplicate template
-		_, err = svc.DuplicateInstance(ctx, user, template.ID, gofakeit.Word())
+		_, err = svc.DuplicateQuest(ctx, user, template.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "cannot duplicate a template")
 	})
@@ -271,7 +213,7 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		insertTestUser(t, dbc, user1.ID)
 
 		// Create instance owned by user1
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user1.ID,
 			IsTemplate: false,
@@ -280,19 +222,19 @@ func TestDuplicationService_DuplicateInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Try to duplicate as user2
-		_, err = svc.DuplicateInstance(ctx, user2, instance.ID, gofakeit.Word())
+		_, err = svc.DuplicateQuest(ctx, user2, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 	})
 
 	t.Run("validates user is not nil", func(t *testing.T) {
-		_, err := svc.DuplicateInstance(ctx, nil, gofakeit.UUID(), gofakeit.Word())
+		_, err := svc.DuplicateQuest(ctx, nil, gofakeit.UUID(), gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 	})
 }
 
-func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
+func TestDuplicationService_CreateTemplateFromQuest(t *testing.T) {
 	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
@@ -303,7 +245,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create source instance
-		sourceInstance := &models.Instance{
+		sourceInstance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -312,8 +254,8 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		require.NoError(t, err)
 
 		// Create settings
-		settings := &models.InstanceSettings{
-			InstanceID:   sourceInstance.ID,
+		settings := &models.QuestSettings{
+			QuestID:      sourceInstance.ID,
 			EnablePoints: true,
 		}
 		err = settingsRepo.Create(ctx, settings)
@@ -321,7 +263,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 
 		// Create template from instance
 		templateName := gofakeit.Word()
-		template, err := svc.CreateTemplateFromInstance(ctx, user, sourceInstance.ID, templateName)
+		template, err := svc.CreateTemplateFromQuest(ctx, user, sourceInstance.ID, templateName)
 		require.NoError(t, err)
 
 		// Verify template
@@ -336,7 +278,7 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		user2 := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user1.ID)
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user1.ID,
 			IsTemplate: false,
@@ -344,13 +286,13 @@ func TestDuplicationService_CreateTemplateFromInstance(t *testing.T) {
 		err := instanceRepo.Create(ctx, instance)
 		require.NoError(t, err)
 
-		_, err = svc.CreateTemplateFromInstance(ctx, user2, instance.ID, gofakeit.Word())
+		_, err = svc.CreateTemplateFromQuest(ctx, user2, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "user not authenticated")
 	})
 }
 
-func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
+func TestDuplicationService_CreateQuestFromTemplate(t *testing.T) {
 	svc, _, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
@@ -361,7 +303,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create template
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: true,
@@ -369,8 +311,8 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{
-			InstanceID:   template.ID,
+		settings := &models.QuestSettings{
+			QuestID:      template.ID,
 			EnablePoints: false,
 		}
 		err = settingsRepo.Create(ctx, settings)
@@ -378,7 +320,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 
 		// Create instance from template
 		instanceName := gofakeit.Word()
-		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, instanceName)
+		instance, err := svc.CreateQuestFromTemplate(ctx, user, template.ID, instanceName)
 		require.NoError(t, err)
 
 		// Verify instance
@@ -392,7 +334,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		user := &models.User{ID: gofakeit.UUID()}
 		insertTestUser(t, dbc, user.ID)
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: false,
@@ -400,7 +342,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, instance)
 		require.NoError(t, err)
 
-		_, err = svc.CreateInstanceFromTemplate(ctx, user, instance.ID, gofakeit.Word())
+		_, err = svc.CreateQuestFromTemplate(ctx, user, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "source is not a template")
 	})
@@ -410,7 +352,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		insertTestUser(t, dbc, user.ID)
 
 		// Create template
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     user.ID,
 			IsTemplate: true,
@@ -418,8 +360,8 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{
-			InstanceID: template.ID,
+		settings := &models.QuestSettings{
+			QuestID: template.ID,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
@@ -459,7 +401,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 
 		// Create instance from template
 		instanceName := gofakeit.Word()
-		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, instanceName)
+		instance, err := svc.CreateQuestFromTemplate(ctx, user, template.ID, instanceName)
 		require.NoError(t, err)
 
 		// Verify ContextStart blocks were copied to new instance
@@ -490,7 +432,7 @@ func TestDuplicationService_CreateInstanceFromTemplate(t *testing.T) {
 	})
 }
 
-func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
+func TestDuplicationService_CreateQuestFromSharedTemplate(t *testing.T) {
 	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
 	defer cleanup()
 
@@ -503,7 +445,7 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		insertTestUser(t, dbc, recipient.ID)
 
 		// Create template owned by owner
-		template := &models.Instance{
+		template := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     owner.ID,
 			IsTemplate: true,
@@ -511,15 +453,15 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, template)
 		require.NoError(t, err)
 
-		settings := &models.InstanceSettings{
-			InstanceID: template.ID,
+		settings := &models.QuestSettings{
+			QuestID: template.ID,
 		}
 		err = settingsRepo.Create(ctx, settings)
 		require.NoError(t, err)
 
 		// Recipient creates instance from shared template
 		instanceName := gofakeit.Word()
-		instance, err := svc.CreateInstanceFromSharedTemplate(ctx, recipient, template.ID, instanceName)
+		instance, err := svc.CreateQuestFromSharedTemplate(ctx, recipient, template.ID, instanceName)
 		require.NoError(t, err)
 
 		// Verify instance is owned by recipient
@@ -535,7 +477,7 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		ownerID := gofakeit.UUID()
 		insertTestUser(t, dbc, ownerID)
 
-		instance := &models.Instance{
+		instance := &models.Quest{
 			Name:       gofakeit.Word(),
 			UserID:     ownerID,
 			IsTemplate: false,
@@ -543,146 +485,8 @@ func TestDuplicationService_CreateInstanceFromSharedTemplate(t *testing.T) {
 		err := instanceRepo.Create(ctx, instance)
 		require.NoError(t, err)
 
-		_, err = svc.CreateInstanceFromSharedTemplate(ctx, user, instance.ID, gofakeit.Word())
+		_, err = svc.CreateQuestFromSharedTemplate(ctx, user, instance.ID, gofakeit.Word())
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), "source is not a template")
-	})
-}
-
-func TestDuplicationService_DuplicateLocation(t *testing.T) {
-	svc, transactor, _, _, locationRepo, blockRepo, dbc, cleanup := setupDuplicationService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	t.Run("successfully duplicates location with blocks", func(t *testing.T) {
-		// Create FK-valid parent chain for source and target instances
-		userID := gofakeit.UUID()
-		insertTestUser(t, dbc, userID)
-		sourceInstanceID := insertTestInstance(t, dbc, userID)
-		targetInstanceID := insertTestInstance(t, dbc, userID)
-
-		// Create source location with valid marker
-		markerCode := gofakeit.LetterN(5)
-		insertTestMarker(t, dbc, markerCode)
-		sourceLocation := models.Location{
-			Name:       gofakeit.Word(),
-			InstanceID: sourceInstanceID,
-			MarkerID:   markerCode,
-			Points:     50,
-		}
-		err := locationRepo.Create(ctx, &sourceLocation)
-		require.NoError(t, err)
-
-		// Add blocks to source location
-		tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
-		require.NoError(t, err)
-		err = blockRepo.DuplicateBlocksByOwnerTx(ctx, tx, "template-id", sourceLocation.ID)
-		require.NoError(t, err)
-		err = tx.Commit()
-		require.NoError(t, err)
-
-		// Duplicate location
-		duplicated, err := svc.DuplicateLocation(ctx, sourceLocation, targetInstanceID)
-		require.NoError(t, err)
-
-		// Verify duplicated location
-		assert.NotEqual(t, sourceLocation.ID, duplicated.ID)
-		assert.Equal(t, sourceLocation.Name, duplicated.Name)
-		assert.Equal(t, targetInstanceID, duplicated.InstanceID)
-		assert.Equal(t, sourceLocation.Points, duplicated.Points)
-	})
-}
-
-func TestDuplicationService_QuickStartDismissed(t *testing.T) {
-	svc, _, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupDuplicationService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	t.Run("DuplicateInstance dismisses quickstart", func(t *testing.T) {
-		user := &models.User{ID: gofakeit.UUID()}
-		insertTestUser(t, dbc, user.ID)
-
-		sourceInstance := &models.Instance{
-			Name:       gofakeit.Word(),
-			UserID:     user.ID,
-			IsTemplate: false,
-		}
-		err := instanceRepo.Create(ctx, sourceInstance)
-		require.NoError(t, err)
-
-		settings := &models.InstanceSettings{InstanceID: sourceInstance.ID}
-		err = settingsRepo.Create(ctx, settings)
-		require.NoError(t, err)
-
-		duplicated, err := svc.DuplicateInstance(ctx, user, sourceInstance.ID, gofakeit.Word())
-		require.NoError(t, err)
-		assert.True(t, duplicated.IsQuickStartDismissed, "duplicated instance should have quickstart dismissed")
-	})
-
-	t.Run("CreateTemplateFromInstance dismisses quickstart", func(t *testing.T) {
-		user := &models.User{ID: gofakeit.UUID()}
-		insertTestUser(t, dbc, user.ID)
-
-		sourceInstance := &models.Instance{
-			Name:       gofakeit.Word(),
-			UserID:     user.ID,
-			IsTemplate: false,
-		}
-		err := instanceRepo.Create(ctx, sourceInstance)
-		require.NoError(t, err)
-
-		settings := &models.InstanceSettings{InstanceID: sourceInstance.ID}
-		err = settingsRepo.Create(ctx, settings)
-		require.NoError(t, err)
-
-		template, err := svc.CreateTemplateFromInstance(ctx, user, sourceInstance.ID, gofakeit.Word())
-		require.NoError(t, err)
-		assert.True(t, template.IsQuickStartDismissed, "template should have quickstart dismissed")
-	})
-
-	t.Run("CreateInstanceFromTemplate dismisses quickstart", func(t *testing.T) {
-		user := &models.User{ID: gofakeit.UUID()}
-		insertTestUser(t, dbc, user.ID)
-
-		template := &models.Instance{
-			Name:       gofakeit.Word(),
-			UserID:     user.ID,
-			IsTemplate: true,
-		}
-		err := instanceRepo.Create(ctx, template)
-		require.NoError(t, err)
-
-		settings := &models.InstanceSettings{InstanceID: template.ID}
-		err = settingsRepo.Create(ctx, settings)
-		require.NoError(t, err)
-
-		instance, err := svc.CreateInstanceFromTemplate(ctx, user, template.ID, gofakeit.Word())
-		require.NoError(t, err)
-		assert.True(t, instance.IsQuickStartDismissed, "instance from template should have quickstart dismissed")
-	})
-
-	t.Run("CreateInstanceFromSharedTemplate dismisses quickstart", func(t *testing.T) {
-		owner := &models.User{ID: gofakeit.UUID()}
-		recipient := &models.User{ID: gofakeit.UUID()}
-		insertTestUser(t, dbc, owner.ID)
-		insertTestUser(t, dbc, recipient.ID)
-
-		template := &models.Instance{
-			Name:       gofakeit.Word(),
-			UserID:     owner.ID,
-			IsTemplate: true,
-		}
-		err := instanceRepo.Create(ctx, template)
-		require.NoError(t, err)
-
-		settings := &models.InstanceSettings{InstanceID: template.ID}
-		err = settingsRepo.Create(ctx, settings)
-		require.NoError(t, err)
-
-		instance, err := svc.CreateInstanceFromSharedTemplate(ctx, recipient, template.ID, gofakeit.Word())
-		require.NoError(t, err)
-		assert.True(t, instance.IsQuickStartDismissed, "instance from shared template should have quickstart dismissed")
 	})
 }

@@ -3,16 +3,9 @@ package public
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
 )
 
 func (h *Handler) About(w http.ResponseWriter, r *http.Request) {
-	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	c := templates.About()
-	err := templates.PublicLayout(c, "About", authed).Render(r.Context(), w)
-	if err != nil {
-		h.logger.Error("Error rendering index", "err", err)
-		return
-	}
+	h.renderPage(w, r, "about", templates.AboutPage)
 }

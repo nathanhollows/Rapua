@@ -8,52 +8,77 @@ order: 21
 
 > Generated from code. Regenerate with: `rapua genspec`
 >
-> Machine-readable: `GET /api/v7/spec`
+> Machine-readable: `GET /api/v8/spec`
+
+## What this is for
+
+A game document is a lossless projection of a quest: export reads it from the database and import writes it back. It is meant to state everything that changes what a player does, sees or is told, so that two documents can be compared, re-run or authored by an external tool. That includes `settings`, which change how a game plays without touching its content: the same `structure` under different settings is a different game.
 
 ## Authoring constraints
 
-These rules are enforced by the linter (`POST /api/v7/lint`). Errors block import; warnings should be fixed.
+These rules are enforced by the linter (`POST /api/v8/lint`). Errors block import; warnings should be fixed.
 
 **Structure**
-- Every location must be inside a group. A location placed directly under `structure.children` is never shown to players. Wrap it in a group. *(`ROOT_LOCATION_HIDDEN`)*
-- Groups must have at least one child. An empty group produces a warning. *(`EMPTY_GROUP`)*
-- Location slugs must be unique across the entire game, including across groups. *(`SLUG_DUPLICATE`)*
+- The document is one recursive type. `structure` is the root objective, and every node under `children` has the same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them.
+- Objective slugs must be unique across the whole document, root and sections included. *(`SLUG_DUPLICATE`)*
+- `routing` is required on an objective with children, and must name one of the three strategies: an empty value is an unmade choice, not a default. It is inert on an objective without children, which is not worth reporting: every objective carries one. *(`INVALID_ROUTING`)*
+- The player's screen draws at most 2 sections deep. A section nested further, below 2 that are drawn, passes through: it still routes and bands, but its tasks appear in the section above. Warns so the author can mark it `pass_through` on purpose; sections marked `pass_through` do not count toward the 2. *(`FORCED_PASS_THROUGH`)*
+- A `pass_through` section needs `children_min` equal to `children_max`, because players never see its finish button. *(`PASS_THROUGH_RANGED_BAND`)* Asking for fewer children than it shows at once warns. *(`PASS_THROUGH_HIDDEN_CHOICE`)*
+- A `secret` objective is never listed. Players find it by scanning one of its proof codes while its parent is open, so its proof needs a scan block. *(`SECRET_NEEDS_SCAN`)* The root may not be secret. *(`ROOT_SECRET`)*
+- Bands are judged against visible children: a found secret joins the band, but `children_min` and `children_max` may not need one. *(`BAND_OUT_OF_RANGE`)* A section whose children are all secret completes on arrival, before any can be found. *(`ONLY_SECRET_CHILDREN`)*
+- A secret with children becomes a side quest once found, so it may not pass through. *(`SECRET_PASS_THROUGH`)*
 
 **Import modes**
-- **Create-import** (`POST /admin/instances/import`): omit `id` on locations and blocks — new UUIDs are generated.
-- **Update-import** (`POST /admin/instances/{id}/import`): include `id` to reconcile with existing records. Matched blocks preserve player state (`TeamBlockState`). Locations absent from the document are deleted.
-- Group `id` is preserved on update-import to avoid orphaning team progress records (`SkippedGroupIDs`).
+- **Create-import** (`POST /admin/quests/import`): omit `id` on objectives and blocks: new UUIDs are generated.
+- **Update-import** (`POST /admin/quests/{id}/import`): include `id` to reconcile with existing records. Matched blocks preserve player state (`RunBlockState`). Objectives absent from the document are deleted.
 
 **Blocks**
 - Every block must have a `type` field matching a registered block type.
 - A block may only appear in contexts listed in its spec. *(`INVALID_CONTEXT`)*
 - Block `id` values must be unique across the document. *(`BLOCK_ID_DUPLICATE`)*
-- Block and location `points` are ignored unless `settings.enable_points` is true. *(`POINTS_DISABLED` warning)*
+- Block `points` are ignored unless `settings.enable_points` is true, and are left alone rather than reported: the editor hides every points control while points are off, so nothing could be done about it from there. An objective has no `points` field of its own: its total point value is the sum of its blocks' points.
 
 **Start page**
-- A start page with blocks but no `start_button` block will not let players join. *(`NO_START_BUTTON` warning)*
+- A start page with no `start_button` block, empty or not, will not let players join. *(`NO_START_BUTTON` warning)*
 
-**Completion**
-- `minimum_required` is only valid when `completion` is `"minimum"`; it must be a positive integer. *(`MINIMUM_REQUIRED_MISMATCH` / `MINIMUM_REQUIRED_MISSING`)*
+**Completion band**
+- `children_min` and `children_max` form a range over completed children. When they are equal the objective auto-completes at that count; when min is lower, reaching min reveals a finish button and the player's press completes the objective, which also auto-completes at max.
+- Omitting both requires every child. Naming either bound widens the other to its extreme (min to 0, max to the child count), so an explicit `children_min: 0` is not the same as omitting it.
+- `children_min` must not exceed `children_max`. *(`BAND_MIN_EXCEEDS_MAX`)*
+- Both bounds must lie between 0 and the child count. *(`BAND_OUT_OF_RANGE`)*
+- `children_max: 0` completes the objective before any child is reachable. *(`BAND_COMPLETES_AT_ZERO`)*
+- The band, `max_next` and `finish_label` are inert on an objective with no children. *(`BAND_ON_LEAF`, `MAX_NEXT_ON_LEAF`, `FINISH_LABEL_UNREACHABLE`)*
+- `finish_label` only shows on an objective in a range. *(`FINISH_LABEL_UNREACHABLE`)*
+
+**Variables (`sets` / `depends`)**
+- A variable is a name that is either set or not. Names are lowercase letters, digits and underscores, not starting with a digit. *(`VAR_NAME_INVALID`)*
+- Only an interactive block sets a variable, the moment the player completes it, through its `sets` field (one name). A choice instead sets the variable of each option the player picks. Objectives and content blocks never set variables. A block completed outside the usual answer, such as naming the team, cannot set one either. *(`SETS_ON_STATIC_BLOCK`, `SETS_ON_CHOICE`, `SETS_UNSUPPORTED`, `SETS_NOT_STRING`)*
+- `depends` is a list of names that must all be set. On an objective it holds the objective locked; on a content block it hides the block entirely. An interactive block cannot depend on anything, and neither can the root. *(`DEPENDS_ON_INTERACTIVE_BLOCK`, `ROOT_DEPENDS`, `DEPENDS_NOT_LIST`, `DEPENDS_EMPTY_NAME`)*
+- There is no negation and no comparison: a gate that has opened stays open.
+- Every name in a `depends` list must be set by some block. *(`UNDEFINED_VAR`)* A name only set inside a draft warns. *(`VAR_ONLY_SET_IN_DRAFT` warning)* A `sets` nothing depends on warns. *(`UNUSED_VAR` warning)*
+- A gate whose variables are only set behind that gate, or behind another gate waiting on it, can never open. Ordered routing counts: a child cannot wait on a sibling that comes after it. *(`DEPENDS_UNSATISFIABLE`)*
+- A single-select choice sets one option, so one gate cannot need two of its options *(`DEPENDS_EXCLUSIVE_CHOICES`)*, and a section that needs children gated on different options cannot be completed *(`BAND_NEEDS_EXCLUSIVE_CHOICES` warning)*.
+- A proof block waiting on something set only after its proof clears is never seen. *(`BLOCK_DEPENDS_TOO_LATE` warning)* A gated child in a randomised section with `max_next` can take a place in the window while shut. *(`DEPENDS_IN_RANDOMISED_WINDOW` warning)* A gated child whose variables are set only by its siblings, in a section that closes before that many are done, will likely stay locked. *(`BAND_CLOSES_FIRST` warning)*
+
 
 ## Full spec
 
 ```json
 {
-  "version": "v7",
+  "version": "v8",
   "document": {
-    "description": "Top-level v7 game document.",
+    "description": "Top-level v8 game document.",
     "fields": [
       {
         "name": "rapua",
         "type": "string",
-        "description": "Format version. Must be \"v7\".",
+        "description": "Format version. Must be \"v8\".",
         "required": true
       },
       {
         "name": "id",
         "type": "string",
-        "description": "Instance UUID. Present on export; omit on create-import to generate a new UUID."
+        "description": "Quest UUID. Present on export; omit on create-import to generate a new UUID."
       },
       {
         "name": "name",
@@ -64,33 +89,23 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       {
         "name": "settings",
         "type": "object",
-        "description": "Game-wide settings.",
+        "description": "Game-wide settings. Each changes what players experience, so two games are only comparable when these match as well as their structure.",
         "required": true,
         "fields": [
           {
-            "name": "must_check_out",
-            "type": "bool",
-            "description": "Players must explicitly check out of each location before moving on."
-          },
-          {
-            "name": "show_team_count",
-            "type": "bool",
-            "description": "Show how many teams are at each location."
-          },
-          {
             "name": "enable_points",
             "type": "bool",
-            "description": "Enable the points system."
-          },
-          {
-            "name": "enable_bonus_points",
-            "type": "bool",
-            "description": "Enable bonus points on blocks."
+            "description": "Whether points count and are shown to players. Off, every block's `points` is ignored and no score is shown. Omitted means false."
           },
           {
             "name": "show_leaderboard",
             "type": "bool",
-            "description": "Show the leaderboard to players."
+            "description": "Whether players see how their team compares to the others. The board ranks by points when `enable_points` is true, otherwise by share of objectives done, and a tie goes to the team seen earlier. Off, players see no ranking. Omitted means false."
+          },
+          {
+            "name": "progress_feedback",
+            "type": "string",
+            "description": "What the player is told about their progress: \"fraction\" (objectives done out of those done plus the fewest still needed), \"count\" (objectives done, no target) or \"none\". Omitted means \"fraction\"."
           }
         ]
       },
@@ -109,123 +124,219 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       {
         "name": "structure",
         "type": "object",
-        "description": "Root group defining routing, navigation, and the location tree.",
+        "description": "The root objective. An ordinary objective with no parent, using the schema below: the tree is one recursive type, not a container wrapping a different one.",
         "required": true,
-        "fields": [
-          {
-            "name": "routing",
-            "type": "enum",
-            "description": "How players are routed through locations. See enums.routing.",
-            "required": true
-          },
-          {
-            "name": "navigation",
-            "type": "enum",
-            "description": "How the navigation UI is presented. See enums.navigation.",
-            "required": true
-          },
-          {
-            "name": "completion",
-            "type": "enum",
-            "description": "When the group is considered complete. See enums.completion.",
-            "required": true
-          },
-          {
-            "name": "minimum_required",
-            "type": "int",
-            "description": "Number of locations required when completion is \"minimum\"."
-          },
-          {
-            "name": "children",
-            "type": "list",
-            "description": "Ordered list of location or group children.",
-            "required": true,
-            "items": {
-              "name": "",
-              "type": "object",
-              "description": "Tagged union: set exactly one of \"location\" or \"group\".",
-              "fields": [
-                {
-                  "name": "location",
-                  "type": "object",
-                  "description": "A single game location. See location schema."
-                },
-                {
-                  "name": "group",
-                  "type": "object",
-                  "description": "A named sub-group with its own routing/navigation/completion settings."
-                }
-              ]
-            }
-          }
-        ]
-      },
-      {
-        "name": "location",
-        "type": "object",
-        "description": "Schema for location objects within structure.children.",
         "fields": [
           {
             "name": "id",
             "type": "string",
-            "description": "Location UUID. Present on export; omit on create-import to generate a new UUID."
+            "description": "Objective UUID. Present on export; omit on create-import to generate a new UUID."
           },
           {
             "name": "slug",
             "type": "string",
-            "description": "Short alphanumeric code used in QR/URLs. Must be unique within the game.",
+            "description": "Short alphanumeric code identifying this objective. Must be unique within the game.",
             "required": true
           },
           {
-            "name": "name",
+            "name": "title",
             "type": "string",
-            "description": "Display name shown to players.",
+            "description": "What the player is asked to do, shown on the quest list and at the top of the page they open. The task, not the place: \"Find the plan chest\" rather than \"Architecture Library\".",
             "required": true
           },
           {
-            "name": "points",
-            "type": "int",
-            "description": "Points awarded on check-in (requires enable_points in settings)."
+            "name": "description",
+            "type": "string",
+            "description": "The detail a player needs once they are there, shown under the title. What will not fit in a name short enough to read in a list."
           },
           {
-            "name": "marker",
+            "name": "draft",
+            "type": "bool",
+            "description": "Holds this objective out of play along with everything beneath it, without moving any of them: it keeps its place and its children, so publishing restores exactly what was there. The flag is never written downward, so a child of a draft carries none of its own. Omitting the key leaves an existing objective's state alone; only an explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT)."
+          },
+          {
+            "name": "proof",
             "type": "object",
-            "description": "Geographic map pin. Omit if the location has no map position.",
+            "description": "Blocks shown while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
+            "required": true,
             "fields": [
               {
-                "name": "lat",
-                "type": "float",
-                "description": "Latitude in decimal degrees.",
-                "required": true
-              },
-              {
-                "name": "lng",
-                "type": "float",
-                "description": "Longitude in decimal degrees.",
-                "required": true
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
               }
             ]
           },
           {
-            "name": "content",
+            "name": "reveal",
+            "type": "object",
+            "description": "Blocks shown once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
+            "required": true,
+            "fields": [
+              {
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
+              }
+            ]
+          },
+          {
+            "name": "pass_through",
+            "type": "bool",
+            "description": "Stops this section being a place the player stands. It still routes, bands and gates its children, but they are shown as if they sat in the nearest section that is drawn, so a pool can hand a player one pick without saying it came from a pool. A pass-through section does not count toward the depth the player's screen draws. Omitting the key leaves an existing objective's state alone. The root may not be a pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no children (PASS_THROUGH_ON_LEAF)."
+          },
+          {
+            "name": "secret",
+            "type": "bool",
+            "description": "Keeps this objective unlisted until a player finds it by scanning one of its proof codes, from anywhere inside its parent while the parent is open. It sits outside the parent's routing. Once found it joins the parent's band like any other child: required under complete-all, counted toward a minimum. An unfound secret is never required. A secret with children becomes a side quest once found, and closes with its parent. Omitting the key leaves an existing objective's state alone. Needs a scan block in its proof (SECRET_NEEDS_SCAN); the root may not be secret (ROOT_SECRET), nor may a secret section pass through (SECRET_PASS_THROUGH)."
+          },
+          {
+            "name": "depends",
             "type": "list",
-            "description": "Blocks shown to players after check-in. Always present, even if empty.",
+            "description": "Variables that must all be set before this objective opens; until then it shows as locked. Variables are set by interactive blocks and choice options. Absent or empty means no gate. The root is always open (ROOT_DEPENDS), and a gate whose variables are only set behind it can never open (DEPENDS_UNSATISFIABLE).",
+            "items": {
+              "name": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "routing",
+            "type": "enum",
+            "description": "How players are routed through this objective's children. Required when there are children, meaningless without them. See enums.routing."
+          },
+          {
+            "name": "children_min",
+            "type": "int",
+            "description": "How many children must complete before the player may finish this objective. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "children_max",
+            "type": "int",
+            "description": "How many completed children finish this objective on their own. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "max_next",
+            "type": "int",
+            "description": "How many children a randomised objective offers at once. 0 means all of them."
+          },
+          {
+            "name": "finish_label",
+            "type": "string",
+            "description": "Label for the finish button. Only an objective in a range ever shows one, so setting this where children_min equals children_max warns (FINISH_LABEL_UNREACHABLE)."
+          },
+          {
+            "name": "children",
+            "type": "list",
+            "description": "Ordered list of child objectives, each with this same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them."
+          }
+        ]
+      },
+      {
+        "name": "objective",
+        "type": "object",
+        "description": "Schema for every objective, root and children alike. Has no points field of its own; its total point value is the sum of its blocks' points.",
+        "fields": [
+          {
+            "name": "id",
+            "type": "string",
+            "description": "Objective UUID. Present on export; omit on create-import to generate a new UUID."
+          },
+          {
+            "name": "slug",
+            "type": "string",
+            "description": "Short alphanumeric code identifying this objective. Must be unique within the game.",
             "required": true
           },
           {
-            "name": "clues",
-            "type": "list",
-            "description": "Clue blocks shown in navigation to help players find this location."
+            "name": "title",
+            "type": "string",
+            "description": "What the player is asked to do, shown on the quest list and at the top of the page they open. The task, not the place: \"Find the plan chest\" rather than \"Architecture Library\".",
+            "required": true
           },
           {
-            "name": "tasks",
-            "type": "list",
-            "description": "Task blocks shown in the task checklist (tasks navigation mode)."
+            "name": "description",
+            "type": "string",
+            "description": "The detail a player needs once they are there, shown under the title. What will not fit in a name short enough to read in a list."
           },
           {
-            "name": "checkpoint",
+            "name": "draft",
+            "type": "bool",
+            "description": "Holds this objective out of play along with everything beneath it, without moving any of them: it keeps its place and its children, so publishing restores exactly what was there. The flag is never written downward, so a child of a draft carries none of its own. Omitting the key leaves an existing objective's state alone; only an explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT)."
+          },
+          {
+            "name": "proof",
+            "type": "object",
+            "description": "Blocks shown while the objective is unproven. A non-empty proof must contain at least one interactive block, or it gates nothing. Proof gates children too: nothing below this objective is reachable until its proof clears. Clearing the proof is what completes an objective, which is what the frontier, the journal and the leaderboard all count. The root carries no proof or reveal content of its own (ROOT_HAS_CONTENT).",
+            "required": true,
+            "fields": [
+              {
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
+              }
+            ]
+          },
+          {
+            "name": "reveal",
+            "type": "object",
+            "description": "Blocks shown once proof completes. On a section this is its own content, and the section is offered to a player until they have seen it, then steps back and its children are offered in its place.",
+            "required": true,
+            "fields": [
+              {
+                "name": "blocks",
+                "type": "list",
+                "description": "Blocks shown to players while this context is active."
+              }
+            ]
+          },
+          {
+            "name": "pass_through",
+            "type": "bool",
+            "description": "Stops this section being a place the player stands. It still routes, bands and gates its children, but they are shown as if they sat in the nearest section that is drawn, so a pool can hand a player one pick without saying it came from a pool. A pass-through section does not count toward the depth the player's screen draws. Omitting the key leaves an existing objective's state alone. The root may not be a pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no children (PASS_THROUGH_ON_LEAF)."
+          },
+          {
+            "name": "secret",
+            "type": "bool",
+            "description": "Keeps this objective unlisted until a player finds it by scanning one of its proof codes, from anywhere inside its parent while the parent is open. It sits outside the parent's routing. Once found it joins the parent's band like any other child: required under complete-all, counted toward a minimum. An unfound secret is never required. A secret with children becomes a side quest once found, and closes with its parent. Omitting the key leaves an existing objective's state alone. Needs a scan block in its proof (SECRET_NEEDS_SCAN); the root may not be secret (ROOT_SECRET), nor may a secret section pass through (SECRET_PASS_THROUGH)."
+          },
+          {
+            "name": "depends",
             "type": "list",
-            "description": "Validation blocks that must pass before check-in completes."
+            "description": "Variables that must all be set before this objective opens; until then it shows as locked. Variables are set by interactive blocks and choice options. Absent or empty means no gate. The root is always open (ROOT_DEPENDS), and a gate whose variables are only set behind it can never open (DEPENDS_UNSATISFIABLE).",
+            "items": {
+              "name": "",
+              "type": "string"
+            }
+          },
+          {
+            "name": "routing",
+            "type": "enum",
+            "description": "How players are routed through this objective's children. Required when there are children, meaningless without them. See enums.routing."
+          },
+          {
+            "name": "children_min",
+            "type": "int",
+            "description": "How many children must complete before the player may finish this objective. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "children_max",
+            "type": "int",
+            "description": "How many completed children finish this objective on their own. The pair forms a completion band. When min equals max the objective auto-completes at that count with no player action. When min is lower, reaching min only reveals a finish button and the player's press is what completes the objective, which also auto-completes at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit children_min of 0 is not the same as omitting it. min greater than max is an error (BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are meaningless on an objective with no children (BAND_ON_LEAF)."
+          },
+          {
+            "name": "max_next",
+            "type": "int",
+            "description": "How many children a randomised objective offers at once. 0 means all of them."
+          },
+          {
+            "name": "finish_label",
+            "type": "string",
+            "description": "Label for the finish button. Only an objective in a range ever shows one, so setting this where children_min equals children_max warns (FINISH_LABEL_UNREACHABLE)."
+          },
+          {
+            "name": "children",
+            "type": "list",
+            "description": "Ordered list of child objectives, each with this same schema. An objective with children is a section; one without is a leaf. Nothing else distinguishes them."
           }
         ]
       }
@@ -236,81 +347,21 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       {
         "value": "randomised",
         "label": "Randomised Route",
-        "description": "The game randomly selects locations for each player/team. Good for large groups."
+        "description": "The game will randomly select objectives for players to pursue. Good for large groups as it disperses players."
       },
       {
         "value": "free_roam",
         "label": "Open Exploration",
-        "description": "Players visit locations in any order. All locations are visible."
+        "description": "Players can pursue objectives in any order. This mode shows all objectives and is good for exploration."
       },
       {
         "value": "ordered",
         "label": "Guided Path",
-        "description": "Players must visit locations in a fixed order."
-      },
-      {
-        "value": "secret",
-        "label": "Secret",
-        "description": "Locations never explicitly shown; players access them out of sequence."
-      }
-    ],
-    "navigation": [
-      {
-        "value": "map",
-        "label": "Map Only",
-        "description": "Players are shown a map with unlabelled pins."
-      },
-      {
-        "value": "labelled_map",
-        "label": "Labelled Map",
-        "description": "Players are shown a map with location names."
-      },
-      {
-        "value": "location_list",
-        "label": "Location List",
-        "description": "Players are shown a list of location names."
-      },
-      {
-        "value": "custom",
-        "label": "Custom Clues",
-        "description": "Players see custom content (e.g. randomised clues) built with the block builder."
-      },
-      {
-        "value": "tasks",
-        "label": "Tasks",
-        "description": "Players see a scavenger-hunt-style checklist with completion tracking."
-      }
-    ],
-    "completion": [
-      {
-        "value": "all",
-        "label": "All",
-        "description": "All locations/groups in this group must be completed."
-      },
-      {
-        "value": "minimum",
-        "label": "Minimum",
-        "description": "At least minimum_required locations/groups must be completed."
+        "description": "Players must complete objectives in a specific order. Good for narrative experiences."
       }
     ]
   },
   "contexts": [
-    {
-      "value": "location_content",
-      "description": "Blocks shown to players after checking in to a location."
-    },
-    {
-      "value": "location_clues",
-      "description": "Clue blocks shown in the navigation UI to help players find this location."
-    },
-    {
-      "value": "task",
-      "description": "Task blocks shown in the tasks navigation checklist."
-    },
-    {
-      "value": "checkpoint",
-      "description": "Validation blocks that must pass before a check-in is accepted."
-    },
     {
       "value": "start",
       "description": "Blocks shown on the game start page (introductions, rules, team name, start button)."
@@ -318,6 +369,35 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
     {
       "value": "finish",
       "description": "Blocks shown on the game finish/end page."
+    },
+    {
+      "value": "objective_proof",
+      "description": "Blocks a player must complete to prove an objective. Once every block here completes, the reveal context is shown."
+    },
+    {
+      "value": "objective_reveal",
+      "description": "Blocks shown once an objective's proof context is complete."
+    }
+  ],
+  "block_shared_fields": [
+    {
+      "name": "points",
+      "type": "int",
+      "description": "Points awarded to the player when this block completes. Negative for a block framed as a cost rather than a reward (e.g. paying points to reveal a clue). Ignored unless settings.enable_points is true. An objective's total point value is the sum of its blocks' points; it is not a field set on the objective itself."
+    },
+    {
+      "name": "sets",
+      "type": "string",
+      "description": "A variable set the moment the player completes this block. Variables are lowercase letters, digits and underscores, and once set stay set. Only interactive blocks set variables (SETS_ON_STATIC_BLOCK); a choice sets the variable of each option picked instead (SETS_ON_CHOICE)."
+    },
+    {
+      "name": "depends",
+      "type": "list",
+      "description": "Variables that must all be set before this block is shown. Until then it is hidden entirely. Only content blocks can depend on a variable (DEPENDS_ON_INTERACTIVE_BLOCK).",
+      "items": {
+        "name": "",
+        "type": "string"
+      }
     }
   ],
   "blocks": [
@@ -326,9 +406,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Alert",
       "description": "Displays a styled alert box with a message.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -351,57 +435,17 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
-      "type": "broker",
-      "name": "Information Broker",
-      "description": "Players spend points to reveal progressively detailed information tiers.",
-      "contexts": [
-        "location_content",
-        "location_clues"
-      ],
-      "fields": [
-        {
-          "name": "prompt",
-          "type": "string",
-          "description": "Instructions shown to the player"
-        },
-        {
-          "name": "default_info",
-          "type": "markdown",
-          "description": "Information shown for free (0 points)"
-        },
-        {
-          "name": "tiers",
-          "type": "list",
-          "description": "Paid information tiers in ascending cost order",
-          "items": {
-            "name": "",
-            "type": "object",
-            "fields": [
-              {
-                "name": "points_required",
-                "type": "int",
-                "description": "Points cost for this tier",
-                "required": true
-              },
-              {
-                "name": "content",
-                "type": "markdown",
-                "description": "Information revealed at this tier",
-                "required": true
-              }
-            ]
-          }
-        }
-      ]
-    },
-    {
       "type": "button",
       "name": "Button",
       "description": "A clickable button that opens a URL.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -434,8 +478,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Checklist",
       "description": "An interactive checklist players can tick off.",
       "contexts": [
-        "location_content",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
@@ -474,12 +523,70 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
+      "type": "choice",
+      "name": "Choice",
+      "description": "Presents labelled options; each option picked sets its own variable.",
+      "contexts": [
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Question or instruction shown above the choices",
+          "required": true
+        },
+        {
+          "name": "button_text",
+          "type": "string",
+          "description": "Label for the submit button (default: \"Confirm choice\")"
+        },
+        {
+          "name": "multi_select",
+          "type": "bool",
+          "description": "Allow selecting multiple options (default: false, a single choice)"
+        },
+        {
+          "name": "options",
+          "type": "list",
+          "description": "Choices presented to the player",
+          "required": true,
+          "items": {
+            "name": "",
+            "type": "object",
+            "fields": [
+              {
+                "name": "label",
+                "type": "string",
+                "description": "Display text for this choice",
+                "required": true
+              },
+              {
+                "name": "sets",
+                "type": "string",
+                "description": "The variable set when the player picks this option. It also identifies the option in player state, so each option in a block needs its own (CHOICE_OPTION_DUPLICATE_SETS)",
+                "required": true
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
       "type": "clue",
       "name": "Clue",
-      "description": "A clue revealed behind a button — players tap to reveal the hint.",
+      "description": "A clue revealed behind a button: players tap to reveal the hint.",
       "contexts": [
-        "location_content",
-        "location_clues"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
@@ -505,9 +612,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Divider",
       "description": "A horizontal rule with an optional title label.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -518,11 +629,40 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
+      "type": "free_text",
+      "name": "Free Text",
+      "description": "An ungraded text input for player reflections and free-form responses.",
+      "contexts": [
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Question or instruction shown to the player"
+        },
+        {
+          "name": "placeholder",
+          "type": "string",
+          "description": "Placeholder text for the input field"
+        }
+      ]
+    },
+    {
       "type": "game_status",
       "name": "Game Status Alert",
       "description": "Shows the current game status (scheduled, active, or closed) with optional messages.",
       "contexts": [
         "start"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -543,13 +683,58 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
+      "type": "geofence",
+      "name": "Location check",
+      "description": "Players must be standing in a place for this to pass.",
+      "contexts": [
+        "objective_proof"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Instruction shown to the player"
+        },
+        {
+          "name": "area",
+          "type": "object",
+          "description": "Where the player must be: a circle with a centre and a radius in metres, or a GeoJSON Polygon"
+        },
+        {
+          "name": "max_accuracy",
+          "type": "float",
+          "description": "Widest margin in metres still worth testing. A vaguer reading is refused rather than guessed at",
+          "default": "50"
+        },
+        {
+          "name": "map_mode",
+          "type": "enum",
+          "description": "What the player sees while checking: \"button\" hides the area (finding it is the challenge), \"map\" shows their live position, \"map_area\" also draws the target area",
+          "default": "button",
+          "enum": [
+            "button",
+            "map",
+            "map_area"
+          ]
+        }
+      ]
+    },
+    {
       "type": "header",
       "name": "Header",
       "description": "A page header with an icon and title.",
       "contexts": [
-        "location_content",
         "start",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -583,10 +768,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Image",
       "description": "Displays an image with an optional caption and link.",
       "contexts": [
-        "location_content",
-        "location_clues",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -604,11 +792,49 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
           "name": "link",
           "type": "string",
           "description": "Optional URL to open when the image is clicked"
+        }
+      ]
+    },
+    {
+      "type": "map",
+      "name": "Map",
+      "description": "Displays a Mapbox map centred on a specific location with a marker.",
+      "contexts": [
+        "finish",
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
+      ],
+      "fields": [
+        {
+          "name": "latitude",
+          "type": "float",
+          "description": "Map centre latitude",
+          "required": true
         },
         {
-          "name": "full_width",
+          "name": "longitude",
+          "type": "float",
+          "description": "Map centre longitude",
+          "required": true
+        },
+        {
+          "name": "zoom",
+          "type": "float",
+          "description": "Map zoom level (1–20, default 14)"
+        },
+        {
+          "name": "caption",
+          "type": "string",
+          "description": "Optional caption displayed below the map"
+        },
+        {
+          "name": "hide_marker",
           "type": "bool",
-          "description": "Render image edge-to-edge on mobile screens"
+          "description": "When true, the map pin is hidden on the player view"
         }
       ]
     },
@@ -617,8 +843,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Password",
       "description": "Players must enter the correct text answer to proceed.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
@@ -644,8 +874,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Photo Upload",
       "description": "Players upload one or more photos as their response.",
       "contexts": [
-        "location_content",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
@@ -665,8 +900,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Pin Code",
       "description": "Players must enter a numeric PIN to proceed.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
@@ -692,8 +931,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Quiz",
       "description": "Multiple choice question with configurable answer options.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
@@ -754,17 +997,21 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
-      "type": "random_clue",
-      "name": "Random Clue",
-      "description": "Shows a randomly selected clue from a list each time the player views the location.",
+      "type": "random_text",
+      "name": "Random Text",
+      "description": "Shows one randomly selected text from a list, deterministically chosen per team.",
       "contexts": [
-        "location_clues"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
-          "name": "clues",
+          "name": "texts",
           "type": "list",
-          "description": "List of clue strings to randomly select from",
+          "description": "List of texts to randomly select from",
           "required": true,
           "items": {
             "name": "",
@@ -778,19 +1025,69 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Rating",
       "description": "Players rate something on a star scale.",
       "contexts": [
-        "location_content",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
           "name": "prompt",
           "type": "string",
           "description": "What the player is rating"
+        }
+      ]
+    },
+    {
+      "type": "scan",
+      "name": "Scan",
+      "description": "Players scan a QR code or barcode to proceed.",
+      "contexts": [
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
+      ],
+      "fields": [
+        {
+          "name": "prompt",
+          "type": "string",
+          "description": "Instruction shown to the player"
         },
         {
-          "name": "max_rating",
-          "type": "int",
-          "description": "Maximum rating value (default 5)"
+          "name": "codes",
+          "type": "array",
+          "description": "Values that satisfy the block; any one counts. A block with none can never be passed",
+          "fields": [
+            {
+              "name": "value",
+              "type": "string",
+              "description": "The value the code carries",
+              "required": true
+            }
+          ]
+        },
+        {
+          "name": "allow_typing",
+          "type": "bool",
+          "description": "Let players type the code as well as scan it. Off means a code passed along in a message does not count",
+          "default": "false"
+        },
+        {
+          "name": "match",
+          "type": "string",
+          "description": "How a scan is compared: exact is byte-for-byte, ci ignores case, contains accepts a value carrying the code and ignores case too, such as a QR encoding a URL",
+          "default": "exact",
+          "enum": [
+            "exact",
+            "ci",
+            "contains"
+          ]
         }
       ]
     },
@@ -799,8 +1096,12 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Sorting",
       "description": "Players drag and drop items into the correct order.",
       "contexts": [
-        "location_content",
-        "checkpoint"
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "points",
+        "sets"
       ],
       "fields": [
         {
@@ -855,6 +1156,9 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "contexts": [
         "start"
       ],
+      "shared_fields": [
+        "depends"
+      ],
       "fields": [
         {
           "name": "scheduled_text",
@@ -879,37 +1183,14 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       ]
     },
     {
-      "type": "task",
-      "name": "Task",
-      "description": "A single task item in a scavenger hunt task list.",
-      "contexts": [
-        "task"
-      ],
-      "fields": [
-        {
-          "name": "task",
-          "type": "string",
-          "description": "Task description shown to players",
-          "required": true
-        },
-        {
-          "name": "icon",
-          "type": "string",
-          "description": "Icon name (Lucide icon)"
-        },
-        {
-          "name": "link_through",
-          "type": "bool",
-          "description": "If true, tapping takes the player to the task location"
-        }
-      ]
-    },
-    {
       "type": "team_name",
       "name": "Team Name",
       "description": "Displays the team name and optionally allows players to change it.",
       "contexts": [
         "start"
+      ],
+      "shared_fields": [
+        "points"
       ],
       "fields": [
         {
@@ -929,10 +1210,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Markdown",
       "description": "Renders Markdown content. Supports headings, lists, links, bold, italic, and images.",
       "contexts": [
-        "location_content",
-        "location_clues",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -948,10 +1232,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "Toggle Text",
       "description": "Collapsible text section with a title and hidden content.",
       "contexts": [
-        "location_content",
-        "location_clues",
         "start",
-        "finish"
+        "finish",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {
@@ -965,11 +1252,6 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
           "type": "markdown",
           "description": "Hidden content revealed when toggled",
           "required": true
-        },
-        {
-          "name": "small",
-          "type": "bool",
-          "description": "Use a smaller toggle style"
         }
       ]
     },
@@ -978,9 +1260,13 @@ These rules are enforced by the linter (`POST /api/v7/lint`). Errors block impor
       "name": "YouTube",
       "description": "Embeds a YouTube video.",
       "contexts": [
-        "location_content",
         "finish",
-        "start"
+        "start",
+        "objective_proof",
+        "objective_reveal"
+      ],
+      "shared_fields": [
+        "depends"
       ],
       "fields": [
         {

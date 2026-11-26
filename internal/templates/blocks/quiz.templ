@@ -3,8 +3,8 @@ package blocks
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // Helper function to get quiz player data
@@ -27,237 +27,155 @@ func isOptionSelected(optionID string, selectedOptions []string) bool {
 	return false
 }
 
-templ quizResults(block blocks.QuizBlock, data blocks.PlayerState) {
-	if playerData, err := getQuizPlayerData(data.GetPlayerData()); err == nil {
-		// Show correct answers
-		<div class="form-control">
-			for _, option := range block.Options {
-				<label
-					class={ fmt.Sprintf("label cursor-default justify-start gap-3 %s w-full", 
-							func() string {
-								if option.IsCorrect {
-									return "text-success"
-								}
-								if isOptionSelected(option.ID, playerData.SelectedOptions) && !option.IsCorrect {
-									return "text-error"
-								}
-								return ""
-							}()) }
-				>
-					if block.MultipleChoice {
-						<input
-							type="checkbox"
-							class={ fmt.Sprintf("checkbox %s", 
-										func() string {
-											if option.IsCorrect {
-												return "checkbox-success"
-											}
-											if isOptionSelected(option.ID, playerData.SelectedOptions) && !option.IsCorrect {
-												return "checkbox-error"
-											}
-											return "checkbox-disabled"
-										}()) }
-							checked?={ option.IsCorrect || isOptionSelected(option.ID, playerData.SelectedOptions) }
-							disabled
-						/>
-					} else {
-						<input
-							type="radio"
-							class={ fmt.Sprintf("radio %s", 
-										func() string {
-											if option.IsCorrect {
-												return "radio-success"
-											}
-											if isOptionSelected(option.ID, playerData.SelectedOptions) && !option.IsCorrect {
-												return "radio-error"
-											}
-											return "radio-disabled"
-										}()) }
-							checked?={ isOptionSelected(option.ID, playerData.SelectedOptions) }
-							disabled
-						/>
-					}
-					<div
-						if option.IsCorrect {
-							class="label-text prose text-success"
-						}
-						else
-						if isOptionSelected(option.ID, playerData.SelectedOptions) && !option.IsCorrect {
-							class="label-text prose text-error"
-						} else {
-							class="label-text prose"
-						}
-					>
-						@templ.Raw(stringToMarkdown(option.Text))
-					</div>
-				</label>
-			}
-		</div>
+// quizVerdict says in words what became of an option, and gives the row's
+// state. Only what the player picked is judged: an option left alone is not
+// marked wrong, and a right one they missed is shown as the answer.
+func quizVerdict(correct, picked bool) (string, string) {
+	switch {
+	case picked && correct:
+		return "That's right", "is-ok"
+	case picked:
+		return "Not this one", "is-no"
+	case correct:
+		return "The right answer", "is-miss"
 	}
+	return "", ""
 }
 
-templ quizPlayer(settings models.InstanceSettings, block blocks.QuizBlock, data blocks.PlayerState) {
-	<div
-		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
-	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
-		}
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			// Render question
-			@templ.Raw(stringToMarkdown(block.Question))
-			if !data.IsComplete() || (block.RetryEnabled && !data.IsComplete()) {
-				<form
-					id={ fmt.Sprintf("quiz-form-%s", block.ID) }
-					hx-post="/blocks/validate"
-					hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-					hx-swap="outerHTML"
-				>
-					<input type="hidden" name="block" value={ block.ID }/>
-					<div class="form-control">
-						// Get shuffled or regular options
-						for _, option := range block.GetShuffledOptions() {
-							<label class="label justify-start gap-3 w-full">
-								if block.MultipleChoice {
-									<input
-										type="checkbox"
-										name="quiz_option"
-										value={ option.ID }
-										class="checkbox checkbox-primary"
-									/>
-								} else {
-									<input
-										type="radio"
-										name="quiz_option"
-										value={ option.ID }
-										class="radio radio-primary"
-									/>
-								}
-								<div class="label-text prose">
-									@templ.Raw(stringToMarkdown(option.Text))
-								</div>
-							</label>
-						}
-					</div>
-					if block.RetryEnabled {
-						// Get player data to check attempts and show feedback
-						if playerData, err := getQuizPlayerData(data.GetPlayerData()); err == nil && playerData.Attempts > 0 {
-							if len(playerData.SelectedOptions) == 0 {
-								<p class="p-4 pb-0 text-primary font-bold text-center">Please select an option to continue (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
-							} else if !playerData.IsCorrect {
-								<p class="p-4 pb-0 text-primary font-bold text-center">Not quite! Try again (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
-							}
-						}
-					}
-					<div class="flex justify-center mt-4">
-						<button
-							type="submit"
-							class="btn btn-primary"
-							disabled
-							id={ fmt.Sprintf("submit-btn-%s", block.ID) }
-							_="
-								on change from (closest <form />).querySelectorAll('input[name=quiz_option]')
-									remove @disabled from me
-								end
-							"
-						>
-							Check
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-						</button>
-					</div>
-				</form>
+templ quizResultRow(option blocks.QuizOption, picked, multiple bool) {
+	{{ verdict, state := quizVerdict(option.IsCorrect, picked) }}
+	<div class={ "qb-opt", "locked", state, templ.KV("box", multiple) }>
+		<span class="qb-mark">
+			if state == "is-no" {
+				@icon("x", templ.Attributes{"aria-hidden": "true"})
 			} else {
-				@quizResults(block, data)
-				if data.IsComplete() && block.UnlockedContent != "" {
-					@templ.Raw(stringToMarkdown(block.UnlockedContent))
-				}
+				@icon("check", templ.Attributes{"aria-hidden": "true"})
+			}
+		</span>
+		<div class="qb-t">
+			<div class="qb-tt">
+				@templ.Raw(stringToMarkdown(option.Text))
+			</div>
+			if verdict != "" {
+				<span class="qb-verdict">
+					if state == "is-no" {
+						@icon("x", templ.Attributes{"aria-hidden": "true"})
+					} else if state == "is-ok" {
+						@icon("check", templ.Attributes{"aria-hidden": "true"})
+					}
+					{ verdict }
+				</span>
 			}
 		</div>
 	</div>
 }
 
-templ quizPlayerUpdate(settings models.InstanceSettings, block blocks.QuizBlock, data blocks.PlayerState) {
+templ quizPlayer(settings models.QuestSettings, block blocks.QuizBlock, data blocks.PlayerState) {
+	@quizCard(settings, block, data, block.GetShuffledOptions(), false)
+}
+
+// quizPlayerUpdate answers a submission: the options keep their order, and the
+// card says what just happened.
+templ quizPlayerUpdate(settings models.QuestSettings, block blocks.QuizBlock, data blocks.PlayerState) {
+	@quizCard(settings, block, data, block.Options, true)
+}
+
+// quizCard is the quiz as a raised card. fresh is whether the player just
+// answered, which is what earns the shake and the pop.
+templ quizCard(settings models.QuestSettings, block blocks.QuizBlock, data blocks.PlayerState, options []blocks.QuizOption, fresh bool) {
+	{{ playerData, _ := getQuizPlayerData(data.GetPlayerData()) }}
+	{{ answered := !data.IsComplete() && playerData.Attempts > 0 && len(playerData.SelectedOptions) > 0 && !playerData.IsCorrect }}
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
+		class={ "qb-card", templ.KV("is-fresh", fresh), templ.KV("is-wrong", answered) }
 	>
-		if settings.EnablePoints && block.Points > 0 {
-			<span class="indicator-item indicator-top indicator-center badge badge-info">{ fmt.Sprint(block.GetPoints()) } pts</span>
-		}
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			// Render question
+		@qbTop("circle-help", "Quiz", settings, block.GetPoints(), data)
+		<div class="qb-q">
 			@templ.Raw(stringToMarkdown(block.Question))
-			if !data.IsComplete() || (block.RetryEnabled && !data.IsComplete()) {
-				<form
-					id={ fmt.Sprintf("quiz-form-%s", block.ID) }
-					hx-post="/blocks/validate"
-					hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
-					hx-swap="outerHTML"
-				>
-					<input type="hidden" name="block" value={ block.ID }/>
-					<div class="form-control flex flex-col gap-3">
-						// Get options (maintain same order as before)
-						for _, option := range block.Options {
-							<label class="label cursor-pointer justify-start w-full">
-								if block.MultipleChoice {
-									<input
-										type="checkbox"
-										name="quiz_option"
-										value={ option.ID }
-										class="checkbox checkbox-primary"
-									/>
-								} else {
-									<input
-										type="radio"
-										name="quiz_option"
-										value={ option.ID }
-										class="radio radio-primary"
-									/>
-								}
-								<div class="label-text">
-									@templ.Raw(stringToMarkdown(option.Text))
-								</div>
-							</label>
-						}
-					</div>
-					if block.RetryEnabled {
-						// Get player data to check attempts and show feedback
-						if playerData, err := getQuizPlayerData(data.GetPlayerData()); err == nil && playerData.Attempts > 0 {
-							if len(playerData.SelectedOptions) == 0 {
-								<p class="p-4 pb-0 text-primary font-bold text-center">Please select an option to continue (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
-							} else if !playerData.IsCorrect {
-								<p class="p-4 pb-0 text-primary font-bold text-center">Not quite! Try again (Attempts: { fmt.Sprint(playerData.Attempts) })</p>
-							}
-						}
-					}
-					<div class="flex justify-center mt-4">
-						<button
-							type="submit"
-							class="btn btn-primary"
-							id={ fmt.Sprintf("submit-btn-%s", block.ID) }
-						>
-							if block.RetryEnabled {
-								Check
-							} else {
-								Submit
-							}
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-						</button>
-					</div>
-				</form>
-			} else {
-				// Show results with animation
-				<div class="animate-[pulse_1s_ease-in-out]">
-					@quizResults(block, data)
-				</div>
-				if data.IsComplete() && block.UnlockedContent != "" {
-					@templ.Raw(stringToMarkdown(block.UnlockedContent))
-				}
-			}
 		</div>
+		if !data.IsComplete() {
+			<form
+				id={ fmt.Sprintf("quiz-form-%s", block.ID) }
+				class="qb-form"
+				hx-post="/blocks/validate"
+				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+				hx-swap="outerHTML"
+			>
+				<input type="hidden" name="block" value={ block.ID }/>
+				<p class="qb-hint">
+					if block.MultipleChoice {
+						Pick all that apply.
+					} else {
+						Pick one answer.
+					}
+				</p>
+				<div class="qb-opts">
+					for _, option := range options {
+						<label class={ "qb-opt", templ.KV("box", block.MultipleChoice) }>
+							<span class="qb-mark">
+								if block.MultipleChoice {
+									<input type="checkbox" name="quiz_option" value={ option.ID }/>
+								} else {
+									<input type="radio" name="quiz_option" value={ option.ID }/>
+								}
+								@icon("check", templ.Attributes{"aria-hidden": "true"})
+							</span>
+							<div class="qb-t">
+								@templ.Raw(stringToMarkdown(option.Text))
+							</div>
+						</label>
+					}
+				</div>
+				if block.RetryEnabled && playerData.Attempts > 0 {
+					if len(playerData.SelectedOptions) == 0 {
+						<p class="qb-msg" role="status">
+							@icon("info", templ.Attributes{"aria-hidden": "true"})
+							<span>Pick an answer to carry on.</span>
+						</p>
+					} else if !playerData.IsCorrect {
+						<p class="qb-msg no" role="status">
+							@icon("circle-x", templ.Attributes{"aria-hidden": "true"})
+							<span>
+								Not quite. Have another look, then try again.
+								<small>Attempt { fmt.Sprint(playerData.Attempts) }</small>
+							</span>
+						</p>
+					}
+				}
+				<button
+					type="submit"
+					class="btn btn-primary qb-go"
+					disabled
+					id={ fmt.Sprintf("submit-btn-%s", block.ID) }
+					_="
+						on change from (closest <form />).querySelectorAll('input[name=quiz_option]')
+							set my.disabled to ((closest <form />).querySelector('input[name=quiz_option]:checked') is null)
+						end
+					"
+				>
+					<span class="qb-idle">Pick an answer</span>
+					<span class="qb-ready">
+						if block.RetryEnabled {
+							Check answer
+						} else {
+							Submit answer
+						}
+						@icon("check", templ.Attributes{"aria-hidden": "true"})
+					</span>
+				</button>
+			</form>
+		} else {
+			<div class="qb-opts">
+				for _, option := range block.Options {
+					@quizResultRow(option, isOptionSelected(option.ID, playerData.SelectedOptions) || (playerData.IsCorrect && option.IsCorrect), block.MultipleChoice)
+				}
+			</div>
+			if block.UnlockedContent != "" {
+				<div class="q-unlocked prose" role="status">
+					@templ.Raw(stringToMarkdown(block.UnlockedContent))
+				</div>
+			}
+		}
 	</div>
 }
 
@@ -275,243 +193,91 @@ var quizUnlockedContentTextarea = TextareaParams{
 	Placeholder: "Well done! Here's what happens next...",
 	Markdown:    true,
 	Required:    false,
+	MinLines: 2,
 	HelpText:    "This content will be shown to the player when they answer correctly.",
 }
 
-templ quizAdmin(settings models.InstanceSettings, block blocks.QuizBlock) {
+const quizCols = "1.4rem 3.4rem 1fr 2.1rem"
+
+func quizRows(blockID string) RowsParams {
+	return RowsParams{
+		ID:       "quiz-options-" + blockID,
+		Cols:     quizCols,
+		Heads:    []string{"Right", "Answer"},
+		Min:      2,
+		AddLabel: "Add an answer",
+		Marks:    "multiple_choice",
+	}
+}
+
+templ quizAdmin(settings models.QuestSettings, block blocks.QuizBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
-		hx-trigger={ fmt.Sprintf("keyup from:(#form-%s textarea, #form-%s input[type=number]) delay:500ms, change from:(#form-%s input[type=checkbox]) delay:100ms, save delay:500ms", block.ID, block.ID, block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		// Points setting
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
-		// Question field
 		@TextareaField(quizQuestionTextarea.SetValue(block.Question))
-		// Answer type selection
-		<div class="flex flex-col gap-2 my-3">
-			<label class="label w-full flex justify-between">
-				Multiple choice
-				<input
-					type="checkbox"
-					name="multiple_choice"
-					class="toggle"
-					checked?={ block.MultipleChoice }
-					_="on change
-					set :inputs to (closest <form />).querySelectorAll('input[name=option_correct]')
-					if I match <:checked /> then
-						add .checkbox to :inputs
-						add .checkbox-sm to :inputs
-						add .checkbox-success to :inputs
-						remove .radio from :inputs
-						remove .radio-sm from :inputs
-						remove .radio-success from :inputs
-						set @type of :inputs to 'checkbox'
-					else
-						add .radio to :inputs
-						add .radio-sm to :inputs
-						add .radio-success to :inputs
-						remove .checkbox from :inputs
-						remove .checkbox-sm from :inputs
-						remove .checkbox-success from :inputs
-						set @type of :inputs to 'radio'
-					end
-				"
-				/>
-			</label>
-			<label class="label w-full flex justify-between">
-				Randomise Order
-				<input
-					type="checkbox"
-					name="randomise_order"
-					class="toggle"
-					checked?={ block.RandomizeOrder }
-				/>
-			</label>
-			<label class="label w-full flex justify-between">
-				Multiple Attempts
-				<input
-					type="checkbox"
-					name="allow_retry"
-					class="toggle"
-					checked?={ block.RetryEnabled }
-				/>
-			</label>
+		<div class="flex flex-col gap-3 mb-5">
+			@adminSwitch("multiple_choice", "Multiple choice", "Players can pick more than one answer.", block.MultipleChoice, templ.Attributes{})
+			@adminSwitch("randomise_order", "Randomise the order", "Each player sees the answers in a different order.", block.RandomizeOrder, templ.Attributes{})
+			@adminSwitch("allow_retry", "Allow more than one attempt", "A wrong answer can be tried again.", block.RetryEnabled, templ.Attributes{})
 		</div>
-		// Answer options
 		<fieldset class="fieldset">
-			<legend class="fieldset-legend flex justify-between w-full">
-				Answer options
-				<button
-					class="btn btn-outline btn-xs"
-					type="button"
-					id="add-option-btn"
-					_="
-						on click
-							set :group to closest <form />
-							put #quiz-option-template's innerHTML after last .quiz-option in :group.querySelector('.quiz-options')
-							if :group.querySelectorAll('input[name=multiple_choice]:checked').length then
-								remove <input[type=radio] /> from last <label /> in :group
-							else
-								remove <input[type=checkbox] /> from last <label /> in :group
-							end
-							set @value of last <input[name=option_correct] /> to 'option_' + ( :group.querySelectorAll('.quiz-options label').length - 1 )
-							set :newInput to last <input[name=option_text] /> in :group
-							call :newInput.focus()
-						"
-				>
-					Add Option
-				</button>
-			</legend>
-			<div
-				class="quiz-options join join-vertical"
-				_="on load or click from me.querySelectorAll('button') or click from previous <button /> or triggerUpdate
-				if my children's length > 2
-					remove .invisible from me.querySelectorAll('button')
-				else
-					add .invisible to me.querySelectorAll('button')
-				end
-				"
-			>
-				// Existing options
+			<legend class="fieldset-legend">Answer options</legend>
+			@adminRows(quizRows(block.ID), nil) {
 				for i, option := range block.Options {
 					@quizOptionAdmin(i, option, block.MultipleChoice)
 				}
-				// Empty slots for new options (minimum 2 total)
 				for i := len(block.Options); i < 2; i++ {
-					// For the first option when creating a new quiz, set it as correct by default
-					if len(block.Options) == 0 && i == 0 {
-						@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: true}, block.MultipleChoice)
-					} else {
-						@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: false}, block.MultipleChoice)
-					}
+					@quizOptionAdmin(i, blocks.QuizOption{IsCorrect: len(block.Options) == 0 && i == 0}, block.MultipleChoice)
 				}
-			</div>
-			<span
-				class="label-text text-xs text-error invisible mt-1"
-				_="
-				set :group to closest <form />
-				on load or click from :group.querySelectorAll('.quiz-options input')
-				set :checkedInputs to :group.querySelectorAll('.quiz-options input:checked')
-				if :checkedInputs's length != 0
-					add .invisible to me
-				else
-					remove .invisible from me
-				end
-			"
-			>
-				At least one option must be correct.
-			</span>
+			}
+			<p class="label">Mark every answer that is right. At least one must be.</p>
 		</fieldset>
-		// Unlocked content field
 		@TextareaField(quizUnlockedContentTextarea.SetValue(block.UnlockedContent))
-		<template id="quiz-option-template">
-			<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
-				<input
-					type="checkbox"
-					name="option_correct"
-					class="checkbox checkbox-sm checkbox-success"
-					_="on change send save to (closest <form/>)"
-				/>
-				<input
-					type="radio"
-					name="option_correct"
-					class="radio radio-sm radio-success"
-					_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
-				/>
-				<input
-					name="option_text"
-					class={ fmt.Sprintf("w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent item-%s", "") }
-					style="field-sizing: content;"
-					placeholder="Answer option..."
-					autoComplete="off"
-					_="on keyup
-						send save to (closest <form/>)
-						if event.key is 'Enter'
-							set :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')
-							set :myIndex to Array.from(:allOptions).indexOf(me)
-							if :myIndex is :allOptions.length - 1
-								send click to (closest <form />).querySelector('#add-option-btn')
-							else
-								call :allOptions[:myIndex + 1].focus()
-							end
-						end
-					"
-				/>
-				<button
-					type="button"
-					class="btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible"
-					data-tip="Delete"
-					_="on click
-				set :group to closest <form />
-				remove closest parent <label />
-				send save to :group
-				send triggerUpdate to :group.querySelector('.quiz-options')
-				"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-				</button>
-			</label>
-		</template>
 	</form>
+	<template id={ quizRows(block.ID).TemplateID() }>
+		@quizOptionAdmin(0, blocks.QuizOption{}, block.MultipleChoice)
+	</template>
 }
 
+// The mark's value is its row's place: the block matches marks to answers by it.
 templ quizOptionAdmin(index int, option blocks.QuizOption, isMultipleChoice bool) {
-	<label class="quiz-option join-item input flex flex-row items-top gap-2 h-auto w-full">
-		if isMultipleChoice {
-			<input
-				type="checkbox"
-				name="option_correct"
-				value={ fmt.Sprintf("option_%d", index) }
-				class="checkbox checkbox-sm checkbox-success"
-				checked?={ option.IsCorrect }
-				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
-			/>
-		} else {
-			<input
-				type="radio"
-				name="option_correct"
-				value={ fmt.Sprintf("option_%d", index) }
-				class="radio radio-sm radio-success"
-				checked?={ option.IsCorrect }
-				_="on change send triggerUpdate to (closest <form/>).querySelector('.quiz-options')"
-			/>
-		}
+	<div class="rows-item" style={ gridCols(quizCols) }>
+		@rowGrip()
 		<input
-			name="option_text"
-			class={ fmt.Sprintf("w-full input hover:border-0 hover:outline-0 focus:border-0 focus:outline-0 border-0 outline-0 bg-transparent item-%s", "") }
-			style="field-sizing: content;"
-			placeholder="Answer option..."
-			value={ option.Text }
-			autoComplete="off"
-			_="on keyup
-				send save to (closest <form/>)
-				if event.key is 'Enter'
-					set :allOptions to (closest <form />).querySelectorAll('input[name=option_text]')
-					set :myIndex to Array.from(:allOptions).indexOf(me)
-					if :myIndex is :allOptions.length - 1
-						send click to (closest <form />).querySelector('#add-option-btn')
-					else
-						call :allOptions[:myIndex + 1].focus()
-					end
-				end
-			"
+			type={ quizMarkType(isMultipleChoice) }
+			name="option_correct"
+			value={ fmt.Sprintf("option_%d", index) }
+			class={ quizMarkClass(isMultipleChoice), "justify-self-center" }
+			checked?={ option.IsCorrect }
+			aria-label="This answer is right"
+			data-rows-mark
+			data-rows-index="option_"
 		/>
-		<button
-			type="button"
-			class="btn btn-xs btn-circle hover:btn-error tooltip flex mt-3 invisible"
-			data-tip="Delete"
-			_="on click
-				set :group to closest <form />
-				remove closest parent <label />
-				send save to :group
-				send triggerUpdate to :group.querySelector('.quiz-options')
-				"
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-		</button>
-	</label>
+		<input
+			type="text"
+			name="option_text"
+			value={ option.Text }
+			placeholder="Answer option..."
+			class="rows-cell"
+			autocomplete="off"
+		/>
+		@rowRemove("answer")
+	</div>
+}
+
+func quizMarkType(multiple bool) string {
+	if multiple {
+		return "checkbox"
+	}
+	return "radio"
+}
+
+func quizMarkClass(multiple bool) string {
+	if multiple {
+		return "checkbox checkbox-sm checkbox-success"
+	}
+	return "radio radio-sm radio-success"
 }

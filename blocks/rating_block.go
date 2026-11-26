@@ -8,10 +8,13 @@ import (
 	"time"
 )
 
+// RatingStars is the scale of every rating: out of five. A longer scale cannot fit a
+// phone in one row of stars big enough to tap, and wrapping them reads badly.
+const RatingStars = 5
+
 type RatingBlock struct {
 	BaseBlock
-	Prompt    string `json:"prompt"`
-	MaxRating int    `json:"max_rating"` // 5, 7, or 10
+	Prompt string `json:"prompt"`
 }
 
 type ratingBlockData struct {
@@ -44,9 +47,6 @@ func (b *RatingBlock) GetData() json.RawMessage {
 // Data Operations
 
 func (b *RatingBlock) ParseData() error {
-	if b.MaxRating == 0 {
-		b.MaxRating = 5 // Default to 5 stars
-	}
 	return json.Unmarshal(b.Data, b)
 }
 
@@ -66,34 +66,15 @@ func (b *RatingBlock) UpdateBlockData(input map[string][]string) error {
 	}
 	b.Prompt = input["prompt"][0]
 
-	// Max Rating
-	if input["max_rating"] != nil && input["max_rating"][0] != "" {
-		maxRating, err := strconv.Atoi(input["max_rating"][0])
-		if err != nil {
-			return errors.New("max_rating must be an integer")
-		}
-		if maxRating < 3 || maxRating > 10 {
-			return errors.New("max_rating must be between 3 and 10")
-		}
-		b.MaxRating = maxRating
-	} else {
-		b.MaxRating = 5 // Default
-	}
-
 	return nil
 }
 
 // ToYAML returns the block's data for YAML export.
 func (b *RatingBlock) ToYAML() map[string]any {
-	m := map[string]any{
+	return map[string]any{
 		"prompt": b.Prompt,
 	}
-	if b.MaxRating > 0 {
-		m["max_rating"] = b.MaxRating
-	}
-	return m
 }
-
 
 // Validation and Points Calculation
 
@@ -110,8 +91,8 @@ func (b *RatingBlock) ValidatePlayerInput(state PlayerState, input map[string][]
 	}
 
 	// Validate rating is within range
-	if rating < 1 || rating > b.MaxRating {
-		return state, fmt.Errorf("rating must be between 1 and %d", b.MaxRating)
+	if rating < 1 || rating > RatingStars {
+		return state, fmt.Errorf("rating must be between 1 and %d", RatingStars)
 	}
 
 	// Save player data
@@ -139,4 +120,3 @@ func (b *RatingBlock) GetPlayerRating(state PlayerState) int {
 	}
 	return data.Rating
 }
-

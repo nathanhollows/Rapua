@@ -6,116 +6,127 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // ExportService converts a live instance into a GameDoc.
 type ExportService struct {
-	instanceRepo         repositories.InstanceRepository
-	instanceSettingsRepo repositories.InstanceSettingsRepository
-	locationRepo         repositories.LocationRepository
+	instanceRepo         repositories.QuestRepository
+	instanceSettingsRepo repositories.QuestSettingsRepository
+	objectiveRepo        repositories.ObjectiveRepository
 	blockRepo            repositories.BlockRepository
 }
 
 // NewExportService creates a new ExportService with the provided dependencies.
 func NewExportService(
-	instanceRepo repositories.InstanceRepository,
-	instanceSettingsRepo repositories.InstanceSettingsRepository,
-	locationRepo repositories.LocationRepository,
+	instanceRepo repositories.QuestRepository,
+	instanceSettingsRepo repositories.QuestSettingsRepository,
+	objectiveRepo repositories.ObjectiveRepository,
 	blockRepo repositories.BlockRepository,
 ) *ExportService {
 	return &ExportService{
 		instanceRepo:         instanceRepo,
 		instanceSettingsRepo: instanceSettingsRepo,
-		locationRepo:         locationRepo,
+		objectiveRepo:        objectiveRepo,
 		blockRepo:            blockRepo,
 	}
 }
 
-// ExportInstance serialises a live instance to a v7 GameDoc.
-func (s *ExportService) ExportInstance(ctx context.Context, instanceID string) (*game.GameDoc, error) {
-	// 1. Load Instance (includes GameStructure JSON column)
-	instance, err := s.instanceRepo.GetByID(ctx, instanceID)
+// optionalString omits an empty description rather than writing "": the key's
+// absence is what tells an import to leave a stored one alone, and an export
+// of nothing should not instruct anybody to clear anything.
+func optionalString(value string) *string {
+	if value == "" {
+		return nil
+	}
+	return &value
+}
+
+func (s *ExportService) ExportInstance(ctx context.Context, questID string) (*game.GameDoc, []string, error) {
+	instance, err := s.instanceRepo.GetByID(ctx, questID)
 	if err != nil {
-		return nil, fmt.Errorf("export: load instance: %w", err)
+		return nil, nil, fmt.Errorf("export: load instance: %w", err)
 	}
 
-	// 2. Load InstanceSettings
-	settings, err := s.instanceSettingsRepo.GetByInstanceID(ctx, instanceID)
+	settings, err := s.instanceSettingsRepo.GetByQuestID(ctx, questID)
 	if err != nil {
-		return nil, fmt.Errorf("export: load settings: %w", err)
+		return nil, nil, fmt.Errorf("export: load settings: %w", err)
 	}
 
-	// 3. Load all Locations with Marker relation
-	locations, err := s.locationRepo.FindByInstance(ctx, instanceID)
+	// Ordered so siblings follow their position: the document's child order is
+	// the table's.
+	objectives, err := s.objectiveRepo.FindTreeByQuestID(ctx, questID)
 	if err != nil {
-		return nil, fmt.Errorf("export: load locations: %w", err)
+		return nil, nil, fmt.Errorf("export: load objectives: %w", err)
 	}
 
-	// 4. Collect all owner IDs: instance itself (start/finish) + all location IDs
-	ownerIDs := make([]string, 0, len(locations)+1)
-	ownerIDs = append(ownerIDs, instanceID)
-	for i := range locations {
-		ownerIDs = append(ownerIDs, locations[i].ID)
+	// The quest owns its start and finish blocks; every objective owns its own.
+	ownerIDs := make([]string, 0, len(objectives)+1)
+	ownerIDs = append(ownerIDs, questID)
+	for i := range objectives {
+		ownerIDs = append(ownerIDs, objectives[i].ID)
 	}
 
-	// 5. Load all raw blocks in one query
 	rawBlocks, err := s.blockRepo.FindModelsByOwnerIDs(ctx, ownerIDs)
 	if err != nil {
-		return nil, fmt.Errorf("export: load blocks: %w", err)
+		return nil, nil, fmt.Errorf("export: load blocks: %w", err)
 	}
 
-	// 6. Build maps for fast lookup
-	locationByID := make(map[string]*models.Location, len(locations))
-	for i := range locations {
-		locationByID[locations[i].ID] = &locations[i]
-	}
-
-	// Group blocks by ownerID, preserving ordering
 	blocksByOwner := make(map[string][]models.Block)
 	for _, b := range rawBlocks {
 		blocksByOwner[b.OwnerID] = append(blocksByOwner[b.OwnerID], b)
 	}
 
-	// 7. Build start/finish from instance-level blocks
-	startDoc, finishDoc := s.buildStartFinish(blocksByOwner[instanceID])
+	startDoc, finishDoc := buildStartFinish(blocksByOwner[questID])
 
-	// 8. Walk GameStructure recursively to build the children tree
-	children := s.walkStructure(instance.GameStructure, locationByID, blocksByOwner)
+	// Every node is an objective row, so the document's recursion is the
+	// table's parent_id and position.
+	childrenOf := make(map[string][]models.Objective, len(objectives))
+	var rootRow *models.Objective
+	for i := range objectives {
+		if objectives[i].ParentID == "" {
+			// Refused rather than resolved. Taking one and dropping the rest
+			// would export a document missing whole subtrees, and re-importing
+			// it sweeps those objectives away as orphans: a backup that deletes
+			// what it was taken to protect.
+			if rootRow != nil {
+				return nil, nil, fmt.Errorf(
+					"export: %w: quest %s", repositories.ErrAmbiguousRootObjective, questID)
+			}
+			rootRow = &objectives[i]
+			continue
+		}
+		childrenOf[objectives[i].ParentID] = append(childrenOf[objectives[i].ParentID], objectives[i])
+	}
+	if rootRow == nil {
+		return nil, nil, fmt.Errorf("export: %w: quest %s", repositories.ErrNoRootObjective, questID)
+	}
+	root := buildObjectiveTree(*rootRow, childrenOf, blocksByOwner)
 
-	// 9. Assemble and return GameDoc
 	doc := &game.GameDoc{
-		Rapua: "v7",
-		ID:    instanceID,
+		Rapua: "v8",
+		ID:    questID,
 		Name:  instance.Name,
 		Settings: game.SettingsDoc{
-			MustCheckOut:      settings.MustCheckOut,
-			ShowTeamCount:     settings.ShowTeamCount,
-			EnablePoints:      settings.EnablePoints,
-			EnableBonusPoints: settings.EnableBonusPoints,
-			ShowLeaderboard:   settings.ShowLeaderboard,
+			EnablePoints:     settings.EnablePoints,
+			ShowLeaderboard:  settings.ShowLeaderboard,
+			ProgressFeedback: string(settings.ProgressFeedback.Normalised()),
 		},
-		Start:  startDoc,
-		Finish: finishDoc,
-		Structure: game.StructureDoc{
-			Routing:         instance.GameStructure.Routing,
-			Navigation:      instance.GameStructure.Navigation,
-			Completion:      instance.GameStructure.CompletionType,
-			MinimumRequired: instance.GameStructure.MinimumRequired,
-			Children:        children,
-		},
+		Start:     startDoc,
+		Finish:    finishDoc,
+		Structure: root,
 	}
 
-	return doc, nil
+	return doc, nil, nil
 }
 
 // buildStartFinish splits instance-level blocks into start and finish arrays.
 // Always returns non-nil slices so "start" and "finish" are present in the output.
-func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) (start, finish []game.BlockDoc) {
-	start = []game.BlockDoc{}
-	finish = []game.BlockDoc{}
+func buildStartFinish(instanceBlocks []models.Block) ([]game.BlockDoc, []game.BlockDoc) {
+	start := []game.BlockDoc{}
+	finish := []game.BlockDoc{}
 
 	// Sort by ordering to preserve intended sequence
 	sort.Slice(instanceBlocks, func(i, j int) bool {
@@ -129,91 +140,69 @@ func (s *ExportService) buildStartFinish(instanceBlocks []models.Block) (start, 
 			start = append(start, doc)
 		case game.ContextFinish:
 			finish = append(finish, doc)
+		case game.ContextObjectiveProof, game.ContextObjectiveReveal:
+			// owned by an objective, not the quest: skip.
 		}
 	}
 
 	return start, finish
 }
 
-// walkStructure recursively converts a GameStructure node into []game.ChildDoc.
-func (s *ExportService) walkStructure(
-	gs models.GameStructure,
-	locationByID map[string]*models.Location,
+// buildObjectiveTree converts one objective row and everything beneath it.
+// Children arrive already ordered by position from the repository.
+func buildObjectiveTree(
+	row models.Objective,
+	childrenOf map[string][]models.Objective,
 	blocksByOwner map[string][]models.Block,
-) []game.ChildDoc {
-	children := make([]game.ChildDoc, 0)
-
-	for _, locID := range gs.LocationIDs {
-		loc, ok := locationByID[locID]
-		if !ok {
-			continue
-		}
-		locDoc := s.buildLocationDoc(loc, blocksByOwner[locID])
-		children = append(children, game.ChildDoc{Location: &locDoc})
+) game.ObjectiveDoc {
+	doc := buildObjectiveDoc(&row, blocksByOwner[row.ID])
+	for _, child := range childrenOf[row.ID] {
+		doc.Children = append(doc.Children, buildObjectiveTree(child, childrenOf, blocksByOwner))
 	}
-
-	for _, subGroup := range gs.SubGroups {
-		groupChildren := s.walkStructure(subGroup, locationByID, blocksByOwner)
-		groupDoc := game.GroupDoc{
-			ID:              subGroup.ID,
-			Name:            subGroup.Name,
-			Color:           subGroup.Color,
-			Routing:         subGroup.Routing,
-			Navigation:      subGroup.Navigation,
-			Completion:      subGroup.CompletionType,
-			MinimumRequired: subGroup.MinimumRequired,
-			Children:        groupChildren,
-		}
-		children = append(children, game.ChildDoc{Group: &groupDoc})
-	}
-
-	return children
+	return doc
 }
 
-// buildLocationDoc converts a Location model + its blocks into a LocationDoc.
-func (s *ExportService) buildLocationDoc(loc *models.Location, locBlocks []models.Block) game.LocationDoc {
-	// Sort by ordering
-	sort.Slice(locBlocks, func(i, j int) bool {
-		return locBlocks[i].Ordering < locBlocks[j].Ordering
+func buildObjectiveDoc(obj *models.Objective, objBlocks []models.Block) game.ObjectiveDoc {
+	sort.Slice(objBlocks, func(i, j int) bool {
+		return objBlocks[i].Ordering < objBlocks[j].Ordering
 	})
 
-	// content is always present; clues/tasks/checkpoint are omitted when empty.
-	content := []game.BlockDoc{}
-	var clues, tasks, checkpoint []game.BlockDoc
+	proof := []game.BlockDoc{}
+	reveal := []game.BlockDoc{}
 
-	for _, b := range locBlocks {
+	for _, b := range objBlocks {
 		doc := modelBlockToDoc(b, true)
 		switch b.Context {
-		case game.ContextLocationContent:
-			content = append(content, doc)
-		case game.ContextLocationClues:
-			clues = append(clues, doc)
-		case game.ContextTask:
-			tasks = append(tasks, doc)
-		case game.ContextCheckpoint:
-			checkpoint = append(checkpoint, doc)
+		case game.ContextObjectiveProof:
+			proof = append(proof, doc)
+		case game.ContextObjectiveReveal:
+			reveal = append(reveal, doc)
+		case game.ContextStart, game.ContextFinish:
+			// not valid for objective blocks: skip.
 		}
 	}
 
-	locDoc := game.LocationDoc{
-		ID:         loc.ID,
-		Slug:       loc.Slug,
-		Name:       loc.Name,
-		Points:     loc.Points,
-		Content:    content,
-		Clues:      clues,
-		Tasks:      tasks,
-		Checkpoint: checkpoint,
+	return game.ObjectiveDoc{
+		ID:          obj.ID,
+		Slug:        obj.Slug,
+		Title:       obj.Title,
+		Description: optionalString(obj.Description),
+		Draft:       &obj.Draft,
+		PassThrough: &obj.PassThrough,
+		Secret:      &obj.Secret,
+		Depends:     obj.Depends,
+		Routing:     obj.Routing,
+		ChildrenMin: obj.ChildrenMin,
+		ChildrenMax: obj.ChildrenMax,
+		MaxNext:     obj.MaxNext,
+		FinishLabel: obj.FinishLabel,
+		Proof: game.ObjectiveContextDoc{
+			Blocks: proof,
+		},
+		Reveal: game.ObjectiveContextDoc{
+			Blocks: reveal,
+		},
 	}
-
-	if loc.Marker.IsMapped() {
-		locDoc.Marker = &game.MarkerDoc{
-			Lat: loc.Marker.Lat,
-			Lng: loc.Marker.Lng,
-		}
-	}
-
-	return locDoc
 }
 
 // modelBlockToDoc converts a models.Block to a game.BlockDoc.
@@ -233,7 +222,10 @@ func modelBlockToDoc(b models.Block, includeID bool) game.BlockDoc {
 	// Inject promoted fields
 	doc["type"] = b.Type
 	if b.Points != 0 {
-		doc["points"] = b.Points
+		// float64 rather than int: the lint rules read the document as decoded
+		// JSON, where every number is a float64 or a json.Number. A Go int
+		// walks past both arms and the rule never fires.
+		doc["points"] = float64(b.Points)
 	}
 	if includeID && b.ID != "" {
 		doc["id"] = b.ID

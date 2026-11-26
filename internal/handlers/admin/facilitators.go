@@ -2,14 +2,16 @@ package admin
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/internal/config"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/admin"
-	public "github.com/nathanhollows/Rapua/v7/internal/templates/public"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/config"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/admin"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 const (
@@ -50,12 +52,12 @@ func (h *Handler) FacilitatorCreateTokenLink(w http.ResponseWriter, r *http.Requ
 		duration = hoursPerDay * time.Hour
 	}
 
-	var locations []string
-	if r.Form.Get("locations") != "" {
-		locations = append(locations, r.Form.Get("locations"))
+	var objectives []string
+	if r.Form.Get("objectives") != "" {
+		objectives = append(objectives, r.Form.Get("objectives"))
 	}
 
-	token, err := h.facilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentInstanceID, locations, duration)
+	token, err := h.facilitatorService.CreateFacilitatorToken(r.Context(), user.CurrentQuestID, objectives, duration)
 	if err != nil {
 		h.handleError(w, r, "creating facilitator token", "Error creating facilitator token")
 		return
@@ -120,47 +122,90 @@ func (h *Handler) FacilitatorDashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Fetch locations
-	locations, err := h.locationService.FindByInstance(r.Context(), facToken.InstanceID)
+	quest, err := h.questService.GetByID(r.Context(), facToken.QuestID)
 	if err != nil {
-		h.handleError(w, r, "fetching locations", "Error fetching locations", "error", err)
+		h.handleError(w, r, "fetching quest", "Error fetching the game", "error", err)
 		return
 	}
 
-	filteredLocations := h.filterLocationsForToken(locations, facToken)
-
-	// Team activity overview
-	overview, err := h.teamService.GetTeamActivityOverview(r.Context(), facToken.InstanceID, filteredLocations)
+	now := time.Now().UTC()
+	report, err := h.runService.CachedStations(r.Context(), facToken.QuestID)
 	if err != nil {
-		h.handleError(w, r, "fetching team activity overview", "Error fetching team activity overview", "error", err)
+		h.handleError(w, r, "reading stations", "Error reading the game", "error", err)
 		return
 	}
+	report.Stations = stationsForToken(report.Stations, facToken)
 
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	c := templates.FacilitatorDashboard(locations, overview)
-	err = public.AuthLayout(c, "Facilitator Dashboard", authed).Render(r.Context(), w)
+	c := templates.FacilitatorDashboard(templates.FacilitatorDashboardData{
+		QuestName: quest.Name,
+		Now:       now,
+		Clock:     services.BuildGameClock(*quest, now),
+		Report:    report,
+		Watching:  watchedStations(r, report.Stations, facToken),
+	})
+	err = templates.FacilitatorLayout(c, "Facilitator Dashboard", authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Activity: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Activity: rendering template", "error", err)
 	}
 }
 
-// filterLocationsForToken filters locations based on the facilitator token permissions.
-func (h *Handler) filterLocationsForToken(
-	locations []models.Location,
-	token *models.FacilitatorToken,
-) []models.Location {
-	if len(token.Locations) == 0 {
-		return locations
-	}
+// facilitatorWatchCookie holds the stations a facilitator chose to follow. The
+// page sets it and the server reads it, so what is rendered is already the
+// choice and nothing has to be hidden afterwards.
+const facilitatorWatchCookie = "rapua_watch"
 
-	var filtered []models.Location
-	for _, allowedID := range token.Locations {
-		for _, loc := range locations {
-			if loc.ID == allowedID {
-				filtered = append(filtered, loc)
-				break
-			}
+// stationsForToken keeps the stations a link covers, in the quest's order. A
+// link made with no objectives covers all of them.
+func stationsForToken(stations []services.StationReading, token *models.FacilitatorToken) []services.StationReading {
+	if len(token.Objectives) == 0 {
+		return stations
+	}
+	allowed := make(map[string]bool, len(token.Objectives))
+	for _, id := range token.Objectives {
+		allowed[id] = true
+	}
+	var kept []services.StationReading
+	for _, station := range stations {
+		if allowed[station.Objective.ID] {
+			kept = append(kept, station)
 		}
 	}
-	return filtered
+	return kept
+}
+
+// watchedStations is the stations this facilitator follows, by objective ID. The
+// cookie holds short keys, and only a station the link covers can be named by
+// one, whatever the cookie says. With no choice made yet, a link made for
+// particular stations follows all of them, and a link for the whole game follows
+// none until asked.
+func watchedStations(
+	r *http.Request, stations []services.StationReading, token *models.FacilitatorToken,
+) map[string]bool {
+	idForKey := make(map[string]string, len(stations))
+	for _, station := range stations {
+		idForKey[services.StationKey(station.Objective.ID)] = station.Objective.ID
+	}
+
+	watching := make(map[string]bool)
+	cookie, err := r.Cookie(facilitatorWatchCookie)
+	if err != nil {
+		if len(token.Objectives) > 0 {
+			for _, id := range idForKey {
+				watching[id] = true
+			}
+		}
+		return watching
+	}
+	// The browser writes the commas percent-encoded and Go hands back the raw value.
+	value, err := url.QueryUnescape(cookie.Value)
+	if err != nil {
+		value = cookie.Value
+	}
+	for _, key := range strings.Split(value, ",") {
+		if id, ok := idForKey[key]; ok {
+			watching[id] = true
+		}
+	}
+	return watching
 }

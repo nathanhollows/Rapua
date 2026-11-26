@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
 )
 
 type OrphanedUploadsCleanupService struct {
@@ -109,7 +109,7 @@ func (s *OrphanedUploadsCleanupService) deleteUploadFile(ctx context.Context, ur
 	path := urlOrPath
 	if strings.HasPrefix(urlOrPath, "http://") || strings.HasPrefix(urlOrPath, "https://") {
 		// Extract path from URL (everything after domain)
-		//nolint:mnd // URL structure: ["http:", "", "domain", "path/to/file"]
+
 		parts := strings.SplitN(urlOrPath, "/", 4)
 		//nolint:mnd // Need 4 parts to extract path after domain
 		if len(parts) >= 4 {
@@ -172,18 +172,18 @@ func (s *OrphanedUploadsCleanupService) CleanupEmptyDirectories(ctx context.Cont
 		// Check if directory is empty
 		entries, readErr := os.ReadDir(path)
 		if readErr != nil {
-			s.logger.Warn("Failed to read directory", "path", path, "error", readErr)
+			s.logger.WarnContext(ctx, "Failed to read directory", "path", path, "error", readErr)
 			return nil
 		}
 
 		if len(entries) == 0 {
 			if removeErr := os.Remove(path); removeErr != nil {
-				s.logger.Warn("Failed to delete empty directory",
+				s.logger.WarnContext(ctx, "Failed to delete empty directory",
 					"path", path,
 					"error", removeErr,
 				)
 			} else {
-				s.logger.Info("Deleted empty directory", "path", path)
+				s.logger.InfoContext(ctx, "Deleted empty directory", "path", path)
 				dirsDeleted++
 			}
 		}

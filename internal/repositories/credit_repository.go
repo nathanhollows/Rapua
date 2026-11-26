@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 )
 
@@ -223,9 +223,8 @@ func (r *CreditRepository) DeductOneCreditWithTx(ctx context.Context, tx *bun.Tx
 
 	if rowsAffected == 0 {
 		// No rows were updated, meaning user doesn't have sufficient credits
-		return errors.New("insufficient credits to start team")
+		return ErrInsufficientCredits
 	}
 
 	return nil
 }
-

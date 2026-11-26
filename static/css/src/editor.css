@@ -1,0 +1,1188 @@
+/* Sortable.js drag states */
+.sortable-ghost-preview {
+  @apply opacity-40 bg-base-200;
+}
+
+/* The same shape as the hover and highlight outlines, in the primary colour:
+   picking a block up should look like the block you were already pointing at,
+   not like a different kind of mark. */
+.sortable-chosen-preview {
+  @apply outline-2 outline-offset-4 outline-primary rounded-2xl;
+}
+
+.sortable-drag-preview {
+  @apply opacity-80 cursor-grabbing;
+}
+
+.transitioning {
+  @apply transition-transform duration-300;
+}
+
+/* The picker owns its own display, because Tailwind's .hidden and
+   .inline-block are single-class utilities in one layer and .inline-block is
+   emitted second: an element carrying both cannot be hidden, by markup or by
+   classList.toggle. Scoped to the picker rather than fixing .hidden globally,
+   which would outrank every responsive "hidden lg:inline-block" in the app and
+   hide things that are meant to appear. */
+.settings-picker {
+  display: inline-block;
+}
+
+/* Compound, so it outranks the rule above rather than tying with it. */
+.settings-picker.hidden {
+  display: none;
+}
+
+/* <details>/<summary> replaces daisyUI's .dropdown here: its open/close and
+   placement depend on newer CSS that proved unreliable with many instances
+   on one page. This just hides the native disclosure marker. */
+.settings-picker > summary {
+  list-style: none;
+}
+.settings-picker > summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Removes the native up/down spinner from a number input. */
+.no-spinner::-webkit-inner-spin-button,
+.no-spinner::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.no-spinner {
+  -moz-appearance: textfield;
+}
+
+/* Routing owns the colour. The author's palette picker was an aesthetic choice
+   that went unused, and the rule is worth more as the one channel that reads
+   at every level. Remapping --color-primary rather than restyling means the
+   existing bg-primary/5 and border-primary/40 simply take the strategy's hue.
+
+   Guided reuses the theme's own primary, captured here under another name
+   because the remapping inherits: a guided group inside an open or randomised
+   one has no primary of its own to fall back to and would wear its parent's. */
+:root {
+  --routing-guided: var(--color-primary);
+  --routing-guided-content: var(--color-primary-content);
+}
+
+[data-routing="ordered"] {
+  --color-primary: var(--routing-guided);
+  --color-primary-content: var(--routing-guided-content);
+}
+
+[data-routing="free_roam"] {
+  --color-primary: var(--color-info);
+  --color-primary-content: var(--color-info-content);
+}
+
+[data-routing="randomised"] {
+  --color-primary: var(--color-accent);
+  --color-primary-content: var(--color-accent-content);
+}
+
+/* The rail draws what the routing does to a player.
+
+   The line is drawn on the row itself rather than on a column beside it, which
+   is what lets it span the space between rows: that space is the row's own
+   padding, so the line runs to the row's edge and meets the next one. The
+   marker sits at the top rather than the middle, level with the title, so a
+   tall group still has its number beside its name instead of floating halfway
+   down the card. */
+/* The step between rows is padding on the row, not a gap on the list. A gap
+   sits outside every box and the rail is drawn inside one, so a gap has to be
+   reached across by a negative offset that then has to be kept in step with
+   it. Inside the row the line simply runs to the row's own edge and meets the
+   next, and the step can change size without a second value to keep in sync. */
+/* The marker's box, which the rail runs through the centre of. The system
+   pages hang their pins in the same column, so they share it. */
+.objective-children,
+.objective-outside {
+  --mark-size: 2rem;
+}
+
+.objective-children {
+  --rail-x: calc(var(--mark-size) / 2);
+  --row-step: 0rem;
+  /* A section is a far heavier object than a leaf. Stacked a leaf's distance
+     apart, four of them read as one undifferentiated column, and the card
+     borders stop reading as the edges of anything. */
+  --group-step: 1.125rem;
+}
+
+.objective-rail-item {
+  position: relative;
+  padding-left: 2.5rem;
+  padding-bottom: var(--row-step);
+}
+
+/* Both sides of a section, so it is not crowded by whatever sits above it. */
+.objective-rail-item:has(> .objective-group),
+.objective-rail-item:has(+ .objective-rail-item > .objective-group),
+.objective-rail-item:has(+ .sortable-ghost-preview + .objective-rail-item > .objective-group) {
+  padding-bottom: var(--group-step);
+}
+
+/* After the rules above, which it has to beat: the last row ends the list, and
+   padding below it would read as the list having a ragged bottom. */
+.objective-rail-item:last-child {
+  padding-bottom: 0;
+}
+
+.objective-rail-item::before {
+  content: "";
+  position: absolute;
+  left: var(--rail-x);
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  border-radius: 2px;
+  transform: translateX(-50%);
+  background: color-mix(in oklab, var(--color-primary) 30%, var(--color-base-100));
+}
+
+.objective-rail-item:first-child::before { top: var(--mark-y, 1.25rem); }
+.objective-rail-item:last-child::before { bottom: calc(100% - var(--mark-y, 1.25rem)); }
+.objective-rail-item:only-child::before { display: none; }
+
+
+/* Open and randomised are adjacent cool hues in this theme, so the silhouette
+   carries the difference: a circle is offered now, a diamond is drawn from a
+   pool. That survives greyscale, which colour alone does not. */
+.objective-mark {
+  position: absolute;
+  left: 0;
+  top: calc(var(--mark-y, 1.25rem) - var(--mark-size) / 2);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--mark-size);
+  height: var(--mark-size);
+  font-family: var(--display-font);
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--color-primary);
+}
+
+/* A leaf's marker lines up with its one row, a section's with its header bar,
+   which is taller: it holds the rule's pill where a row holds small buttons. */
+.objective-rail-item { --mark-y: 1.4375rem; }
+.objective-rail-item:has(> .objective-group) { --mark-y: 1.8125rem; }
+
+.objective-mark[data-mark="step"] {
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--color-primary) 45%, var(--color-base-100));
+  color: color-mix(in oklab, var(--color-primary-content) 85%, black);
+}
+:root[data-theme="dracula"] .objective-mark[data-mark="step"] {
+  background: color-mix(in oklab, var(--color-primary) 50%, var(--color-base-100));
+  color: var(--color-base-content);
+}
+
+/* Larger than the diamond's side, or it reads as the smaller mark: the diamond
+   is a square on its point and spans its diagonal, about 1.4 times its side.
+   This sits between the two at equal area and equal span. */
+.objective-mark[data-mark="dot"]::before {
+  content: "";
+  width: 0.9375rem;
+  height: 0.9375rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--color-primary) 85%, var(--color-base-100));
+}
+
+/* One diamond that is either there or not. The pool draws nothing at all and
+   lets the dashed line run straight through, so the fills are the only marks
+   on a randomised rail: what the run drew, against the places it did not.
+   An outline would have made the pool a second kind of mark competing with
+   the first, which is the opposite of the point.
+
+   Still one rule in two states rather than two shapes, so the fill can move
+   between them without the marker changing size or position as it goes, and
+   the cross-fade is a single property. */
+.objective-mark[data-mark="window"]::before,
+.objective-mark[data-mark="pool"]::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  transform: rotate(45deg);
+  background: color-mix(in oklab, var(--color-primary) 85%, var(--color-base-100));
+  transition: opacity 0.9s ease-in-out;
+}
+
+.objective-mark[data-mark="pool"]::before {
+  opacity: 0;
+}
+
+/* The shuffle is ambient, not a notification: anyone who has asked for less
+   motion gets the served state and no movement at all. */
+@media (prefers-reduced-motion: reduce) {
+  .objective-mark[data-mark="window"]::before,
+  .objective-mark[data-mark="pool"]::before {
+    transition: none;
+  }
+}
+
+.objective-mark[data-mark="parked"]::before {
+  content: "";
+  width: 0.45rem;
+  height: 2px;
+  background: color-mix(in oklch, var(--color-base-content) 30%, transparent);
+}
+
+/* Three strategies, three lines, so the rail reads without colour at all.
+
+   Guided keeps the ruled line: the order is fixed and the line says so. Open
+   is dotted, because every child is offered at once and nothing joins them in
+   sequence. Randomised is dashed its whole length, because the order is not
+   fixed and a ruled line would promise one.
+
+   Open is drawn as a gradient rather than a dotted border: at a rail's width
+   the browser's own dots are nearly touching, which reads as a faded solid
+   line beside the dashes rather than as a different line. */
+.objective-rail-item[data-mark="dot"]::before {
+  background: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--color-primary) 40%, var(--color-base-100)) 0 4px,
+    transparent 4px 9px
+  );
+}
+
+/* The window is the diamonds that are filled; the pool is the ones that are
+   not. Two channels, no wandering line to read through. */
+.objective-rail-item[data-mark="window"]::before,
+.objective-rail-item[data-mark="pool"]::before {
+  background: none;
+  width: 0;
+  border-left: 3px dashed color-mix(in oklab, var(--color-primary) 40%, var(--color-base-100));
+}
+
+/* A parked row draws a faint line rather than a dashed one: dashed already
+   means randomised, and one mark cannot say two things. */
+.objective-rail-item[data-mark="parked"]::before {
+  background: color-mix(in oklch, var(--color-base-content) 14%, transparent);
+  border: 0;
+}
+
+/* The pool gets no treatment on the row itself. Colour inherits, so muting a
+   pooled section dragged its whole subtree down with it: the children inside
+   are not themselves in anybody's pool. It also moves when a sibling is
+   drafted, because drafting one promotes the next into the window, which read
+   as drafting having mysteriously lit up the row below.
+
+   The diamond carries it instead, and now carries it better than a colour
+   could: the fill moves between the diamonds every few seconds, which says
+   "this run happens to have drawn these" far more plainly than a row that is
+   permanently a bit grey. */
+
+/* White groups on the grey plane read as objects on it. :where keeps this below
+   the parked and pass-through rules, which must still win on a nested card. */
+:where(.quest-plane, .objective-group) .objective-group {
+  background-color: var(--color-base-100);
+}
+
+/* A section's rule: its routing, then its band, as one pill. It is a button
+   like any other (neutral face, edge and lip); the hue is only on its icon
+   and pips. */
+.settings-rule-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  height: 2rem;
+  padding-inline: 0.75rem;
+  border-radius: 9999px;
+  background: var(--color-base-100);
+  border: 1.5px solid var(--btn-edge);
+  box-shadow: 0 2px 0 var(--btn-edge);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+.settings-rule-pill::-webkit-details-marker {
+  display: none;
+}
+.settings-rule-pill:active,
+.settings-rule[open] > .settings-rule-pill {
+  transform: translateY(1px);
+  box-shadow: 0 1px 0 var(--btn-edge);
+}
+.settings-rule-pill:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.settings-routing-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--color-base-content);
+  font-weight: 700;
+}
+.settings-routing-icon {
+  color: var(--color-primary);
+}
+
+/* The ghost leads the pill when the section passes through, divided from the
+   routing as the band is. The rule is drawn on this wrapper because the
+   tooltip inside it owns its own ::before and ::after. */
+.objective-passthrough-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+.objective-passthrough-mark::after {
+  content: "";
+  width: 1px;
+  height: 1rem;
+  background: color-mix(in oklch, var(--color-primary) 40%, transparent);
+}
+
+/* Inside a section's card body, daisyUI grows every paragraph to fill the
+   card. In the rule's menu that stretched each column's heading and pushed
+   the column's contents to the bottom. */
+.settings-rule p {
+  flex-grow: 0;
+}
+
+/* The routing in force, tinted and outlined in its own hue: the menu changes
+   the section the moment an option is picked, so it has to show which one
+   holds. Each option carries its own data-routing, so the hue is its own. The
+   outline frames the whole option, where a tick was one more mark to find. An
+   inset shadow rather than a border, so picking does not shift the text. */
+.settings-routing-option[aria-current="true"] {
+  background: color-mix(in oklch, var(--color-primary) 14%, transparent);
+  box-shadow: inset 0 0 0 var(--border) color-mix(in oklch, var(--color-primary) 60%, transparent);
+}
+.settings-routing-option[aria-current="true"] .settings-routing-option-label {
+  color: var(--color-primary);
+}
+
+/* A stepper button at its end says so under the pointer. daisyUI takes
+   pointer events off a disabled button, so the cursor fell through to the
+   panel beneath and the button looked like one that ignored the click. A
+   disabled button still fires no click, so this only brings back the cursor. */
+.band-step:disabled {
+  pointer-events: auto;
+  cursor: not-allowed;
+}
+
+/* A band count between its stepper buttons, read as a word or a fraction. */
+.band-value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 4.5rem;
+  height: 2rem;
+  padding-inline: 0.75rem;
+  border: 1px solid var(--color-base-300);
+  border-inline: 0;
+  background: var(--color-base-200);
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Each column of the rule's menu is named by the question it answers. */
+.settings-menu-heading {
+  padding: 0.75rem 1rem 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: color-mix(in oklch, var(--color-base-content) 55%, transparent);
+}
+
+/* The band half. A rule divides it from the routing; its own colour is
+   neutral, because the band is not part of the routing. */
+.settings-band-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  color: color-mix(in oklch, var(--color-base-content) 85%, transparent);
+}
+.settings-band-picker::before {
+  content: "";
+  width: 1px;
+  height: 1rem;
+  background: color-mix(in oklch, var(--color-primary) 40%, transparent);
+}
+.band-glance {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+}
+/* Restated because this file sits outside the utility layer: the hidden
+   utility alone loses to the display rules here. */
+.settings-band-picker.hidden,
+.band-finish-chip.hidden {
+  display: none;
+}
+
+/* The finish button in miniature: square-cornered like a button, not round
+   like the pill around it, and capped so a long label cannot stretch the
+   header. */
+.band-finish-chip {
+  display: inline-block;
+  max-width: 9rem;
+  height: 1.25rem;
+  padding-inline: 0.4375rem;
+  border: 1px solid color-mix(in oklch, var(--color-base-content) 30%, transparent);
+  border-radius: 0.3125rem;
+  background: color-mix(in oklch, var(--color-base-content) 8%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  line-height: 1.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The pips only describe the band: the tooltip says it in a sentence, and a
+   click anywhere on the pill opens the menu where it is chosen. */
+.band-pips {
+  display: inline-flex;
+  align-items: center;
+  height: 1.5rem;
+}
+.band-pip {
+  display: grid;
+  place-items: center;
+  width: 0.875rem;
+  height: 1.5rem;
+}
+.band-pip::before {
+  content: "";
+  box-sizing: border-box;
+  width: 0.5625rem;
+  height: 0.5625rem;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+/* Told apart by fill first: a dot, then rings, bright where the player may
+   still play and faint where the section closes it. */
+.band-pip[data-state="required"]::before {
+  background: currentColor;
+}
+.band-pip[data-state="closed"]::before {
+  border-color: color-mix(in oklch, currentColor 35%, transparent);
+}
+
+/* A parked row is out of play: dashed, drained of its routing hue, but still
+   legible, because finding it is how it gets put back.
+   Muted by colour, border and background rather than by opacity, because the
+   drag handle and the eye inside carry tooltips and opacity on an ancestor
+   takes the tooltip down with everything else. No greyscale filter either:
+   the eye keeps its warning colour, so the one vivid thing on a parked row is
+   the control that un-parks it. */
+.objective-parked {
+  border-style: dashed;
+  border-color: color-mix(in oklch, var(--color-base-content) 24%, transparent);
+  background: color-mix(in oklch, var(--color-base-content) 4%, transparent);
+  color: color-mix(in oklch, var(--color-base-content) 42%, transparent);
+}
+
+/* A parked section loses its routing tint along with everything else: out of
+   play, its routing governs nothing. */
+.objective-parked .objective-group-header {
+  background: color-mix(in oklch, var(--color-base-content) 5%, transparent);
+  border-bottom-color: color-mix(in oklch, var(--color-base-content) 18%, transparent);
+}
+
+/* A pass-through section is not a place the player stands, so it drops the box
+   a place gets and keeps only the rail that its row sits on: the rows inside
+   read as belonging to the section above, which is how the player sees them.
+   Both the author's flag and the depth cap's flattening draw this way, because
+   to the player they are the same thing. Colour and border rather than opacity
+   throughout: the header carries tooltips. */
+.objective-group.objective-passthrough {
+  background: transparent;
+  box-shadow: none;
+  border-color: transparent;
+}
+/* Child combinators, not descendant ones: a drawn section nested inside a
+   pass-through keeps its own header, and the flat look is only for the one the
+   author marked. */
+.objective-passthrough > .card-body > .objective-group-header {
+  background: transparent;
+  border-bottom-color: color-mix(in oklch, var(--color-base-content) 12%, transparent);
+}
+.objective-passthrough > .card-body > .objective-group-header > a {
+  font-style: italic;
+  font-weight: 500;
+}
+/* With no box there is nothing to pad at either side or below: the rows inside
+   run from the section's own edge to the same right edge as their neighbours,
+   their rail straight under the header's start, and the gap after the last one
+   is the gap between any two sections. */
+.objective-passthrough > .card-body > .objective-group-body {
+  padding-inline: 0;
+  padding-bottom: 0;
+}
+
+/* The rows on the other end of a hovered lock or key. An outline, not a tint:
+   every hue in the tree already belongs to a routing strategy, and a fill would
+   read as one. Only the header of a section is marked, because its own blocks
+   are what matched, not everything inside it. Drawn over the row's own border:
+   outside it, the outlines of neighbouring rows run together. */
+.objective-var-match > .objective-row,
+.objective-var-match > .objective-group > .card-body > .objective-group-header {
+  outline: 2px solid color-mix(in oklch, var(--color-base-content) 75%, transparent);
+  outline-offset: -1px;
+}
+
+/* The system pages hang their pin where a marker would go, so the gutter is
+   one column down the whole page. No line joins them: they are outside the
+   quest on purpose, and the top-level routing governs what sits between. */
+.objective-outside-mark {
+  position: absolute;
+  left: 0;
+  /* Level with the middle of the row beside it. */
+  top: calc(1.125rem - var(--mark-size) / 2);
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: var(--mark-size);
+  height: var(--mark-size);
+  color: color-mix(in oklch, var(--color-base-content) 75%, transparent);
+}
+/* Location insert zones */
+.loc-insert-zone {
+  @apply pointer-events-none;
+}
+.loc-insert-btn {
+  @apply opacity-0 pointer-events-none transition-opacity duration-150;
+}
+.loc-insert-zone.zone-visible .loc-insert-btn {
+  @apply opacity-100 pointer-events-auto;
+}
+
+/* Leaf run corner-rounding is computed and applied as inline styles by
+   updateJoinRounding (objective_tree.templ), not here: CSS-only attempts
+   kept losing to daisyUI's own cascade at a run's edges. */
+
+/* Rows are a divided list, not boxes. The border stays, transparent, so a
+   row keeps its height and the rail marker still sits on its centre. */
+.objective-row { position: relative; }
+.objective-row:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.objective-row.objective-parked { border-color: transparent; background: transparent; }
+.objective-rail-item:not(:has(> .objective-group)) + .objective-rail-item:not(:has(> .objective-group)) > .objective-row::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--row-step) / -2);
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--line);
+}
+.objective-points { display: grid; place-items: center; flex: none; width: 4.25rem; }
+
+.quest-plane,
+.objective-group {
+  --quest-edge: color-mix(in oklab, var(--color-primary) 32%, var(--color-base-100));
+  --quest-band: color-mix(in oklab, var(--color-primary) 22%, var(--color-base-100));
+}
+:root[data-theme="dracula"] .quest-plane,
+:root[data-theme="dracula"] .objective-group {
+  --quest-band: color-mix(in oklab, var(--color-primary) 16%, var(--color-base-100));
+}
+
+.quest-plane {
+  border-radius: 22px;
+  border-color: var(--quest-edge);
+  background: color-mix(in oklab, var(--color-base-200) 55%, var(--color-base-300));
+}
+.quest-plane > #quest-root-settings {
+  padding: 0.75rem 1rem 0.75rem 1.125rem;
+  border-radius: 21px 21px 0 0;
+  border-color: var(--quest-edge);
+  background: var(--quest-band);
+}
+.quest-plane > .py-2 { padding: 0.5rem 0.5rem 1.25rem; }
+
+.objective-group:not(.objective-parked, .objective-passthrough) {
+  border-width: 1.5px;
+  border-radius: 18px;
+  border-color: var(--quest-edge);
+}
+.objective-group:not(.objective-parked, .objective-passthrough) > .card-body > .objective-group-header {
+  background: var(--quest-band);
+  border-bottom: 1px solid var(--quest-edge);
+}
+.objective-group-header {
+  min-height: 3.625rem;
+  padding: 0.5rem 0.875rem 0.5rem 0.75rem;
+}
+.objective-group-header > a {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.objective-group-body { padding: 0.25rem 0.875rem 0.5rem 0.25rem; }
+
+.objective-row {
+  min-height: 2.875rem;
+  font-size: 0.96875rem;
+  gap: 0.75rem;
+}
+.objective-drag-handle { width: 1.1rem; height: 1.1rem; }
+
+.objective-points .badge {
+  width: 100%;
+  justify-content: center;
+  padding: 0.0625rem 0;
+  border: 0;
+  background: color-mix(in oklab, var(--color-primary) 9%, var(--color-base-100));
+  color: color-mix(in oklab, var(--color-primary) 55%, var(--color-base-content));
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+:root[data-theme="dracula"] .objective-points .badge {
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
+  color: color-mix(in oklab, var(--color-primary) 35%, var(--color-base-content));
+}
+
+.settings-rule-pill {
+  height: 2.375rem;
+  padding-inline: 0.875rem;
+  border-radius: 0.75rem;
+  border-color: var(--btn-edge);
+  box-shadow: 0 2px 0 var(--btn-edge);
+  font-size: 0.8125rem;
+  font-weight: 700;
+}
+.settings-rule-pill:active,
+.settings-rule[open] > .settings-rule-pill { box-shadow: 0 0 0 var(--btn-edge); transform: translateY(2px); }
+
+/* Draft and Secret: an icon that appears with the row, a face only under its
+   own pointer, and a filled button once set. The fade is on the icon, never
+   the button, so its tooltip stays whole. */
+.objective-visibility-toggle,
+.objective-secret-toggle {
+  width: 1.875rem;
+  height: 1.875rem;
+  min-height: 0;
+  padding: 0;
+  border-radius: 0.5625rem;
+  border: 1.5px solid transparent;
+  background: transparent;
+  box-shadow: none;
+}
+.objective-visibility-toggle:hover,
+.objective-visibility-toggle:focus-visible,
+.objective-secret-toggle:hover,
+.objective-secret-toggle:focus-visible {
+  border-color: var(--btn-edge);
+  background: var(--color-base-100);
+  box-shadow: 0 2px 0 var(--btn-edge);
+}
+.objective-visibility-toggle[data-published="false"],
+.objective-secret-toggle[data-secret="true"] {
+  border-color: var(--color-base-content);
+  background: var(--color-base-content);
+  color: var(--color-base-100);
+  box-shadow: 0 2px 0 color-mix(in oklab, var(--color-base-content) 60%, transparent);
+}
+.objective-visibility-toggle[data-published="false"] svg,
+.objective-secret-toggle[data-secret="true"] svg { color: inherit; opacity: 1; }
+
+.objective-secret-footer .objective-row a { font-style: italic; }
+.objective-rail-item[data-mark="secret"]::before { display: none; }
+
+/* No hover on touch, so the Draft and Secret icons stay faintly visible. */
+@media (hover: none) {
+  .objective-visibility-toggle svg,
+  .objective-secret-toggle svg { opacity: 0.6; }
+}
+
+.objective-secret-divider { margin: 0.5rem 0 0.25rem; font-size: 0.75rem; color: var(--soft); }
+.objective-secret-divider::before,
+.objective-secret-divider::after {
+  height: 0;
+  background: none;
+  border-top: 3px dotted var(--line-strong);
+}
+.objective-secret-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.125rem 0.75rem;
+  border-radius: 9999px;
+  background: var(--color-base-200);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.objective-secret-footer .objective-row { border-bottom-style: dashed; }
+.objective-draft-tag {
+  height: 1.25rem;
+  padding-inline: 0.5rem;
+  border: 1.5px dashed var(--line-strong);
+  background: transparent;
+  color: var(--soft);
+  font-weight: 700;
+}
+.objective-parked .objective-points .badge {
+  background: transparent;
+  color: var(--soft);
+}
+
+/* Nothing may change size mid-drag or the drop target flips: the placeholder is a
+   line over the list and nesting is a highlight, not a layout change. */
+#objective-tree .objective-rail-item.sortable-ghost-preview {
+  height: 0;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  opacity: 1;
+  background: none;
+}
+#objective-tree .sortable-chosen-preview { outline: none; }
+#objective-tree .objective-rail-item.sortable-ghost-preview > *:not(.drag-cue) { display: none; }
+#objective-tree .objective-rail-item.sortable-ghost-preview::before { display: none; }
+#objective-tree .objective-rail-item.sortable-ghost-preview::after {
+  content: "";
+  position: absolute;
+  left: 2.5rem;
+  right: 0;
+  top: -2px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-primary);
+}
+
+/* Split at the row's midpoint, where nesting starts: label and gap on the left,
+   dashed on the right. */
+#objective-tree .objective-rail-item.sortable-ghost-preview[style*="--nest-at"]::after {
+  background:
+    linear-gradient(var(--color-primary), var(--color-primary)) 0 0 / calc(var(--nest-at) - 0.5rem) 100% no-repeat,
+    repeating-linear-gradient(to right, color-mix(in oklab, var(--color-primary) 55%, transparent) 0 6px, transparent 6px 12px) calc(var(--nest-at) + 0.5rem) 0 / calc(100% - var(--nest-at) - 0.5rem) 100% no-repeat;
+}
+.drag-cue { display: none; }
+#objective-tree .sortable-ghost-preview[style*="--nest-at"] > .drag-cue {
+  display: block;
+  position: absolute;
+  top: 0;
+  transform: translate(-50%, -50%);
+  padding: 0 0.625rem;
+  background: var(--color-base-100);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  line-height: 1.25rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+  z-index: 2;
+}
+#objective-tree .sortable-ghost-preview > .drag-cue-left {
+  left: calc(2.5rem + (var(--nest-at) - 0.5rem) / 2);
+  color: var(--color-primary);
+}
+#objective-tree .sortable-ghost-preview > .drag-cue-right {
+  left: calc(2.5rem + var(--nest-at) * 1.5 + 0.25rem);
+  color: var(--soft);
+}
+
+/* Nest mode: a line under the target, indented to where its children sit. */
+#objective-tree.nesting .sortable-ghost-preview::after,
+#objective-tree.nesting .sortable-ghost-preview > .drag-cue { display: none; }
+li.nest-target::after {
+  content: "";
+  position: absolute;
+  left: 5rem;
+  right: 0;
+  bottom: -2px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-primary);
+}
+
+/* Nest mode: the row that will become the parent is ringed and named. */
+li.nest-target > .objective-row {
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
+  box-shadow: inset 0 0 0 2px var(--color-primary);
+}
+li.nest-target > .objective-row::after {
+  content: "Nest inside";
+  position: absolute;
+  right: 10.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.6875rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+  pointer-events: none;
+}
+#objective-tree.tree-dragging::after {
+  content: attr(data-drag-hint);
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  background: var(--color-base-content);
+  color: var(--color-base-100);
+  font-size: 0.8125rem;
+  font-weight: 700;
+  pointer-events: none;
+}
+.tree-dragging .objective-children > .objective-rail-item.sortable-ghost-preview { position: relative; }
+
+/* Drag picture: short, title only, faded right so the placeholder stays readable. */
+.drag-image {
+  position: fixed;
+  top: -1000px;
+  left: 0;
+  width: 220px;
+  padding: 0.625rem 0.875rem;
+  border-radius: 0.75rem;
+  background: var(--color-base-100);
+  box-shadow: var(--soft-shadow);
+  color: var(--color-base-content);
+  font-size: 0.96875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to right, #000 45%, transparent);
+  mask-image: linear-gradient(to right, #000 45%, transparent);
+}
+
+/* Next to a group, centre the line in its gap. */
+#objective-tree li.objective-rail-item:has(> .objective-group) + .sortable-ghost-preview::after,
+#objective-tree .sortable-ghost-preview:has(+ li.objective-rail-item > .objective-group)::after {
+  top: calc(var(--group-step) / -2 - 2px);
+}
+#objective-tree li.objective-rail-item:has(> .objective-group) + .sortable-ghost-preview > .drag-cue,
+#objective-tree .sortable-ghost-preview:has(+ li.objective-rail-item > .objective-group) > .drag-cue {
+  top: calc(var(--group-step) / -2);
+}
+
+/* Objective editor: a heading row per step above plain panels, the way the
+   other pages are built. Blocks are cards of their own whose header never
+   changes, open or shut, so the page does not shift as it is used. */
+.obj-page { --side: 390px; padding-inline: 1.25rem; padding-bottom: 3rem; }
+
+.obj-strip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1.6rem;
+  margin-bottom: .9rem;
+  padding: .75rem 1.25rem;
+  border-radius: 22px;
+}
+.obj-worth { color: var(--soft); font-size: .9rem; font-weight: 600; }
+.obj-worth b { color: var(--color-base-content); font-weight: 800; }
+
+.obj-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.obj-switch svg { color: var(--soft); }
+.obj-switch:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 4px; border-radius: 8px; }
+.obj-switch i {
+  position: relative;
+  flex: none;
+  width: 2.4rem;
+  height: 1.4rem;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--color-base-300);
+  transition: background .15s, border-color .15s;
+}
+.obj-switch i::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: .9rem;
+  height: .9rem;
+  border-radius: 50%;
+  background: var(--soft);
+  transition: transform .15s, background .15s;
+}
+.obj-switch[aria-checked="true"] i { border-color: var(--color-primary); background: var(--color-primary); }
+.obj-switch[aria-checked="true"] i::after { background: #fff; transform: translateX(1rem); }
+@media (prefers-reduced-motion: reduce) {
+  .obj-switch i, .obj-switch i::after { transition: none; }
+}
+
+.obj-num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  border-radius: 50%;
+  background: color-mix(in oklab, var(--color-primary) 22%, var(--color-base-100));
+  color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
+  font: 800 .95rem var(--display-font);
+}
+.obj-title { display: grid; min-width: 0; }
+.obj-title h2 { font: 800 1.35rem/1.15 var(--display-font); letter-spacing: -.025em; }
+.obj-title small { overflow: hidden; color: var(--soft); font-size: .875rem; line-height: 1.25; text-overflow: ellipsis; white-space: nowrap; }
+.obj-gtot { color: var(--soft); font-size: .875rem; font-weight: 700; white-space: nowrap; }
+.obj-count { margin-left: .5rem; color: var(--soft); font-size: .78rem; font-weight: 600; }
+.obj-link {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem .65rem;
+  margin: .6rem 0 .75rem;
+  color: var(--soft);
+  font-size: .85rem;
+}
+.obj-link code { color: var(--color-base-content); font: 600 .8rem ui-monospace, monospace; }
+.obj-link small { flex-basis: 100%; font-size: .8rem; }
+
+/* The icon tile a block wears in the list, its form and the picker. */
+.block-chip {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: .75rem;
+  background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100));
+  color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content));
+}
+.block-chip svg { width: 1.15rem; height: 1.15rem; }
+.block-pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; }
+.block-pick-item {
+  display: flex;
+  align-items: flex-start;
+  gap: .6rem;
+  width: 100%;
+  padding: .6rem;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--color-base-100);
+  text-align: left;
+  cursor: pointer;
+}
+.block-pick-item:hover,
+.block-pick-item:focus-visible { border-color: var(--line-strong); box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.block-pick-item svg { flex: none; width: 1.25rem; height: 1.25rem; margin-top: .1rem; }
+.block-pick-item b { display: block; font-size: .9rem; }
+.block-pick-item small { display: block; color: var(--soft); font-size: .78rem; font-weight: 500; line-height: 1.3; }
+
+.vars-label { font-family: var(--font-sans, inherit); font-weight: 700; }
+
+.cs { margin-top: 1.75rem; }
+/* A page with one section has nothing above it to separate from but its heading. */
+.cs-solo { margin-top: .5rem; }
+/* Hints are all present and hidden by script, so space is only wanted for one showing. */
+[data-hints]:has(> :not([hidden])) { margin-top: .5rem; margin-bottom: .75rem; }
+.cs-head { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; padding-inline: .25rem; }
+.cs-head .grow { flex: 1; }
+.cs-panel { display: grid; grid-template-columns: 250px minmax(0, 1fr) var(--side); overflow: clip; }
+.cs-task { grid-template-columns: minmax(0, 1fr) var(--side); }
+/* The task panel takes the same field styling as the block forms, with its own padding. */
+.ct-panel.cf-fields { flex: none; padding: 1.25rem 1.5rem .75rem; }
+.cf-fields .input.input-lg { min-height: 3rem; font-size: 1.1rem; }
+.cs-phonecol { display: flex; flex-direction: column; align-items: center; align-self: stretch; gap: .6rem; padding: 1.25rem; border-left: 1px solid var(--line); background: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100)); }
+.cs-prevcol { align-items: stretch; }
+.ct-card { padding: 0; }
+.ctx-title { margin: 0 0 .6rem .25rem; font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.02em; }
+.ctx-rule { margin-left: .5rem; padding: .1rem .7rem; border-radius: 999px; background: color-mix(in oklab, var(--color-primary) 22%, var(--color-base-100)); font: 700 .8rem var(--font-sans, inherit); letter-spacing: 0; vertical-align: .15em; }
+.ctx-dim { margin-bottom: .6rem; opacity: .42; }
+.ct-card #objective-card { margin-bottom: .6rem; }
+@media (max-width: 1180px) {
+  .cs-panel { grid-template-columns: 220px minmax(0, 1fr); }
+  .cs-task { grid-template-columns: minmax(0, 1fr); }
+  .cs-phonecol { grid-column: 1 / -1; border-left: 0; border-top: 1px solid var(--line); }
+  .cf-phone { position: static; }
+}
+
+/* Small screens: the rail lies along the top as one scrolling row, and the add button stays in view at
+   its right end, faded over whatever scrolls beneath it. */
+@media (max-width: 600px) {
+  .cs-panel, .cs-task { grid-template-columns: minmax(0, 1fr); }
+  .cs-rail { padding: .6rem; border-right: 0; border-bottom: 1px solid var(--line); }
+  .cs-rail .rl { flex-direction: row; max-height: none; overflow: auto hidden; scrollbar-width: none; }
+  .cs-rail .rl::-webkit-scrollbar { display: none; }
+  .cs-rail .rl-item { flex: none; width: auto; max-width: 13rem; }
+  .cs-rail .rl-grip { display: none; }
+  .cs-rail .rl-add { position: sticky; right: -3px; bottom: auto; flex: none; margin-left: auto; box-shadow: -.75rem 0 .5rem .1rem var(--rail-bg); }
+}
+
+/* A note from the rules: a soft tint of its severity, no outline, the same in light and dark. */
+.lint-note { --tone: var(--color-info); display: flex; align-items: flex-start; gap: .75rem; margin-bottom: .75rem; padding: .8rem 1rem; border-radius: 16px; background: color-mix(in oklab, var(--tone) 15%, var(--color-base-100)); font-size: .875rem; line-height: 1.45; }
+.lint-note.warning { --tone: var(--color-warning); }
+.lint-note.error { --tone: var(--color-error); }
+.lint-ico { display: grid; flex: none; place-items: center; width: 1.9rem; height: 1.9rem; border-radius: .6rem; background: color-mix(in oklab, var(--tone) 28%, var(--color-base-100)); color: color-mix(in oklab, var(--tone) 55%, var(--color-base-content)); }
+.lint-head { margin: 0; font-weight: 800; }
+.lint-n { margin-left: .25rem; padding: .05rem .45rem; border-radius: 999px; background: color-mix(in oklab, var(--tone) 24%, var(--color-base-100)); font-size: .75rem; }
+.lint-list { display: grid; gap: .2rem; margin: .2rem 0 0; padding: 0; list-style: none; }
+.lint-go { padding: 0; border: 0; background: none; font-weight: 700; text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+.lint-go:disabled { cursor: not-allowed; }
+.cs-rail { --rail-bg: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100)); display: flex; flex-direction: column; padding: .9rem; border-right: 1px solid var(--line); background: var(--rail-bg); }
+/* A long stack scrolls in the rail so the section stays about as tall as its preview. The add button
+   stays in view because it is how an author reaches the end of a list they cannot see. */
+.cs-rail .rl { position: relative; max-height: min(640px, calc(100vh - 4rem)); margin: -3px; padding: 3px; overflow-y: auto; overscroll-behavior: contain; }
+.cs-rail .rl-add { position: sticky; bottom: -3px; background: var(--rail-bg); }
+.rl { display: flex; flex-direction: column; gap: .4rem; }
+.rl-item { display: flex; align-items: center; gap: .45rem; width: 100%; padding: .35rem .6rem .35rem .3rem; border: 1.5px solid var(--line); border-radius: 14px; background: var(--color-base-100); font-size: .9rem; font-weight: 700; text-align: left; cursor: pointer; }
+.rl-item:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.rl-grip { padding: .35rem .1rem; color: color-mix(in oklab, var(--color-base-content) 55%, var(--color-base-100)); cursor: grab; }
+.rl-item .block-chip { flex: none; width: 1.8rem; height: 1.8rem; border-radius: .55rem; }
+.rl-item .block-chip svg { width: 1rem; height: 1rem; }
+.rl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rl-pts { color: var(--soft); font-size: .78rem; font-weight: 700; }
+.rl-pts::after { content: " pts"; }
+.rl-var { display: inline-grid; place-items: center; color: var(--color-primary); }
+.rl-var:empty { display: none; }
+.rl-var svg { width: .85rem; height: .85rem; }
+.rl-item.on { border-color: var(--color-primary); background: color-mix(in oklab, var(--color-primary) 12%, var(--color-base-100)); box-shadow: 0 0 0 1.5px var(--color-primary); }
+.rl-item.hl:not(.on) { border-color: color-mix(in oklab, var(--color-primary) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+.rl-int .block-chip { background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 45%, var(--color-base-content)); }
+.rl-static .block-chip { background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: color-mix(in oklab, var(--color-base-content) 90%, var(--color-base-100)); }
+.rl-static .rl-pts { display: none; }
+.rl-add { display: flex; align-items: center; justify-content: center; gap: .4rem; padding: .55rem; border: 1.5px dashed var(--line-strong); border-radius: 14px; background: none; color: var(--soft); font-weight: 700; cursor: pointer; }
+.rl-add:hover, .rl-add.on { border-color: var(--color-primary); color: var(--color-base-content); }
+.sortable-ghost { opacity: .35; }
+
+.cs-edit { display: flex; flex-direction: column; min-width: 0; }
+.cs-forms { display: flex; flex: 1; flex-direction: column; }
+.cf-form { display: flex; flex: 1; flex-direction: column; }
+.cf-form[hidden] { display: none; }
+.cf-head { display: flex; align-items: center; gap: .8rem; padding: 1rem 1.4rem .25rem; }
+.cf-head .grow { flex: 1; }
+.cf-head .btn-ghost { color: var(--soft); }
+.cf-head .block-chip { flex: none; }
+.cf-title { display: grid; }
+.cf-title small { color: var(--soft); font-size: .8rem; font-weight: 600; }
+.cf-title b { font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.025em; }
+.cf-fields { flex: 1; padding: .75rem 1.4rem 1.5rem; }
+/* Block form fields. The templates keep daisyUI's names (fieldset, input, textarea, select), so one
+   place restyles every block's form: a label row, a control, a hint, in the same rhythm. */
+.cf-fields .fieldset { display: block; margin: 0 0 1.05rem; padding: 0; border: 0; background: none; font-size: .9rem; }
+.cf-fields .fieldset-legend { display: flex; align-items: center; justify-content: flex-start; gap: .4rem; width: 100%; margin: 0 0 .35rem; padding: 0; font-size: .85rem; font-weight: 700; color: var(--color-base-content); }
+/* The Markdown glyph comes before the name in the markup and reads better after it. */
+.cf-fields .fieldset-legend > a { order: 1; display: inline-grid; place-items: center; color: var(--soft); }
+.cf-fields .fieldset-legend > a svg { width: .95rem; height: .95rem; }
+.cf-fields .fieldset-legend .badge { order: 2; margin-left: auto; height: auto; padding: .12rem .55rem; border-radius: 999px; font-size: .72rem; font-weight: 700; }
+.cf-fields .label, .cf-fields .fieldset-label { display: block; margin: .35rem 0 0; padding: 0; font-size: .8rem; line-height: 1.4; font-weight: 500; color: var(--soft); white-space: normal; }
+.cf-fields .input, .cf-fields .select, .cf-fields .textarea { width: 100%; min-height: 2.6rem; border: 1.5px solid var(--line-strong); border-radius: 14px; background-color: var(--color-base-100); box-shadow: none; color: var(--color-base-content); font-size: .9rem; font-weight: 500; }
+.cf-fields .textarea { padding: .65rem .85rem; line-height: 1.5; }
+.cf-fields .textarea.font-mono { font-size: .84rem; }
+.cf-fields .input input { font-weight: 500; }
+.cf-fields .input:focus-within, .cf-fields .select:focus, .cf-fields .textarea:focus { outline: 2px solid var(--color-base-content); outline-offset: 1px; }
+
+/* A switch with its own words and a line saying what it does. */
+.sw { display: flex; align-items: flex-start; gap: .8rem; cursor: pointer; }
+.sw .toggle { flex: none; margin-top: .05rem; }
+.sw-text b { display: block; font-size: .85rem; font-weight: 700; }
+.sw-text small { display: block; margin-top: .1rem; font-size: .8rem; font-weight: 500; color: var(--soft); }
+
+.val-pill { margin-left: auto; padding: .12rem .6rem; border-radius: 999px; background: color-mix(in oklab, var(--color-primary) 18%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 70%, var(--color-base-content)); font-size: .8rem; font-weight: 800; }
+
+/* A list of rows the author fills in. Choice uses it now; quiz, sorting and checklist can. */
+.rows { overflow: hidden; border: 1.5px solid var(--line-strong); border-radius: 16px; background: var(--color-base-100); --rows-mute: color-mix(in oklab, var(--color-base-content) 78%, var(--color-base-100)); }
+.rows-head, .rows-item { display: grid; grid-template-columns: 1.4rem 1fr 8.5rem 2.1rem; align-items: center; gap: .4rem; padding: .25rem .55rem; }
+.rows-head { padding-block: .45rem; background: color-mix(in oklab, var(--color-base-content) 4.5%, var(--color-base-100)); color: var(--rows-mute); font-size: .72rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.rows-item { border-top: 1px solid var(--line); }
+.rows-item.sortable-ghost { opacity: .4; }
+.rows-cell { box-sizing: border-box; width: 100%; min-height: 2.3rem; padding: 0 .55rem; border: 0; border-radius: 10px; background: none; color: var(--color-base-content); font: inherit; font-size: .9rem; line-height: 1.5; }
+.rows-cell.code { color: var(--color-base-content); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .82rem; }
+.rows-cell::placeholder { color: var(--rows-mute); opacity: .75; }
+.rows-cell:focus { outline: 0; background: color-mix(in oklab, var(--color-base-content) 6%, transparent); box-shadow: inset 0 0 0 2px var(--color-base-content); }
+.rows-grip, .rows-rm { display: inline-grid; place-items: center; width: 1.6rem; height: 2rem; border: 0; border-radius: 10px; background: none; color: var(--rows-mute); cursor: grab; }
+.rows-grip svg, .rows-rm svg { width: 1rem; height: 1rem; }
+.rows-rm { width: 2rem; cursor: pointer; }
+.rows-rm:hover { background: color-mix(in oklab, var(--color-error) 14%, var(--color-base-100)); color: var(--color-error); }
+.rows-add { display: flex; align-items: center; justify-content: center; gap: .4rem; width: 100%; padding: .6rem; border: 0; border-top: 1.5px dashed var(--line-strong); background: none; color: var(--rows-mute); font-size: .9rem; font-weight: 700; cursor: pointer; }
+.rows-add svg { width: 1rem; height: 1rem; }
+.rows-add:hover { background: color-mix(in oklab, var(--color-base-content) 4%, transparent); color: var(--color-base-content); }
+.map-frame { overflow: hidden; border: 1.5px solid var(--line-strong); border-radius: 16px; }
+.map-chip { display: inline-block; margin-top: .5rem; padding: .15rem .65rem; border-radius: 999px; background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: var(--soft); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .78rem; font-weight: 600; }
+.cf-foot { margin-top: auto; padding: .8rem 1.4rem 1rem; border-top: 1px solid var(--line); }
+.cf-form .badge-neutral { border: 0; background: color-mix(in oklab, var(--color-base-content) 9%, var(--color-base-100)); color: var(--soft); }
+.cf-empty { display: flex; flex-direction: column; align-items: flex-start; gap: .75rem; max-width: 30rem; padding: 2rem 1.4rem; }
+.cf-empty b { font: 800 1.3rem/1.15 var(--display-font); letter-spacing: -.025em; }
+.cf-empty p { margin: 0; color: var(--soft); }
+
+.pt-wrap { position: relative; }
+.pt-btn { display: inline-flex; align-items: center; gap: .35rem; padding: .3rem .8rem; border: 1.5px solid var(--line-strong); border-radius: 999px; background: color-mix(in oklab, var(--color-primary) 14%, var(--color-base-100)); font-size: .85rem; font-weight: 800; cursor: pointer; }
+.pt-pop { display: none; position: absolute; right: 0; top: calc(100% + .5rem); z-index: 30; width: 18rem; padding: 1rem; border: 1px solid var(--line-strong); border-radius: 20px; background: var(--color-base-100); box-shadow: var(--soft-shadow); }
+.pt-wrap.open .pt-pop { display: block; }
+.pt-pop .kicker { display: block; margin-bottom: .65rem; }
+.pt-chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: .45rem; }
+.pt-chips button { height: 2.5rem; padding: 0; border: 1.5px solid var(--line); border-radius: 12px; background: var(--color-base-100); font-size: .95rem; font-weight: 800; cursor: pointer; transition: background .12s, color .12s; }
+.pt-chips button:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.pt-chips button.on { border-color: var(--color-primary); background: var(--color-primary); color: var(--color-primary-content); box-shadow: none; }
+.pt-custom { display: flex; align-items: center; gap: .6rem; margin-top: .95rem; padding-top: .95rem; border-top: 1px solid var(--line); }
+.pt-custom .lbl { flex: none; margin: 0; color: var(--soft); font-size: .8rem; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.pt-input { display: flex; flex: 1; align-items: center; gap: .4rem; min-width: 0; height: 2.5rem; margin: 0; }
+.pt-input input { flex: 1; width: 100%; min-width: 0; height: auto; padding: 0; font-weight: 800; line-height: 1.2; }
+.pt-input span { color: var(--soft); font-size: .85rem; font-weight: 700; }
+.pt-input.is-custom { border-color: var(--color-primary); box-shadow: 0 0 0 2px color-mix(in oklab, var(--color-primary) 35%, transparent); }
+.pt-input.is-custom span { color: var(--color-primary); }
+.pt-input:focus-within { border-color: var(--color-primary); }
+.pt-note { margin: .6rem 0 0; color: var(--soft); font-size: .8rem; }
+
+.cf-pick .cf-fields { padding-top: 1rem; }
+.cf-search { margin-bottom: 1.1rem; }
+.cf-pick .kicker { display: block; margin: .25rem 0 .6rem; }
+.cf-pick .block-pick-grid + .kicker { margin-top: 1.4rem; }
+.cf-pick .block-pick-grid { grid-template-columns: repeat(2, 1fr); grid-auto-rows: 5.75rem; }
+.cf-pick .block-pick-grid > form { display: flex; min-height: 0; }
+.cf-pick .block-pick-item { flex: 1; align-items: center; gap: .8rem; overflow: hidden; }
+.cf-pick .block-pick-item small { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+.cf-pick .block-pick-item svg { flex: none; width: 2.5rem; height: 2.5rem; margin: 0; padding: .4rem; border-radius: .75rem; background: color-mix(in oklab, var(--color-base-content) 8%, var(--color-base-100)); color: var(--soft); }
+.cf-pick .block-pick-item[data-kind="true"] svg { background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 80%, var(--color-base-content)); }
+.cf-none { padding: 2rem 0; color: var(--soft); text-align: center; }
+
+.cf-prevhead { display: flex; align-items: center; justify-content: space-between; width: 350px; max-width: 100%; }
+.cf-frame { display: inline-flex; align-items: center; gap: .5rem; color: var(--soft); font-size: .8rem; font-weight: 700; cursor: pointer; }
+/* A plain card, like the task preview, until the phone is asked for. Its height
+   follows its content up to the cap, and it is pinned to stay beside a long form. */
+.cf-phone { position: sticky; top: 1rem; display: flex; flex: none; flex-direction: column; width: 350px; max-width: 100%; max-height: min(664px, calc(100vh - 2rem)); overflow: hidden; border: 1.5px solid var(--line); border-radius: 20px; background: var(--color-base-200); }
+.obj-page[data-frame="on"] .cf-phone { height: min(664px, calc(100vh - 2rem)); border: 9px solid #15131a; border-radius: 44px; }
+[data-theme="dracula"] .obj-page[data-frame="on"] .cf-phone { border-color: #4a4f68; }
+/* The dock is fixed to the screen in the app, so it is pinned to the card's foot here. */
+.cf-dock { display: none; }
+.cf-dock .dock { position: static; }
+.obj-page[data-frame="on"] .cf-dock { display: block; flex: none; }
+.cf-screen { flex: 1; min-height: 11rem; overflow-y: auto; scrollbar-width: none; background: var(--color-base-200); }
+.cf-screen::-webkit-scrollbar { display: none; }
+.cf-pane { padding: 1rem; }
+/* Clears the frame's corner, which crops the top edge. */
+.obj-page[data-frame="on"] .cf-pane { padding: 2.2rem 1rem 1.5rem; }
+/* The player's start page sits low to clear its own header, which a plain card has not got. */
+.obj-page:not([data-frame="on"]) .cf-pane [data-block-list] { margin-top: 0; }
+.cf-pane #objective-page { padding: 0; }
+.cf-pane #objective-page > .q-dim:first-child:has(h1:empty) { display: none; }
+.cf-pane #objective-zone { min-height: 9rem; }
+.cf-pane .block-view { position: relative; border-radius: 18px; cursor: pointer; }
+.cf-pane .block-view * { pointer-events: none; }
+/* Thin and offset, so the ring frames a block and does not crowd it. */
+.cf-pane .block-view:hover, .cf-pane .block-view.hl:not(.sel) { outline: 2px solid color-mix(in oklab, var(--color-primary) 45%, transparent); outline-offset: 5px; }
+.cf-pane .block-view.sel { outline: 2px solid var(--color-primary); outline-offset: 5px; }
+/* The player's page has a tall minimum height of its own, which pushed this
+   below the phone. It is laid over the screen instead, centred in it. */
+.cf-screen { position: relative; }
+.cf-screen .cf-pane #objective-page.q-page { min-height: 0; }
+.cf-phone-empty { position: absolute; inset: 0; z-index: 1; display: grid; place-content: center; margin: 0; padding: 0 2rem; color: var(--soft); font-size: 1.05rem; font-weight: 600; line-height: 1.4; text-align: center; text-wrap: balance; pointer-events: none; }
+.cf-phone-empty[hidden] { display: none; }
+
+.cf-starters { max-width: none; width: 100%; }
+.st-grid { display: grid; grid-template-columns: repeat(2, 1fr); grid-auto-rows: 6.25rem; gap: .6rem; width: 100%; margin-top: .6rem; }
+.st-grid > form { display: flex; min-height: 0; }
+.st-card { flex: 1; align-items: center; gap: .8rem; padding: .85rem; }
+.st-card svg { flex: none; width: 2.5rem; height: 2.5rem; margin: 0; padding: .4rem; border-radius: .75rem; background: color-mix(in oklab, var(--color-primary) 24%, var(--color-base-100)); color: color-mix(in oklab, var(--color-primary) 80%, var(--color-base-content)); }
+.st-card b { font-size: 1rem; }

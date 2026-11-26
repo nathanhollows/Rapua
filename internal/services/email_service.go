@@ -16,8 +16,8 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/google/uuid"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/emails"
-	"github.com/nathanhollows/Rapua/v7/models"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/emails"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type EmailService struct{}
@@ -71,7 +71,7 @@ func buildEmailMessage(msg emailMessage, smtpHost string) ([]byte, error) {
 
 	// Write headers in order
 	for _, h := range headers {
-		buf.WriteString(fmt.Sprintf("%s: %s\r\n", h.key, h.value))
+		fmt.Fprintf(&buf, "%s: %s\r\n", h.key, h.value)
 	}
 	buf.WriteString("\r\n")
 

@@ -1,0 +1,454 @@
+package templates
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v8/models"
+	"time"
+)
+
+templ Instances(quests []models.Quest, currentQuest models.Quest, templates []models.Quest) {
+	<div class="flex flex-row justify-between items-center w-full p-5">
+		<div class="flex items-center gap-1">
+			<h1 class="text-4xl font-black">Quests</h1>
+			<div class="dropdown dropdown-hover">
+				<div tabindex="0" role="button" class="btn btn-circle btn-ghost btn-xs text-info">@icon("info", templ.Attributes{"class": "w-4 h-4"})
+</div>
+				<div tabindex="0" class="card compact dropdown-content font-normal bg-base-200 rounded-box z-[1] w-72 shadow">
+					<div tabindex="0" class="card-body">
+						<h2 class="card-title">Quests</h2>
+						<p>Quests are the core of your event. They contain all the locations, content, teams, and settings for your event.</p>
+						<p>Your active quest is the one you are currently managing. You can switch between games at any time.</p>
+						<p>You can run multiple quests at the same time, but only one can be active in the admin panel.</p>
+					</div>
+				</div>
+			</div>
+		</div>
+		<span class="flex gap-2">
+			<button
+				class="btn"
+				onclick="import_modal.showModal()"
+			>
+				@icon("upload", templ.Attributes{"class": "w-4 h-4"})
+				Import
+			</button>
+			<button
+				class="btn btn-primary"
+				onclick="new_modal.showModal()"
+			>
+				@icon("plus", templ.Attributes{"class": "w-4 h-4"})
+				Create a new quest
+			</button>
+		</span>
+	</div>
+	<div class="px-5">
+		<div class="flex items-center gap-3 mb-3">
+			<span class="text-sm opacity-50">
+				<span
+					id="instance-count"
+					_="on htmx:afterSettle from body or keyup from #search-quests
+					set my textContent to <.instance-item:not( [style*='display: none'] )/>'s length"
+				>{ fmt.Sprint(len(quests)) }</span> quests
+			</span>
+			@statusLegendKey(models.Active, "Live")
+			@statusLegendKey(models.Scheduled, "Scheduled")
+			@statusLegendKey(models.Closed, "Closed")
+			<label class="input flex items-center gap-2 ml-auto w-56">
+				@icon("search", templ.Attributes{"class": "w-4 h-4 opacity-50"})
+				<input
+					id="search-quests"
+					type="text"
+					class="grow"
+					placeholder="Search quests"
+					_="on input
+					show .instance-item
+						when its textContent.toLowerCase().normalize('NFD')
+						contains my value.toLowerCase().normalize('NFD')"
+				/>
+			</label>
+		</div>
+		<div id="instance-list" class="panel">
+			<div class="row-list">
+				for i, quest := range quests {
+					@instanceItem(quest, quest.ID == currentQuest.ID, currentQuest.ID != "", i == 0, i == len(quests)-1)
+				}
+				<div
+					if len(quests) == 0 {
+						class="no-teams basis-full flex items-center gap-3 px-4 py-3"
+					} else {
+						class="no-teams basis-full flex items-center gap-3 px-4 py-3 hidden"
+					}
+					_="on htmx:afterSettle from body
+					if <.instance-item/>'s length == 0
+						remove .hidden from me
+					else
+						add .hidden to me
+					end
+					on htmx:afterRequest from body
+						wait 0.5s
+						if <.instance-item/>'s length == 0
+							remove .hidden from me
+						else
+							add .hidden to me
+						end
+					"
+				>
+					<p class="flex-grow text-center text-sm opacity-50">No quests yet. Create one to get started.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Templates -->
+	@TemplatesPage(templates)
+	<!-- Modals -->
+	@ImportModal()
+	<dialog id="confirm_duplicate_modal" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box prose">
+			<h3 class="text-lg font-bold">Duplicate a game</h3>
+			<p class="pt-4">You are about to duplicate a game including its:</p>
+			<ul class="mt-0">
+				<li>locations and content</li>
+				<li>settings</li>
+			</ul>
+			<p>This will <strong>not</strong> duplicate any teams or activities/check-ins.</p>
+			<form hx-post="/admin/quests/duplicate">
+				<input type="hidden" name="id" value=""/>
+				<fieldset class="fieldset not-prose">
+					<legend class="fieldset-legend">New game name</legend>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
+					<p class="label">
+						You can change this later.
+					</p>
+				</fieldset>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick="confirm_duplicate_modal.close()">Nevermind</button>
+					<button type="submit" class="btn btn-primary">Duplicate</button>
+				</div>
+			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
+	</dialog>
+	<dialog id="confirm_delete_modal" class="modal modal-bottom sm:modal-middle p-1">
+		<div class="modal-box prose outline outline-2 outline-offset-1 outline-error">
+			<h3 class="text-lg font-bold">Delete a game</h3>
+			<p class="pt-4">You are about to delete a game. Doing this will delete its:</p>
+			<ul>
+				<li>locations and content</li>
+				<li>teams and check-ins</li>
+				<li>settings</li>
+			</ul>
+			<p>This action cannot be undone. To confirm, please type the name of the game you want to delete: <code id="instance_name">instance</code></p>
+			<form hx-post="/admin/quests/delete" hx-swap="none">
+				<input type="hidden" name="id" value=""/>
+				<fieldset class="fieldset">
+					<legend class="fieldset-legend">Game name</legend>
+					<input type="text" class="input w-full" name="confirmname" autocomplete="off" required/>
+				</fieldset>
+				<div class="modal-action">
+					<button type="button" class="btn" onclick="confirm_delete_modal.close()">Nevermind</button>
+					<button type="submit" class="btn btn-error" onclick="confirm_delete_modal.close()">Delete</button>
+				</div>
+			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
+	</dialog>
+	<dialog id="new_modal" class="modal modal-bottom sm:modal-middle">
+		<div class="modal-box">
+			<form hx-post="/admin/quests/new" hx-swap="none">
+				<h3 class="text-lg font-bold">Create a new quest</h3>
+				<fieldset class="fieldset not-prose">
+					<legend class="fieldset-legend">Game name</legend>
+					<input type="text" class="input w-full" name="name" required autocomplete="off"/>
+					<p class="label">
+						You can change this later.
+					</p>
+				</fieldset>
+				<div class="modal-action">
+					<button
+						class="btn"
+						type="button"
+						onclick="new_modal.close()"
+					>
+						Nevermind
+					</button>
+					<button type="submit" class="btn btn-primary">Save</button>
+				</div>
+			</form>
+			<form method="dialog">
+				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			</form>
+		</div>
+	</dialog>
+	<script>
+function handleModalAction(modalId, nameFieldId, defaultName = '', showInstanceName = false) {
+	// Error checking
+	if (!modalId) {
+		console.error('Modal ID is required');
+		return;
+	}
+	if (showInstanceName && !nameFieldId) {
+		console.error('Name field ID is required when showing instance name');
+		return;
+	}
+	if (showInstanceName && !document.getElementById(nameFieldId)) {
+		console.error('Name field ID does not exist');
+		return;
+	}
+
+  const { id, name } = event.currentTarget.dataset;
+	if (!id) {
+		console.error('Instance ID is required');
+		return;
+	}
+  const modal = document.getElementById(modalId);
+  const form = modal.querySelector('form');
+  const input = form.querySelector('input[name="name"]');
+  const hidden = form.querySelector('input[name="id"]');
+
+  if (showInstanceName) {
+    document.getElementById(nameFieldId).textContent = name;
+  }
+
+	if (input) {
+		input.value = defaultName ? `${name} ${defaultName}` : name || '';
+	}
+  hidden.value = id;
+
+  modal.showModal();
+}
+
+function confirmDeleteInstance() {
+  handleModalAction('confirm_delete_modal', 'instance_name', '', true);
+}
+
+function confirmDeleteTemplate() {
+  handleModalAction('confirm_delete_template_modal', 'delete-template-name', '', true);
+}
+
+function confirmDuplicate() {
+  handleModalAction('confirm_duplicate_modal', '', '(copy)');
+}
+
+function createTemplate() {
+  handleModalAction('create_template_modal', 'template-modal-instance-name', '', true);
+}
+
+function shareTemplate() {
+	handleModalAction('share_template_modal');
+}
+
+function launchTemplate() {
+	handleModalAction('launch_template_modal', 'launch-template-name', '', true);
+}
+
+function submitImportTo(url) {
+	const form = document.getElementById('import-form');
+	form.setAttribute('hx-post', url);
+	htmx.process(form);
+	htmx.trigger(form, 'submit');
+}
+</script>
+}
+
+templ InstanceName(quest models.Quest, active bool) {
+	<div
+		id={ fmt.Sprint("name-", quest.ID) }
+		class="min-w-0"
+	>
+		<div class="flex items-center gap-2">
+			<div
+				class="font-medium truncate tooltip cursor-pointer"
+				data-tip="Click to rename"
+				hx-get={ fmt.Sprint("/admin/quests/", quest.ID, "/edit/name") }
+				hx-target={ fmt.Sprint("#name-", quest.ID) }
+				hx-swap="outerHTML"
+				_="on click send closeNameEdit"
+			>
+				{ quest.Name }
+			</div>
+			if active {
+				<span class="badge badge-primary badge-sm">selected</span>
+			}
+		</div>
+		<div class="text-xs font-semibold opacity-60">
+			if !quest.StartTime.Time.IsZero() && !quest.EndTime.Time.IsZero() {
+				if quest.StartTime.Time.Year() == quest.EndTime.Time.Year() {
+					{ quest.StartTime.Time.Local().Format("02 Jan") } – { quest.EndTime.Time.Local().Format("02 Jan 2006") }
+				} else {
+					{ quest.StartTime.Time.Local().Format("02 Jan 2006") } – { quest.EndTime.Time.Local().Format("02 Jan 2006") }
+				}
+			} else if !quest.StartTime.Time.IsZero() {
+				if quest.StartTime.Time.After(time.Now()) {
+					Starts { quest.StartTime.Time.Local().Format("02 Jan 2006") }
+				} else {
+					Started { quest.StartTime.Time.Local().Format("02 Jan 2006") }
+				}
+			} else if !quest.EndTime.Time.IsZero() {
+				Ends { quest.EndTime.Time.Local().Format("02 Jan 2006") }
+			}
+		</div>
+	</div>
+}
+
+templ InstanceNameEdit(quest models.Quest) {
+	<form
+		id={ fmt.Sprint("name-", quest.ID) }
+		hx-post={ fmt.Sprint("/admin/quests/", quest.ID, "/edit/name") }
+		hx-target={ fmt.Sprint("#name-", quest.ID) }
+		hx-swap="outerHTML"
+		hx-trigger="submit"
+	>
+		<label class="input gap-2">
+			<input
+				id="name-input"
+				type="text"
+				name="name"
+				class="grow text-ellipsis"
+				placeholder="Instance name"
+				autoComplete="off"
+				autoFocus
+				tabIndex="0"
+				value={ quest.Name }
+				onkeydown="if(event.key==='Escape'){this.closest('form').querySelector('button[type=button]').click();return false}"
+			/>
+			<button
+				type="button"
+				hx-get={ fmt.Sprint("/admin/quests/", quest.ID, "/name") }
+				hx-target={ fmt.Sprint("#name-", quest.ID) }
+				hx-swap="outerHTML"
+				class="btn btn-xs btn-circle"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x w-4 h-4"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
+			</button>
+			<button
+				type="submit"
+				class="btn btn-xs btn-circle"
+			>
+				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check w-4 h-4"><path d="M20 6 9 17l-5-5"></path></svg>
+			</button>
+		</label>
+	</form>
+}
+
+templ instanceItem(quest models.Quest, active bool, anyActive bool, first bool, last bool) {
+	<div class={ "instance-item list-row flex items-center gap-3 px-4 py-3", templ.KV("list-row-on", active) }>
+		<div class="flex items-center gap-3 grow">
+			<!-- Play Status -->
+			<div class="tooltip tooltip-right shrink-0" data-tip={ quest.GetStatus().Description() }>
+				@questStatusIcon(quest, "w-5 h-5")
+			</div>
+			<!-- Instance name -->
+			<span
+				id={ fmt.Sprint("name-", quest.ID) }
+				class="instance-name grow"
+			>
+				@InstanceName(quest, active)
+			</span>
+			<span class="grow"></span>
+			<!-- Action buttons -->
+			if !active {
+				<span class="hidden sm:inline-block tooltip" data-tip="Make this your active game">
+					<a
+						href={ templ.SafeURL(fmt.Sprint("/admin/quests/", fmt.Sprint(quest.ID), "/switch")) }
+						if anyActive {
+							class="btn btn-sm inline-flex"
+						} else {
+							class="btn btn-sm btn-primary inline-flex"
+						}
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+						Select
+					</a>
+				</span>
+			}
+			<!-- Actions Menu -->
+			<span class="tooltip" data-tip="More actions">
+				<div class="dropdown dropdown-end">
+					<div tabindex="0" role="button" class="btn btn-sm m-1">
+						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-ellipsis w-5 h-5"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+					</div>
+					<ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-52 p-2 shadow">
+						<!-- Switch -->
+						if !active {
+							<li class="inline-block sm:hidden">
+								<a
+									href={ templ.SafeURL(fmt.Sprint("/admin/quests/", fmt.Sprint(quest.ID), "/switch")) }
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+									Select this game
+								</a>
+							</li>
+						} else {
+							<li class="inline-block sm:hidden menu-disabled">
+								<a>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-compass w-4 h-4"><path d="m16.24 7.76-1.804 5.411a2 2 0 0 1-1.265 1.265L7.76 16.24l1.804-5.411a2 2 0 0 1 1.265-1.265z"></path><circle cx="12" cy="12" r="10"></circle></svg>
+									Select this game
+								</a>
+							</li>
+						}
+						<!-- Duplicate -->
+						<li>
+							<a
+								data-id={ fmt.Sprint(quest.ID) }
+								data-name={ quest.Name }
+								onclick="confirmDuplicate()"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-copy w-4 h-4"><path d="M2 16V4a2 2 0 0 1 2-2h11"></path><path d="M22 18H11a2 2 0 1 0 0 4h10.5a.5.5 0 0 0 .5-.5v-15a.5.5 0 0 0-.5-.5H11a2 2 0 0 0-2 2v12"></path><path d="M5 14H4a2 2 0 1 0 0 4h1"></path></svg>
+								Duplicate
+							</a>
+						</li>
+						<!-- Create new template -->
+						<li>
+							<a
+								data-id={ fmt.Sprint(quest.ID) }
+								data-name={ quest.Name }
+								onclick="createTemplate()"
+							>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-book-dashed w-4 h-4"><path d="M12 17h1.5"></path><path d="M12 22h1.5"></path><path d="M12 2h1.5"></path><path d="M17.5 22H19a1 1 0 0 0 1-1"></path><path d="M17.5 2H19a1 1 0 0 1 1 1v1.5"></path><path d="M20 14v3h-2.5"></path><path d="M20 8.5V10"></path><path d="M4 10V8.5"></path><path d="M4 19.5V14"></path><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H8"></path><path d="M8 22H6.5a1 1 0 0 1 0-5H8"></path></svg>
+								Create template
+							</a>
+						</li>
+						<!-- Export as JSON -->
+						<li>
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/quests/%s/export", quest.ID)) }>
+								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" x2="12" y1="15" y2="3"></line></svg>
+								Download JSON
+							</a>
+						</li>
+						<span class="divider my-0"></span>
+						<!-- Delete -->
+						if active {
+							<li class="menu-disabled">
+								<a
+									class="tooltip cursor-not-allowed flex"
+									data-tip="Cannot delete current instance"
+									data-tip="Cannot delete current instance"
+									aria-disabled="true"
+									disabled
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+									Delete
+								</a>
+							</li>
+						} else {
+							<li>
+								<a
+									class="text-error"
+									data-id={ fmt.Sprint(quest.ID) }
+									data-name={ quest.Name }
+									onclick="confirmDeleteInstance()"
+								>
+									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-4 h-4"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
+									Delete
+								</a>
+							</li>
+						}
+					</ul>
+				</div>
+			</span>
+		</div>
+	</div>
+}

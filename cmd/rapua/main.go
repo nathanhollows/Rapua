@@ -7,18 +7,20 @@ import (
 	"log/slog"
 	"os"
 
+	"github.com/nathanhollows/Rapua/v8/blocks"
+
 	"github.com/joho/godotenv"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	admin "github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
-	players "github.com/nathanhollows/Rapua/v7/internal/handlers/players"
-	public "github.com/nathanhollows/Rapua/v7/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v7/internal/migrations"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
-	"github.com/nathanhollows/Rapua/v7/internal/server"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/internal/sessions"
-	"github.com/nathanhollows/Rapua/v7/internal/storage"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	admin "github.com/nathanhollows/Rapua/v8/internal/handlers/admin"
+	players "github.com/nathanhollows/Rapua/v8/internal/handlers/players"
+	public "github.com/nathanhollows/Rapua/v8/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v8/internal/migrations"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v8/internal/server"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/sessions"
+	"github.com/nathanhollows/Rapua/v8/internal/storage"
 	console "github.com/phsym/console-slog"
 	"github.com/uptrace/bun"
 	"github.com/uptrace/bun/migrate"
@@ -26,7 +28,7 @@ import (
 )
 
 const (
-	version    = "v7.0.0"
+	version    = "v8.0.0"
 	uploadsDir = "static/uploads/"
 )
 
@@ -47,7 +49,11 @@ func main() {
 
 	dbc := db.MustOpen(logger)
 
-	migrator := migrate.NewMigrator(dbc, migrations.Migrations)
+	// WithMarkAppliedOnSuccess: default bun behaviour marks a migration applied
+	// before running Up, so a failed Up still gets skipped on retry. Some of
+	// our migrations (20260827000000, notably) rely on failing loudly and
+	// being retried after the operator fixes the underlying data.
+	migrator := migrate.NewMigrator(dbc, migrations.Migrations, migrate.WithMarkAppliedOnSuccess(true))
 
 	app := &cli.App{
 		Name:        "Rapua",
@@ -55,9 +61,10 @@ func main() {
 		Description: `An open-source platform for location-based games.`,
 		Version:     version,
 		Commands: []*cli.Command{
-			newDBCommand(migrator, logger),
+			newDBCommand(dbc, migrator, logger),
 			newCreditsCommand(dbc, logger),
 			newGenerateLoginCommand(dbc, logger),
+			newSeedCommand(dbc, migrator, logger),
 			newGenSpecCommand(),
 		},
 		Action: func(_ *cli.Context) error {
@@ -79,71 +86,87 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	checkInRepo := repositories.NewCheckInRepository(dbc)
 	creditRepo := repositories.NewCreditRepository(dbc)
 	creditPurchaseRepo := repositories.NewCreditPurchaseRepository(dbc)
 	facilitatorRepo := repositories.NewFacilitatorTokenRepo(dbc)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
 	notificationRepo := repositories.NewNotificationRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
+	objectiveContextCompletionRepo := repositories.NewObjectiveContextCompletionRepository(dbc)
+	runEventRepo := repositories.NewRunEventRepository(dbc)
+	runVariableRepo := repositories.NewRunVariableRepository(dbc)
+
 	shareLinkRepo := repositories.NewShareLinkRepository(dbc)
-	teamRepo := repositories.NewTeamRepository(dbc)
-	teamStartLogRepo := repositories.NewTeamStartLogRepository(dbc)
+	teamRepo := repositories.NewRunRepository(dbc)
+	runStartLogRepo := repositories.NewRunStartLogRepository(dbc)
 	userRepo := repositories.NewUserRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
 	transactor := db.NewTransactor(dbc)
 	localStorage := storage.NewLocalStorage("static/uploads/")
 
-	accessService := services.NewAccessService(blockRepo, instanceRepo, locationRepo, markerRepo)
-	locationStatsService := services.NewLocationStatsService(locationRepo)
+	accessService := services.NewAccessService(blockRepo, instanceRepo, objectiveRepo)
 	gameScheduleService := services.NewGameScheduleService(instanceRepo)
-	quickstartService := services.NewQuickstartService(instanceRepo)
-	markerService := services.NewMarkerService(markerRepo)
-	uploadService := services.NewUploadService(uploadRepo, localStorage)
-	gameStructureService := services.NewGameStructureService(locationRepo, instanceRepo)
+	uploadService := services.NewUploadService(transactor, uploadRepo, runEventRepo, localStorage)
 	deleteService := services.NewDeleteService(
-		transactor, instanceRepo, locationRepo, markerRepo,
-		teamRepo, uploadRepo, dbc, uploadsDir, logger,
+		transactor, instanceRepo,
+		teamRepo, uploadRepo, objectiveRepo, runEventRepo, dbc, uploadsDir, logger,
 	)
 	duplicationService := services.NewDuplicationService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo,
+		logger, transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
 	)
 	facilitatorService := services.NewFacilitatorService(facilitatorRepo)
 	assetGenerator := services.NewAssetGenerator()
 	identityService := services.NewAuthService(userRepo)
 	blockService := services.NewBlockService(blockRepo, blockStateRepo)
 	emailService := services.NewEmailService()
-	instanceSettingsService := services.NewInstanceSettingsService(instanceSettingsRepo)
-	locationService := services.NewLocationService(locationRepo, markerRepo, blockRepo, markerService)
+	instanceSettingsService := services.NewQuestSettingsService(instanceSettingsRepo)
+	objectiveService := services.NewObjectiveService(transactor, objectiveRepo)
 
-	gameStructureService.SetRelationLoader(locationService)
-
-	navigationService := services.NewNavigationService(locationRepo, teamRepo, gameStructureService, blockService)
-	checkInService := services.NewCheckInService(
-		checkInRepo, locationRepo, teamRepo,
-		locationStatsService, navigationService, blockService,
+	sectionFinishRepo := repositories.NewSectionFinishRepository(dbc)
+	navigationService := services.NewNavigationService(
+		transactor,
+		objectiveRepo,
+		objectiveContextCompletionRepo,
+		sectionFinishRepo,
+		blockRepo,
+		teamRepo,
+		runEventRepo,
+		runVariableRepo,
+		logger,
 	)
-	notificationService := services.NewNotificationService(notificationRepo, teamRepo)
+	checkInService := services.NewCheckInService(
+		transactor,
+		teamRepo, blockService,
+		objectiveRepo, objectiveContextCompletionRepo,
+		sectionFinishRepo, blockRepo,
+		runEventRepo, runVariableRepo,
+	)
+	notificationService := services.NewNotificationService(transactor, notificationRepo, teamRepo, runEventRepo)
 	userService := services.NewUserService(userRepo, instanceRepo)
 	monthlyCreditTopupJob := services.NewMonthlyCreditTopupService(transactor, creditRepo, logger)
 	staleCreditCleanupService := services.NewStalePurchaseCleanupService(transactor, logger)
 	orphanedUploadsCleanupService := services.NewOrphanedUploadsCleanupService(uploadRepo, logger, uploadsDir)
-	creditService := services.NewCreditService(transactor, creditRepo, teamStartLogRepo, userRepo)
+	creditService := services.NewCreditService(transactor, creditRepo, runStartLogRepo, userRepo)
 	stripeService := services.NewStripeService(transactor, creditService, creditPurchaseRepo, userRepo, logger)
-	teamService := services.NewTeamService(
-		transactor, teamRepo, checkInRepo, creditService, blockStateRepo, locationRepo,
+	runService := services.NewRunService(
+		transactor, teamRepo, creditService, blockStateRepo,
+		objectiveRepo, objectiveContextCompletionRepo,
+		sectionFinishRepo, blockRepo,
+		runEventRepo, runVariableRepo,
 	)
 	leaderBoardService := services.NewLeaderBoardService()
-	instanceService := services.NewInstanceService(instanceRepo, instanceSettingsRepo, blockRepo)
+	questService := services.NewQuestService(transactor, instanceRepo, instanceSettingsRepo, blockRepo, objectiveRepo)
 	templateService := services.NewTemplateService(
 		duplicationService, instanceRepo, instanceSettingsRepo, shareLinkRepo,
 	)
-	exportService := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, blockRepo)
+	lintService := services.NewLintService(
+		instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo, blocks.Registry(),
+	)
+	exportService := services.NewExportService(instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo)
 	importService := services.NewImportService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
+		logger, transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
 	)
 
 	sessions.Start()
@@ -174,16 +197,17 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 		&templateService, userService, magicTokenService,
 	)
 	playerHandler := players.NewPlayerHandler(
-		logger, blockService, checkInService, instanceService, locationService,
-		markerService, navigationService, notificationService, teamService, uploadService,
+		logger, blockService, checkInService, questService, leaderBoardService,
+		navigationService, notificationService, runService, uploadService,
 	)
+	variableService := services.NewVariableService(objectiveRepo, blockRepo)
 	adminHandler := admin.NewAdminHandler(
-		logger, accessService, assetGenerator, identityService, blockService,
-		creditService, creditPurchaseRepo, deleteService, duplicationService,
+		logger, accessService, assetGenerator, identityService, blockService, lintService,
+		variableService, creditService, creditPurchaseRepo, deleteService, duplicationService,
 		exportService, importService, facilitatorService, gameScheduleService,
-		gameStructureService, instanceRepo, instanceService, instanceSettingsService,
-		locationService, markerService, navigationService, notificationService,
-		teamService, templateService, uploadService, userService, quickstartService,
+		instanceRepo, questService, instanceSettingsService,
+		objectiveService, notificationService,
+		runService, templateService, uploadService, userService,
 		leaderBoardService, stripeService,
 	)
 
@@ -192,8 +216,7 @@ func runApp(logger *slog.Logger, dbc *bun.DB) { //nolint:funlen // Main setup fu
 
 func initialiseFolders(logger *slog.Logger) {
 	folders := []string{
-		"assets/", "assets/codes/", "assets/codes/png/", "assets/codes/svg/",
-		"assets/fonts/", "assets/posters/",
+		"assets/",
 	}
 	for _, folder := range folders {
 		if _, err := os.Stat(folder); err != nil {

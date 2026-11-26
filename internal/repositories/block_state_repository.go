@@ -6,27 +6,33 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 )
 
 type BlockStateRepository interface {
 	// Create creates a new player state
 	Create(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error)
-	// NewBlockState creates a new block state for a specified block and team
-	NewBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
+	// NewBlockState creates a new block state for a specified block, run, and quest
+	NewBlockState(ctx context.Context, blockID, runCode, questID string) (blocks.PlayerState, error)
 
-	// GetByBlockAndTeam gets a player state by block ID and team code
-	GetByBlockAndTeam(ctx context.Context, blockID string, teamCode string) (blocks.PlayerState, error)
+	// GetByBlockAndRun gets a player state by block ID, run code, and quest ID
+	GetByBlockAndRun(ctx context.Context, blockID, runCode, questID string) (blocks.PlayerState, error)
 
-	// Update updates an existing player state
-	Update(ctx context.Context, block blocks.PlayerState) (blocks.PlayerState, error)
+	// UpdateIfIncompleteWithTx writes the state only if the stored row is still
+	// incomplete, and reports whether this call is the one that wrote it.
+	UpdateIfIncompleteWithTx(ctx context.Context, tx *bun.Tx, state blocks.PlayerState) (bool, error)
 
-	// Delete deletes a player state by block ID and team code
-	Delete(ctx context.Context, blockID string, teamCode string) error
+	// Delete deletes a player state by block ID, run code, and quest ID
+	Delete(ctx context.Context, blockID, runCode, questID string) error
 	// DeleteByBlockID deletes all player states for a block
 	DeleteByBlockID(ctx context.Context, tx *bun.Tx, blockID string) error
+
+	// LastSeenByRun returns the time of each run's most recent block
+	// interaction, keyed by run code. Runs that have touched no block yet are
+	// absent from the map.
+	LastSeenByRun(ctx context.Context, questID string) (map[string]time.Time, error)
 }
 
 type blockStateRepository struct {
@@ -43,9 +49,14 @@ func NewBlockStateRepository(db *bun.DB) BlockStateRepository {
 type PlayerStateData struct {
 	blockID       string
 	playerID      string
+	questID       string
 	playerData    json.RawMessage
 	isComplete    bool
 	pointsAwarded int
+}
+
+func (p *PlayerStateData) GetQuestID() string {
+	return p.questID
 }
 
 func (p *PlayerStateData) GetBlockID() string {
@@ -81,10 +92,11 @@ func (p *PlayerStateData) SetPointsAwarded(points int) {
 }
 
 // Convert model state to PlayerState.
-func convertModelToPlayerStateData(state models.TeamBlockState) blocks.PlayerState {
+func convertModelToPlayerStateData(state models.RunBlockState) blocks.PlayerState {
 	return &PlayerStateData{
 		blockID:       state.BlockID,
-		playerID:      state.TeamCode,
+		playerID:      state.RunCode,
+		questID:       state.QuestID,
 		playerData:    state.PlayerData,
 		isComplete:    state.IsComplete,
 		pointsAwarded: state.PointsAwarded,
@@ -92,27 +104,28 @@ func convertModelToPlayerStateData(state models.TeamBlockState) blocks.PlayerSta
 }
 
 // Convert PlayerState to model state.
-func convertPlayerStateToModelData(state blocks.PlayerState) models.TeamBlockState {
-	return models.TeamBlockState{
-		TeamCode:      state.GetPlayerID(),
+func convertPlayerStateToModelData(state blocks.PlayerState) models.RunBlockState {
+	return models.RunBlockState{
+		RunCode:       state.GetPlayerID(),
 		BlockID:       state.GetBlockID(),
+		QuestID:       state.GetQuestID(),
 		PlayerData:    state.GetPlayerData(),
 		IsComplete:    state.IsComplete(),
 		PointsAwarded: state.GetPointsAwarded(),
 	}
 }
 
-// GetByBlockAndTeam fetches a specific team block state for a block and team.
-func (r *blockStateRepository) GetByBlockAndTeam(
+// GetByBlockAndRun fetches a specific run block state for a block, run, and quest.
+func (r *blockStateRepository) GetByBlockAndRun(
 	ctx context.Context,
-	blockID string,
-	teamCode string,
+	blockID, runCode, questID string,
 ) (blocks.PlayerState, error) {
-	var modelState models.TeamBlockState
+	var modelState models.RunBlockState
 	err := r.db.NewSelect().
 		Model(&modelState).
 		Where("block_id = ?", blockID).
-		Where("team_code = ?", teamCode).
+		Where("run_code = ?", runCode).
+		Where("quest_id = ?", questID).
 		Scan(ctx)
 	if err != nil {
 		return nil, err
@@ -121,7 +134,7 @@ func (r *blockStateRepository) GetByBlockAndTeam(
 	return convertModelToPlayerStateData(modelState), nil
 }
 
-// Create inserts a new team block state into the database.
+// Create inserts a new run block state into the database.
 func (r *blockStateRepository) Create(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
 	modelState := convertPlayerStateToModelData(state)
 
@@ -135,34 +148,47 @@ func (r *blockStateRepository) Create(ctx context.Context, state blocks.PlayerSt
 	return convertModelToPlayerStateData(modelState), nil
 }
 
-// Update modifies an existing team block state in the database.
-func (r *blockStateRepository) Update(ctx context.Context, state blocks.PlayerState) (blocks.PlayerState, error) {
+// UpdateIfIncompleteWithTx carries the incomplete check in the UPDATE's WHERE, so
+// the condition cannot go stale between a caller's read and this write.
+func (r *blockStateRepository) UpdateIfIncompleteWithTx(
+	ctx context.Context, tx *bun.Tx, state blocks.PlayerState,
+) (bool, error) {
 	modelState := convertPlayerStateToModelData(state)
 	if state.GetBlockID() == "" || state.GetPlayerID() == "" {
-		return nil, errors.New("block_id and team_code must be set")
+		return false, errors.New("block_id and run_code must be set")
 	}
 
-	_, err := r.db.NewUpdate().
+	res, err := tx.NewUpdate().
 		Model(&modelState).
 		Set("player_data = ?", modelState.PlayerData).
 		Set("is_complete = ?", modelState.IsComplete).
 		Set("points_awarded = ?", modelState.PointsAwarded).
 		Set("updated_at = ?", time.Now()).
 		Where("block_id = ?", state.GetBlockID()).
-		Where("team_code = ?", state.GetPlayerID()).
+		Where("run_code = ?", state.GetPlayerID()).
+		Where("quest_id = ?", modelState.QuestID).
+		Where("is_complete = ?", false).
 		Exec(ctx)
+	if err != nil {
+		return false, err
+	}
 
-	return state, err
+	affected, err := res.RowsAffected()
+	if err != nil {
+		return false, err
+	}
+	return affected > 0, nil
 }
 
 // NewBlockState creates a new block state.
 func (r *blockStateRepository) NewBlockState(
 	_ context.Context,
-	blockID, teamCode string,
+	blockID, runCode, questID string,
 ) (blocks.PlayerState, error) {
 	state := &PlayerStateData{
 		blockID:       blockID,
-		playerID:      teamCode,
+		playerID:      runCode,
+		questID:       questID,
 		playerData:    nil,
 		isComplete:    false,
 		pointsAwarded: 0,
@@ -170,12 +196,13 @@ func (r *blockStateRepository) NewBlockState(
 	return state, nil
 }
 
-// Delete removes a team block state from the database by its ID.
-func (r *blockStateRepository) Delete(ctx context.Context, blockID string, teamCode string) error {
+// Delete removes a run block state from the database by its key.
+func (r *blockStateRepository) Delete(ctx context.Context, blockID, runCode, questID string) error {
 	_, err := r.db.NewDelete().
-		Model(&models.TeamBlockState{}).
+		Model(&models.RunBlockState{}).
 		Where("block_id = ?", blockID).
-		Where("team_code = ?", teamCode).
+		Where("run_code = ?", runCode).
+		Where("quest_id = ?", questID).
 		Exec(ctx)
 	if err != nil {
 		return err
@@ -183,12 +210,39 @@ func (r *blockStateRepository) Delete(ctx context.Context, blockID string, teamC
 	return nil
 }
 
-// DeleteByBlockID removes all team block states for a block from the database.
+// DeleteByBlockID removes all run block states for a block from the database.
 func (r *blockStateRepository) DeleteByBlockID(ctx context.Context, tx *bun.Tx, blockID string) error {
 	_, err := tx.NewDelete().
-		Model(&models.TeamBlockState{}).
+		Model(&models.RunBlockState{}).
 		Where("block_id = ?", blockID).
 		Exec(ctx)
 	return err
 }
 
+// LastSeenByRun answers "when did this run last do anything", which the run's
+// own updated_at cannot: that column is stamped at insert and never advanced.
+// Every graded answer writes its block's state, so a playing run has a recent row.
+func (r *blockStateRepository) LastSeenByRun(
+	ctx context.Context, questID string,
+) (map[string]time.Time, error) {
+	var rows []struct {
+		RunCode  string    `bun:"run_code"`
+		LastSeen time.Time `bun:"last_seen"`
+	}
+	err := r.db.NewSelect().
+		Model((*models.RunBlockState)(nil)).
+		ColumnExpr("run_code").
+		ColumnExpr("MAX(updated_at) AS last_seen").
+		Where("quest_id = ?", questID).
+		Group("run_code").
+		Scan(ctx, &rows)
+	if err != nil {
+		return nil, err
+	}
+
+	lastSeen := make(map[string]time.Time, len(rows))
+	for _, row := range rows {
+		lastSeen[row.RunCode] = row.LastSeen
+	}
+	return lastSeen, nil
+}

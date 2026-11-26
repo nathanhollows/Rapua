@@ -1,19 +1,18 @@
-//nolint:testpackage // Test requires access to internal members
-package players
+package players_test
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"log/slog"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -47,23 +46,18 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 		returnUpload: &models.Upload{
 			ID:          "upload-123",
 			OriginalURL: "https://example.com/uploads/test.jpg",
-			InstanceID:  "instance-123",
-			TeamCode:    "TEAM1",
+			QuestID:     "instance-123",
+			RunCode:     "TEAM1",
 			BlockID:     "block-456",
-			LocationID:  "location-789",
 		},
 	}
 
-	// Create handler with mock service
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
 	// Create a test team
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data
@@ -90,7 +84,7 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// Add team to context
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	// Create response recorder
@@ -109,22 +103,18 @@ func TestPlayerHandler_UploadImage_Success(t *testing.T) {
 	assert.Equal(t, "https://example.com/uploads/test.jpg", response["url"])
 
 	// Verify metadata was passed correctly
-	assert.Equal(t, "instance-123", mockService.uploadedMetadata.InstanceID)
-	assert.Equal(t, "TEAM1", mockService.uploadedMetadata.TeamID)
+	assert.Equal(t, "instance-123", mockService.uploadedMetadata.QuestID)
+	assert.Equal(t, "TEAM1", mockService.uploadedMetadata.RunID)
 	assert.Equal(t, "block-456", mockService.uploadedMetadata.BlockID)
-	assert.Equal(t, "location-789", mockService.uploadedMetadata.LocationID)
 }
 
 func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {
 	mockService := &mockUploadService{}
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data without file
@@ -135,7 +125,7 @@ func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/upload/image", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	w := httptest.NewRecorder()
@@ -152,10 +142,7 @@ func TestPlayerHandler_UploadImage_NoFile(t *testing.T) {
 
 func TestPlayerHandler_UploadImage_NoTeamInContext(t *testing.T) {
 	mockService := &mockUploadService{}
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
 	// Create multipart form data
 	body := &bytes.Buffer{}
@@ -187,14 +174,11 @@ func TestPlayerHandler_UploadImage_ServiceError(t *testing.T) {
 		returnError: assert.AnError,
 	}
 
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data
@@ -209,7 +193,7 @@ func TestPlayerHandler_UploadImage_ServiceError(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/upload/image", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	w := httptest.NewRecorder()
@@ -229,19 +213,16 @@ func TestPlayerHandler_UploadImage_WithoutBlockID(t *testing.T) {
 		returnUpload: &models.Upload{
 			ID:          "upload-123",
 			OriginalURL: "https://example.com/uploads/test.jpg",
-			InstanceID:  "instance-123",
-			TeamCode:    "TEAM1",
+			QuestID:     "instance-123",
+			RunCode:     "TEAM1",
 		},
 	}
 
-	handler := &PlayerHandler{
-		logger:        slog.Default(),
-		uploadService: mockService,
-	}
+	handler := players.NewTestPlayerHandler(players.WithUploadService(mockService))
 
-	team := &models.Team{
-		Code:       "TEAM1",
-		InstanceID: "instance-123",
+	team := &models.Run{
+		Code:    "TEAM1",
+		QuestID: "instance-123",
 	}
 
 	// Create multipart form data without block_id
@@ -256,7 +237,7 @@ func TestPlayerHandler_UploadImage_WithoutBlockID(t *testing.T) {
 
 	req := httptest.NewRequest(http.MethodPost, "/upload/image", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
-	ctx := context.WithValue(req.Context(), contextkeys.TeamKey, team)
+	ctx := context.WithValue(req.Context(), contextkeys.RunKey, team)
 	req = req.WithContext(ctx)
 
 	w := httptest.NewRecorder()

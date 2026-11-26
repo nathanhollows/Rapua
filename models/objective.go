@@ -1,0 +1,81 @@
+package models
+
+import (
+	"github.com/nathanhollows/Rapua/v8/game"
+)
+
+// Objective is a single thing to accomplish, rendered with two contexts (proof,
+// then reveal) rather than the freeform block canvas a Location uses.
+type Objective struct {
+	baseModel
+
+	ID      string `bun:"id,pk,notnull"`
+	QuestID string `bun:"quest_id,notnull"`
+	// ParentID is empty for the quest's root objective, which is the only row
+	// without one. Every other row names the objective it sits beneath.
+	ParentID string `bun:"parent_id,type:varchar(36),nullzero"`
+	// Position orders an objective among its siblings. Meaningful only within
+	// one parent.
+	Position int `bun:"position,type:int"`
+	// Draft keeps an objective out of play without moving it. The player engine
+	// never loads a draft row, so a drafted section is absent rather than
+	// locked, and publishing it again puts it back where it sat.
+	Draft bool `bun:"draft,type:boolean"`
+	// PassThrough stops a section being a place the player stands. It still
+	// routes, bands and gates; its rows join the nearest section that is drawn.
+	PassThrough bool `bun:"pass_through,type:boolean"`
+	// Secret keeps an objective unlisted until a run finds it by scanning. It
+	// sits outside its parent's routing, and its band counts it only once found.
+	Secret bool `bun:"secret,type:boolean"`
+	// Depends holds the objective locked until the run has set every variable
+	// in it.
+	Depends game.DependsField `bun:"depends,type:text,nullzero"`
+	Slug    string            `bun:"slug,type:varchar(255)"`
+	Title   string            `bun:"title,type:varchar(255)"`
+	// Description is the detail a player needs once they are there. The title
+	// is the task and has to stay short enough to read in a list; this is what
+	// will not fit in it.
+	Description string `bun:"description,type:text"`
+
+	// Routing, the band, MaxNext and FinishLabel all govern children, and mean
+	// nothing on an objective without any.
+	Routing game.RouteStrategy `bun:"routing,type:varchar(32)"`
+	// ChildrenMin and ChildrenMax are the completion band. Nullable because an
+	// explicit 0 is a different node from an omitted bound: see game.FillBand.
+	ChildrenMin *int   `bun:"children_min,type:int,nullzero"`
+	ChildrenMax *int   `bun:"children_max,type:int,nullzero"`
+	MaxNext     int    `bun:"max_next,type:int"`
+	FinishLabel string `bun:"finish_label,type:varchar(255)"`
+
+	Quest  Quest   `bun:"rel:has-one,join:quest_id=id"`
+	Blocks []Block `bun:"rel:has-many,join:id=owner_id"`
+}
+
+func (o *Objective) HasProofContext() bool {
+	for i := range o.Blocks {
+		if o.Blocks[i].Context == game.ContextObjectiveProof {
+			return true
+		}
+	}
+	return false
+}
+
+func (o *Objective) HasRevealContext() bool {
+	for i := range o.Blocks {
+		if o.Blocks[i].Context == game.ContextObjectiveReveal {
+			return true
+		}
+	}
+	return false
+}
+
+// TotalPoints is the objective's point value: the sum of its blocks' points,
+// not a field of its own. Requires Blocks to be loaded, via
+// ObjectiveRepository.LoadBlocks.
+func (o *Objective) TotalPoints() int {
+	total := 0
+	for i := range o.Blocks {
+		total += o.Blocks[i].Points
+	}
+	return total
+}

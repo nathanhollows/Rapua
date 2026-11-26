@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
 )
 
 const maxUploadSize = 25 << 20 // 25MB
@@ -29,10 +29,9 @@ func (h *Handler) UploadMedia(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 
 	metadata := services.UploadMetadata{
-		InstanceID: r.Form.Get("instance_id"),
-		TeamID:     r.Form.Get("team_id"),
-		BlockID:    r.Form.Get("block_id"),
-		LocationID: r.Form.Get("location_id"),
+		QuestID: r.Form.Get("quest_id"),
+		RunID:   r.Form.Get("team_id"),
+		BlockID: r.Form.Get("block_id"),
 	}
 
 	media, err := h.uploadService.UploadFile(r.Context(), file, fileHeader, metadata)
@@ -59,15 +58,14 @@ func (h *Handler) UploadsSearch(w http.ResponseWriter, r *http.Request) {
 
 	filters := map[string]string{}
 
-	if !r.Form.Has("instanceID") {
-		h.handleError(w, r, "Malformed request", "Missing instanceID", "error", nil)
+	if !r.Form.Has("questID") {
+		h.handleError(w, r, "Malformed request", "Missing questID", "error", nil)
 	}
 
-	filters["instance_id"] = r.Form.Get("instanceID")
+	filters["quest_id"] = r.Form.Get("questID")
 	filters["type"] = r.Form.Get("type")
-	filters["team_code"] = r.Form.Get("teamCode")
+	filters["run_code"] = r.Form.Get("runCode")
 	filters["block_id"] = r.Form.Get("blockID")
-	filters["location_id"] = r.Form.Get("locationID")
 
 	// Remove empty filters
 	for key, value := range filters {

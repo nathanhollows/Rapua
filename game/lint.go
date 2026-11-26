@@ -3,24 +3,77 @@ package game
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
+	"strings"
 )
 
-// LintResult holds errors and warnings from linting a GameDoc.
+var slugPattern = regexp.MustCompile(`^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$`)
+
+// startButtonBlockType is the one block type the linter names directly: the
+// start page is useless without it, and no generic registry capability
+// expresses that.
+const startButtonBlockType = "start_button"
+
+// costBlockType is the one block that takes points off instead of giving them, so
+// its points are negative by design: "paying points to reveal a clue" in the spec.
+// Every other block's points are a reward and cannot be below zero.
+const costBlockType = "clue"
+
+// retiredSecretRouting is no longer a RouteStrategy, but a document written
+// before it was retired can still name it, and saying why is more use than
+// calling the value unrecognised.
+const retiredSecretRouting = "secret"
+
 type LintResult struct {
-	Errors   []LintDiag // Must fix before importing
-	Warnings []LintDiag // Should fix but won't block import
+	Errors   []LintDiag `json:"errors"`   // Must fix before importing
+	Warnings []LintDiag `json:"warnings"` // Should fix but won't block import
 }
 
-// LintDiag is a single diagnostic message with a path and code.
 type LintDiag struct {
-	Path    string // e.g. "structure.children[0].location.content[1]"
-	Code    string // e.g. "SLUG_DUPLICATE", "INVALID_CONTEXT"
-	Message string
+	Path    string `json:"path"` // e.g. "structure.children[0].objective.proof.blocks[1]".
+	Code    string `json:"code"` // e.g. "SLUG_DUPLICATE", "INVALID_CONTEXT"
+	Message string `json:"message"`
 }
 
-// IsValid returns true if there are no errors (warnings are acceptable).
 func (r LintResult) IsValid() bool {
 	return len(r.Errors) == 0
+}
+
+func (r LintResult) HasError(code string) bool {
+	for _, e := range r.Errors {
+		if e.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+// HasWarning is HasError for the diagnostics that do not block an import.
+func (r LintResult) HasWarning(code string) bool {
+	for _, w := range r.Warnings {
+		if w.Code == code {
+			return true
+		}
+	}
+	return false
+}
+
+// Filter returns the diagnostics whose path starts with prefix. Quest-level
+// diagnostics are grouped only by where they came from, and "start" or
+// "finish" is the whole of that address.
+func (r LintResult) Filter(prefix string) LintResult {
+	var out LintResult
+	for _, e := range r.Errors {
+		if strings.HasPrefix(e.Path, prefix) {
+			out.Errors = append(out.Errors, e)
+		}
+	}
+	for _, w := range r.Warnings {
+		if strings.HasPrefix(w.Path, prefix) {
+			out.Warnings = append(out.Warnings, w)
+		}
+	}
+	return out
 }
 
 // Lint validates a GameDoc in three layers: schema, semantic, structural.
@@ -32,15 +85,17 @@ func Lint(doc *GameDoc, registry BlockRegistry) LintResult {
 }
 
 type linter struct {
-	doc      *GameDoc
-	registry BlockRegistry
-	result   LintResult
-	slugs    map[string]bool
-	blockIDs map[string]bool
+	doc            *GameDoc
+	registry       BlockRegistry
+	result         LintResult
+	slugs          map[string]bool
+	objectiveSlugs map[string]bool // slugs of objectives specifically, a subset of slugs.
+	blockIDs       map[string]bool
 }
 
 func (l *linter) run() {
 	l.slugs = make(map[string]bool)
+	l.objectiveSlugs = make(map[string]bool)
 	l.blockIDs = make(map[string]bool)
 
 	// Layer 1: Schema
@@ -58,13 +113,42 @@ func (l *linter) run() {
 // --- Layer 1: Schema ---
 
 func (l *linter) checkSchema() {
-	if l.doc.Rapua != "v7" {
-		l.errorf("", "VERSION_MISMATCH", "expected rapua: \"v7\", got %q", l.doc.Rapua)
+	if l.doc.Rapua != "v8" {
+		l.errorf("", "VERSION_MISMATCH", "expected rapua: \"v8\", got %q", l.doc.Rapua)
 	}
 	if l.doc.Name == "" {
 		l.errorf("name", "MISSING_NAME", "game name is required")
 	}
-	l.checkStructureDoc("structure", l.doc.Structure)
+	if l.doc.Structure.IsDraft() {
+		l.errorf("structure.draft", "ROOT_DRAFT",
+			"the root objective is a draft, which takes the whole quest out of play; "+
+				"draft the sections beneath it instead")
+	}
+	if l.doc.Structure.IsPassThrough() {
+		l.errorf("structure.pass_through", "ROOT_PASS_THROUGH",
+			"the root objective is the quest rather than a place in it, so there is nothing "+
+				"for pass_through to hide; mark the sections beneath it instead")
+	}
+	if l.doc.Structure.IsSecret() {
+		l.errorf("structure.secret", "ROOT_SECRET",
+			"the root objective is the quest itself, so hiding it hides everything; "+
+				"mark the objectives beneath it secret instead")
+	}
+	// An unknown value would import as fraction and silently set the wrong study
+	// condition. Empty means the default.
+	if fb := l.doc.Settings.ProgressFeedback; fb != "" {
+		if _, err := ParseProgressFeedback(fb); err != nil {
+			l.errorf("settings.progress_feedback", "INVALID_PROGRESS_FEEDBACK",
+				"progress_feedback must be \"fraction\", \"count\" or \"none\", got %q", fb)
+		}
+	}
+	l.checkRootIsContainer()
+	if len(l.doc.Structure.Depends) > 0 {
+		l.errorf("structure.depends", "ROOT_DEPENDS",
+			"the root objective is the quest itself and is always open, so it cannot wait on a "+
+				"variable; gate the sections beneath it instead")
+	}
+	l.checkObjectiveDoc("structure", l.doc.Structure, 0, 0)
 	for i, b := range l.doc.Start {
 		l.checkBlockDoc(fmt.Sprintf("start[%d]", i), b, ContextStart)
 	}
@@ -73,67 +157,272 @@ func (l *linter) checkSchema() {
 	}
 }
 
-func (l *linter) checkStructureDoc(path string, s StructureDoc) {
-	l.checkRouting(path+".routing", s.Routing)
-	l.checkNavigation(path+".navigation", s.Navigation)
-	l.checkCompletion(path, s.Completion, s.MinimumRequired)
-	for i, child := range s.Children {
-		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
-	}
-}
+// MaxDrawnDepth is how many sections deep the player's screen ever draws.
+//
+// Past this a section passes through: it still routes, bands and gates, but has
+// no place on the screen and its rows join the nearest section that does. An
+// author's pass_through sections do not count toward it, so marking one lets a
+// deeper level be drawn.
+//
+// This is a gameplay constant that lint reads, not lint policy: the player's
+// screen and navigation.MaxDrawnDepth follow it, and it sits here only because
+// navigation imports game and not the other way round.
+const MaxDrawnDepth = 2
 
-func (l *linter) checkGroupDoc(path string, g GroupDoc) {
-	if g.Name == "" {
-		l.errorf(path+".name", "MISSING_GROUP_NAME", "group name is required")
-	}
-	l.checkRouting(path+".routing", g.Routing)
-	l.checkNavigation(path+".navigation", g.Navigation)
-	l.checkCompletion(path, g.Completion, g.MinimumRequired)
-	for i, child := range g.Children {
-		l.checkChildDoc(fmt.Sprintf("%s.children[%d]", path, i), child)
-	}
-}
+// checkObjectiveDoc validates one node and recurses into its children. depth is
+// the node's own distance from the root, which is depth 0. drawn is how many
+// sections above it the player's screen draws.
+func (l *linter) checkObjectiveDoc(path string, obj ObjectiveDoc, depth, drawn int) {
+	l.checkObjectiveIdentity(path, obj)
+	l.checkSecret(path, obj)
+	l.checkChildSettings(path, obj)
 
-func (l *linter) checkChildDoc(path string, child ChildDoc) {
-	if child.Location != nil {
-		l.checkLocationDoc(path+".location", *child.Location)
-	} else if child.Group != nil {
-		l.checkGroupDoc(path+".group", *child.Group)
-	} else {
-		l.errorf(path, "EMPTY_CHILD", "child has neither location nor group")
-	}
-}
-
-func (l *linter) checkLocationDoc(path string, loc LocationDoc) {
-	if loc.Slug == "" {
-		l.errorf(path+".slug", "MISSING_SLUG", "location slug is required")
-	}
-	if loc.Name == "" {
-		l.errorf(path+".name", "MISSING_LOCATION_NAME", "location name is required")
-	}
-	if loc.Points < 0 {
-		l.errorf(path+".points", "INVALID_POINTS", "points must be non-negative")
-	}
-	if loc.Marker != nil {
-		if loc.Marker.Lat == 0 && loc.Marker.Lng == 0 {
-			l.warnf(path+".marker", "ZERO_COORDINATES", "marker has zero coordinates; omit marker if location has no map pin")
+	childDrawn := drawn
+	isSection := obj.PublishedChildCount() > 0
+	if depth > 0 && isSection && !obj.IsPassThrough() {
+		if drawn >= MaxDrawnDepth {
+			if !obj.IsDraft() {
+				l.warnf(path, "FORCED_PASS_THROUGH",
+					"objective %q is nested more than %d sections deep, so players will not see it as a "+
+						"place and its tasks will appear in the section above; mark it pass_through to "+
+						"make that deliberate", obj.Slug, MaxDrawnDepth)
+			}
+		} else {
+			childDrawn++
 		}
 	}
-	for i, b := range loc.Content {
-		l.checkBlockDoc(fmt.Sprintf("%s.content[%d]", path, i), b, ContextLocationContent)
-	}
-	for i, b := range loc.Clues {
-		l.checkBlockDoc(fmt.Sprintf("%s.clues[%d]", path, i), b, ContextLocationClues)
-	}
-	for i, b := range loc.Tasks {
-		l.checkBlockDoc(fmt.Sprintf("%s.tasks[%d]", path, i), b, ContextTask)
-	}
-	for i, b := range loc.Checkpoint {
-		l.checkBlockDoc(fmt.Sprintf("%s.checkpoint[%d]", path, i), b, ContextCheckpoint)
+
+	for i, child := range obj.Children {
+		l.checkObjectiveDoc(fmt.Sprintf("%s.children[%d]", path, i), child, depth+1, childDrawn)
 	}
 }
 
-func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) {
+func (l *linter) checkObjectiveIdentity(path string, obj ObjectiveDoc) {
+	l.checkDependsNames(path+".depends", obj.Depends)
+	if obj.Slug == "" {
+		l.errorf(path+".slug", "MISSING_SLUG", "objective slug is required")
+	} else if !slugPattern.MatchString(obj.Slug) {
+		l.errorf(path+".slug", "SLUG_INVALID_FORMAT",
+			"slug %q must contain only lowercase letters, digits, and hyphens (no leading/trailing hyphens)", obj.Slug)
+	}
+	if obj.Title == "" {
+		l.errorf(path+".title", "MISSING_OBJECTIVE_TITLE", "objective title is required")
+	}
+
+	l.checkObjectiveContextDoc(path+".proof", obj.Proof, ContextObjectiveProof)
+	l.checkObjectiveContextDoc(path+".reveal", obj.Reveal, ContextObjectiveReveal)
+
+	if len(obj.Proof.Blocks) == 0 || l.registry == nil {
+		return
+	}
+	for _, b := range obj.Proof.Blocks {
+		typStr, ok := b["type"].(string)
+		if ok && l.registry.IsInteractive(typStr) {
+			return
+		}
+	}
+	l.errorf(path+".proof", "PROOF_CONTEXT_NO_INTERACTIVE_BLOCK",
+		"a non-empty proof context must contain at least one interactive block, or it gates nothing")
+}
+
+// checkSecret holds a secret to being findable: nothing lists it, so its proof
+// has to be something a player can do without seeing it.
+func (l *linter) checkSecret(path string, obj ObjectiveDoc) {
+	if !obj.IsSecret() {
+		return
+	}
+	if !hasBlockOfType(obj.Proof.Blocks, DiscoveryBlockTypes()) {
+		l.errorf(path+".proof", "SECRET_NEEDS_SCAN",
+			"a secret is never listed, so players can only find it by scanning; "+
+				"add a scan block to its proof")
+	}
+	if obj.IsPassThrough() && obj.PublishedChildCount() > 0 {
+		l.errorf(path+".pass_through", "SECRET_PASS_THROUGH",
+			"a secret section becomes a side quest players enter once they find it, "+
+				"so it cannot pass through; turn pass_through off")
+	}
+}
+
+func hasBlockOfType(blocks []BlockDoc, types []string) bool {
+	for _, b := range blocks {
+		typ, _ := b["type"].(string)
+		for _, want := range types {
+			if typ == want {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// checkChildSettings validates everything that only means something to a node
+// with children: routing, the completion band, max_next, and the finish label.
+func (l *linter) checkChildSettings(path string, obj ObjectiveDoc) {
+	// Published, unhidden children only: the player engine never loads a draft
+	// and never requires an unfound secret, so a band counting either is one no
+	// run is bound to meet.
+	childCount := obj.BandChildCount()
+	if childCount == 0 && obj.PublishedChildCount() > 0 {
+		l.errorf(path, "ONLY_SECRET_CHILDREN",
+			"every child in play is secret, so nothing holds this objective open: it completes "+
+				"on arrival and its secrets close before anyone can find them; add a visible child")
+		return
+	}
+	if childCount == 0 {
+		// With nothing below it in play, the node behaves as a leaf: its own
+		// proof is the whole of its completion. Worth saying when the author
+		// wrote children and drafted them all, since the document still looks
+		// like a section.
+		if len(obj.Children) > 0 {
+			l.warnf(path, "ALL_CHILDREN_DRAFT",
+				"every one of this objective's %d children is a draft, so it has nothing to route "+
+					"or complete and behaves as a leaf", len(obj.Children))
+		}
+		l.checkLeafSettings(path, obj)
+		return
+	}
+
+	l.checkRouting(path+".routing", obj.Routing)
+	l.checkBandBounds(path, obj, childCount)
+
+	// Every semantic rule reads the filled band, not the literal fields: an
+	// omitted bound is a real value, just not one the author wrote.
+	band := obj.Band()
+	if obj.FinishLabel != "" && band.AutoCompletes() {
+		l.warnf(path+".finish_label", "FINISH_LABEL_UNREACHABLE",
+			"finish_label is set but this objective auto-completes at %d of %d children, "+
+				"so it never shows a finish button", band.Min, childCount)
+	}
+	if obj.ChildrenMax != nil && *obj.ChildrenMax == 0 {
+		// Reads as "no children needed", so the objective completes before the
+		// player has seen any of them and closes the whole subtree. max_next
+		// nearby does treat 0 as "all of them", which invites exactly this.
+		//
+		// Only when the author wrote it. A filled band reaching zero because
+		// every child is drafted is the case above, and blaming a field nobody
+		// set sends them looking for something that is not there.
+		l.errorf(path+".children_max", "BAND_COMPLETES_AT_ZERO",
+			"children_max is 0, so this objective completes before any of its %d children are reachable; "+
+				"omit it to require all of them", childCount)
+	}
+	l.checkPassThroughSection(path, obj, childCount)
+	if obj.MaxNext > 0 && obj.Routing != RouteStrategyRandomised {
+		// Import only: the editor hides the field once routing moves away, so
+		// the lint service filters this out (importOnly).
+		l.warnf(path+".max_next", "MAX_NEXT_IGNORED",
+			"max_next only applies to %q routing", string(RouteStrategyRandomised))
+	}
+}
+
+// checkPassThroughSection checks a pass-through section for rules a player
+// would be held to without ever seeing them. The engine can place a finish
+// press on the nearest drawn section, so a ranged band is playable; it is
+// refused as policy, because the button would name a section the player never
+// entered. A band that closes early also removes tasks nothing on screen
+// explained.
+func (l *linter) checkPassThroughSection(path string, obj ObjectiveDoc, childCount int) {
+	if !obj.IsPassThrough() {
+		return
+	}
+	band := obj.Band()
+	if !band.AutoCompletes() {
+		l.errorf(path+".pass_through", "PASS_THROUGH_RANGED_BAND",
+			"a pass-through section that players can finish early would show its finish button "+
+				"inside a section they never entered, naming something they never saw; "+
+				"make children_min and children_max equal, or turn pass_through off")
+		return
+	}
+	if band.Min >= childCount {
+		return
+	}
+	var offered int
+	switch obj.Routing {
+	case RouteStrategyOrdered:
+		offered = 1
+	case RouteStrategyRandomised:
+		offered = childCount
+		if obj.MaxNext > 0 && obj.MaxNext < childCount {
+			offered = obj.MaxNext
+		}
+	case RouteStrategyFreeRoam:
+		offered = childCount
+	default:
+		offered = childCount
+	}
+	if offered > band.Min {
+		l.warnf(path+".pass_through", "PASS_THROUGH_HIDDEN_CHOICE",
+			"this pass-through section asks for %d of %d children but shows players %d at once, so "+
+				"finishing %d would make the rest vanish with no explanation; use randomised routing "+
+				"with max_next of %d", band.Min, childCount, offered, band.Min, band.Min)
+	}
+}
+
+// checkBandBounds checks the literal children_min/children_max the author
+// wrote, before any default filling: a bound out of range is an authoring
+// mistake whether or not the filled band happens to come out sane.
+func (l *linter) checkBandBounds(path string, obj ObjectiveDoc, childCount int) {
+	for _, bound := range []struct {
+		name  string
+		value *int
+	}{
+		{"children_min", obj.ChildrenMin},
+		{"children_max", obj.ChildrenMax},
+	} {
+		if bound.value == nil {
+			continue
+		}
+		if *bound.value < 0 {
+			l.errorf(path+"."+bound.name, "BAND_OUT_OF_RANGE",
+				"%s (%d) must not be negative", bound.name, *bound.value)
+		}
+		if *bound.value > childCount {
+			l.errorf(path+"."+bound.name, "BAND_OUT_OF_RANGE",
+				"%s (%d) exceeds the %d children below this objective, so it can never be met",
+				bound.name, *bound.value, childCount)
+		}
+	}
+
+	if obj.ChildrenMin != nil && obj.ChildrenMax != nil && *obj.ChildrenMin > *obj.ChildrenMax {
+		l.errorf(path+".children_min", "BAND_MIN_EXCEEDS_MAX",
+			"children_min (%d) exceeds children_max (%d)", *obj.ChildrenMin, *obj.ChildrenMax)
+	}
+}
+
+// checkLeafSettings warns about fields that govern children on a node with
+// none. They are inert rather than wrong, which is why these are warnings: an
+// author mid-edit may be about to add the children.
+//
+// Routing is not among them. Every objective is created with one, so a leaf
+// carrying routing is the normal state rather than something an author did,
+// and a warning on every leaf of every quest is noise that teaches people to
+// ignore the panel. An objective moved out of a section keeps its settings on
+// purpose: they are what it needs again the moment it gains children.
+func (l *linter) checkLeafSettings(path string, obj ObjectiveDoc) {
+	if obj.ChildrenMin != nil || obj.ChildrenMax != nil {
+		l.warnf(path+".children_min", "BAND_ON_LEAF",
+			"children_min/children_max have no effect on an objective with no children")
+	}
+	if obj.MaxNext > 0 {
+		l.warnf(path+".max_next", "MAX_NEXT_ON_LEAF",
+			"max_next has no effect on an objective with no children")
+	}
+	if obj.FinishLabel != "" {
+		l.warnf(path+".finish_label", "FINISH_LABEL_UNREACHABLE",
+			"finish_label has no effect on an objective with no children")
+	}
+	if obj.IsPassThrough() {
+		l.warnf(path+".pass_through", "PASS_THROUGH_ON_LEAF",
+			"pass_through has no effect on an objective with no children")
+	}
+}
+
+func (l *linter) checkObjectiveContextDoc(path string, objCtx ObjectiveContextDoc, ctx BlockContext) {
+	for i, b := range objCtx.Blocks {
+		l.checkBlockDoc(fmt.Sprintf("%s.blocks[%d]", path, i), b, ctx)
+	}
+}
+
+func (l *linter) checkBlockDoc(path string, b BlockDoc, _ BlockContext) { //nolint:gocognit
 	typVal, ok := b["type"]
 	if !ok {
 		l.errorf(path+".type", "MISSING_BLOCK_TYPE", "block is missing required \"type\" field")
@@ -148,7 +437,7 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) {
 		l.errorf(path+".type", "UNKNOWN_BLOCK_TYPE", "unknown block type %q", typStr)
 		return
 	}
-	if pointsVal, ok := b["points"]; ok {
+	if pointsVal, ok := b["points"]; ok && typStr != costBlockType {
 		switch v := pointsVal.(type) {
 		case float64:
 			if v < 0 {
@@ -160,18 +449,22 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) {
 			}
 		}
 	}
-	// Warn about unrecognised field names using the block's spec.
+	l.checkBlockVarsDoc(path, typStr, b)
 	if l.registry != nil {
 		known := l.registry.KnownFields(typStr)
 		if known != nil {
-			knownSet := make(map[string]bool, len(known)+3)
+			knownSet := make(map[string]bool, len(known)+5) //nolint:mnd // +5 for the fields every block shares
 			for _, f := range known {
 				knownSet[f] = true
 			}
-			// Promoted fields are always valid
+			// Fields valid on every block. sets and depends are judged by
+			// checkBlockVarsDoc, which says why one is wrong rather than
+			// calling it a typo.
 			knownSet["type"] = true
 			knownSet["id"] = true
 			knownSet["points"] = true
+			knownSet["sets"] = true
+			knownSet["depends"] = true
 			for k := range b {
 				if !knownSet[k] {
 					l.warnf(path+"."+k, "UNKNOWN_FIELD",
@@ -179,83 +472,94 @@ func (l *linter) checkBlockDoc(path string, b BlockDoc, ctx BlockContext) {
 				}
 			}
 		}
+		errs, warns := l.registry.ValidateBlock(typStr, path, b)
+		l.result.Errors = append(l.result.Errors, errs...)
+		l.result.Warnings = append(l.result.Warnings, warns...)
 	}
 }
 
 func (l *linter) checkRouting(path string, r RouteStrategy) {
 	switch r {
-	case RouteStrategyRandomised, RouteStrategyFreeRoam, RouteStrategyOrdered, RouteStrategySecret:
-		// valid
+	case RouteStrategyRandomised, RouteStrategyFreeRoam, RouteStrategyOrdered:
+		// valid.
+	case RouteStrategy(retiredSecretRouting):
+		// Named rather than left to the default arm so a document carrying the
+		// retired value is told so directly.
+		l.errorf(path, "INVALID_ROUTING",
+			"routing %q is retired; an objective is reachable by its parent's routing, "+
+				"and a scan block in its proof lets players reach it out of order", r)
+	case "":
+		// Its own arm because an omission is not a typo. The three strategies
+		// produce quests that play nothing like one another, so there is no
+		// default that could be assumed on the author's behalf.
+		l.errorf(path, "INVALID_ROUTING",
+			"routing is not set; choose how this objective offers what is inside it: "+
+				"%q one at a time in order, %q all at once, or %q a few at a time",
+			string(RouteStrategyOrdered), string(RouteStrategyFreeRoam), string(RouteStrategyRandomised))
 	default:
 		l.errorf(path, "INVALID_ROUTING", "invalid routing value %q", r)
-	}
-}
-
-func (l *linter) checkNavigation(path string, n NavigationMode) {
-	switch n {
-	case NavigationMap, NavigationLabelledMap, NavigationList, NavigationCustom, NavigationTasks:
-		// valid
-	default:
-		l.errorf(path, "INVALID_NAVIGATION", "invalid navigation value %q", n)
-	}
-}
-
-func (l *linter) checkCompletion(path string, c CompletionType, minRequired int) {
-	switch c {
-	case CompletionAll, CompletionMinimum:
-		// valid
-	default:
-		l.errorf(path+".completion", "INVALID_COMPLETION", "invalid completion value %q", c)
-		return
-	}
-	if c != CompletionMinimum && minRequired != 0 {
-		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_MISMATCH",
-			"minimum_required is only valid when completion is \"minimum\"")
-	}
-	if c == CompletionMinimum && minRequired <= 0 {
-		l.errorf(path+".minimum_required", "MINIMUM_REQUIRED_MISSING",
-			"minimum_required must be positive when completion is \"minimum\"")
 	}
 }
 
 // --- Layer 2: Semantic ---
 
 func (l *linter) checkSemantic() {
-	l.collectAndCheckSlugsInChildren("structure", l.doc.Structure.Children)
+	l.collectAndCheckSlugs("structure", l.doc.Structure)
 	l.checkBlockContexts("start", l.doc.Start, ContextStart)
 	l.trackBlockIDs("start", l.doc.Start)
 	l.checkBlockContexts("finish", l.doc.Finish, ContextFinish)
 	l.trackBlockIDs("finish", l.doc.Finish)
+	l.checkVariables()
 }
 
-func (l *linter) collectAndCheckSlugsInChildren(path string, children []ChildDoc) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Location != nil {
-			slug := child.Location.Slug
-			if slug != "" {
-				if l.slugs[slug] {
-					l.errorf(childPath+".location.slug", "SLUG_DUPLICATE",
-						"duplicate slug %q", slug)
-				}
-				l.slugs[slug] = true
-			}
-			l.checkLocationContexts(childPath+".location", *child.Location)
-		} else if child.Group != nil {
-			l.collectAndCheckSlugsInChildren(childPath+".group", child.Group.Children)
+// collectAndCheckSlugs walks the tree recording slugs. The root is included:
+// it is an ordinary node whose slug can collide like any other. Drafts are
+// included too: a slug is taken whether or not the objective is in play, and
+// publishing must not be the moment a collision appears.
+func (l *linter) collectAndCheckSlugs(path string, obj ObjectiveDoc) {
+	if obj.Slug != "" {
+		if l.slugs[obj.Slug] {
+			l.errorf(path+".slug", "SLUG_DUPLICATE", "duplicate slug %q", obj.Slug)
 		}
+		l.slugs[obj.Slug] = true
+		l.objectiveSlugs[obj.Slug] = true
+	}
+	l.checkObjectiveContexts(path, obj)
+
+	for i, child := range obj.Children {
+		l.collectAndCheckSlugs(fmt.Sprintf("%s.children[%d]", path, i), child)
 	}
 }
 
-func (l *linter) checkLocationContexts(path string, loc LocationDoc) {
-	l.checkBlockContexts(path+".content", loc.Content, ContextLocationContent)
-	l.checkBlockContexts(path+".clues", loc.Clues, ContextLocationClues)
-	l.checkBlockContexts(path+".tasks", loc.Tasks, ContextTask)
-	l.checkBlockContexts(path+".checkpoint", loc.Checkpoint, ContextCheckpoint)
-	l.trackBlockIDs(path+".content", loc.Content)
-	l.trackBlockIDs(path+".clues", loc.Clues)
-	l.trackBlockIDs(path+".tasks", loc.Tasks)
-	l.trackBlockIDs(path+".checkpoint", loc.Checkpoint)
+// checkRootIsContainer rejects content on the root.
+//
+// The root is the quest, not a place in it: it is never rendered as an
+// objective, so proof or reveal blocks on it are content no player is ever
+// shown. A second introduction belongs to an objective of its own, ordered
+// first, where it can be seen, reordered and drafted like anything else.
+func (l *linter) checkRootIsContainer() {
+	for _, context := range []struct {
+		name   string
+		blocks []BlockDoc
+	}{
+		{"proof", l.doc.Structure.Proof.Blocks},
+		{"reveal", l.doc.Structure.Reveal.Blocks},
+	} {
+		if len(context.blocks) == 0 {
+			continue
+		}
+		l.errorf("structure."+context.name, "ROOT_HAS_CONTENT",
+			"the root carries %s content, which no player is shown: the root is the quest rather than "+
+				"a place in it. Move it to an objective of its own, first among the root's children",
+			context.name)
+	}
+}
+
+func (l *linter) checkObjectiveContexts(path string, obj ObjectiveDoc) {
+	l.checkBlockContexts(path+".proof.blocks", obj.Proof.Blocks, ContextObjectiveProof)
+	l.checkBlockContexts(path+".reveal.blocks", obj.Reveal.Blocks, ContextObjectiveReveal)
+	l.trackBlockIDs(path+".proof.blocks", obj.Proof.Blocks)
+	l.trackBlockIDs(path+".reveal.blocks", obj.Reveal.Blocks)
 }
 
 func (l *linter) checkBlockContexts(path string, blocks []BlockDoc, ctx BlockContext) {
@@ -297,84 +601,26 @@ func (l *linter) trackBlockIDs(path string, blocks []BlockDoc) {
 // --- Layer 3: Structural warnings ---
 
 func (l *linter) checkStructural() {
-	for i, child := range l.doc.Structure.Children {
-		if child.Location != nil {
-			l.warnf(fmt.Sprintf("structure.children[%d].location", i), "ROOT_LOCATION_HIDDEN",
-				"location %q is a direct child of the root structure and will not be shown; wrap it in a group",
-				child.Location.Name)
-		}
-	}
-	l.checkStructuralChildren("structure", l.doc.Structure.Children)
-
-	// Warn if start page has no start_button
 	hasStartButton := false
 	for _, b := range l.doc.Start {
-		if t, ok := b["type"].(string); ok && t == "start_button" {
+		if t, ok := b["type"].(string); ok && t == startButtonBlockType {
 			hasStartButton = true
 			break
 		}
 	}
-	if len(l.doc.Start) > 0 && !hasStartButton {
+	// An empty page is the worst case, not an exempt one: nothing on it can
+	// start a run, and the player is held on /start until something does.
+	if !hasStartButton {
 		l.warnf("start", "NO_START_BUTTON",
 			"start page has no start_button block; players won't be able to start the game")
 	}
 
-	// Warn if blocks have points but enable_points is false
-	if !l.doc.Settings.EnablePoints {
-		l.warnBlocksWithPoints("start", l.doc.Start)
-		l.warnBlocksWithPoints("finish", l.doc.Finish)
-		l.warnChildrenBlockPoints("structure", l.doc.Structure.Children)
-	}
-}
-
-func (l *linter) checkStructuralChildren(path string, children []ChildDoc) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Group != nil {
-			if len(child.Group.Children) == 0 {
-				l.warnf(childPath+".group", "EMPTY_GROUP",
-					"group %q has no children", child.Group.Name)
-			}
-			l.checkStructuralChildren(childPath+".group", child.Group.Children)
-		}
-	}
-}
-
-func (l *linter) warnBlocksWithPoints(path string, blocks []BlockDoc) {
-	for i, b := range blocks {
-		if pointsVal, ok := b["points"]; ok {
-			var pts float64
-			switch v := pointsVal.(type) {
-			case float64:
-				pts = v
-			case json.Number:
-				pts, _ = v.Float64()
-			}
-			if pts > 0 {
-				l.warnf(fmt.Sprintf("%s[%d].points", path, i), "POINTS_DISABLED",
-					"block has points but enable_points is false in settings")
-			}
-		}
-	}
-}
-
-func (l *linter) warnChildrenBlockPoints(path string, children []ChildDoc) {
-	for i, child := range children {
-		childPath := fmt.Sprintf("%s.children[%d]", path, i)
-		if child.Location != nil {
-			loc := *child.Location
-			if loc.Points > 0 {
-				l.warnf(childPath+".location.points", "POINTS_DISABLED",
-					"location has points but enable_points is false")
-			}
-			l.warnBlocksWithPoints(childPath+".location.content", loc.Content)
-			l.warnBlocksWithPoints(childPath+".location.clues", loc.Clues)
-			l.warnBlocksWithPoints(childPath+".location.tasks", loc.Tasks)
-			l.warnBlocksWithPoints(childPath+".location.checkpoint", loc.Checkpoint)
-		} else if child.Group != nil {
-			l.warnChildrenBlockPoints(childPath+".group", child.Group.Children)
-		}
-	}
+	// Points on a quest that has them switched off used to warn. The editor
+	// hides every points control while they are off, so the field that would
+	// clear the warning cannot be reached from the page the warning is on:
+	// the only way to act on it was to turn points on, which is the opposite
+	// of what it asked for. Stored points are simply inert until an author
+	// switches them back on, and then they are what that author wanted.
 }
 
 // --- Helpers ---

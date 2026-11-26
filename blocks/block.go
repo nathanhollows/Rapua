@@ -4,15 +4,25 @@ import (
 	"fmt"
 	"slices"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
-// Type aliases — blocks/ re-exports game/ vocabulary so callers don't need to change imports.
-type BlockContext = game.BlockContext
+// Block re-exports game.Block; see game package for full documentation.
 type Block = game.Block
+
+// BlockContext re-exports game.BlockContext; see game package for full documentation.
+type BlockContext = game.BlockContext
+
+// BaseBlock re-exports game.BaseBlock; see game package for full documentation.
 type BaseBlock = game.BaseBlock
+
+// PlayerState re-exports game.PlayerState; see game package for full documentation.
 type PlayerState = game.PlayerState
+
+// RegisteredBlock re-exports game.RegisteredBlock; see game package for full documentation.
 type RegisteredBlock = game.RegisteredBlock
+
+// Blocks re-exports game.Blocks; see game package for full documentation.
 type Blocks = game.Blocks
 
 // ErrBlockTypeNotFound is returned when a block type is not registered.
@@ -23,12 +33,10 @@ const FormValueTrue = game.FormValueTrue
 
 // BlockContext constants re-exported from game/.
 const (
-	ContextLocationContent = game.ContextLocationContent
-	ContextLocationClues   = game.ContextLocationClues
-	ContextTask            = game.ContextTask
-	ContextCheckpoint      = game.ContextCheckpoint
 	ContextStart           = game.ContextStart
 	ContextFinish          = game.ContextFinish
+	ContextObjectiveProof  = game.ContextObjectiveProof
+	ContextObjectiveReveal = game.ContextObjectiveReveal
 )
 
 //nolint:gochecknoglobals // Central block registry pattern requires package-level state
@@ -38,59 +46,101 @@ var (
 )
 
 // registerBlock is an internal helper to register blocks with their contexts.
-func registerBlock(instance Block, contexts []BlockContext) {
+func registerBlock(prototype Block, contexts []BlockContext) {
 	registration := &RegisteredBlock{
-		BlockType:         instance.GetType(),
-		Instance:          instance,
+		BlockType:         prototype.GetType(),
+		Prototype:         prototype,
 		SupportedContexts: contexts,
 	}
 
-	blockRegistry[instance.GetType()] = registration
+	blockRegistry[prototype.GetType()] = registration
 
 	// Update context registry
 	for _, context := range contexts {
 		if contextRegistry[context] == nil {
 			contextRegistry[context] = make([]string, 0)
 		}
-		contextRegistry[context] = append(contextRegistry[context], instance.GetType())
+		contextRegistry[context] = append(contextRegistry[context], prototype.GetType())
 	}
 }
 
 //nolint:gochecknoinits // Block registry initialization requires init for package-level setup
 func init() {
-	// Content blocks
+	// Content blocks.
 	registerBlock(
 		&MarkdownBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
-	registerBlock(&AlertBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
-	registerBlock(&ButtonBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
-	registerBlock(&DividerBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
-	registerBlock(&HeaderBlock{}, []BlockContext{ContextLocationContent, ContextStart, ContextFinish})
+	registerBlock(
+		&AlertBlock{},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
+		&ButtonBlock{},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
+		&DividerBlock{},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
+		&HeaderBlock{},
+		[]BlockContext{ContextStart, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+	)
 	registerBlock(
 		&ImageBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextFinish, ContextStart},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
 	registerBlock(
-		&ToggleTextBlock{},
-		[]BlockContext{ContextLocationContent, ContextLocationClues, ContextStart, ContextFinish},
+		&MapBlock{},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
 	)
-	registerBlock(&YoutubeBlock{}, []BlockContext{ContextLocationContent, ContextFinish, ContextStart})
-	registerBlock(&RandomClueBlock{}, []BlockContext{ContextLocationClues})
+	registerBlock(&RandomTextBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(
+		&ToggleTextBlock{},
+		[]BlockContext{ContextStart, ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
+		&YoutubeBlock{},
+		[]BlockContext{ContextFinish, ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+	)
 
-	// Interactive blocks
-	registerBlock(&BrokerBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&ChecklistBlock{}, []BlockContext{ContextLocationContent, ContextStart})
-	registerBlock(&ClueBlock{}, []BlockContext{ContextLocationContent, ContextLocationClues})
-	registerBlock(&PasswordBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&PhotoBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
-	registerBlock(&PincodeBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&QuizBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-	registerBlock(&RatingBlock{}, []BlockContext{ContextLocationContent, ContextFinish})
-	registerBlock(&SortingBlock{}, []BlockContext{ContextLocationContent, ContextCheckpoint})
-
-	// Task specific blocks
-	registerBlock(&TaskBlock{}, []BlockContext{ContextTask})
+	// Interactive blocks.
+	registerBlock(
+		&ChecklistBlock{},
+		[]BlockContext{ContextStart, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
+		&ChoiceBlock{},
+		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
+		&ClueBlock{},
+		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(
+		&FreeTextBlock{},
+		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(&PasswordBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(
+		&PhotoBlock{},
+		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(&PincodeBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(&QuizBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
+	registerBlock(
+		&ScanBlock{},
+		[]BlockContext{ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	// Proof only. A geofence asks whether the player is standing somewhere,
+	// which is a thing to prove rather than a thing to reveal.
+	registerBlock(&GeofenceBlock{}, []BlockContext{ContextObjectiveProof})
+	registerBlock(
+		&RatingBlock{},
+		[]BlockContext{ContextFinish, ContextObjectiveProof, ContextObjectiveReveal},
+	)
+	registerBlock(&SortingBlock{}, []BlockContext{ContextObjectiveProof, ContextObjectiveReveal})
 
 	// System blocks
 	registerBlock(&GameStatusAlertBlock{}, []BlockContext{ContextStart})
@@ -110,7 +160,7 @@ func GetBlocksForContext(context BlockContext) Blocks {
 	blocks := make(Blocks, 0, len(blockTypes))
 	for _, blockType := range blockTypes {
 		if registration := blockRegistry[blockType]; registration != nil {
-			blocks = append(blocks, registration.Instance)
+			blocks = append(blocks, registration.Prototype)
 		}
 	}
 
@@ -129,6 +179,17 @@ func CanBlockBeUsedInContext(blockType string, context BlockContext) bool {
 	}
 
 	return false
+}
+
+// IconSVGForType returns the icon a block type draws itself with, for the
+// places that hold a type string rather than a block. Empty for a type nothing
+// registered, which a caller renders as nothing rather than guessing.
+func IconSVGForType(blockType string) string {
+	registration := blockRegistry[blockType]
+	if registration == nil {
+		return ""
+	}
+	return registration.Prototype.GetIconSVG()
 }
 
 // Registry returns a game.BlockRegistry backed by this package's block registry.
@@ -162,7 +223,7 @@ func (r *registryImpl) KnownFields(blockType string) []string {
 	if reg == nil {
 		return nil
 	}
-	sp, ok := reg.Instance.(game.SpecProvider)
+	sp, ok := reg.Prototype.(game.SpecProvider)
 	if !ok {
 		return nil
 	}
@@ -174,7 +235,45 @@ func (r *registryImpl) KnownFields(blockType string) []string {
 	return names
 }
 
-func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
+// IsInteractive reports whether a block asks something of the player. It reads
+// RequiresValidation because that is what the question means: a block the
+// player has to satisfy before the context clears.
+func (r *registryImpl) IsInteractive(blockType string) bool {
+	reg := blockRegistry[blockType]
+	if reg == nil {
+		return false
+	}
+	return reg.Prototype.RequiresValidation()
+}
+
+func (r *registryImpl) ValidateBlock(blockType, path string, doc game.BlockDoc) ([]game.LintDiag, []game.LintDiag) {
+	reg := blockRegistry[blockType]
+	if reg == nil {
+		return nil, nil
+	}
+	if v, ok := reg.Prototype.(game.BlockDocValidator); ok {
+		return v.ValidateBlockDoc(path, doc)
+	}
+	return nil, nil
+}
+
+func (r *registryImpl) CanSetVars(blockType string) bool {
+	reg := blockRegistry[blockType]
+	return reg != nil && game.CanSetVars(reg.Prototype)
+}
+
+func (r *registryImpl) DocVars(blockType string, doc game.BlockDoc) (game.DocVars, bool) {
+	reg := blockRegistry[blockType]
+	if reg == nil {
+		return game.DocVars{}, false
+	}
+	if v, ok := reg.Prototype.(game.DocVarsReporter); ok {
+		return v.DocVars(doc), true
+	}
+	return game.DocVars{}, false
+}
+
+func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) { //nolint:funlen
 	// Check if block type exists in registry
 	registration := blockRegistry[baseBlock.Type]
 	if registration == nil {
@@ -191,6 +290,10 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewAlertBlock(baseBlock), nil
 	case "password":
 		return NewAnswerBlock(baseBlock), nil
+	case scanBlockType:
+		return NewScanBlock(baseBlock), nil
+	case geofenceBlockType:
+		return NewGeofenceBlock(baseBlock), nil
 	case "pincode":
 		return NewPincodeBlock(baseBlock), nil
 	case checklistBlockType:
@@ -205,12 +308,12 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewQuizBlock(baseBlock), nil
 	case "clue":
 		return NewClueBlock(baseBlock), nil
-	case "broker":
-		return NewBrokerBlock(baseBlock), nil
 	case "button":
 		return NewButtonBlock(baseBlock), nil
-	case "random_clue":
-		return NewRandomClueBlock(baseBlock), nil
+	case "random_text":
+		return NewRandomTextBlock(baseBlock), nil
+	case "free_text":
+		return NewFreeTextBlock(baseBlock), nil
 	case "photo":
 		return NewPhotoBlock(baseBlock), nil
 	case "header":
@@ -221,12 +324,14 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 		return NewGameStatusAlertBlock(baseBlock), nil
 	case "start_button":
 		return NewStartGameButtonBlock(baseBlock), nil
-	case "task":
-		return NewTaskBlock(baseBlock), nil
 	case "rating":
 		return NewRatingBlock(baseBlock), nil
 	case "toggle_text":
 		return NewToggleTextBlock(baseBlock), nil
+	case mapBlockType:
+		return NewMapBlock(baseBlock), nil
+	case "choice":
+		return NewChoiceBlock(baseBlock), nil
 	default:
 		return nil, fmt.Errorf("%w: %s", ErrBlockTypeNotFound, baseBlock.Type)
 	}
@@ -247,6 +352,18 @@ func NewDividerBlock(base BaseBlock) *DividerBlock {
 
 func NewAlertBlock(base BaseBlock) *AlertBlock {
 	return &AlertBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewScanBlock(base BaseBlock) *ScanBlock {
+	return &ScanBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewGeofenceBlock(base BaseBlock) *GeofenceBlock {
+	return &GeofenceBlock{
 		BaseBlock: base,
 	}
 }
@@ -293,20 +410,20 @@ func NewClueBlock(base BaseBlock) *ClueBlock {
 	}
 }
 
-func NewBrokerBlock(base BaseBlock) *BrokerBlock {
-	return &BrokerBlock{
-		BaseBlock: base,
-	}
-}
-
 func NewButtonBlock(base BaseBlock) *ButtonBlock {
 	return &ButtonBlock{
 		BaseBlock: base,
 	}
 }
 
-func NewRandomClueBlock(base BaseBlock) *RandomClueBlock {
-	return &RandomClueBlock{
+func NewRandomTextBlock(base BaseBlock) *RandomTextBlock {
+	return &RandomTextBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewFreeTextBlock(base BaseBlock) *FreeTextBlock {
+	return &FreeTextBlock{
 		BaseBlock: base,
 	}
 }
@@ -342,24 +459,20 @@ func NewStartGameButtonBlock(base BaseBlock) *StartGameButtonBlock {
 	}
 }
 
-func NewTaskBlock(base BaseBlock) *TaskBlock {
-	return &TaskBlock{
-		BaseBlock:   base,
-		LinkThrough: true,
-	}
-}
-
-const defaultMaxRating = 5
-
 func NewRatingBlock(base BaseBlock) *RatingBlock {
 	return &RatingBlock{
 		BaseBlock: base,
-		MaxRating: defaultMaxRating,
 	}
 }
 
 func NewToggleTextBlock(base BaseBlock) *ToggleTextBlock {
 	return &ToggleTextBlock{
+		BaseBlock: base,
+	}
+}
+
+func NewMapBlock(base BaseBlock) *MapBlock {
+	return &MapBlock{
 		BaseBlock: base,
 	}
 }

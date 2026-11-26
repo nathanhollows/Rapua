@@ -2,167 +2,132 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-templ pincodePlayer(settings models.InstanceSettings, block blocks.PincodeBlock, data blocks.PlayerState) {
-	<div
-		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
-	>
-		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
-			@templ.Raw(stringToMarkdown(block.Prompt))
-			<form
-				hx-post={ fmt.Sprint("/blocks/validate") }
-				hx-swap="none"
-			>
-				<input type="hidden" name="block" value={ block.ID }/>
-				<label
-					for={ fmt.Sprintf("pincode-%s", block.ID) }
-					class="form-control w-full"
-				>
-					<div
-						class="flex flex-row flex-wrap gap-2 justify-center mb-4"
-					>
-						for i := range block.Pincode {
-							<input
-								type="text"
-								name="pincode"
-								class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
-								minlength="1"
-								maxlength="1"
-								required
-								if data.IsComplete() {
-									disabled
-									value={ string(block.Pincode[i]) }
-								}
-								_="on input
-								if event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then
-									set input to event.target.nextElementSibling
-									if input != null then
-										input.focus()
-									end
-								else 
-									set event.target.value to ''
-								end
-							on keydown
-								if event.key is in ['Backspace', 'Delete'] then
-									set event.target.value to ''
-									set input to event.target.previousElementSibling
-									input.focus()
-									event.preventDefault()
-								else if event.key is in ['ArrowLeft'] then
-									set input to event.target.previousElementSibling
-									if input != null then
-										input.focus()
-									end
-								else if event.key is in ['ArrowRight'] then
-									set input to event.target.nextElementSibling
-									if input != null then
-										input.focus()
-									end
-								end
-							"
-							/>
-						}
-					</div>
-					if !data.IsComplete() {
-						<button type="submit" class="btn btn-primary w-full">
-							Check
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-						</button>
-					} else {
-						@templ.Raw(stringToMarkdown(block.UnlockedContent))
-					}
-				</label>
-			</form>
-		</div>
-	</div>
+templ pincodePlayer(settings models.QuestSettings, block blocks.PincodeBlock, data blocks.PlayerState) {
+	@pincodeCard(settings, block, data, false)
 }
 
-templ pincodePlayerUpdate(settings models.InstanceSettings, block blocks.PincodeBlock, data blocks.PlayerState) {
+// pincodePlayerUpdate answers a guess: the card is replaced, and a wrong one shakes.
+templ pincodePlayerUpdate(settings models.QuestSettings, block blocks.PincodeBlock, data blocks.PlayerState) {
+	@pincodeCard(settings, block, data, true)
+}
+
+// pincodePerRow is how many boxes share a row. Past six they wrap to two rows, so
+// each stays big enough to tap.
+func pincodePerRow(digits int) int {
+	const oneRow = 6
+	if digits <= oneRow {
+		return digits
+	}
+	return (digits + 1) / 2
+}
+
+templ pincodeCard(settings models.QuestSettings, block blocks.PincodeBlock, data blocks.PlayerState, update bool) {
+	{{ answered := update && !data.IsComplete() }}
 	<div
 		id={ fmt.Sprintf("player-block-%s", block.ID) }
-		class="indicator w-full"
-		hx-swap-oob="true"
+		class={ "qb-card", templ.KV("is-fresh", update), templ.KV("is-wrong", answered) }
+		if update {
+			hx-swap-oob="true"
+		}
 	>
-		@pointsBadge(settings.EnablePoints, data.GetPointsAwarded())
-		@completionBadge(data)
-		<div class="card prose p-5 bg-base-200 shadow-lg w-full">
+		@qbTop("grip", "Pincode", settings, block.GetPoints(), data)
+		<div class="qb-q">
 			@templ.Raw(stringToMarkdown(block.Prompt))
-			<form
-				hx-post={ fmt.Sprint("/blocks/validate") }
-				hx-swap="none"
-			>
-				<input type="hidden" name="block" value={ block.ID }/>
-				<label
-					for={ fmt.Sprintf("pincode-%s", block.ID) }
-					class="form-control w-full"
-				>
-					<div
-						if data.IsComplete() {
-							class="flex flex-row flex-wrap gap-2 justify-center mb-4"
-						} else {
-							class="flex flex-row flex-wrap gap-2 justify-center mb-4 animate-[wobble_1s_ease-in-out]"
-						}
-					>
-						for i := range block.Pincode {
-							<input
-								type="text"
-								name="pincode"
-								class="input input-lg validator w-auto rounded-md aspect-square text-center font-mono font-bold"
-								minlength="1"
-								maxlength="1"
-								required
-								if data.IsComplete() {
-									disabled
-									value={ string(block.Pincode[i]) }
-								}
-								_="on input
-								if event.target.value is in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'] then
-									set input to event.target.nextElementSibling
-									if input != null then
-										input.focus()
-									end
-								else 
-									set event.target.value to ''
-								end
-							on keydown
-								if event.key is in ['Backspace', 'Delete'] then
-									set event.target.value to ''
-									set input to event.target.previousElementSibling
-									input.focus()
-									event.preventDefault()
-								else if event.key is in ['ArrowLeft'] then
-									set input to event.target.previousElementSibling
-									if input != null then
-										input.focus()
-									end
-								else if event.key is in ['ArrowRight'] then
-									set input to event.target.nextElementSibling
-									if input != null then
-										input.focus()
-									end
-								end
-							"
-							/>
-						}
-					</div>
-					if !data.IsComplete() {
-						<button type="submit" class="btn btn-primary w-full">
-							Check
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-send-horizontal w-4 h-5"><path d="M3.714 3.048a.498.498 0 0 0-.683.627l2.843 7.627a2 2 0 0 1 0 1.396l-2.842 7.627a.498.498 0 0 0 .682.627l18-8.5a.5.5 0 0 0 0-.904z"></path><path d="M6 12h16"></path></svg>
-						</button>
-					} else {
-						@templ.Raw(stringToMarkdown(block.UnlockedContent))
-					}
-				</label>
-			</form>
 		</div>
+		if data.IsComplete() {
+			<div class="qb-digits ok" style={ templ.SafeCSS(fmt.Sprintf("--per:%d", pincodePerRow(len(block.Pincode)))) }>
+				for i := range block.Pincode {
+					<input
+						type="text"
+						class="qb-digit"
+						aria-label={ fmt.Sprintf("Digit %d", i+1) }
+						value={ string(block.Pincode[i]) }
+						disabled
+					/>
+				}
+			</div>
+			if block.UnlockedContent != "" {
+				<div class="q-unlocked prose" role="status">
+					@templ.Raw(stringToMarkdown(block.UnlockedContent))
+				</div>
+			}
+		} else {
+			<form class="qb-form" hx-post="/blocks/validate" hx-swap="none">
+				<input type="hidden" name="block" value={ block.ID }/>
+				<p class="qb-hint">Numbers only.</p>
+				if answered {
+					<p class="qb-msg no" role="status">
+						@icon("circle-x", templ.Attributes{"aria-hidden": "true"})
+						<span>That is not the right code. Check the digits and try again.</span>
+					</p>
+				}
+				<div class="qb-digits" style={ templ.SafeCSS(fmt.Sprintf("--per:%d", pincodePerRow(len(block.Pincode)))) }>
+					for i := range block.Pincode {
+						<input
+							type="text"
+							name="pincode"
+							class="qb-digit"
+							inputmode="numeric"
+							pattern="[0-9]"
+							maxlength="1"
+							autocomplete="off"
+							aria-label={ fmt.Sprintf("Digit %d", i+1) }
+							required
+						/>
+					}
+				</div>
+				<button type="submit" class="btn btn-primary qb-go" disabled>
+					<span class="qb-idle">Enter all { fmt.Sprint(len(block.Pincode)) } digits</span>
+					<span class="qb-ready">
+						Check
+						@icon("check", templ.Attributes{"aria-hidden": "true"})
+					</span>
+				</button>
+			</form>
+		}
 	</div>
+	<script>
+	(function () {
+		if (window.__qbPins) return;
+		window.__qbPins = true;
+		function boxes(el) { return Array.prototype.slice.call(el.closest('form').querySelectorAll('input.qb-digit')); }
+		function sync(el) {
+			var form = el.closest('form'), go = form.querySelector('button[type=submit]');
+			if (go) go.disabled = boxes(el).some(function (b) { return b.value === ''; });
+		}
+		document.addEventListener('input', function (e) {
+			var box = e.target;
+			if (!box.classList || !box.classList.contains('qb-digit')) return;
+			box.value = box.value.replace(/\D/g, '').slice(-1);
+			var all = boxes(box), i = all.indexOf(box);
+			if (box.value && all[i + 1]) all[i + 1].focus();
+			sync(box);
+		});
+		document.addEventListener('keydown', function (e) {
+			var box = e.target;
+			if (!box.classList || !box.classList.contains('qb-digit')) return;
+			var all = boxes(box), i = all.indexOf(box);
+			if (e.key === 'Backspace' && box.value === '' && all[i - 1]) { all[i - 1].value = ''; all[i - 1].focus(); sync(box); e.preventDefault(); }
+			if (e.key === 'ArrowLeft' && all[i - 1]) { all[i - 1].focus(); e.preventDefault(); }
+			if (e.key === 'ArrowRight' && all[i + 1]) { all[i + 1].focus(); e.preventDefault(); }
+		});
+		document.addEventListener('paste', function (e) {
+			var box = e.target;
+			if (!box.classList || !box.classList.contains('qb-digit')) return;
+			var text = ((e.clipboardData || window.clipboardData).getData('text') || '').replace(/\D/g, '');
+			if (!text) return;
+			e.preventDefault();
+			var all = boxes(box);
+			all.forEach(function (b, j) { b.value = text.charAt(j); });
+			all[Math.min(text.length, all.length - 1)].focus();
+			sync(box);
+		});
+	})();
+	</script>
 }
 
 var pincodeTextarea = TextareaParams{
@@ -178,19 +143,17 @@ var pincodeUnlockedContentTextarea = TextareaParams{
 	Placeholder: "Aye, you got it! Here's your next clue: ...",
 	Markdown:    true,
 	Required:    false,
+	MinLines: 2,
 	HelpText:    "This content will be shown to the player when they answer correctly.",
 }
 
-templ pincodeAdmin(settings models.InstanceSettings, block blocks.PincodeBlock) {
+templ pincodeAdmin(settings models.QuestSettings, block blocks.PincodeBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
 		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
 		hx-swap="none"
 	>
-		if settings.EnablePoints {
-			@adminPointsField(block.Points)
-		}
 		@TextareaField(pincodeTextarea.SetValue(block.Prompt))
 		<fieldset class="fieldset">
 			<legend class="fieldset-legend">Pincode</legend>

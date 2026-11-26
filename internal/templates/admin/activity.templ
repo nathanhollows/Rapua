@@ -3,97 +3,64 @@ package templates
 import (
 	"fmt"
 	"github.com/SerhiiCho/timeago/v3"
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/uptrace/bun/schema"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"time"
 )
 
-// getTeamStatus calculates the status of a team based on its current state
-func getTeamStatus(team models.Team, totalLocations int) services.TeamStatus {
-	if team.MustCheckOut != "" {
-		return services.StatusOnsite
-	} else if len(team.CheckIns) == totalLocations && totalLocations > 0 {
-		return services.StatusFinished
-	} else if len(team.CheckIns) > 0 {
-		return services.StatusTransit
-	} else if team.HasStarted {
-		return services.StatusStarted
-	}
-	return services.StatusStarted // Default to "Not Started" behavior
-}
-
-// countActiveTeams counts teams that have started
-func countActiveTeams(teams []models.Team) int {
-	count := 0
-	for _, team := range teams {
-		if team.HasStarted {
-			count++
-		}
-	}
-	return count
-}
-
-// countTeamsByStatus counts teams in each status category
-func countTeamsByStatus(teams []models.Team, totalLocations int) (inTransit, checkedIn int) {
-	for _, team := range teams {
-		if !team.HasStarted {
-			continue
-		}
-		status := getTeamStatus(team, totalLocations)
-		switch status {
-		case services.StatusOnsite:
-			checkedIn++
-		case services.StatusTransit, services.StatusStarted:
-			inTransit++
-		}
-	}
-	return
-}
-
-// TeamStatusBadge renders a status badge for a team with optional tooltip and size
+// TeamStatusBadge renders a status badge for a team with optional tooltip and size.
+// Complete is filled where Playing is soft: both are green, because both are
+// well, but only one of them has stopped.
 templ TeamStatusBadge(status services.TeamStatus, withTooltip bool, size string) {
 	switch status {
-		case services.StatusOnsite:
-			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-accent badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Currently checked in">Onsite</span>
-			} else {
-				<span class={ fmt.Sprintf("badge badge-accent badge-%s", size) }>Onsite</span>
-			}
 		case services.StatusFinished:
 			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-success badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Finished all locations!">Finished</span>
+				<span class={ fmt.Sprintf("badge badge-success badge-%s tooltip tooltip-left", size) } data-tip="The run is complete.">Complete</span>
 			} else {
-				<span class={ fmt.Sprintf("badge badge-success badge-%s", size) }>Finished</span>
+				<span class={ fmt.Sprintf("badge badge-success badge-%s", size) }>Complete</span>
 			}
-		case services.StatusTransit:
+		case services.StatusPlaying:
 			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-secondary badge-outline text-base-content bg-success badge-%s tooltip tooltip-left", size) } data-tip="This team is between locations">In transit</span>
+				<span class={ fmt.Sprintf("badge badge-success badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Moving at this run's usual pace.">Playing</span>
 			} else {
-				<span class={ fmt.Sprintf("badge badge-secondary badge-%s", size) }>In transit</span>
+				<span class={ fmt.Sprintf("badge badge-success badge-soft badge-%s", size) }>Playing</span>
+			}
+		case services.StatusIdle:
+			if withTooltip {
+				<span class={ fmt.Sprintf("badge badge-info badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Quieter than usual for a while.">Idle</span>
+			} else {
+				<span class={ fmt.Sprintf("badge badge-info badge-soft badge-%s", size) }>Idle</span>
+			}
+		case services.StatusStalled:
+			if withTooltip {
+				<span class={ fmt.Sprintf("badge badge-warning badge-soft badge-%s tooltip tooltip-left", size) } data-tip="A long quiet spell.">Stalled</span>
+			} else {
+				<span class={ fmt.Sprintf("badge badge-warning badge-soft badge-%s", size) }>Stalled</span>
+			}
+		case services.StatusAbandoned:
+			if withTooltip {
+				<span class={ fmt.Sprintf("badge badge-error badge-soft badge-%s tooltip tooltip-left", size) } data-tip="Quiet so long they may have walked off.">Abandoned</span>
+			} else {
+				<span class={ fmt.Sprintf("badge badge-error badge-soft badge-%s", size) }>Abandoned</span>
 			}
 		case services.StatusStarted:
 			if withTooltip {
-				<span class={ fmt.Sprintf("badge badge-ghost badge-%s tooltip tooltip-left", size) } data-tip="This team has not checked in anywhere yet">Started</span>
+				<span class={ fmt.Sprintf("badge badge-ghost badge-%s tooltip tooltip-left", size) } data-tip="This run has started, and has not shown enough of a pace to read yet.">Started</span>
 			} else {
 				<span class={ fmt.Sprintf("badge badge-ghost badge-%s", size) }>Started</span>
 			}
 		default:
-			<span class={ fmt.Sprintf("badge badge-ghost badge-%s", size) }>Not Started</span>
+			<span class={ fmt.Sprintf("badge badge-ghost badge-%s", size) }>Not started</span>
 	}
 }
 
-templ ActivityTracker(instance models.Instance) {
+templ ActivityTracker(quest models.Quest, summaries map[string]services.RunSummary) {
 	<div class="flex flex-col sm:flex-row gap-3 justify-between items-center w-full p-5">
-		<h1 class="text-2xl font-bold">
-			Activity
-		</h1>
-		@ActivityStatusBadge(instance)
+		<h1 class="text-4xl font-black">Activity</h1>
 		<div class="flex gap-3">
-			@GameScheduleStatus(instance)
 			<button
-				class="btn btn-secondary tooltip"
+				class="btn tooltip"
 				data-tip="Send an announcement to all teams"
 				onclick="announcement_modal.showModal()"
 			>
@@ -116,18 +83,21 @@ templ ActivityTracker(instance models.Instance) {
 		</div>
 	</div>
 	<div class="px-5 mb-5">
-		@ActivityStats(instance)
+		@GameControl(quest)
 	</div>
-	<div class="relative flex flex-col lg:flex-row px-5 gap-5 overflow-x-hidden">
-		<div class="w-full lg:w-80 space-y-5 flex-shrink-0">
-			@LocationOverviewCard(instance)
-		</div>
-		<div class="w-full flex-1 min-w-0 overflow-x-hidden">
-			<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors">
-				<div class="card-body p-6">
-					<div class="flex items-center justify-between mb-4">
-						<h2 class="card-title text-lg flex items-center gap-2">
-							if instance.Settings.EnablePoints {
+	<div class="px-5 mb-5">
+		@ActivityStats(quest, summaries)
+	</div>
+	<div class="split px-5">
+		<div class="w-full min-w-0 overflow-x-hidden">
+			<!-- No padding below the table, and clipped to the card's corners:
+			the rows run edge to edge, so the last one ends the card rather
+			than leaving a strip of padding under it. -->
+			<div class="card panel overflow-hidden">
+				<div class="card-body p-5">
+					<div class="flex items-center justify-between mb-2">
+						<h2 class="card-title text-2xl font-extrabold flex items-center gap-2">
+							if quest.Settings.EnablePoints {
 								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trophy w-5 h-5"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"></path><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"></path><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"></path></svg>
 								Leaderboard
 							} else {
@@ -135,7 +105,7 @@ templ ActivityTracker(instance models.Instance) {
 								Team progress
 							}
 						</h2>
-						<label class="input input-sm flex items-center gap-2 w-60">
+						<label class="input flex items-center gap-2 w-60">
 							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
 							<input
 								id="search-teams-activity"
@@ -176,11 +146,11 @@ templ ActivityTracker(instance models.Instance) {
 							</button>
 						</label>
 					</div>
-					<div class="overflow-x-auto -mx-6">
+					<div class="overflow-x-auto -mx-2 px-2">
 						<table
 							id="team-activity"
-							class="overflow-hidden table table-sm md:table-md table-zebra w-full h-auto self-start"
-							hx-get="/admin/activity/teams"
+							class="table row-table w-full h-auto self-start"
+							hx-get="/admin/activity/runs"
 							hx-target="#team-activity"
 							hx-swap="outerHTML"
 							hx-trigger="load"
@@ -189,10 +159,148 @@ templ ActivityTracker(instance models.Instance) {
 				</div>
 			</div>
 		</div>
+		@JustNowSlot(quest, false)
 	</div>
-	@scheduleModal(instance)
 	@announcementModal()
 	@teamModal()
+}
+
+// JustNowSlot is empty unless the game is live, so the leaderboard keeps the
+// row to itself. Start and Stop swap it out-of-band.
+templ JustNowSlot(quest models.Quest, oob bool) {
+	<div
+		id="just-now"
+		class="min-w-0"
+		if oob {
+			hx-swap-oob="true"
+		}
+	>
+		if quest.GetStatus() == models.Active {
+			<section class="card panel feed">
+				<div class="card-body p-5">
+					<h2 class="card-title text-2xl font-extrabold">Just now</h2>
+					<div
+						hx-get="/admin/activity/recent"
+						hx-trigger="load, every 10s"
+						hx-swap="innerHTML"
+					></div>
+				</div>
+			</section>
+		}
+		@agoScript()
+	</div>
+}
+
+// Outside the live branch: the slot is swapped in when the game starts, and the
+// guard stops that stacking timers.
+templ agoScript() {
+	<script>
+		(function () {
+			if (window.__tickAgo) return;
+			window.__tickAgo = true;
+			function ago(from) {
+				var s = Math.max(0, Math.floor((Date.now() - new Date(from)) / 1000));
+				if (s < 5) return 'just now';
+				if (s < 60) return s + ' seconds ago';
+				var m = Math.floor(s / 60);
+				if (m < 60) return m + (m === 1 ? ' minute ago' : ' minutes ago');
+				var h = Math.floor(m / 60);
+				if (h < 24) return h + (h === 1 ? ' hour ago' : ' hours ago');
+				var d = Math.floor(h / 24);
+				return d + (d === 1 ? ' day ago' : ' days ago');
+			}
+			setInterval(function () {
+				document.querySelectorAll('time[data-ago]').forEach(function (el) {
+					var text = ago(el.getAttribute('datetime'));
+					if (el.textContent !== text) el.textContent = text;
+				});
+			}, 1000);
+		})();
+	</script>
+}
+
+func feedIcon(kind services.RunLogKind) string {
+	switch kind {
+	case services.RunLogAnswer:
+		return "check"
+	case services.RunLogSection:
+		return "flag"
+	case services.RunLogUpload:
+		return "camera"
+	case services.RunLogFinish:
+		return "trophy"
+	case services.RunLogStart:
+		return "play"
+	}
+	return "circle"
+}
+
+// Green is points earned, amber is a section closed or the finish, as on the run page.
+func feedTone(entry services.ActivityEntry) string {
+	switch {
+	case entry.Kind == services.RunLogSection || entry.Kind == services.RunLogFinish:
+		return "event-gold"
+	case entry.Kind == services.RunLogAnswer:
+		return "event-ok"
+	}
+	return ""
+}
+
+func feedWho(entry services.ActivityEntry) string {
+	if entry.RunName != "" {
+		return entry.RunName
+	}
+	return entry.RunCode
+}
+
+func feedWhat(entry services.ActivityEntry) string {
+	switch entry.Kind {
+	case services.RunLogAnswer:
+		if entry.Title != "" {
+			return entry.BlockName + " in " + entry.Title
+		}
+		return entry.BlockName
+	case services.RunLogSection:
+		if entry.Title != "" {
+			return "Closed out " + entry.Title
+		}
+		return "Closed out a section"
+	case services.RunLogUpload:
+		return "Added a photo"
+	case services.RunLogFinish:
+		return "Finished the quest"
+	case services.RunLogStart:
+		return "Started playing"
+	}
+	return ""
+}
+
+templ RecentActivity(entries []services.ActivityEntry, enablePoints bool) {
+	if len(entries) == 0 {
+		<p class="empty">Nothing yet. Teams appear here as they play.</p>
+	} else {
+		<ul class="feed-list" hx-boost="true">
+			for _, entry := range entries {
+				<li>
+					<a href={ templ.URL("/admin/runs/" + entry.RunCode) } class={ "event", feedTone(entry) }>
+						<span class="event-ico">
+							@icon(feedIcon(entry.Kind), templ.Attributes{"class": "w-4 h-4"})
+						</span>
+						<span class="min-w-0">
+							<b class="block truncate">{ feedWho(entry) }</b>
+							<small class="block truncate">{ feedWhat(entry) }</small>
+						</span>
+						<span class="event-r">
+							if enablePoints && entry.Points > 0 {
+								<b>+{ fmt.Sprint(entry.Points) }</b>
+							}
+							<small><time datetime={ entry.Time.UTC().Format(time.RFC3339) } data-ago>{ timeago.Parse(entry.Time) }</time></small>
+						</span>
+					</a>
+				</li>
+			}
+		</ul>
+	}
 }
 
 templ teamModal() {
@@ -209,19 +317,37 @@ templ teamModal() {
 	</script>
 }
 
-templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, leaderboardData []services.LeaderBoardTeamData, currentSortField string, currentSortOrder string) {
+// runProgressBar draws how far along a run is: the share of what it owes that
+// it has done, never a raw count, because two runs on one quest need not be
+// the same length and a count would compare lengths rather than progress.
+templ runProgressBar(done, total int) {
+	{{ pct := 0 }}
+	if total > 0 {
+		{{ pct = done * 100 / total }}
+	}
+	<div class="flex items-center gap-2">
+		<progress
+			class={ "progress w-24", templ.KV("progress-success", total > 0 && done >= total), templ.KV("progress-primary", total > 0 && done < total) }
+			value={ fmt.Sprint(pct) }
+			max="100"
+		></progress>
+		<span class="text-xs tabular-nums">{ fmt.Sprintf("%d%%", pct) }</span>
+	</div>
+}
+
+templ ActivityTeamsTable(settings models.QuestSettings, objectiveCount int, leaderboardData []services.LeaderBoardTeamData, unusedCodes int, currentSortField string, currentSortOrder string) {
 	<div class="overflow-x-auto">
 		<table
 			id="team-activity"
-			class="overflow-hidden table table-sm md:table-md table-zebra w-full mt-5 md:mt-0 h-auto self-start"
-			hx-get={ fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", currentSortField, currentSortOrder) }
+			class="table row-table w-full mt-5 md:mt-0 h-auto self-start"
+			hx-get={ fmt.Sprintf("/admin/activity/runs?sort=%s&order=%s", currentSortField, currentSortOrder) }
 			hx-target="#team-activity"
 			hx-swap="outerHTML"
 			hx-trigger="every 30s"
 			_="init send input to #search-teams-activity"
 		>
 			<!-- head -->
-			<thead class="uppercase text-xs font-normal tracking-wider">
+			<thead class="uppercase text-xs font-extrabold tracking-widest">
 				<tr>
 					<th class="text-center">
 						@sortableHeader("rank", "Rank", currentSortField, currentSortOrder, true)
@@ -255,8 +381,8 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 			>
 				for _, teamData := range leaderboardData {
 					<tr
-						class="team-activity-row hover:bg-base-300 hover:scale-[1.01] transition-all overflow-hidden cursor-pointer"
-						hx-get={ templ.URL(fmt.Sprintf("/admin/teams/%s", teamData.Code)) }
+						class="team-activity-row cursor-pointer"
+						hx-get={ templ.URL(fmt.Sprintf("/admin/runs/%s", teamData.Code)) }
 						hx-target="body"
 						hx-swap="outerHTML"
 						hx-push-url="true"
@@ -274,7 +400,7 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 							}
 						</td>
 						<td class="font-mono tracking-wider">
-							{ teamData.Code }
+							{ models.FormatRunCode(teamData.Code) }
 						</td>
 						if teamData.Name != "" {
 							<td>{ teamData.Name }</td>
@@ -285,15 +411,19 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 							<td>{ fmt.Sprint(teamData.Points) }</td>
 						}
 						<td>
-							<span class="tooltip" data-tip={ teamData.LastSeen.Local().Format("02 Jan 03:04 PM") }>
-								{ timeago.Parse(teamData.LastSeen) }
-							</span>
+							if !teamData.LastSeen.IsZero() {
+								<span class="tooltip" data-tip={ teamData.LastSeen.Local().Format("02 Jan 03:04 PM") }>
+									{ timeago.Parse(teamData.LastSeen) }
+								</span>
+							} else {
+								<em class="opacity-50">No activity yet</em>
+							}
 						</td>
 						<td>
-							if locationCount > 0 {
-								{ fmt.Sprintf("%d ∕ %d", teamData.Progress, locationCount) }
+							if objectiveCount > 0 {
+								@runProgressBar(teamData.Progress, teamData.Total)
 							} else {
-								<em class="opacity-50">No locations</em>
+								<em class="opacity-50">No objectives</em>
 							}
 						</td>
 						<td>
@@ -304,7 +434,7 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 				if len(leaderboardData) == 0 {
 					<tr>
 						<td colspan="7" class="text-center py-5">
-							No teams or players have joined the game yet.
+							@activityEmptyAdvice(unusedCodes)
 						</td>
 					</tr>
 				}
@@ -313,221 +443,249 @@ templ ActivityTeamsTable(settings models.InstanceSettings, locationCount int, le
 	</div>
 }
 
-templ ActivityStatusBadge(instance models.Instance) {
-	<div id="activity-status-badge" class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
-		<div class="inline-grid *:[grid-area:1/1]">
-			switch instance.GetStatus() {
-				case models.Active:
-					<div class="status status-lg status-success animate-ping"></div>
-					<div class="status status-lg status-success"></div>
-				case models.Scheduled:
-					<div class="status status-lg status-info"></div>
-				case models.Closed:
-					<div class="status status-lg"></div>
+// activityEmptyAdvice says what to do about an empty table, which depends on
+// whether there is anything to hand out: codes already waiting need sharing,
+// and with none there is nothing to share until some are made.
+templ activityEmptyAdvice(unusedCodes int) {
+	if unusedCodes > 0 {
+		<p>
+			Nobody has joined yet. 
+			if unusedCodes == 1 {
+				You have one unused code ready to share.
+			} else {
+				You have { fmt.Sprint(unusedCodes) } unused codes ready to share.
 			}
-		</div>
-		{ instance.GetStatus().String() }
-	</div>
+		</p>
+		<a href="/admin/runs" class="link link-primary font-semibold">See your codes</a>
+	} else {
+		<p>There are no runs yet, and players join with a run code.</p>
+		<a href="/admin/runs?add" class="link link-primary font-semibold">Make codes to share</a>
+	}
 }
 
-templ ActivityStatusBadgeOOB(instance models.Instance) {
-	<div id="activity-status-badge" hx-swap-oob="true" class="md:mr-auto inline-grid grid-cols-2 items-center w-min gap-5">
-		<div class="inline-grid *:[grid-area:1/1]">
-			switch instance.GetStatus() {
-				case models.Active:
-					<div class="status status-lg status-success animate-ping"></div>
-					<div class="status status-lg status-success"></div>
-				case models.Scheduled:
-					<div class="status status-lg status-info"></div>
-				case models.Closed:
-					<div class="status status-lg"></div>
-			}
-		</div>
-		{ instance.GetStatus().String() }
-	</div>
+const (
+	secondsPerMinute = 60
+	secondsPerHour   = 3600
+	secondsPerDay    = 86400
+)
+
+func gameEndScheduled(quest models.Quest) bool {
+	return !quest.EndTime.IsZero() && quest.EndTime.After(quest.StartTime.Time)
 }
 
-templ GameScheduleStatus(instance models.Instance, messages ...flash.Message) {
+func gameCountdown(quest models.Quest) (time.Time, string) {
+	switch quest.GetStatus() {
+	case models.Scheduled:
+		return quest.StartTime.Time, "Opens in"
+	case models.Active:
+		if gameEndScheduled(quest) {
+			return quest.EndTime.Time, "Closes in"
+		}
+	case models.Closed:
+	}
+	return time.Time{}, ""
+}
+
+func countdownParts(target time.Time) (days, hours, minutes, seconds int) {
+	left := max(int(time.Until(target).Seconds()), 0)
+	return left / secondsPerDay, left % secondsPerDay / secondsPerHour, left % secondsPerHour / secondsPerMinute, left % secondsPerMinute
+}
+
+// The whole card is swapped on a state change, so every control over the state lives in it.
+templ GameControl(quest models.Quest, messages ...flash.Message) {
 	for _, msg := range messages {
 		@Toast(msg)
 	}
-	<div id="schedule-status" class="flex flex-row gap-3">
-		switch instance.GetStatus() {
-			case models.Active:
-				<a
-					hx-get="/admin/schedule/stop"
-					hx-target="#schedule-status"
-					class="btn btn-error flex join-item tooltip"
-					data-tip="Stop the game"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-octagon-x w-5 h-5"><path d="m15 9-6 6"></path><path d="M2.586 16.726A2 2 0 0 1 2 15.312V8.688a2 2 0 0 1 .586-1.414l4.688-4.688A2 2 0 0 1 8.688 2h6.624a2 2 0 0 1 1.414.586l4.688 4.688A2 2 0 0 1 22 8.688v6.624a2 2 0 0 1-.586 1.414l-4.688 4.688a2 2 0 0 1-1.414.586H8.688a2 2 0 0 1-1.414-.586z"></path><path d="m9 9 6 6"></path></svg>
-					Stop
-				</a>
-				@scheduleButton(instance.EndTime.After(instance.StartTime.Time), instance.EndTime)
-			case models.Scheduled:
-				<a
-					hx-get="/admin/schedule/start"
-					hx-target="#schedule-status"
-					class="btn btn-primary flex join-item tooltip"
-					data-tip="Start the game early"
-				>
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play w-5 h-5"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
-					Start now
-				</a>
-				@scheduleButton(true, instance.StartTime)
-			case models.Closed:
-				<a hx-get="/admin/schedule/start" hx-target="#schedule-status" class="btn btn-primary flex join-item tooltip" data-tip="Start the game">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-play w-5 h-5"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
-					Start
-				</a>
-				@scheduleButton(false, instance.StartTime)
-		}
+	{{ status := quest.GetStatus() }}
+	{{ iconName, _, _ := questStatusLook(quest) }}
+	{{ endSet := gameEndScheduled(quest) }}
+	{{ target, countdownLabel := gameCountdown(quest) }}
+	<div
+		id="schedule-status"
+		class={ "panel game", templ.KV("game-open", status == models.Active), templ.KV("game-scheduled", status == models.Scheduled) }
+	>
+		<div class="game-main">
+			<span class="game-chipw">
+				<span class="game-chip">
+					@icon(iconName, templ.Attributes{"class": "w-7 h-7"})
+				</span>
+			</span>
+			<div class="game-text">
+				switch status {
+					case models.Active:
+						<h2>The game is open</h2>
+						if endSet {
+							<p>It closes by itself at <time datetime={ quest.EndTime.Time.UTC().Format(time.RFC3339) } data-local>{ quest.EndTime.Time.Local().Format("Mon 2 Jan, 3:04pm") }</time>.</p>
+						} else {
+							<p>Teams can start playing. It stays open until you stop it.</p>
+						}
+					case models.Scheduled:
+						<h2>
+							<time datetime={ quest.StartTime.Time.UTC().Format(time.RFC3339) } data-starts-at>{ startsAt(quest) }</time>
+						</h2>
+						if endSet {
+							<p>It closes at <time datetime={ quest.EndTime.Time.UTC().Format(time.RFC3339) } data-local>{ quest.EndTime.Time.Local().Format("Mon 2 Jan, 3:04pm") }</time>. Start now to open it early.</p>
+						} else {
+							<p>Start now to open it early.</p>
+						}
+					case models.Closed:
+						<h2>The game is closed</h2>
+						<p>Nobody can start a run. Start it now, or set a time.</p>
+				}
+			</div>
+			if !target.IsZero() {
+				{{ days, hours, minutes, seconds := countdownParts(target) }}
+				<div class="game-cdw">
+					<span class="kicker">{ countdownLabel }</span>
+					<div class="game-cd" role="timer" data-countdown={ target.UTC().Format(time.RFC3339) }>
+						<span><b data-u="d">{ fmt.Sprint(days) }</b>days</span>
+						<span><b data-u="h">{ fmt.Sprint(hours) }</b>hrs</span>
+						<span><b data-u="m">{ fmt.Sprint(minutes) }</b>min</span>
+						<span><b data-u="s">{ fmt.Sprint(seconds) }</b>sec</span>
+					</div>
+				</div>
+			}
+			<div class="game-act">
+				switch status {
+					case models.Active:
+						<button type="button" class="btn btn-error" hx-get="/admin/schedule/stop" hx-target="#schedule-status" hx-swap="outerHTML">
+							@icon("square", templ.Attributes{"class": "w-5 h-5"})
+							Stop
+						</button>
+					case models.Scheduled:
+						<button type="button" class="btn btn-primary" hx-get="/admin/schedule/start" hx-target="#schedule-status" hx-swap="outerHTML">
+							@icon("play", templ.Attributes{"class": "w-5 h-5"})
+							Start now
+						</button>
+					case models.Closed:
+						<button type="button" class="btn btn-primary" hx-get="/admin/schedule/start" hx-target="#schedule-status" hx-swap="outerHTML">
+							@icon("play", templ.Attributes{"class": "w-5 h-5"})
+							Start
+						</button>
+				}
+				<button type="button" class="btn" data-schedule-toggle aria-expanded="false" aria-controls="schedule-form">
+					@icon("calendar-clock", templ.Attributes{"class": "w-5 h-5"})
+					if status == models.Closed || (status == models.Active && !endSet) {
+						Schedule
+					} else {
+						Edit schedule
+					}
+				</button>
+			</div>
+		</div>
+		<form
+			id="schedule-form"
+			class="game-sched hidden"
+			hx-post="/admin/schedule/"
+			hx-target="#schedule-status"
+			hx-swap="outerHTML"
+			data-start={ quest.StartTime.Format("2006-01-02 15:04") }
+			data-end={ quest.EndTime.Format("2006-01-02 15:04") }
+		>
+			@scheduleRow("start", "Start", "Opens the game by itself.", !quest.StartTime.IsZero())
+			@scheduleRow("end", "End", "Closes it by itself.", endSet)
+			<input type="hidden" name="utc_start_date"/>
+			<input type="hidden" name="utc_start_time"/>
+			<input type="hidden" name="utc_end_date"/>
+			<input type="hidden" name="utc_end_time"/>
+			<div class="game-foot">
+				<small>Times are in your time zone.</small>
+				<span class="grow"></span>
+				<button type="button" class="btn" data-schedule-toggle>Cancel</button>
+				<button type="submit" class="btn btn-primary">Save</button>
+			</div>
+		</form>
+		@gameControlScript()
 	</div>
 }
 
-templ scheduleButton(scheduled bool, t schema.NullTime) {
-	if !scheduled {
-		<button class="btn btn-secondary flex join-item tooltip" onclick="schedule_modal.showModal()" data-tip="Set the start and end time">
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
-			Schedule
-		</button>
-	} else {
-		<button
-			id="start-time"
-			data-start={ t.Format("02-Jan-2006 15:04:05") }
-			class="btn btn-secondary flex join-item tooltip"
-			onclick="schedule_modal.showModal()"
-			data-tip="Sechedule"
-		>
-			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-calendar-clock w-5 h-5"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"></path><path d="M16 2v4"></path><path d="M8 2v4"></path><path d="M3 10h5"></path><path d="M17.5 17.5 16 16.3V14"></path><circle cx="16" cy="16" r="6"></circle></svg>
-			if int(t.Time.Sub(time.Now()).Seconds()) / 86400 > 0 {
-				<div id="days-container" class="leading-none flex align-middle">
-					<span class="countdown font-bold leading-none" id="days" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())/86400) }>
-						<span></span>
-					</span>
-					d
-				</div>
-			} else {
-				<div id="days-container" class="leading-none flex align-middle" style="display: none">
-					<span class="countdown font-bold leading-none" id="days" style="--value: 0">
-						<span></span>
-					</span>
-					d
-				</div>
-			}
-			if (int(t.Time.Sub(time.Now()).Seconds()) % 86400) / 3600 > 0 {
-				<div id="hours-container" class="leading-none flex align-middle">
-					<span class="countdown font-bold leading-none" id="hours" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%86400)/3600) }>
-						<span></span>
-					</span>
-					h
-				</div>
-			} else {
-				<div id="hours-container" class="leading-none flex align-middle" style="display: none">
-					<span class="countdown font-bold leading-none" id="hours" style="--value: 0">
-						<span></span>
-					</span>
-					h
-				</div>
-			}
-			<div class="leading-none flex align-middle">
-				<span class="countdown font-bold" id="minutes" style={ fmt.Sprintf("--value: %d", (int(t.Time.Sub(time.Now()).Seconds())%3600)/60) }>
-					<span></span>
-				</span>
-				m
-			</div>
-			<div class="leading-none flex align-middle">
-				<span class="countdown font-bold" id="seconds" style={ fmt.Sprintf("--value: %d", int(t.Time.Sub(time.Now()).Seconds())%60) }>
-					<span></span>
-				</span>
-				s
-			</div>
-		</button>
-		<style>
-				for i := range 60 {
-					{ fmt.Sprintf("[data-value=\"%d\"]", i) } {
-						--value: { fmt.Sprint(i) };
-				    }
-				}
-				</style>
-		<script>
-  // JavaScript for countdown
-  (function() {
-    // Store interval ID on window object to persist across HTMX swaps
-    if (!window.gameCountdownInterval) {
-      window.gameCountdownInterval = null;
-    }
-
-    function startCountdown(startTime) {
-      // Clear any existing interval before starting a new one
-      if (window.gameCountdownInterval) {
-        clearInterval(window.gameCountdownInterval);
-        window.gameCountdownInterval = null;
-      }
-
-      function updateCountdown() {
-        const now = new Date();
-        const remainingTime = new Date(startTime) - now;
-
-        if (remainingTime == 0) {
-          window.location.reload();
-          return;
-        }
-
-        const seconds = Math.floor((remainingTime / 1000) % 60);
-        const minutes = Math.floor((remainingTime / 1000 / 60) % 60);
-        const hours = Math.floor((remainingTime / 1000 / 60 / 60) % 24);
-        const days = Math.floor(remainingTime / 1000 / 60 / 60 / 24);
-
-        const secondsEl = document.getElementById("seconds");
-        const minutesEl = document.getElementById("minutes");
-        const hoursContainer = document.getElementById("hours-container");
-        const hoursEl = document.getElementById("hours");
-        const daysContainer = document.getElementById("days-container");
-        const daysEl = document.getElementById("days");
-
-        if (!secondsEl || !minutesEl) return; // Elements removed, stop updating
-
-        secondsEl.style.setProperty('--value', seconds);
-        minutesEl.style.setProperty('--value', minutes);
-
-        if (hours > 0) {
-          hoursContainer.style.display = "flex";
-          hoursEl.style.setProperty('--value', hours);
-        } else {
-          hoursContainer.style.display = "none";
-        }
-
-        if (days > 0) {
-          daysContainer.style.display = "flex";
-          daysEl.style.setProperty('--value', days);
-        } else {
-          daysContainer.style.display = "none";
-        }
-      }
-
-      updateCountdown();
-      window.gameCountdownInterval = setInterval(updateCountdown, 1000);
-    }
-
-    if (document.getElementById('start-time') != null) {
-      function UTCtoLocal(time) {
-        const utc = new Date(`${time}`);
-        const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
-        return local
-      }
-      const startTimeElement = document.getElementById('start-time');
-      const startTime = startTimeElement.dataset.start;
-      startCountdown(UTCtoLocal(startTime));
-    }
-  })();
-</script>
-	}
+templ scheduleRow(key, label, hint string, on bool) {
+	<div class="game-row">
+		<label class="flex items-center gap-3 font-bold">
+			<input type="checkbox" name={ "set_" + key } class="toggle toggle-primary" checked?={ on }/>
+			{ label }
+		</label>
+		<input type="date" name={ key + "_date" } class="input" aria-label={ label + " date" }/>
+		<input type="time" name={ key + "_time" } class="input" aria-label={ label + " time" }/>
+		<small>{ hint }</small>
+	</div>
 }
 
-templ TeamActivity(settings models.InstanceSettings, team models.Team, notifications []models.Notification, nextLocations []models.Location) {
+// Swapped in with the card, so listeners install once and each swap only re-runs boot.
+templ gameControlScript() {
+	<script>
+		(function () {
+			function boot() {
+				document.querySelectorAll('time[data-local]').forEach(function (el) {
+					el.textContent = new Date(el.getAttribute('datetime')).toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+				});
+				tick();
+			}
+			function tick() {
+				document.querySelectorAll('[data-countdown]').forEach(function (box) {
+					var left = Math.floor((new Date(box.dataset.countdown) - Date.now()) / 1000);
+					if (left <= 0) { window.location.reload(); return; }
+					var v = { d: Math.floor(left / 86400), h: Math.floor(left % 86400 / 3600), m: Math.floor(left % 3600 / 60), s: left % 60 };
+					Object.keys(v).forEach(function (k) { box.querySelector('[data-u="' + k + '"]').textContent = v[k]; });
+				});
+			}
+			if (window.__gameControl) { window.__gameControl(); return; }
+			window.__gameControl = boot;
+
+			function fromUTC(date, time) {
+				var u = new Date(date + 'T' + time + ':00Z');
+				var iso = new Date(u.getTime() - u.getTimezoneOffset() * 60000).toISOString();
+				return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
+			}
+			function toUTC(date, time) {
+				var iso = new Date(date + 'T' + time).toISOString();
+				return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
+			}
+			function populate(form) {
+				['start', 'end'].forEach(function (k) {
+					var v = (form.dataset[k] || '').split(' ');
+					if (v[0] && v[0] !== '0001-01-01') {
+						var l = fromUTC(v[0], v[1]);
+						form.elements[k + '_date'].value = l.date;
+						form.elements[k + '_time'].value = l.time;
+					}
+				});
+			}
+			function sync(form) {
+				['start', 'end'].forEach(function (k) {
+					var on = form.elements['set_' + k].checked;
+					var d = form.elements[k + '_date'], t = form.elements[k + '_time'];
+					d.disabled = t.disabled = !on;
+					var u = on && d.value && t.value ? toUTC(d.value, t.value) : { date: '', time: '' };
+					form.elements['utc_' + k + '_date'].value = u.date;
+					form.elements['utc_' + k + '_time'].value = u.time;
+				});
+			}
+
+			document.addEventListener('click', function (e) {
+				if (!e.target.closest('[data-schedule-toggle]')) return;
+				var form = document.getElementById('schedule-form');
+				var open = !form.classList.toggle('hidden');
+				document.querySelectorAll('[data-schedule-toggle][aria-expanded]').forEach(function (b) { b.setAttribute('aria-expanded', open); });
+				if (open) { populate(form); sync(form); }
+			});
+			document.addEventListener('change', function (e) {
+				var form = e.target.closest('#schedule-form');
+				if (form) sync(form);
+			});
+			document.addEventListener('submit', function (e) {
+				if (e.target.id === 'schedule-form') sync(e.target);
+			}, true);
+			document.addEventListener('htmx:afterSwap', boot);
+			setInterval(tick, 1000);
+			boot();
+		})();
+	</script>
+}
+
+templ RunActivity(settings models.QuestSettings, team models.Run, notifications []models.Notification, incompleteObjectives []models.Objective, completedObjectives []models.Objective) {
 	<h3 class="text-lg font-bold">
-		{ team.Code }
+		{ models.FormatRunCode(team.Code) }
 		if team.Name != "" {
 			<span class="opacity-50">∕</span> { team.Name }
 		}
@@ -535,22 +693,15 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 			<span class="badge badge-info badge-sm">{ fmt.Sprint(team.Points) } pts</span>
 		}
 	</h3>
-	<!-- Current Location -->
-	if team.MustCheckOut != "" {
-		<div class="w-full">
-			<p class="py-3 font-bold divider divider-start">Current Location</p>
-			{ team.BlockingLocation.Name }
-		</div>
-	}
-	<!-- Next Locations -->
+	<!-- Outstanding objectives -->
 	<div class="w-full">
-		<p class="py-3 font-bold divider divider-start">Next Locations</p>
-		if len(nextLocations) > 0 {
+		<p class="py-3 font-bold divider divider-start">Outstanding objectives</p>
+		if len(incompleteObjectives) > 0 {
 			<div class="prose">
 				<ul>
-					for _, location := range nextLocations {
+					for _, objective := range incompleteObjectives {
 						<li>
-							{ location.Name }
+							{ objective.Title }
 						</li>
 					}
 				</ul>
@@ -559,26 +710,20 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 			<p>All done!</p>
 		}
 	</div>
-	<!-- Previous Locations -->
-	if len(team.CheckIns) > 0 {
+	<!-- Completed objectives -->
+	if len(completedObjectives) > 0 {
 		<div class="py-3 font-bold divider divider-start">
-			Previous Locations
+			Completed objectives
 		</div>
-		for _, scan := range team.CheckIns {
-			if !scan.MustCheckOut {
-				<div class="prose">
-					<ul>
-						<li>
-							{ scan.Location.Name }
-							<span class="convert-time badge badge-sm badge-ghost" data-datetime={ fmt.Sprint(scan.CreatedAt.UTC()) }></span>
-							if settings.EnablePoints && scan.Points > 0 {
-								<span class="badge badge-sm badge-info">+{ fmt.Sprint(scan.Points) } pts</span>
-							}
-						</li>
-					</ul>
-				</div>
-			}
-		}
+		<div class="prose">
+			<ul>
+				for _, objective := range completedObjectives {
+					<li>
+						{ objective.Title }
+					</li>
+				}
+			</ul>
+		</div>
 	}
 	<p class="py-3 font-bold divider divider-start">
 		Alerts
@@ -601,7 +746,7 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 	}
 	<label class="form-control w-full mt-3">
 		<form hx-post="/admin/notify/team/" hx-swap="none">
-			<input type="hidden" name="teamCode" value={ team.Code }/>
+			<input type="hidden" name="runCode" value={ team.Code }/>
 			<div class="join w-full">
 				<input class="input join-item w-full" name="content" placeholder="Message" autocomplete="off" autofocus="off" required/>
 				<button type="submit" class="btn btn-primary join-item rounded-r-full" onclick="announcement_modal.close()">
@@ -625,196 +770,6 @@ templ TeamActivity(settings models.InstanceSettings, team models.Team, notificat
 			class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
 		>✕</button>
 	</form>
-}
-
-templ scheduleModal(instance models.Instance) {
-	<dialog id="schedule_modal" class="modal modal-bottom sm:modal-middle">
-		<div class="modal-box">
-			<h3 class="text-lg font-bold">Schedule a Game</h3>
-			<p class="py-3">
-				Schedule a game to start and/or end at a specific time. 
-			</p>
-			<form hx-post="/admin/schedule/" hx-target="#schedule-status" hx-swap="outerHTML">
-				<div class="divider py-5">
-					<div class="form-control">
-						<label class="label cursor-pointer flex gap-3">
-							Scheduled Start
-							if instance.StartTime.Time.IsZero() {
-								<input type="checkbox" name="set_start" class="checkbox"/>
-							} else {
-								<input type="checkbox" name="set_start" class="checkbox" checked/>
-							}
-						</label>
-					</div>
-				</div>
-				<div id="utc-start-time" class="join flex justify-center pb-5" data-start={ instance.StartTime.Format("2006-01-02 15:04") }>
-					<input
-						id="start_date"
-						type="date"
-						name="start_date"
-						class="input join-item"
-					/>
-					<input
-						id="start_time"
-						type="time"
-						name="start_time"
-						class="input join-item"
-					/>
-				</div>
-				<div class="divider py-5">
-					<div class="form-control">
-						<label class="label cursor-pointer flex gap-3">
-							Scheduled End
-							if !instance.EndTime.IsZero() && instance.EndTime.After(instance.StartTime.Time) {
-								<input type="checkbox" name="set_end" class="checkbox" checked/>
-							} else {
-								<input type="checkbox" name="set_end" class="checkbox"/>
-							}
-						</label>
-					</div>
-				</div>
-				<div id="utc-end-time" class="join flex justify-center" data-end={ instance.EndTime.Format("2006-01-02 15:04") }>
-					<input
-						id="end_date"
-						type="date"
-						name="end_date"
-						class="input join-item"
-					/>
-					<input
-						id="end_time"
-						type="time"
-						name="end_time"
-						class="input join-item"
-					/>
-				</div>
-				<!-- Hidden UTC Inputs -->
-				<input type="hidden" name="utc_start_date"/>
-				<input type="hidden" name="utc_start_time"/>
-				<input type="hidden" name="utc_end_date"/>
-				<input type="hidden" name="utc_end_time"/>
-				<div class="modal-action">
-					<button class="btn" onclick="event.preventDefault(); schedule_modal.close()">Nevermind</button>
-					<button type="submit" onclick="schedule_modal.close()" class="btn btn-primary">Save</button>
-				</div>
-			</form>
-			<form method="dialog">
-				<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
-			</form>
-		</div>
-	</dialog>
-	<script>
-		function localToUTC(date, time) {
-			const utc = new Date(`${date}T${time}`);
-			return {
-				date: utc.toISOString().split('T')[0],
-				time: utc.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format
-			};
-		}
-
-		function UTCtoLocal(date, time) {
-			const utc = new Date(`${date}T${time}Z`);
-			const local = new Date(utc.getTime() - utc.getTimezoneOffset() * 60000);
-			return {
-				date: local.toISOString().split('T')[0],
-				time: local.toISOString().split('T')[1].substring(0, 5)  // Get HH:MM format
-			};
-		}
-
-		function populateDateTimeInputs() {
-			const startDateInput = document.querySelector('input[name="start_date"]');
-			const startTimeInput = document.querySelector('input[name="start_time"]');
-			const endDateInput = document.querySelector('input[name="end_date"]');
-			const endTimeInput = document.querySelector('input[name="end_time"]');
-
-			const utcStartElement = document.getElementById('utc-start-time');
-			const utcEndElement = document.getElementById('utc-end-time');
-
-			const utcStart = utcStartElement.dataset.start.split(' ');
-			const utcEnd = utcEndElement.dataset.end.split(' ');
-
-			// Check the time is not empty: 0001-01-01 00:00
-			if (utcStart[0] != '0001-01-01') {
-				const localStart = UTCtoLocal(utcStart[0], utcStart[1]);
-				startDateInput.value = localStart.date;
-				startTimeInput.value = localStart.time;
-			}
-
-			if (utcEnd[0] != '0001-01-01') {
-				const localEnd = UTCtoLocal(utcEnd[0], utcEnd[1]);
-				endDateInput.value = localEnd.date;
-				endTimeInput.value = localEnd.time;
-			}
-		}
-
-        function handleDateTimeChange() {
-            const startDateInput = document.querySelector('input[name="start_date"]');
-            const startTimeInput = document.querySelector('input[name="start_time"]');
-            const endDateInput = document.querySelector('input[name="end_date"]');
-            const endTimeInput = document.querySelector('input[name="end_time"]');
-            const setStartCheckbox = document.querySelector('input[name="set_start"]');
-            const setEndCheckbox = document.querySelector('input[name="set_end"]');
-
-            // Only convert if checkbox is checked AND both date and time have values
-            if (setStartCheckbox.checked && startDateInput.value && startTimeInput.value) {
-                const utcStart = localToUTC(startDateInput.value, startTimeInput.value);
-                document.querySelector('input[name="utc_start_date"]').value = utcStart.date;
-                document.querySelector('input[name="utc_start_time"]').value = utcStart.time;
-            } else {
-                document.querySelector('input[name="utc_start_date"]').value = '';
-                document.querySelector('input[name="utc_start_time"]').value = '';
-            }
-
-            if (setEndCheckbox.checked && endDateInput.value && endTimeInput.value) {
-                const utcEnd = localToUTC(endDateInput.value, endTimeInput.value);
-                document.querySelector('input[name="utc_end_date"]').value = utcEnd.date;
-                document.querySelector('input[name="utc_end_time"]').value = utcEnd.time;
-            } else {
-                document.querySelector('input[name="utc_end_date"]').value = '';
-                document.querySelector('input[name="utc_end_time"]').value = '';
-            }
-        }
-
-		function initScheduleModal() {
-			populateDateTimeInputs();
-			handleDateTimeChange();
-		}
-
-		// Set up event listeners once when the script loads
-		(function() {
-            const inputs = document.querySelectorAll('#schedule_modal input[type="date"], #schedule_modal input[type="time"]');
-            const checkboxes = document.querySelectorAll('#schedule_modal input[type="checkbox"]');
-            const form = document.querySelector('#schedule_modal form');
-			const modal = document.getElementById('schedule_modal');
-
-            inputs.forEach(input => {
-                input.addEventListener('change', handleDateTimeChange);
-            });
-
-            checkboxes.forEach(checkbox => {
-                checkbox.addEventListener('change', handleDateTimeChange);
-            });
-
-            // Ensure UTC conversion happens on form submission
-            form.addEventListener('submit', function(e) {
-                handleDateTimeChange();
-            });
-
-			// Initialize whenever the modal is opened
-			const observer = new MutationObserver(function(mutations) {
-				mutations.forEach(function(mutation) {
-					if (mutation.type === 'attributes' && mutation.attributeName === 'open') {
-						if (modal.hasAttribute('open')) {
-							initScheduleModal();
-						}
-					}
-				});
-			});
-
-			if (modal) {
-				observer.observe(modal, { attributes: true });
-			}
-		})();
-    </script>
 }
 
 templ announcementModal() {
@@ -878,7 +833,7 @@ func getSortURL(field string, currentSortField string, currentSortOrder string) 
 			newOrder = "desc"
 		}
 	}
-	return fmt.Sprintf("/admin/activity/teams?sort=%s&order=%s", field, newOrder)
+	return fmt.Sprintf("/admin/activity/runs?sort=%s&order=%s", field, newOrder)
 }
 
 func getSortTooltip(field string, currentSortField string, currentSortOrder string) string {
@@ -897,240 +852,34 @@ func getSortTooltip(field string, currentSortField string, currentSortOrder stri
 	}
 }
 
-// LocationVisitStats holds visit statistics for a location
-type LocationVisitStats struct {
-	Location        models.Location
-	TotalVisits     int
-	CurrentVisitors int
-	AvgTimeMinutes  float64
-}
-
-// getLocationVisitStats returns visit statistics for all locations
-func getLocationVisitStats(locations []models.Location, teams []models.Team, mustCheckOut bool) []LocationVisitStats {
-	stats := make([]LocationVisitStats, len(locations))
-
-	for i, location := range locations {
-		stats[i].Location = location
-		stats[i].TotalVisits = location.TotalVisits
-		stats[i].CurrentVisitors = location.CurrentCount
-
-		// Use AvgDuration from the location model if MustCheckOut is enabled
-		// AvgDuration is stored in seconds, convert to minutes
-		if mustCheckOut && location.AvgDuration > 0 {
-			stats[i].AvgTimeMinutes = location.AvgDuration / 60
-		}
-	}
-
-	return stats
-}
-
-templ ActivityStats(instance models.Instance) {
+templ ActivityStats(quest models.Quest, summaries map[string]services.RunSummary) {
 	<div
 		id="activity-stats"
 		hx-get="/admin/activity/stats"
 		hx-target="#activity-stats"
 		hx-swap="outerHTML"
 		hx-trigger="every 30s"
-		class="grid grid-cols-2 md:grid-cols-5 gap-0 shadow rounded-box w-full bg-gradient-to-br from-info/10 to-info/5 border border-info/20 hover:border-info/30 transition-colors overflow-hidden"
+		class="panel stat-strip"
 	>
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Active teams</div>
-			<div class="stat-value">{ fmt.Sprint(countActiveTeams(instance.Teams)) }</div>
-			<div class="stat-desc">of { fmt.Sprint(len(instance.Teams)) } total</div>
+		<div class="stat-cell">
+			<span class="kicker">Running</span>
+			<b class="stat-num">{ fmt.Sprint(countRunning(quest.Runs, summaries)) }</b>
+			<small>of { fmt.Sprint(len(quest.Runs)) } runs</small>
 		</div>
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">In transit</div>
-			<div class="stat-value">
-				{ fmt.Sprint(func() int { inTransit, _ := countTeamsByStatus(instance.Teams, len(instance.Locations)); return inTransit }()) }
-			</div>
-			<div class="stat-desc">Moving between locations</div>
+		<div class="stat-cell">
+			<span class="kicker">Not started</span>
+			<b class="stat-num">{ fmt.Sprint(countNotStarted(quest.Runs)) }</b>
+			<small>Codes not yet used</small>
 		</div>
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Checked in</div>
-			<div class="stat-value">
-				{ fmt.Sprint(func() int { _, checkedIn := countTeamsByStatus(instance.Teams, len(instance.Locations)); return checkedIn }()) }
-			</div>
-			<div class="stat-desc">Currently at locations</div>
+		<div class="stat-cell">
+			<span class="kicker">Median progress</span>
+			<b class="stat-num">{ fmt.Sprint(medianShare(quest.Runs, summaries)) }%</b>
+			<small>Of each run's own objectives</small>
 		</div>
-		<div class="stat place-items-center border-b md:border-b-0 md:border-r border-info/20">
-			<div class="stat-title">Average progress</div>
-			<div class="stat-value">
-				if len(instance.Locations) > 0 && len(instance.Teams) > 0 {
-					{ fmt.Sprintf("%.0f%%", func() float64 {
-						total := 0
-						activeCount := 0
-						for _, team := range instance.Teams {
-							if team.HasStarted {
-								total += len(team.CheckIns)
-								activeCount++
-							}
-						}
-						if activeCount == 0 {
-							return 0
-						}
-						return (float64(total) / float64(activeCount)) / float64(len(instance.Locations)) * 100
-					}()) }
-				} else {
-					0%
-				}
-			</div>
-			<div class="stat-desc">Across active teams</div>
+		<div class="stat-cell">
+			<span class="kicker">Finished</span>
+			<b class="stat-num">{ fmt.Sprint(countFinished(quest.Runs, summaries)) }</b>
+			<small>Reached the end</small>
 		</div>
-		<div class="stat place-items-center col-span-2 md:col-span-1">
-			<div class="stat-title">Completion rate</div>
-			<div class="stat-value">
-				if len(instance.Teams) > 0 {
-					{ fmt.Sprintf("%.0f%%", func() float64 {
-						finishedCount := 0
-						for _, team := range instance.Teams {
-							if len(instance.Locations) > 0 && len(team.CheckIns) == len(instance.Locations) {
-								finishedCount++
-							}
-						}
-						return (float64(finishedCount) / float64(len(instance.Teams))) * 100
-					}()) }
-				} else {
-					0%
-				}
-			</div>
-			<div class="stat-desc">Teams finished</div>
-		</div>
-	</div>
-}
-
-templ LocationOverviewList(instance models.Instance) {
-	if len(instance.Locations) > 0 {
-		<ul
-			id="location-overview-list"
-			class="list max-h-96 overflow-y-auto overflow-x-hidden"
-			hx-get="/admin/activity/locations"
-			hx-target="#location-overview-list"
-			hx-swap="outerHTML"
-			hx-trigger="every 30s"
-			hx-disinherit="*"
-			_="init send input to #search-locations"
-		>
-			for i, stat := range getLocationVisitStats(instance.Locations, instance.Teams, instance.Settings.MustCheckOut) {
-				<li class={ "location-row", templ.KV("bg-base-200", i%2 == 0), templ.KV("bg-base-100", i%2 != 0) }>
-					<div class="px-6 list-row flex items-start justify-between py-4 w-full rounded-none gap-4">
-						<div class="flex flex-col gap-2 min-w-0 flex-1">
-							<a href={ templ.URL(fmt.Sprintf("/admin/locations/%s", stat.Location.Slug)) } class="text-sm font-medium truncate hover:underline">
-								{ stat.Location.Name }
-							</a>
-							if func() bool {
-								for _, t := range instance.Teams {
-									if t.MustCheckOut == stat.Location.ID {
-										return true
-									}
-								}
-								return false
-							}() {
-								<div class="flex gap-2 flex-wrap">
-									for _, t := range instance.Teams {
-										if t.MustCheckOut == stat.Location.ID {
-											<a
-												href={ templ.URL(fmt.Sprintf("/admin/teams/%s", t.Code)) }
-												class="btn btn-xs btn-secondary btn-outline font-mono tracking-wider"
-											>
-												{ t.Code }
-											</a>
-										}
-									}
-								</div>
-							}
-						</div>
-						<div class="flex items-center gap-3 flex-shrink-0">
-							<div class="tooltip tooltip-left" data-tip="Total visits">
-								<div class="flex items-center gap-1">
-									<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-history w-4 h-4 text-base-content/60"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path><path d="M3 3v5h5"></path><path d="M12 7v5l4 2"></path></svg>
-									<span class="font-bold text-sm">{ fmt.Sprint(stat.TotalVisits) }</span>
-								</div>
-							</div>
-							if instance.Settings.MustCheckOut {
-								<div class="tooltip tooltip-left" data-tip="Avg time spent">
-									<div class="flex items-center gap-1">
-										<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-timer w-4 h-4 text-info"><line x1="10" x2="14" y1="2" y2="2"></line><line x1="12" x2="15" y1="14" y2="11"></line><circle cx="12" cy="14" r="8"></circle></svg>
-										<span class="font-bold text-sm text-info">
-											if stat.AvgTimeMinutes > 0 {
-												if stat.AvgTimeMinutes >= 60 {
-													{ fmt.Sprintf("%.0fh", stat.AvgTimeMinutes/60) }
-												} else {
-													{ fmt.Sprintf("%.0fm", stat.AvgTimeMinutes) }
-												}
-											} else {
-												-
-											}
-										</span>
-									</div>
-								</div>
-							}
-						</div>
-					</div>
-				</li>
-			}
-		</ul>
-	} else {
-		<ul id="location-overview-list" class="list">
-			<li>
-				<div class="text-center py-8 text-base-content/60">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-inbox w-12 h-12 mx-auto mb-2 opacity-50"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"></polyline><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"></path></svg>
-					<p class="text-sm">No locations added yet</p>
-				</div>
-			</li>
-		</ul>
-	}
-}
-
-templ LocationOverviewCard(instance models.Instance) {
-	<div class="card bg-gradient-to-br from-base-200/70 to-base-200/50 border border-base-content/20 hover:border-base-content/30 transition-colors overflow-hidden">
-		<div class="card-body p-6 pb-4">
-			<div class="flex flex-col gap-4 mb-2">
-				<h2 class="card-title text-lg flex items-center gap-2">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin-check w-5 h-5"><path d="M19.43 12.935c.357-.967.57-1.955.57-2.935a8 8 0 0 0-16 0c0 4.993 5.539 10.193 7.399 11.799a1 1 0 0 0 1.202 0 32.197 32.197 0 0 0 .813-.728"></path><circle cx="12" cy="10" r="3"></circle><path d="m16 18 2 2 4-4"></path></svg>
-					Location overview
-				</h2>
-				<label class="input input-sm flex items-center gap-2">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-search w-4 h-4"><circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path></svg>
-					<input
-						id="search-locations"
-						type="text"
-						class="grow"
-						placeholder="Search locations"
-						_="
-						init send input to me
-						on input or load
-							show .location-row
-								when its textContent.toLowerCase().normalize('NFD')
-								contains my value.toLowerCase().normalize('NFD')
-							if my value's length > 0 then
-								remove .invisible from #clear-search-locations
-							else
-								add .invisible to #clear-search-locations
-							end
-						end
-						"
-					/>
-					<button
-						id="clear-search-locations"
-						role="button"
-						class="btn btn-ghost btn-xs btn-circle invisible -mr-2"
-						type="reset"
-						_="
-							init if #search-locations's value's length > 0 then
-								remove .invisible from me
-							end
-							on click
-								set #search-locations's value to ''
-								add .invisible to me
-								send input to #search-locations
-							end
-						"
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x w-4 h-4 opacity-80 hover:opacity-100"><path d="M18 6 6 18"></path><path d="m6 6 12 12"></path></svg>
-					</button>
-				</label>
-			</div>
-		</div>
-		@LocationOverviewList(instance)
 	</div>
 }

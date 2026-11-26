@@ -3,30 +3,124 @@ title: "Changelog"
 sidebar: true
 order: 100
 tag: updated
+tag_until: 2026-12-23
 ---
 
 # Changelog
 
-## 7.0.1
+## 8.0.0 (2026-11-26)
+
+v8.0.0 replaces Locations with Objectives. An objective is something for players to do. It can ask for proof, and can then reveal bonus content. An objective with other objectives inside it becomes a section, so one type replaces locations, groups, and the old game-structure blob.
+
+Every interface has been redesigned: the public site, the player, the admin (with a new objective editor), and the blocks that appear in both. The [creators page](/creators) shows the new features in action.
+
+A team is the people playing. A run is a recorded game: it exists once a team has joined, and is what the admin lists and reports on.
+
+### Added
+
+**Structure**
+
+- **Nesting:** any objective becomes a section once something sits inside it.
+- **Pass-through:** a flag on a section. A pass-through section hides itself and shows its children in the section above, with its routing still deciding which children appear. Players only see two levels, so sections nested deeper are flattened the same way automatically.
+- **Completion bands:** a section needs at least x and at most y of the objectives inside it.
+- **Draft objectives:** hidden from players, with everything beneath them, until published. New objectives start as drafts.
+- **Secret objectives:** never listed, found by scanning their code from anywhere in the quest. A found secret counts toward its section, and one with children opens as a side quest.
+- **Keys and locks:** interactive blocks can set a variable, and objectives and content blocks can wait on variables.
+
+**Building a quest**
+
+- **Quest tree:** see, drag, publish and park the whole quest at once, with a rule pill on each section and a live lint panel that flags problems on the row they belong to.
+- **New blocks:** Choice, Scan, and Location check (stand inside an area you draw). A wrong Location check says roughly how far off it was.
+- **Section templates:** add the blocks for a Scan, Location or Quiz section in one click. Start and Complete pages also offer templates, and an empty Start page is flagged.
+- Adding an objective is one click, and copies a sibling's navigation block.
+- A running game can't be edited. Stop it first, or duplicate it and work on the copy.
+- More lint checks: missing routing, unreachable bands or finish labels, locks nothing can open, and sections that will be flattened.
+- `/api/v8/spec` and `/api/v8/lint` are public and need no CSRF token.
+
+**Playing**
+
+- **Quest screen:** leads with each objective's task, shows progress, and lets players finish a section. A quest chooses whether progress shows as a total, a count, or nothing.
+- **You tab:** replaces Team, with the leaderboard and team name.
+- **Player journal:** a diary of what the team did, built from a record of every player event, including failed attempts.
+- Players can join by opening a link with the run code in it, and a returning player is offered their game back.
+- Free text answers can be edited after sending. Pincode is a single field of any length.
+- Any short code can be rendered as a QR image.
+- Run code lookups are limited to 10 a minute per client.
+
+**Running a game**
+
+- **Run page:** a timeline of what the team opened, answered and uploaded, when they were playing, idle, stalled or gone, and where they are in the quest.
+- **Facilitator dashboard:** rebuilt around "do I have to keep waiting?". Pick your stations to see time left, which teams are due, which are with you, and which have stopped.
 
 ### Changed
 
-- Split ./rapua commands into separate files.
+- **Breaking:** Players end a section early by pressing finish, not by a facilitator skipping the team. Runs with a skipped section reopen as unfinished.
+- **Breaking:** Admin routes say "Run" where they said "Team", and "Quest" where they said "Instance" or "Game" (`/admin/quests/*`, `/admin/runs/*`). Old URLs no longer resolve.
+- **Breaking:** The spec API moved from `/api/v7/*` to `/api/v8/*`, and documents must declare `"rapua": "v8"`.
+- **Breaking:** Task blocks become one-item checklists on upgrade. Leftover Task List blocks are deleted.
+- Routing is required on every objective and defaults to "ordered". Unset routing becomes free roam on upgrade, as it played in v7, and a secret group's locations become secret objectives in its parent.
+- Points live on blocks, set from the picker in each block's header. An objective's total is the sum of its blocks.
+- The points toggle moved to the quest page, and the Experience settings page is gone.
+- A run is marked started, and its credit spent, when a player presses Start, not when they join.
+- Run codes are six letters, shown with a break in the middle (`ABC-DEF`), and are found however they are written. Existing runs keep their four-letter code.
+- Run, activity and facilitator dashboards report progress in objectives.
+- Random Clue is now Random Text. Existing blocks are renamed on upgrade.
+
+### Fixed
+
+- A clue with a points cost was flagged as needing a fix, and an exported game with a clue wouldn't import.
+- Stripe checkout no longer holds a write lock while fetching the receipt.
+- A failed upload no longer leaves its file behind.
+- The activity page's "last seen" showed when a run was created, not when the team last played.
+- The Stripe webhook and the game spec and import uploads no longer read unbounded request bodies.
+- Player and public scripts and stylesheets are versioned, so browsers fetch new ones after an update.
+
+### Removed
+
+- **Breaking:** Location, Marker, and Check-in. Locations with a marker convert to objectives on upgrade, and printed posters keep working.
+- **Breaking:** Navigation display modes (Map, Labelled Map, List, Custom Clues, Tasks). Every objective uses the same navigation and content blocks.
+- **Breaking:** Groups. Any objective with children now has the group's routing and completion rule. "All" / "minimum required" becomes a completion band: equal bounds finish automatically, a range adds an optional finish button.
+- **Breaking:** Bonus points for early check-ins, and the `show_team_count` setting.
+- **Breaking:** The full-width option on image blocks, the small option on toggle text blocks, and the scale option on rating blocks. The upgrade clears each setting from existing blocks.
+- Resetting a run. Delete the run and add a new one instead.
+- The Broker block.
+- The "manage groups" editor, replaced by the quest tree.
+- The Quickstart bar and its guide, which no longer matched how the app works.
+- Creating an objective by duplicating a marker's coordinates from another quest.
+
+## 7.1.0 (2026-04-11)
+
+### Added
+
+- [Free text block](/docs/user/blocks/free-text) for unconstrained text responses.
+
+## 7.0.1 (2026-04-11)
+
+### Changed
+
+- Split `./rapua` commands into separate files.
 - Update docs ordering and roadmap.
 
 ### Fixed
 
 - Migration fixes orphaned team block states.
 
-## 7.0.0
+## 7.0.0 (2026-04-11)
+
+v7.0.0 introduces games as code which lets me do fancy things like static game analysis (finding bugs in games without playing them), have AI write games using a [game specification](/docs/developer/game-spec), and store game templates with the code. 
+
+Since games are now code, instead of database entities, it also means I can change how I think about games, which means I can build in cool things like dynamically visible stages, locations, and content.
 
 ### Added
 
+- Quick add locations with one click.
+- Adding new locations to a group automatically adds a navigation block if the neighbouring location only has one navigation. This is to make it faster to rapidly add locations.
 - New `game` package now holds game types (extracted from `models` and `blocks`) and supports game import, export, and linting.
 - Markdown tables are now supported in block content and documentation pages.
 - [Versioning docs](/docs/developer/versioning) to explain how Rapua uses semver and how to upgrade quickly.
 - Completed the Forgot Password flow with email support. Users can now reset their password via email if they forget it.
 - Image blocks can now be full width on mobile.
+- [Map block](/docs/user/blocks/map) to replace the `Map` and `Map and Names` navigation display mode.
 
 ### Changed
 
@@ -38,12 +132,14 @@ tag: updated
 
 ### Fixed
 
+- The pincode block inputs now render horizontally on chrome based browsers.
 - Navigation button issue. Fixes [#122](https://github.com/nathanhollows/Rapua/issues/122)
 - Spacing issue in quiz block. Fixes [#123](https://github.com/nathanhollows/Rapua/issues/123)
 
 ### Removed
 
 - **Breaking:** Removed `ContentID` from locations and dropped `location_content` table.
+- **Breaking:** Removed `NavigationMode` from `/models` and simplified `/blocks` contexts to just have one for each of the start and finish pages, and location content and navigation.
 - Removed legacy block handlers.
 - Removed stub code in leaderboard service.
 
@@ -413,7 +509,7 @@ Version 5.1.0 introduces a very simple pricing model for Rapua. 1 credit = 1 tea
 ### Changed
 
 - Colour scheme and homepage updates! The colour scheme is consistent between light and dark modes now.
-- The [Experience Settings](/admin/experience) page is now much easier to read and nicer to look at.
+- The Experience Settings page is now much easier to read and nicer to look at.
 
 ### Fixed
 
@@ -813,7 +909,7 @@ This update introduces significant architectural changes to make the codebase ea
   - A new [facilitator dashboard](/docs/user/facilitator-dashboard) helps staff know the current progress of the game, reducing the need for practice communication. [#56](https://github.com/nathanhollows/Rapua/issues/56)
 
 - **UI/UX Improvements:**
-  - [Reset and delete actions for teams](/docs/user/players-and-teams#deleting-and-resetting-teams) now require confirmation to prevent accidental data loss.
+  - [Reset and delete actions for teams](/docs/user/players-and-teams#deleting-teams) now require confirmation to prevent accidental data loss.
   
 ### Changed
 - Deleting teams now refreshes the entire list view instead of partial updates for better consistency.

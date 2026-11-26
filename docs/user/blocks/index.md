@@ -1,14 +1,14 @@
 ---
 title: "Content Blocks"
 sidebar: true
-order: 21
+order: 24
 ---
 
 # Content blocks
 
 Rapua has a content block system that allows you to add different types of content to your game, whether static information, interactive challenges, or clues for participants to solve.
 
-Some blocks are for clues only (e.g. Random Clue Block), while others can be used anywhere.
+Some blocks can only be used inside objectives (e.g. Random Text), while others can be used anywhere.
 
 ![](/static/images/docs/user/blocks/block-picker.webp)
 
@@ -21,30 +21,28 @@ These blocks are the foundation of your game and are used to provide information
 - [Divider](/docs/user/blocks/divider)
 - [Header](/docs/user/blocks/header)
 - [Image](/docs/user/blocks/image)
+- [Map](/docs/user/blocks/map)
 - [Text](/docs/user/blocks/text)
 - [Toggle Text](/docs/user/blocks/toggle-text)
-- [Random Clue](/docs/user/blocks/random-clue)
+- [Random Text](/docs/user/blocks/random-text)
 - [YouTube](/docs/user/blocks/youtube)
 
 ## Interactive blocks
 
 These blocks allow you to create interactive elements in your game that require participants to complete a task or answer a question. They can be used to test knowledge, provide feedback, or guide participants through the game.
 
-- [Broker](/docs/user/blocks/broker)
+Any interactive block can carry a key: click the key in its header and name a variable, and completing the block sets it. Static blocks carry a lock instead, and stay hidden until the variables they wait on are set. See [keys and locks](/docs/user/sections#keys-and-locks).
+
 - [Checklist](/docs/user/blocks/checklist)
+- [Choice](/docs/user/blocks/choice)
 - [Clue](/docs/user/blocks/clue)
+- [Free Text](/docs/user/blocks/free-text)
 - [Password](/docs/user/blocks/password)
 - [Photo](/docs/user/blocks/photo)
 - [Pincode](/docs/user/blocks/pincode)
 - [Quiz](/docs/user/blocks/quiz)
 - [Rating](/docs/user/blocks/rating)
 - [Sorting](/docs/user/blocks/sorting)
-
-## Task blocks
-
-These blocks are designed for specific navigation modes.
-
-- [Task](/docs/user/blocks/task) - Defines tasks for [Task List](/docs/user/game-settings#:~:text=Task%20List) navigation
 
 ## System blocks
 

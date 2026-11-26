@@ -1,0 +1,258 @@
+package templates
+
+import (
+	"fmt"
+	"regexp"
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// lintBlockPath picks the section, and the block when there is one, that a
+// diagnostic is about out of its document path: structure.children[2].proof.blocks[0].max_rating
+// names a block, structure.children[2].proof the section as a whole.
+var lintBlockPath = regexp.MustCompile(`\.(proof|reveal)(?:\.blocks\[(\d+)\])?(?:\.|$)`)
+
+// objectiveTitleOrBlank gives an objective with no title something to read and
+// click. A title can be empty in older data, and a link with no text has no
+// target to hit, which strands the author from the objective they need to fix.
+func objectiveTitleOrBlank(title string) string {
+	if strings.TrimSpace(title) == "" {
+		return "Untitled task"
+	}
+	return title
+}
+
+// lintLine is a diagnostic placed in the editor. Block is the 1-based position
+// in its section, or zero when the note is about the section as a whole.
+type lintLine struct {
+	Message string
+	Block   int
+}
+
+type zoneLint struct {
+	Errors   []lintLine
+	Warnings []lintLine
+}
+
+// lintForZone keeps the diagnostics that belong in one section. Anything that
+// names no block falls to the task section, which is where the objective's own
+// fields live.
+func lintForZone(result game.LintResult, zone string) zoneLint {
+	return zoneLint{
+		Errors:   zoneLines(result.Errors, zone),
+		Warnings: zoneLines(result.Warnings, zone),
+	}
+}
+
+func zoneLines(diagnostics []game.LintDiag, zone string) []lintLine {
+	var lines []lintLine
+	for _, diagnostic := range diagnostics {
+		where, block := "task", 0
+		if match := lintBlockPath.FindStringSubmatch(diagnostic.Path); match != nil {
+			where = match[1]
+			if _, err := fmt.Sscan(match[2], &block); err == nil {
+				block++
+			}
+		}
+		if where == zone {
+			lines = append(lines, lintLine{Message: diagnostic.Message, Block: block})
+		}
+	}
+	return lines
+}
+
+// QuestLint reports what is wrong with the quest itself: the start and finish
+// pages, the settings, and the shape of the tree. What is wrong with a
+// particular objective is marked on that objective, where it can be acted on.
+//
+// Unlike the import check, which is a decision point, this is a running
+// commentary on something being built. It says nothing at all when there is
+// nothing to say: a panel that is always there is one nobody reads.
+templ QuestLint(lint services.QuestLint) {
+	<div id="quest-lint" class="px-5">
+		if lint.Unreadable() {
+			<div role="alert" class="alert alert-outline alert-warning mb-3 items-start">
+				@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
+				<div>
+					<p class="font-bold">Checks could not run</p>
+					<p class="text-sm mt-1">
+						Nothing here has been checked, so an empty list is not an all-clear.
+						Reload to try again.
+					</p>
+				</div>
+			</div>
+		}
+		if len(lint.Quest.Errors) > 0 {
+			@questLintList("error", "circle-alert", "Needs fixing", lint.Quest.Errors)
+		}
+		if len(lint.Quest.Warnings) > 0 {
+			@questLintList("warning", "triangle-alert", "Worth a look", lint.Quest.Warnings)
+		}
+	</div>
+}
+
+templ questLintList(style, iconName, heading string, diagnostics []game.LintDiag) {
+	<div role="alert" class={ "alert alert-outline mb-3 items-start", "alert-" + style }>
+		@icon(iconName, templ.Attributes{"class": "w-5 h-5"})
+		<div>
+			<p class="font-bold">{ heading } ({ fmt.Sprint(len(diagnostics)) })</p>
+			<ul class="text-sm mt-1 list-disc list-inside space-y-0.5">
+				for _, diagnostic := range diagnostics {
+					<li>{ diagnostic.Message }</li>
+				}
+			</ul>
+		</div>
+	</div>
+}
+
+// objectiveLintBadge marks a row the linter has something to say about, and
+// says it on hover.
+//
+// tabindex because the badge is the only place this text appears in the tree:
+// a tooltip nothing can focus is one a keyboard never reads.
+templ objectiveLintBadge(result game.LintResult) {
+	if len(result.Errors) > 0 || len(result.Warnings) > 0 {
+		<span class="tooltip tooltip-left shrink-0" tabindex="0">
+			<span class="tooltip-content w-72 p-3 text-left whitespace-normal">
+				@lintDiagLines("Needs fixing", result.Errors)
+				@lintDiagLines("Worth a look", result.Warnings)
+			</span>
+			if len(result.Errors) > 0 {
+				@icon("circle-alert", templ.Attributes{"class": "w-4 h-4 text-error"})
+			} else {
+				@icon("triangle-alert", templ.Attributes{"class": "w-4 h-4 text-warning"})
+			}
+		</span>
+	}
+}
+
+templ lintDiagLines(heading string, diagnostics []game.LintDiag) {
+	if len(diagnostics) > 0 {
+		<p class="text-xs font-bold uppercase tracking-wide">{ heading }</p>
+		<ul class="text-xs list-disc list-outside pl-4 space-y-1 mb-2">
+			for _, diagnostic := range diagnostics {
+				<li class="text-pretty">{ diagnostic.Message }</li>
+			}
+		</ul>
+	}
+}
+
+// QuestBuilder is the quest page. The panel renders inside the tree rather
+// than above it, so one swap refreshes both: what is wrong and the rows it is
+// wrong about are answers to the same question.
+templ QuestBuilder(lint services.QuestLint, root models.Objective, nodes []*ObjectiveTreeNode, settings models.QuestSettings) {
+	@ObjectiveTree(lint, root, nodes, settings)
+}
+
+// SystemPageLintOOB re-renders the system page's panel after a block changes.
+templ SystemPageLintOOB(lint services.QuestLint, pathPrefix string) {
+	<div id="system-page-lint" hx-swap-oob="true">
+		@SystemPageLint(lint, pathPrefix)
+	</div>
+}
+
+// SystemPageLint shows the diagnostics about one system page, minus the missing
+// start button, which the page already offers a fix for as a hint. It sets no
+// side padding: the editor around it does.
+templ SystemPageLint(lint services.QuestLint, pathPrefix string) {
+	{{ result := withoutHintedDiagnostics(lint.Quest.Filter(pathPrefix)) }}
+	if lint.Unreadable() {
+		<div role="alert" class="alert alert-outline alert-warning mb-3 items-start">
+			@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
+			<p class="text-sm">Checks could not run, so nothing on this page has been checked.</p>
+		</div>
+	} else if len(result.Errors) > 0 || len(result.Warnings) > 0 {
+		if len(result.Errors) > 0 {
+			@questLintList("error", "circle-alert", "Needs fixing", result.Errors)
+		}
+		if len(result.Warnings) > 0 {
+			@questLintList("warning", "triangle-alert", "Worth a look", result.Warnings)
+		}
+	}
+}
+
+// withoutHintedDiagnostics drops what the system page editor already offers a
+// fix for in place.
+func withoutHintedDiagnostics(result game.LintResult) game.LintResult {
+	keep := func(diagnostics []game.LintDiag) []game.LintDiag {
+		var kept []game.LintDiag
+		for _, diagnostic := range diagnostics {
+			if diagnostic.Code != "NO_START_BUTTON" {
+				kept = append(kept, diagnostic)
+			}
+		}
+		return kept
+	}
+	return game.LintResult{Errors: keep(result.Errors), Warnings: keep(result.Warnings)}
+}
+
+// ObjectiveLintPanelOOB re-renders every slot in place after a save. The
+// objective form posts with no swap, so without this the slots keep whatever
+// they said when the page loaded: a fixed problem still reads as broken, and a
+// newly broken one still reads as clean.
+templ ObjectiveLintPanelOOB(lint services.QuestLint, objectiveID string) {
+	@objectiveLintSlot(lint, objectiveID, "task", true)
+	@objectiveLintSlot(lint, objectiveID, "proof", true)
+	@objectiveLintSlot(lint, objectiveID, "reveal", true)
+}
+
+// objectiveLintSlot is what the rules say about one part of the editor, shown
+// inside that part: a note about a block sits with the blocks, not above a page
+// the author may have scrolled away from.
+//
+// The task slot also takes whatever names no block, and the root's diagnostics
+// about the quest. The root has no row in the tree, so this page is the only
+// one carrying the controls those are about.
+//
+// Every slot sits between its section's header and its panel, flush with the
+// panel, so a note never pushes the form it is about out of place.
+templ objectiveLintSlot(lint services.QuestLint, objectiveID, zone string, oob bool) {
+	{{ found := lintForZone(lint.ForEditor(objectiveID), zone) }}
+	<div
+		id={ "lint-" + zone }
+		class="empty:hidden"
+		if oob {
+			hx-swap-oob="true"
+		}
+	>
+		if zone == "task" && lint.Unreadable() {
+			<div role="alert" class="lint-note warning">
+				<span class="lint-ico">
+					@icon("triangle-alert", templ.Attributes{"class": "w-5 h-5"})
+				</span>
+				<p>Checks could not run, so nothing on this page has been checked.</p>
+			</div>
+		}
+		if len(found.Errors) > 0 {
+			@zoneLintList("error", "circle-alert", "Needs fixing", found.Errors)
+		}
+		if len(found.Warnings) > 0 {
+			@zoneLintList("warning", "triangle-alert", "Worth a look", found.Warnings)
+		}
+	</div>
+}
+
+templ zoneLintList(style, iconName, heading string, lines []lintLine) {
+	<div role="alert" class={ "lint-note", style }>
+		<span class="lint-ico">
+			@icon(iconName, templ.Attributes{"class": "w-5 h-5"})
+		</span>
+		<div>
+			<p class="lint-head">{ heading } <span class="lint-n">{ fmt.Sprint(len(lines)) }</span></p>
+			<ul class="lint-list">
+				for _, line := range lines {
+					<li>
+						if line.Block > 0 {
+							<button type="button" class="lint-go" data-ignore-lock data-lint-goto={ fmt.Sprint(line.Block) }>Block { fmt.Sprint(line.Block) }</button>{ ": " + line.Message }
+						} else {
+							{ line.Message }
+						}
+					</li>
+				}
+			</ul>
+		</div>
+	</div>
+}

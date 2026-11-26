@@ -1,0 +1,683 @@
+/* Player shell tokens.
+   A tile's face, edge and icon are one hue at three lightnesses; the hue is set
+   per section (--h) from the palette in internal/templates/players/hues.go.
+   Scoped to .player so the admin, which shares these themes, is untouched.
+   Dark is darker than dracula's own ground so a tile reads as raised. --iol is
+   the icon glyph, dark on a bright tile in both themes (a light glyph on the
+   dark tile measures about 2:1). hues_test.go holds these to contrast floors.
+
+   --tint, --edge and --ico are declared again wherever --h changes (.q-sec): a
+   custom property using var() resolves on the element that holds it, so
+   children setting --h would otherwise see the parent's colours. */
+.player {
+  --tl: 94.5%; --tc: .05;
+  --el: 82%;   --ec: .09;
+  --il: 82%;   --ic: .12;
+  --iol: 22%;
+  --dl: 68%;
+  --al-i-bg: oklch(86% .075 235); --al-w-bg: oklch(90% .13 88);
+  --al-s-bg: oklch(86% .1 150); --al-e-bg: oklch(86% .09 27); --al-on: oklch(22% .03 260);
+  --h: 135;
+  --tint: oklch(var(--tl) var(--tc) var(--h));
+  --edge: oklch(var(--el) var(--ec) var(--h));
+  --ico: oklch(var(--il) var(--ic) var(--h));
+  --ico-on: oklch(var(--iol) .06 var(--h));
+  --dot: oklch(var(--dl) .15 var(--h));
+  --soft: color-mix(in oklab, var(--color-base-content) 88%, var(--color-base-100));
+  --hair: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+  --sd: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  .player {
+    --color-base-100: oklch(25% 0.016 277.508);
+    --color-base-200: oklch(21.5% 0.014 277.508);
+    --color-base-300: oklch(18.5% 0.012 277.508);
+    --tl: 36%; --tc: .085;
+    --el: 24%; --ec: .06;
+    --il: 72%; --ic: .15;
+    --iol: 16%;
+    --dl: 78%;
+    --al-i-bg: oklch(36% .09 245); --al-w-bg: oklch(40% .09 80);
+    --al-s-bg: oklch(36% .09 150); --al-e-bg: oklch(38% .1 27); --al-on: oklch(97% .01 100);
+    --sd: oklch(10% 0.012 277.508 / .9);
+  }
+}
+/* The admin picks its theme by attribute, so its preview must follow it. */
+[data-theme="dracula"] .player {
+  --color-base-100: oklch(25% 0.016 277.508);
+  --color-base-200: oklch(21.5% 0.014 277.508);
+  --color-base-300: oklch(18.5% 0.012 277.508);
+  --tl: 36%; --tc: .085;
+  --el: 24%; --ec: .06;
+  --il: 72%; --ic: .15;
+  --iol: 16%;
+  --dl: 78%;
+  --al-i-bg: oklch(36% .09 245); --al-w-bg: oklch(40% .09 80);
+  --al-s-bg: oklch(36% .09 150); --al-e-bg: oklch(38% .1 27); --al-on: oklch(97% .01 100);
+  --sd: oklch(10% 0.012 277.508 / .9);
+}
+[data-theme="cupcake"] .player {
+  --color-base-100: inherit; --color-base-200: inherit; --color-base-300: inherit;
+  --tl: 94.5%; --tc: .05;
+  --el: 82%;   --ec: .09;
+  --il: 82%;   --ic: .12;
+  --iol: 22%;
+  --dl: 68%;
+  --al-i-bg: oklch(86% .075 235); --al-w-bg: oklch(90% .13 88);
+  --al-s-bg: oklch(86% .1 150); --al-e-bg: oklch(86% .09 27); --al-on: oklch(22% .03 260);
+  --sd: color-mix(in oklab, var(--color-base-content) 18%, transparent);
+}
+
+/* One class per hue, so no number passes through the style sanitiser. */
+.q-h15 { --h: 15; } .q-h60 { --h: 60; } .q-h105 { --h: 105; } .q-h150 { --h: 150; }
+.q-h195 { --h: 195; } .q-h240 { --h: 240; } .q-h285 { --h: 285; } .q-h330 { --h: 330; }
+
+.player .q-sec {
+  --dot: oklch(var(--dl) .15 var(--h));
+  --tint: oklch(var(--tl) var(--tc) var(--h));
+  --edge: oklch(var(--el) var(--ec) var(--h));
+  --ico: oklch(var(--il) var(--ic) var(--h));
+  --ico-on: oklch(var(--iol) .06 var(--h));
+}
+.player .q-soft { color: var(--soft); }
+
+/* Headings. The group is the loudest type; the section under it is one step
+   down with a dot in its hue, so colour tells sections apart without a box. */
+.player .q-group { margin: 0; font-size: 30px; font-weight: 800; line-height: 1.1; letter-spacing: -.035em; text-wrap: balance; }
+.player .q-head { margin: 0; font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -.03em; text-wrap: balance; }
+.player .q-head-sub { display: inline-flex; align-items: center; gap: 10px; font-size: 22px; letter-spacing: -.025em; }
+.player .q-head-sub::before { content: ""; flex: none; width: 14px; height: 14px; border-radius: 50%; background: oklch(var(--dl) .15 var(--h)); }
+.player .q-pill { padding: 3px 12px; border-radius: 999px; background: oklch(var(--tl) calc(var(--tc) * 1.8) var(--h)); font-size: 15px; font-weight: 800; }
+
+/* A task: raised, and the only raised thing that is a link. Pressing drops the
+   face by its edge height so the bottom stays put. */
+.player .q-tile {
+  --lift: 4px; --pc: var(--edge);
+  position: relative; display: flex; align-items: center; gap: 14px;
+  min-height: 76px; padding: 14px 14px 14px 12px; border-radius: 22px;
+  background: var(--tint); color: var(--color-base-content);
+  box-shadow: 0 var(--lift) 0 var(--pc);
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-tile:active, .player .q-fin:active { transform: translateY(var(--lift)); box-shadow: 0 0 0 var(--pc); }
+.player .q-tile:focus-visible, .player .q-fin:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+.player .q-top { display: flex; align-items: center; gap: 14px; }
+.player .q-ico {
+  flex: none; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 16px;
+  background: var(--ico); color: var(--ico-on); box-shadow: 0 3px 0 var(--edge);
+}
+.player .q-ico svg { width: 26px; height: 26px; }
+.player .q-title { font-size: 20px; font-weight: 700; line-height: 1.2; letter-spacing: -.015em; text-wrap: pretty; }
+.player .q-desc { font-size: 16px; font-weight: 500; line-height: 1.3; text-wrap: pretty; }
+.player .q-hero { --lift: 6px; flex-direction: column; align-items: stretch; gap: 14px; min-height: 196px; padding: 20px 18px 18px; border-radius: 28px; }
+.player .q-hero .q-ico { width: 64px; height: 64px; border-radius: 20px; }
+.player .q-hero .q-ico svg { width: 34px; height: 34px; }
+.player .q-over { font-size: 15px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; }
+.player .q-hero .q-title { font-size: 28px; font-weight: 800; letter-spacing: -.025em; }
+.player .q-hero .q-desc { font-size: 17px; }
+.player .q-go { display: flex; align-items: center; gap: 8px; margin-top: auto; font-size: 18px; font-weight: 800; }
+
+/* The way out of a met band: an "or", then one loud button. Green is the
+   finishing colour everywhere, so success and not the section's hue. */
+.player .q-or { display: flex; align-items: center; gap: 12px; font-size: 15px; font-weight: 700; color: var(--soft); }
+.player .q-or::before, .player .q-or::after { content: ""; flex: 1; border-top: 3px dotted var(--hair); }
+.player .q-fin {
+  --lift: 5px; --pc: color-mix(in oklab, var(--color-success) 55%, black);
+  width: 100%; min-height: 64px; padding: 12px 16px; border: 0; border-radius: 20px;
+  background: var(--color-success); color: var(--color-success-content);
+  font: 800 21px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em; text-wrap: balance;
+  box-shadow: 0 var(--lift) 0 var(--pc); cursor: pointer;
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .player .q-tile, .player .q-fin { transition: none; }
+}
+
+/* A task's page: screen height less layout padding (pt-4, pb-24 clearing the
+   dock), so "Back to the quest" sits at the bottom when content is short. */
+.player .q-page { min-height: calc(100dvh - 7rem); }
+
+/* The reveal takes no hue: the group is no help once it is being read.
+   Dropping chroma is enough since tiles are built from it. */
+.player .q-neutral { --tc: 0; --ec: 0; --ic: 0; }
+
+/* An interactive block draws its own card: a raised, tinted face means this
+   wants something from you. Overrides daisyUI's flat fill so it follows the
+   section. */
+.player .block-view .card.shadow-lg {
+  background: var(--tint); color: var(--color-base-content);
+  border-radius: 22px; box-shadow: 0 4px 0 var(--edge);
+}
+
+.player .q-back {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 60px; padding: 10px 16px; border-radius: 20px;
+  background: var(--color-base-100); color: var(--color-base-content);
+  font: 800 19px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em;
+  box-shadow: 0 4px 0 var(--sd);
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-back:active { transform: translateY(4px); box-shadow: 0 0 0 var(--sd); }
+.player .q-back:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+
+/* The notice that the page is about to change: fixed above the dock, a bar
+   draining over the wait, the page behind dimmed. */
+.player .q-toast {
+  position: fixed; z-index: 30; left: 50%; transform: translateX(-50%);
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  width: min(calc(100% - 2rem), 26rem); overflow: hidden;
+  display: flex; align-items: center; gap: 12px; padding: 16px 16px 20px;
+  border: 0; border-radius: 20px; text-align: left;
+  background: var(--color-success); color: var(--color-success-content);
+  font: 800 18px/1.2 ui-rounded, system-ui, sans-serif;
+  box-shadow: 0 5px 0 color-mix(in oklab, var(--color-success) 55%, black), 0 16px 24px -12px rgba(0,0,0,.4);
+  animation: q-toastin .25s cubic-bezier(.3,1.4,.5,1);
+}
+.player .q-toast i {
+  position: absolute; left: 0; bottom: 0; width: 100%; height: 6px;
+  background: color-mix(in oklab, var(--color-success-content) 55%, transparent);
+  transform-origin: left; animation: q-drain 1.7s linear forwards;
+}
+@keyframes q-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes q-toastin { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+.player .q-dim { transition: opacity 1.7s linear; }
+.player .q-page:has(.q-toast) .q-dim { opacity: .45; }
+@media (prefers-reduced-motion: reduce) {
+  .player .q-toast { animation: none; }
+  .player .q-dim, .player .q-back { transition: none; }
+}
+
+/* Journal and You. Raised means it does something (a find reopens its page, the
+   pencil renames); everything else is flat so a fact never looks like a button. */
+.player .q-label { font-size: 15px; font-weight: 700; letter-spacing: .02em; color: var(--soft); }
+
+.player .q-chips { display: flex; gap: 8px; overflow-x: auto; margin-inline: -1rem; padding: 4px 1rem 6px; scrollbar-width: none; }
+.player .q-chips::-webkit-scrollbar { display: none; }
+.player .q-chip {
+  flex: none; display: inline-flex; align-items: center; min-height: 44px; padding: 0 18px;
+  border: 2px solid var(--hair); border-radius: 999px; white-space: nowrap;
+  font: 700 16px/1 ui-rounded, system-ui, sans-serif; color: var(--color-base-content);
+}
+.player .q-chip-on { background: var(--color-base-content); border-color: var(--color-base-content); color: var(--color-base-100); }
+.player .q-chip:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+
+.player .q-flat {
+  display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 14px 16px; border-radius: 22px;
+  background: var(--color-base-100); color: var(--color-base-content);
+}
+.player .q-flat .q-ico { background: var(--color-base-300); color: var(--color-base-content); box-shadow: none; }
+.player .q-flat.q-mile { background: var(--tint); }
+.player .q-flat.q-mile .q-ico { background: var(--ico); color: var(--ico-on); }
+.player .q-flat.q-won { background: var(--color-success); color: var(--color-success-content); min-height: 88px; }
+.player .q-flat.q-won .q-ico { background: var(--color-base-100); color: var(--color-base-content); }
+.player .q-flat.q-won .q-title { font-size: 24px; font-weight: 800; }
+.player .q-flat.q-won .q-desc { color: var(--color-success-content); }
+.player .q-pts {
+  display: inline-block; margin-left: 8px; padding: 1px 10px; border-radius: 999px;
+  background: var(--color-success); color: var(--color-success-content); font-weight: 800; font-variant-numeric: tabular-nums;
+}
+
+.player .q-pencil {
+  flex: none; width: 52px; height: 52px; display: grid; place-items: center; border: 0; border-radius: 50%;
+  background: var(--color-base-100); color: var(--color-base-content); box-shadow: 0 3px 0 var(--sd); cursor: pointer;
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-pencil:active { transform: translateY(3px); box-shadow: 0 0 0 var(--sd); }
+.player .q-pencil:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+
+.player .q-rename { width: 100%; display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 22px; background: var(--color-base-100); box-shadow: 0 3px 0 var(--sd); }
+.player .q-input {
+  min-height: 56px; padding: 0 16px; border: 2px solid var(--hair); border-radius: 16px;
+  background: var(--color-base-200); color: var(--color-base-content); font: 700 20px ui-rounded, system-ui, sans-serif;
+}
+.player .q-input:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+
+.player .q-char {
+  flex: 1; max-width: 64px; height: 72px; display: grid; place-items: center; border-radius: 18px;
+  background: var(--color-base-100); box-shadow: 0 3px 0 var(--sd);
+  font: 800 32px ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.player .q-stat { display: flex; flex-direction: column; gap: 2px; padding: 14px 16px 16px; border-radius: 22px; background: var(--color-base-100); box-shadow: 0 3px 0 var(--sd); }
+.player .q-num { font: 800 32px/1.1 ui-rounded, system-ui, sans-serif; letter-spacing: -.02em; font-variant-numeric: tabular-nums; }
+.player .q-of { font-size: 18px; font-weight: 600; color: var(--soft); letter-spacing: 0; }
+
+.player .q-lb { display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 10px 16px; border-radius: 18px; background: var(--color-base-100); font-size: 18px; font-weight: 600; }
+.player .q-lb-me { background: var(--tint); font-weight: 800; }
+.player .q-rk { width: 28px; flex: none; font-variant-numeric: tabular-nums; color: var(--soft); }
+.player .q-sc { font-weight: 800; font-variant-numeric: tabular-nums; }
+.player .q-you { margin-left: 8px; padding: 1px 10px; border-radius: 999px; background: var(--color-base-content); color: var(--color-base-100); font-size: 15px; font-style: normal; font-weight: 800; }
+@media (prefers-reduced-motion: reduce) { .player .q-pencil { transition: none; } }
+
+/* q-act is the one thing to do, in the action colour; q-alt is the quieter way
+   round it. Both press like a tile. */
+.player .q-act, .player .q-alt {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  width: 100%; min-height: 60px; padding: 10px 20px; border-radius: 20px;
+  font: 800 20px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em; cursor: pointer;
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .q-act {
+  --lift: 5px; --pc: color-mix(in oklab, var(--color-primary) 55%, black);
+  border: 0; background: var(--color-primary); color: var(--color-primary-content);
+  box-shadow: 0 var(--lift) 0 var(--pc);
+}
+.player .q-act-fit { width: auto; flex: none; }
+.player .q-alt {
+  --lift: 0px; --pc: transparent;
+  border: 2px solid var(--hair); background: transparent; color: var(--color-base-content);
+  font-size: 18px; font-weight: 700;
+}
+.player .q-act:active { transform: translateY(var(--lift)); box-shadow: 0 0 0 var(--pc); }
+.player .q-act:focus-visible, .player .q-alt:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .player .q-act, .player .q-alt { transition: none; } }
+
+/* The blocks draw daisyUI buttons, fields, options and alerts; this skins them
+   as raised, large, high-contrast like the tiles. Unlayered, so it beats
+   daisyUI's layer whatever the specificity. */
+.player .btn {
+  --pc: var(--sd);
+  min-height: 56px; height: auto; padding: 10px 22px; border-radius: 20px; border: 0;
+  font: 800 19px/1.15 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em;
+  box-shadow: 0 4px 0 var(--pc);
+  transition: transform .12s cubic-bezier(.3,1.6,.5,1), box-shadow .12s;
+}
+.player .btn:not(.btn-circle):active { transform: translateY(4px); box-shadow: 0 0 0 var(--pc); }
+.player .btn:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+.player .btn-sm { min-height: 48px; font-size: 17px; padding: 8px 18px; }
+.player .btn-primary { --pc: color-mix(in oklab, var(--color-primary) 55%, black); background: var(--color-primary); color: var(--color-primary-content); }
+.player .btn-secondary { --pc: color-mix(in oklab, var(--color-secondary) 55%, black); background: var(--color-secondary); color: var(--color-secondary-content); }
+.player .btn-accent { --pc: color-mix(in oklab, var(--color-accent) 55%, black); background: var(--color-accent); color: var(--color-accent-content); }
+.player .btn-success { --pc: color-mix(in oklab, var(--color-success) 55%, black); background: var(--color-success); color: var(--color-success-content); }
+.player .btn-info { --pc: color-mix(in oklab, var(--color-info) 55%, black); background: var(--color-info); color: var(--color-info-content); }
+.player .btn-warning { --pc: color-mix(in oklab, var(--color-warning) 55%, black); background: var(--color-warning); color: var(--color-warning-content); }
+.player .btn-error { --pc: color-mix(in oklab, var(--color-error) 55%, black); background: var(--color-error); color: var(--color-error-content); }
+.player .btn-ghost, .player .btn-outline, .player .btn-neutral {
+  --pc: transparent; background: transparent; color: var(--color-base-content);
+  border: 2px solid var(--hair); box-shadow: none; font-weight: 700;
+}
+.player .btn-circle { border-radius: 999px; min-height: 0; box-shadow: none; }
+.player .btn[disabled], .player .btn-disabled { opacity: .5; box-shadow: none; }
+
+.player .input, .player .textarea, .player .select {
+  min-height: 56px; border: 2px solid var(--hair); border-radius: 16px;
+  background: var(--color-base-200); color: var(--color-base-content);
+  font-size: 18px; font-weight: 600; box-shadow: none;
+}
+.player .input:focus, .player .input:focus-within, .player .textarea:focus, .player .select:focus {
+  outline: 3px solid var(--color-base-content); outline-offset: 2px; border-color: transparent;
+}
+
+/* Options: a whole row to tap, raised when taken. Written against the label
+   holding the input, so every block that offers a choice gets it. The map's
+   style switcher is a label holding a checkbox too, and is not an option. */
+.player .block-view label:has(> input[type="radio"]), .player .block-view label:not(.map-style-switcher):has(> input[type="checkbox"]) {
+  display: flex; align-items: center; gap: 14px; width: 100%; min-height: 64px; padding: 12px 16px;
+  border: 2px solid var(--hair); border-radius: 20px; background: var(--color-base-100);
+  font-size: 19px; font-weight: 700; cursor: pointer; color: var(--color-base-content);
+}
+/* An option's words wrap in the room left, so a long label never pushes the
+   control or a verdict pill out of the row. */
+.player .block-view label:has(> input[type="radio"]) > :not(input), .player .block-view label:not(.map-style-switcher):has(> input[type="checkbox"]) > :not(input) { flex: 1 1 10rem; min-width: 0; overflow-wrap: anywhere; }
+.player .block-view label:has(> input[type="radio"]) > input, .player .block-view label:not(.map-style-switcher):has(> input[type="checkbox"]) > input { flex: none; }
+.player .block-view label:not(.map-style-switcher):has(> input:checked) { border-color: transparent; background: var(--tint); box-shadow: 0 3px 0 var(--edge); font-weight: 800; }
+.player .block-view label:not(.map-style-switcher):is(:has(> input[type="radio"]), :has(> input[type="checkbox"])):has(> input:focus-visible) { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+.player .radio, .player .checkbox { --size: 1.75rem; }
+
+/* Alerts must be seen: full colour, raised, large type. daisyUI's soft alerts
+   read as a grey bar. */
+.player .alert {
+  border: 0; border-radius: 22px; padding: 16px 18px; gap: 14px;
+  background: var(--al-i-bg); color: var(--al-on); --alert-color: var(--al-on);
+  font-size: 18px; font-weight: 700; line-height: 1.45; box-shadow: 0 4px 0 var(--sd);
+}
+.player .alert-success { background: var(--al-s-bg); }
+.player .alert-warning { background: var(--al-w-bg); }
+.player .alert-error { background: var(--al-e-bg); }
+.player .alert svg { width: 26px; height: 26px; stroke: currentColor; }
+
+.player .prose { --tw-prose-body: var(--color-base-content); --tw-prose-headings: var(--color-base-content); --tw-prose-bold: var(--color-base-content); font-size: 1.125rem; line-height: 1.5; }
+
+/* The dock: three big targets, the current one raised in the tint. */
+.player .dock {
+  height: calc(76px + env(safe-area-inset-bottom, 0px)); gap: 6px;
+  padding: 10px max(12px, calc((100% - 28rem) / 2)) calc(10px + env(safe-area-inset-bottom, 0px));
+  background: var(--color-base-100); border-top: 0; box-shadow: 0 -8px 20px -14px rgba(0,0,0,.4);
+}
+.player .dock > * { margin-bottom: 0; flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border-radius: 18px; color: var(--soft); }
+.player .dock .dock-label { font-size: 15px; font-weight: 700; }
+.player .dock svg { width: 26px; height: 26px; }
+.player .dock > .dock-active { background: var(--tint); color: var(--color-base-content); }
+.player .dock > .dock-active .dock-label { font-weight: 800; }
+.player .dock > .dock-active::after { display: none; }
+
+/* Static blocks and the remaining pieces of block chrome. */
+/* Images and maps sit flat on a cream page, so they take the same bottom edge
+   as a card. */
+.player .block-view figure img, .player .block-view [id^="player-map-block-"], .player .block-view [id^="geofence-player-map-"] { border-radius: 24px; box-shadow: 0 4px 0 var(--sd); }
+.player .block-view figcaption { font-size: 15px; font-weight: 600; color: var(--soft); }
+.player .badge { height: 1.75rem; padding: 0 12px; font-size: 14px; font-weight: 800; }
+/* Points and completion share the card's top-right: points first and, once the
+   block is done, a check after them. A block not yet done says nothing. */
+.player .indicator .indicator-item { --indicator-x: 0; margin-right: 1rem; }
+.player .indicator .indicator-item.indicator-center { --indicator-s: auto; --indicator-e: 0; }
+.player .indicator:has(.q-check) .indicator-item.indicator-center { margin-right: 3.25rem; }
+.player .q-check { width: 1.75rem; padding: 0; }
+
+.player .q-unlocked { margin-top: 12px; font-size: 18px; font-weight: 600; line-height: 1.45; }
+.player .q-unlocked > :first-child { margin-top: 0; } .player .q-unlocked > :last-child { margin-bottom: 0; }
+
+/* The finish page's header is flat: the one loud thing on the page is the
+   button, so green is saved for what the player should press. */
+.player .q-finish {
+  display: flex; align-items: center; gap: 16px; padding: 20px 18px;
+  border-radius: 28px; background: var(--color-base-100); color: var(--color-base-content);
+  box-shadow: 0 4px 0 var(--sd);
+}
+.player .q-finish-ico {
+  flex: none; width: 64px; height: 64px; display: grid; place-items: center; border-radius: 22px;
+  background: var(--ico); color: var(--ico-on); box-shadow: 0 4px 0 var(--edge);
+}
+.player .q-finish-ico svg { width: 34px; height: 34px; }
+.player .q-finish-title { margin: 0; font-size: 26px; font-weight: 800; line-height: 1.15; letter-spacing: -.03em; text-wrap: balance; }
+.player .q-finish-pts { margin: 4px 0 0; font-size: 20px; font-weight: 700; color: var(--soft); font-variant-numeric: tabular-nums; }
+.player a.q-fin { display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none; }
+
+/* Option rows need a margin: the label rule gave each a height and none, and
+   daisyUI's form-control no longer lays them out. */
+.player .block-view :is(label:has(> input[type="radio"]), label:not(.map-style-switcher):has(> input[type="checkbox"])) + :is(label:has(> input[type="radio"]), label:not(.map-style-switcher):has(> input[type="checkbox"])) { margin-top: 12px; }
+
+/* A field and its button stack: a daisyUI join would fight for one row at this
+   size. */
+.player .join { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+.player .join > .input, .player .join > input, .player .join > .btn { width: 100%; max-width: none; border-radius: 16px; }
+.player .join > .btn { border-radius: 20px; }
+.player .join > .btn-primary { --pc: color-mix(in oklab, var(--color-primary) 55%, black); background: var(--color-primary); color: var(--color-primary-content); border: 0; box-shadow: 0 4px 0 var(--pc); }
+
+/* The small buttons are small on purpose, in a row of controls. */
+.player .btn-xs { min-height: 44px; min-width: 44px; padding: 0 10px; font-size: 16px; border-radius: 14px; }
+.player .sort-container .join { flex-direction: row; width: auto; gap: 8px; }
+.player .sort-container .join > .btn { width: 48px; border-radius: 14px; }
+
+/* The start and link buttons are the call to action, so they fill the width. */
+.player .block-view .text-center > .btn:not(.btn-circle) { width: 100%; }
+
+/* Stars: daisyUI draws unchosen ones at 20% opacity, near invisible on a tinted
+   card. */
+.player .rating * { opacity: .4; }
+.player .rating :checked, .player .rating [aria-checked="true"], .player .rating [aria-current="true"],
+.player .rating :has(~ :checked, ~ [aria-checked="true"], ~ [aria-current="true"]) { opacity: 1; }
+.player .rating-lg { --size: 2.75rem; }
+.player .rating-xl { --size: 3rem; }
+
+/* A form's submit is the thing to press, so it fills the card like the rest. */
+.player .block-view .card button[type="submit"].btn { width: 100%; }
+
+/* An answered quiz shows each option with its verdict in words: colour alone
+   measured about 2.5:1 on a tinted card. The row stays plain instead of taking
+   the chosen-option fill, and the verdict sits at the right end of the row. */
+.player .block-view label:not(.map-style-switcher):has(> input:disabled) {
+  background: var(--color-base-100); border: 2px solid var(--hair); box-shadow: none;
+  color: var(--color-base-content); font-weight: 700; cursor: default;
+}
+.player .block-view label:not(.map-style-switcher):has(> input:disabled) > .q-verdict { margin-left: auto; flex: none; padding: 2px 12px; border-radius: 999px; font-size: 15px; font-weight: 800; white-space: nowrap; }
+.player .q-verdict-ok { background: var(--color-success); color: var(--color-success-content); }
+.player .q-verdict-no { background: var(--color-error); color: var(--color-error-content); }
+
+
+/* ---------------------------------------------------------------------------
+   The block family. Flat means read, raised means do: a static block sits on the
+   page with no card, and anything that asks for an answer gets the tinted,
+   raised card (.qb-card). One edge: cards 5px, rows and chips 3px. Corners step
+   26, 22, 20. Section colour says where you are, green says done or right, red
+   says not this one, and nothing else is green or red.
+   --------------------------------------------------------------------------- */
+
+/* Text. Links are bold and underlined so they read outside; bullets take the
+   section colour; a quote is the one place a bar down the side means something. */
+.player .block-view .prose { max-width: none; font-weight: 500; line-height: 1.55; text-wrap: pretty; }
+.player .block-view .prose > * { margin-block: 0; }
+.player .block-view .prose > * + * { margin-top: .85em; }
+.player .block-view .prose li, .player .block-view .prose li > p { margin: 0; }
+.player .block-view .prose strong { font-weight: 800; }
+.player .block-view .prose a { color: var(--color-primary); font-weight: 700; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.player .block-view .prose h1, .player .block-view .prose h2, .player .block-view .prose h3 { margin-bottom: 0; font-family: ui-rounded, system-ui, sans-serif; font-weight: 800; line-height: 1.2; letter-spacing: -.025em; }
+.player .block-view .prose h1 { margin-top: 1.2em; font-size: 26px; }
+.player .block-view .prose h2 { margin-top: 1.3em; font-size: 22px; }
+.player .block-view .prose h3 { margin-top: 1.3em; font-size: 19px; }
+.player .block-view .prose ul { padding: 0; list-style: none; }
+.player .block-view .prose ul > li { position: relative; padding-left: 26px; }
+.player .block-view .prose ul > li::before { content: ""; position: absolute; left: 4px; top: .6em; width: 11px; height: 11px; border-radius: 50%; background: var(--dot); }
+.player .block-view .prose ol > li::marker { font-weight: 800; color: var(--soft); }
+.player .block-view .prose li + li { margin-top: .4em; }
+.player .block-view .prose blockquote { padding: 2px 0 2px 16px; border-left: 4px dotted var(--hair); color: var(--soft); font-style: normal; font-weight: 600; }
+.player .block-view .prose blockquote > * { margin: 0; }
+.player .block-view .prose blockquote > * + * { margin-top: .6em; }
+.player .block-view .prose blockquote p::before, .player .block-view .prose blockquote p::after { content: none; }
+
+/* A tilted sticker: the icon on a heading, a card's kind, a callout. The big one
+   hops when poked. */
+.player .qb-sticker {
+  flex: none; display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px;
+  background: var(--ico); color: var(--ico-on); box-shadow: 0 4px 0 var(--edge); transform: rotate(var(--r, -4deg)); cursor: pointer;
+}
+.player .qb-sticker svg { width: 34px; height: 34px; }
+.player .qb-sticker.md { width: 56px; height: 56px; border-radius: 18px; } .player .qb-sticker.md svg { width: 30px; height: 30px; }
+.player .qb-sticker.sm { width: 48px; height: 48px; border-radius: 16px; box-shadow: 0 3px 0 var(--edge); } .player .qb-sticker.sm svg { width: 26px; height: 26px; }
+.player .qb-sticker.xs { width: 34px; height: 34px; border-radius: 11px; box-shadow: 0 2px 0 var(--edge); cursor: default; } .player .qb-sticker.xs svg { width: 20px; height: 20px; }
+.player .block-view:nth-child(even) .qb-sticker { --r: 4deg; }
+.player .qb-sticker.qb-hop { animation: qb-hop .55s cubic-bezier(.3,1.6,.5,1); }
+@keyframes qb-hop {
+  0% { transform: rotate(var(--r, -4deg)) translateY(0); }
+  35% { transform: rotate(calc(var(--r, -4deg) * -1.6)) translateY(-14px) scale(1.06); }
+  70% { transform: rotate(var(--r, -4deg)) translateY(2px) scale(.97); }
+  100% { transform: rotate(var(--r, -4deg)); }
+}
+
+.player .qb-head { display: flex; flex-direction: column; align-items: center; gap: 16px; margin: 6px 0; text-align: center; }
+.player .qb-head h1 { margin: 0; font: 800 30px/1.12 ui-rounded, system-ui, sans-serif; letter-spacing: -.035em; text-wrap: balance; }
+.player .qb-head.md h1 { font-size: 26px; } .player .qb-head.sm h1 { font-size: 22px; }
+
+/* Images, maps and video sit flat on the page with a card's bottom edge. A linked
+   image says so, so a link is never a surprise. */
+.player .block-view figure img { border-radius: 24px; }
+.player .block-view figcaption, .player .qb-cap { margin-top: 12px; font-size: 15px; font-weight: 600; color: var(--soft); text-align: center; text-wrap: balance; }
+.player .qb-imglink { position: relative; display: block; }
+.player .qb-out { position: absolute; right: 12px; bottom: 12px; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px 6px 10px; border-radius: 999px; background: var(--color-base-100); color: var(--color-base-content); font-size: 14px; font-weight: 800; box-shadow: 0 3px 0 var(--sd); }
+.player .qb-out svg { width: 16px; height: 16px; }
+.player .qb-video { position: relative; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 24px; background: var(--color-base-300); box-shadow: 0 4px 0 var(--sd); }
+.player .qb-video iframe, .player .qb-video img { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.player .block-view .mapboxgl-marker g[fill="#3FB1CE"] { fill: var(--dot); }
+
+/* Callouts keep full-strength fills; the icon rides in a small tilted chip. */
+.player .alert { align-items: flex-start; }
+.player .qb-ai { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 13px; background: color-mix(in oklab, var(--al-on) 14%, transparent); transform: rotate(var(--r, -5deg)); }
+.player .qb-ai svg { width: 22px; height: 22px; }
+.player .block-view:nth-child(even) .qb-ai { --r: 5deg; }
+.player .alert { font-weight: 600; }
+.player .alert b, .player .alert strong { font-weight: 800; }
+
+/* A link out says where it goes. */
+.player .qb-link .btn { gap: 10px; } .player .qb-link .btn svg { width: 22px; height: 22px; flex: none; }
+
+/* A dotted pause. With a title the line breaks around it; without, it runs on. */
+.player .qb-div { display: flex; align-items: center; gap: 14px; margin: 2px 0; color: var(--soft); font-size: 15px; font-weight: 800; }
+.player .qb-div::before, .player .qb-div::after { content: ""; flex: 1; border-top: 3px dotted var(--hair); }
+.player .qb-div:empty { gap: 0; }
+.player .qb-div:empty::after { display: none; }
+
+/* Tap to reveal: a chevron that turns over, and a hint while closed. */
+.player .qb-reveal { border-radius: 22px; background: var(--color-base-100); box-shadow: inset 0 0 0 2px var(--hair); }
+.player .qb-reveal[open] { box-shadow: inset 0 0 0 3px var(--dot), 0 3px 0 var(--edge); }
+.player .qb-reveal summary { display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px 16px; list-style: none; cursor: pointer; border-radius: 22px; }
+.player .qb-reveal summary::-webkit-details-marker { display: none; }
+.player .qb-reveal summary:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+.player .qb-chev { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--ico); color: var(--ico-on); transition: transform .25s cubic-bezier(.3,1.6,.5,1); }
+.player .qb-chev svg { width: 22px; height: 22px; }
+.player .qb-reveal[open] .qb-chev { transform: rotate(180deg); }
+.player .qb-reveal-t { flex: 1; min-width: 0; font: 800 18px/1.25 ui-rounded, system-ui, sans-serif; letter-spacing: -.01em; }
+.player .qb-reveal-t small { display: block; font: 600 14px system-ui, sans-serif; letter-spacing: 0; color: var(--soft); }
+.player .qb-reveal[open] .qb-reveal-t small { display: none; }
+.player .qb-reveal-body { padding: 2px 18px 18px; }
+.player .qb-reveal[open] .qb-reveal-body { animation: qb-in .28s cubic-bezier(.3,1.3,.5,1); }
+@keyframes qb-in { from { transform: translateY(-8px); } to { transform: none; } }
+
+/* The game's clock. Tiles take the same raised edge as everything else. */
+.player .game-countdown > div { min-width: 64px; padding: 10px 6px 8px; border-radius: 18px; background: var(--color-base-100); color: var(--color-base-content); box-shadow: 0 3px 0 var(--sd); font-size: 13px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; text-align: center; }
+.player .game-countdown .countdown { font-family: ui-rounded, system-ui, sans-serif; font-size: 32px; font-weight: 800; letter-spacing: -.02em; text-transform: none; }
+.player .block-view .alert-info .text-sm { font: 800 17px/1.25 ui-rounded, system-ui, sans-serif; }
+
+/* The start button: flat and honest while it cannot be pressed. */
+.player .qb-wait { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 60px; padding: 10px 20px; border-radius: 20px; background: var(--color-base-100); box-shadow: inset 0 0 0 2px var(--hair); color: var(--soft); font: 800 18px ui-rounded, system-ui, sans-serif; }
+.player .qb-wait svg { width: 22px; height: 22px; }
+.player .qb-start .btn { gap: 10px; width: 100%; } .player .qb-start .btn svg { width: 24px; height: 24px; }
+
+/* The interactive block: a raised, tinted card. It wants something from you. */
+.player .qb-card { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 16px 16px 18px; border-radius: 26px; background: var(--tint); color: var(--color-base-content); box-shadow: 0 5px 0 var(--edge); }
+.player .qb-card.is-fresh.is-wrong { animation: qb-shake .52s cubic-bezier(.36,.07,.19,.97); }
+@keyframes qb-shake { 10% { transform: translateX(-13px); } 25% { transform: translateX(11px); } 40% { transform: translateX(-9px); } 55% { transform: translateX(7px); } 70% { transform: translateX(-4px); } 85% { transform: translateX(2px); } }
+.player .qb-top { display: flex; align-items: center; gap: 10px; min-height: 40px; }
+.player .qb-kind { flex: 1; min-width: 0; font: 800 15px/1.1 ui-rounded, system-ui, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: color-mix(in oklab, var(--color-base-content) 82%, var(--tint)); }
+.player .qb-chip { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 14px; border-radius: 999px; background: var(--color-base-100); box-shadow: inset 0 0 0 2px var(--hair); font: 800 15px system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+.player .qb-chip svg { width: 18px; height: 18px; stroke-width: 3; }
+.player .qb-chip.earned { background: var(--color-success); color: var(--color-success-content); box-shadow: 0 3px 0 color-mix(in oklab, var(--color-success) 55%, black); }
+.player .qb-card.is-fresh .qb-chip.earned, .player .qb-fresh .qb-chip.earned { animation: qb-pop .5s cubic-bezier(.3,1.7,.5,1); }
+.player .qb-card.is-fresh .qb-chip.earned::after, .player .qb-fresh .qb-chip.earned::after {
+  content: ""; position: absolute; left: 50%; top: 50%; width: 8px; height: 8px; margin: -4px; border-radius: 3px; pointer-events: none;
+  box-shadow: 0 -34px 0 var(--color-success), 30px -22px 0 var(--color-warning), 36px 6px 0 var(--color-info), 18px 32px 0 var(--color-accent),
+              -18px 32px 0 var(--color-primary), -36px 6px 0 var(--color-warning), -30px -22px 0 var(--color-info), 0 34px 0 var(--color-secondary);
+  animation: qb-burst .8s cubic-bezier(.2,.7,.3,1) forwards;
+}
+@keyframes qb-pop { from { transform: scale(.6); } to { transform: scale(1); } }
+@keyframes qb-burst { from { transform: scale(.2); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+.player .qb-form { display: flex; flex-direction: column; gap: 14px; }
+.player .qb-q { margin: 0; font: 800 21px/1.28 ui-rounded, system-ui, sans-serif; letter-spacing: -.015em; text-wrap: pretty; }
+.player .qb-q > * { margin: 0; } .player .qb-q > * + * { margin-top: .6em; }
+.player .qb-hint { margin: -6px 0 0; font-size: 15px; font-weight: 600; color: var(--soft); }
+.player .qb-opts { display: flex; flex-direction: column; gap: 10px; }
+
+/* An option is a row to tap. Selected, it keeps the card's colour out: a white
+   fill, an edge in the section colour, a filled mark. The edge is an inset ring
+   so choosing never moves anything. */
+.player .qb-opt { position: relative; display: flex; align-items: center; gap: 14px; min-height: 64px; padding: 12px 16px; border-radius: 20px; background: var(--color-base-100); box-shadow: inset 0 0 0 2px var(--hair); font-size: 19px; font-weight: 700; cursor: pointer; transition: box-shadow .12s, transform .12s cubic-bezier(.3,1.6,.5,1); }
+.player .qb-opt:hover { box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--color-base-content) 38%, transparent); }
+.player .qb-opt:active { transform: translateY(2px); }
+.player .qb-opt:has(input:focus-visible) { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+.player .qb-mark { position: relative; flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; box-shadow: inset 0 0 0 3px color-mix(in oklab, var(--color-base-content) 34%, transparent); color: oklch(18% .04 var(--h)); transition: background .12s, box-shadow .12s; }
+.player .qb-opt.box .qb-mark { border-radius: 10px; }
+.player .qb-mark input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; appearance: none; }
+.player .qb-mark svg { width: 20px; height: 20px; stroke-width: 3.4; transform: scale(0); transition: transform .2s cubic-bezier(.3,1.9,.5,1); }
+.player .qb-opt:has(input:checked) { box-shadow: inset 0 0 0 3px var(--dot), 0 3px 0 var(--edge); font-weight: 800; }
+.player .qb-opt:has(input:checked) .qb-mark { background: var(--dot); box-shadow: none; }
+.player .qb-opt:has(input:checked) .qb-mark svg { transform: scale(1); }
+.player .qb-t { flex: 1; min-width: 0; line-height: 1.3; overflow-wrap: anywhere; text-decoration: line-through transparent 2px; transition: text-decoration-color .2s, color .2s; }
+.player .qb-t > * { margin: 0; }
+.player .qb-t { display: flex; flex-wrap: wrap; align-items: center; column-gap: 10px; row-gap: 6px; }
+.player .qb-tt { min-width: 0; max-width: 100%; }
+.player .qb-verdict { display: inline-flex; flex: none; align-items: center; gap: 6px; padding: 3px 12px 3px 8px; border-radius: 999px; font: 800 14px/1.2 system-ui, sans-serif; }
+.player .qb-verdict svg { width: 16px; height: 16px; stroke-width: 3.4; }
+.player .qb-opt.locked { cursor: default; }
+.player .qb-opt.locked:active { transform: none; }
+.player .qb-opt.locked:not(.is-ok):not(.is-no):not(.is-miss):not(.chosen) { color: var(--soft); }
+.player .qb-opt.locked:hover { box-shadow: inset 0 0 0 2px var(--hair); }
+.player .qb-opt.is-ok, .player .qb-opt.is-ok:hover { box-shadow: inset 0 0 0 3px var(--color-success), 0 3px 0 color-mix(in oklab, var(--color-success) 50%, transparent); font-weight: 800; }
+.player .qb-opt.is-no, .player .qb-opt.is-no:hover { box-shadow: inset 0 0 0 3px var(--color-error), 0 3px 0 color-mix(in oklab, var(--color-error) 50%, transparent); font-weight: 800; }
+.player .qb-opt.is-ok .qb-mark { background: var(--color-success); color: var(--color-success-content); box-shadow: none; }
+.player .qb-opt.is-no .qb-mark { background: var(--color-error); color: var(--color-error-content); box-shadow: none; }
+.player .qb-opt.is-ok .qb-mark svg, .player .qb-opt.is-no .qb-mark svg { transform: scale(1); }
+.player .qb-opt.is-ok .qb-verdict { background: var(--color-success); color: var(--color-success-content); }
+.player .qb-opt.is-miss .qb-verdict { color: color-mix(in oklab, var(--color-success) 70%, var(--color-base-content)); box-shadow: inset 0 0 0 2px currentColor; }
+.player .qb-opt.is-no .qb-verdict { background: var(--color-error); color: var(--color-error-content); }
+.player .qb-opt.is-done:has(input:checked) { box-shadow: inset 0 0 0 3px var(--dot); }
+.player .qb-opt.is-done.locked:has(input:checked) { box-shadow: inset 0 0 0 3px var(--color-success); }
+.player .qb-opt.is-done.locked:has(input:checked) .qb-mark { background: var(--color-success); color: var(--color-success-content); }
+.player .qb-opt.chosen, .player .qb-opt.chosen:hover { box-shadow: inset 0 0 0 3px var(--color-success); font-weight: 800; color: var(--color-base-content); }
+.player .qb-opt.chosen .qb-mark { background: var(--color-success); color: var(--color-success-content); box-shadow: none; }
+.player .qb-opt.chosen .qb-mark svg { transform: scale(1); }
+.player .qb-opt.is-done:has(input:checked) .qb-t { color: color-mix(in oklab, var(--color-base-content) 58%, var(--color-base-100)); text-decoration-color: currentColor; }
+
+/* A text field that sits on the card like an option does. */
+.player .qb-input { display: block; width: 100%; min-height: 60px; padding: 14px 16px; border: 0; border-radius: 20px; background: var(--color-base-100); color: var(--color-base-content); box-shadow: inset 0 0 0 2px var(--hair); font: 600 19px/1.4 system-ui, sans-serif; }
+.player .qb-input:focus { outline: none; box-shadow: inset 0 0 0 3px var(--dot); }
+.player .qb-name { display: flex; align-items: center; padding: 12px 16px; border-radius: 20px; background: var(--color-base-100); box-shadow: inset 0 0 0 2px var(--hair); font: 800 22px ui-rounded, system-ui, sans-serif; overflow-wrap: anywhere; }
+
+/* One box per digit. Past six they wrap to two rows so each stays big enough to tap. */
+.player .qb-digits { display: grid; grid-template-columns: repeat(var(--per, 4), minmax(0, 1fr)); gap: 10px; }
+.player .qb-digit { width: 100%; min-width: 0; height: 76px; padding: 0; border: 0; border-radius: 20px; background: var(--color-base-100); color: var(--color-base-content); box-shadow: inset 0 0 0 2px var(--hair); text-align: center; font: 800 36px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.player .qb-digit:focus { outline: none; box-shadow: inset 0 0 0 3px var(--dot); }
+.player .qb-digits.ok .qb-digit { box-shadow: inset 0 0 0 3px var(--color-success); }
+.player .qb-card.is-lit .qb-sticker.xs { background: var(--color-warning); color: var(--color-warning-content); box-shadow: 0 2px 0 color-mix(in oklab, var(--color-warning) 55%, black); }
+.player .btn.qb-confirm { position: relative; overflow: hidden; }
+.player .btn.qb-confirm::after { content: ""; position: absolute; left: 0; bottom: 0; width: 100%; height: 5px; background: color-mix(in oklab, currentColor 55%, transparent); transform-origin: left; animation: qb-drain 3s linear forwards; }
+@keyframes qb-drain { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+/* Free text: a roomy box, and what was sent comes back as a quote, one of the
+   places a dotted bar down the side means something. */
+.player .qb-text { display: block; width: 100%; min-height: 112px; padding: 14px 16px; border: 0; border-radius: 20px; background: var(--color-base-100); color: var(--color-base-content); box-shadow: inset 0 0 0 2px var(--hair); font: 600 19px/1.4 system-ui, sans-serif; resize: vertical; }
+.player .qb-text::placeholder, .player .qb-input::placeholder { color: var(--soft); font-weight: 500; }
+.player .qb-text:focus { outline: none; box-shadow: inset 0 0 0 3px var(--dot); }
+.player .qb-quote { margin: 0; padding: 2px 0 2px 16px; border-left: 4px dotted var(--hair); font-size: 18px; font-weight: 600; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; }
+.player .qb-quote-cap { margin: 0 0 6px; font-size: 15px; font-weight: 600; color: var(--soft); }
+.player .qb-btn2 { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 56px; padding: 10px 20px; border: 2px solid var(--hair); border-radius: 20px; background: transparent; color: var(--color-base-content); font: 700 18px ui-rounded, system-ui, sans-serif; cursor: pointer; }
+.player .qb-btn2:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 3px; }
+.player .qb-card .hidden { display: none; }
+
+/* Rating: big stars. Every star up to the chosen one fills, and hovering previews. */
+.player .qb-stars { display: grid; grid-template-columns: repeat(5, minmax(0, 56px)); justify-content: center; gap: 6px; }
+.player .qb-star { position: relative; display: grid; place-items: center; width: 100%; aspect-ratio: 1; border-radius: 16px; color: color-mix(in oklab, var(--color-base-content) 38%, transparent); cursor: pointer; transition: transform .15s cubic-bezier(.3,1.9,.5,1), color .1s; }
+.player .qb-star input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; appearance: none; }
+.player .qb-star svg { width: 78%; height: 78%; fill: none; }
+.player .qb-star:has(input:checked), .player .qb-star:has(~ .qb-star input:checked), .player .qb-star.on { color: var(--color-warning); }
+.player .qb-star:has(input:checked) svg, .player .qb-star:has(~ .qb-star input:checked) svg, .player .qb-star.on svg { fill: currentColor; }
+.player .qb-stars:not(.locked):has(.qb-star:hover) .qb-star { color: color-mix(in oklab, var(--color-base-content) 38%, transparent); }
+.player .qb-stars:not(.locked):has(.qb-star:hover) .qb-star svg { fill: none; }
+.player .qb-stars:not(.locked):has(.qb-star:hover) .qb-star:hover, .player .qb-stars:not(.locked):has(.qb-star:hover) .qb-star:has(~ .qb-star:hover) { color: var(--color-warning); }
+.player .qb-stars:not(.locked):has(.qb-star:hover) .qb-star:hover svg, .player .qb-stars:not(.locked):has(.qb-star:hover) .qb-star:has(~ .qb-star:hover) svg { fill: currentColor; }
+.player .qb-stars:not(.locked) .qb-star:hover { transform: scale(1.12) rotate(-6deg); }
+.player .qb-star:has(input:focus-visible) { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+.player .qb-stars.locked .qb-star { cursor: default; }
+
+/* Photos: each is a card with its own remove button until the last one is in. */
+.player .qb-shots { display: grid; gap: 12px; }
+.player .qb-shot { position: relative; overflow: hidden; border-radius: 20px; background: var(--color-base-100); box-shadow: 0 3px 0 var(--sd); }
+.player .qb-shot img { display: block; width: 100%; height: auto; }
+.player .qb-x { position: absolute; right: 10px; top: 10px; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%; background: var(--color-base-100); color: var(--color-base-content); box-shadow: 0 3px 0 var(--sd); cursor: pointer; }
+.player .qb-x svg { width: 20px; height: 20px; }
+.player .qb-x:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: 2px; }
+.player .qb-card .progress { width: 100%; }
+.player label.qb-go { cursor: pointer; }
+.player label.qb-go svg { width: 22px; height: 22px; }
+
+/* Sorting: drag by the handle. No arrows, so a long option has the whole row. */
+.player .qb-sort { display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.player .qb-srow { display: flex; align-items: center; gap: 10px; min-height: 64px; padding: 8px 12px 8px 0; border-radius: 20px; background: var(--color-base-100); box-shadow: inset 0 0 0 2px var(--hair); font-size: 19px; font-weight: 700; }
+.player .qb-grip { flex: none; align-self: stretch; display: grid; place-items: center; width: 44px; margin: -8px 0; border: 0; border-radius: 20px 0 0 20px; background: transparent; color: var(--soft); cursor: grab; touch-action: none; }
+.player .qb-grip svg { width: 22px; height: 22px; }
+.player .qb-grip:focus-visible { outline: 3px solid var(--color-base-content); outline-offset: -3px; }
+.player .qb-n { flex: none; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 10px; background: var(--ico); color: var(--ico-on); font: 800 16px ui-rounded, system-ui, sans-serif; }
+.player .qb-srow .qb-t { padding: 5px 0; }
+.player .qb-srow.sortable-ghost { box-shadow: inset 0 0 0 3px var(--dot), 0 3px 0 var(--edge); }
+.player .qb-srow.sortable-chosen { cursor: grabbing; }
+.player .qb-sort.locked .qb-grip { display: none; }
+.player .qb-sort.locked .qb-srow { padding-left: 12px; }
+.player .qb-srow.is-ok { box-shadow: inset 0 0 0 3px var(--color-success); }
+.player .qb-srow.is-no { box-shadow: inset 0 0 0 3px var(--color-error); }
+
+/* The button names what is missing until there is something to send. */
+.player .qb-go { width: 100%; gap: 10px; }
+.player .qb-go svg { width: 22px; height: 22px; }
+.player .qb-go:disabled { background: color-mix(in oklab, var(--color-base-content) 12%, var(--tint)); color: var(--soft); box-shadow: none; cursor: not-allowed; opacity: 1; }
+.player .qb-go:disabled .qb-ready, .player .qb-go:not(:disabled) .qb-idle { display: none; }
+.player .qb-go .qb-ready { display: inline-flex; align-items: center; gap: 10px; }
+.player .qb-msg { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-radius: 18px; background: var(--color-base-100); box-shadow: inset 0 0 0 2px var(--hair); font-size: 17px; font-weight: 700; line-height: 1.35; }
+.player .qb-msg svg { flex: none; width: 24px; height: 24px; margin-top: 1px; }
+.player .qb-msg.no svg { color: var(--color-error); }
+.player .qb-msg.ok svg { color: var(--color-success); }
+.player .qb-msg small { display: block; font-size: 14px; font-weight: 600; color: var(--soft); }
+
+@media (prefers-reduced-motion: reduce) {
+  .player .qb-sticker.qb-hop, .player .qb-card.is-fresh, .player .qb-card.is-fresh .qb-chip.earned, .player .qb-reveal[open] .qb-reveal-body { animation: none; }
+  .player .qb-card.is-fresh .qb-chip.earned::after { display: none; }
+  .player .qb-opt, .player .qb-mark svg, .player .qb-chev, .player .qb-t { transition: none; }
+  .player .btn.qb-confirm::after { animation: none; }
+  .player .qb-star { transition: none; }
+}

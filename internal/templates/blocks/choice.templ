@@ -1,0 +1,166 @@
+package blocks
+
+import (
+	"fmt"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+templ choicePlayer(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState) {
+	@choiceCard(settings, block, state, false)
+}
+
+// choicePlayerUpdate answers a pick: it replaces the card in place.
+templ choicePlayerUpdate(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState) {
+	@choiceCard(settings, block, state, true)
+}
+
+// choiceCard has no right answer, so nothing on it is green or red. Once a pick is
+// made it stays, locked, in the section colour.
+templ choiceCard(settings models.QuestSettings, block blocks.ChoiceBlock, state blocks.PlayerState, update bool) {
+	<div
+		id={ fmt.Sprintf("player-block-%s", block.ID) }
+		class={ "qb-card", templ.KV("is-fresh", update) }
+		if update {
+			hx-swap-oob="true"
+		}
+	>
+		@qbTop("signpost", "Choice", settings, block.GetPoints(), state)
+		if block.Prompt != "" {
+			<div class="qb-q">
+				@templ.Raw(stringToMarkdown(block.Prompt))
+			</div>
+		}
+		if state.IsComplete() {
+			<p class="qb-hint">You chose:</p>
+			<div class="qb-opts">
+				for _, label := range block.GetChosenLabels(state) {
+					<div class={ "qb-opt", "locked", "chosen", templ.KV("box", block.MultiSelect) }>
+						<span class="qb-mark">
+							@icon("check", templ.Attributes{"aria-hidden": "true"})
+						</span>
+						<div class="qb-t">{ label }</div>
+					</div>
+				}
+			</div>
+		} else {
+			<form
+				class="qb-form"
+				hx-post="/blocks/validate"
+				hx-target={ fmt.Sprintf("#player-block-%s", block.ID) }
+			>
+				<input type="hidden" name="block" value={ block.ID }/>
+				<p class="qb-hint">
+					if block.MultiSelect {
+						Pick all that apply.
+					} else {
+						Pick one.
+					}
+				</p>
+				<div class="qb-opts">
+					for _, opt := range block.Options {
+						<label class={ "qb-opt", templ.KV("box", block.MultiSelect) }>
+							<span class="qb-mark">
+								if block.MultiSelect {
+									<input type="checkbox" name="choice" value={ opt.Sets }/>
+								} else {
+									<input type="radio" name="choice" value={ opt.Sets }/>
+								}
+								@icon("check", templ.Attributes{"aria-hidden": "true"})
+							</span>
+							<div class="qb-t">{ opt.Label }</div>
+						</label>
+					}
+				</div>
+				<button
+					type="submit"
+					class="btn btn-primary qb-go"
+					disabled
+					_="
+						on change from (closest <form />).querySelectorAll('input[name=choice]')
+							set my.disabled to ((closest <form />).querySelector('input[name=choice]:checked') is null)
+						end
+					"
+				>
+					<span class="qb-idle">Pick an option</span>
+					<span class="qb-ready">
+						{ block.GetButtonText() }
+						@icon("check", templ.Attributes{"aria-hidden": "true"})
+					</span>
+				</button>
+			</form>
+		}
+	</div>
+}
+
+templ choiceAdmin(settings models.QuestSettings, block blocks.ChoiceBlock) {
+	<form
+		id={ fmt.Sprintf("form-%s", block.ID) }
+		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
+		hx-trigger={ fmt.Sprintf("keyup from:#form-%s delay:500ms, change from:#form-%s delay:100ms", block.ID, block.ID) }
+		hx-swap="none"
+	>
+		@TextareaField(TextareaParams{
+			Name:        "prompt",
+			Title:       "Prompt",
+			Placeholder: "Which path will you take?",
+			HelpText:    "Question or instruction shown above the choices.",
+			Markdown:    true,
+		}.SetValue(block.Prompt))
+		@TextInputField(TextInputParams{
+			Name:         "button_text",
+			Title:        "Button Text",
+			Placeholder:  "Confirm choice",
+			HelpText:     "Label shown on the submit button.",
+			ExtraClasses: "w-full",
+		}.SetValue(block.ButtonText))
+		<fieldset class="fieldset">
+			<legend class="fieldset-legend">Choices</legend>
+			@adminRows(choiceRows(block.ID), nil) {
+				for _, opt := range block.Options {
+					@choiceOptionItem(opt)
+				}
+				for i := 0; i < (2 - len(block.Options)); i++ {
+					@choiceOptionItem(blocks.ChoiceOption{})
+				}
+			}
+			<p class="label">Each choice sets a variable when picked. Names use lowercase letters, digits and underscores.</p>
+		</fieldset>
+		@adminSwitch("multi_select", "Allow multiple selections", "Players can pick more than one choice.", block.MultiSelect, templ.Attributes{})
+	</form>
+	<template id={ choiceRows(block.ID).TemplateID() }>
+		@choiceOptionItem(blocks.ChoiceOption{})
+	</template>
+}
+
+func choiceRows(blockID string) RowsParams {
+	return RowsParams{
+		ID:       "choice-options-" + blockID,
+		Heads:    []string{"Label", "Variable"},
+		AddLabel: "Add a choice",
+	}
+}
+
+templ choiceOptionItem(opt blocks.ChoiceOption) {
+	<div class="rows-item">
+		@rowGrip()
+		<input
+			type="text"
+			name="option_label"
+			value={ opt.Label }
+			placeholder="Choice label"
+			class="rows-cell"
+			autocomplete="off"
+		/>
+		<input
+			type="text"
+			name="option_sets"
+			value={ opt.Sets }
+			placeholder="var_name"
+			pattern="[a-z_][a-z0-9_]*"
+			class="rows-cell code"
+			autocomplete="off"
+		/>
+		@rowRemove("choice")
+	</div>
+}

@@ -7,10 +7,10 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -22,10 +22,8 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 	transactor := db.NewTransactor(dbc)
 
 	// Initialize required repositories
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
-	teamRepo := repositories.NewTeamRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	teamRepo := repositories.NewRunRepository(dbc)
 	uploadRepo := repositories.NewUploadRepository(dbc)
 
 	// Create temp uploads directory for testing
@@ -35,10 +33,10 @@ func setupDeleteService(t *testing.T) (*services.DeleteService, *bun.DB, func())
 	deleteService := services.NewDeleteService(
 		transactor,
 		instanceRepo,
-		locationRepo,
-		markerRepo,
 		teamRepo,
 		uploadRepo,
+		repositories.NewObjectiveRepository(dbc),
+		repositories.NewRunEventRepository(dbc),
 		dbc,
 		uploadsDir,
 		newTLogger(t),
@@ -87,11 +85,11 @@ func TestDeleteService_DeleteUser_WithCreditData(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create team start log
-	teamStartLog := &models.TeamStartLog{
-		ID:         gofakeit.UUID(),
-		UserID:     user.ID,
-		TeamID:     gofakeit.UUID(),
-		InstanceID: gofakeit.UUID(),
+	teamStartLog := &models.RunStartLog{
+		ID:      gofakeit.UUID(),
+		UserID:  user.ID,
+		RunID:   gofakeit.UUID(),
+		QuestID: gofakeit.UUID(),
 	}
 	_, err = dbc.NewInsert().Model(teamStartLog).Exec(ctx)
 	require.NoError(t, err)
@@ -116,7 +114,7 @@ func TestDeleteService_DeleteUser_WithCreditData(t *testing.T) {
 	assert.Equal(t, 0, count, "Credit adjustment should be deleted")
 
 	// Verify team start log was deleted
-	count, err = dbc.NewSelect().Model(&models.TeamStartLog{}).Where("id = ?", teamStartLog.ID).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.RunStartLog{}).Where("id = ?", teamStartLog.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "Team start log should be deleted")
 }
@@ -428,18 +426,18 @@ func TestDeleteService_DeleteUser_WithCompletePurchaseHistory(t *testing.T) {
 	}
 
 	// Create team start logs
-	teamStartLogs := []models.TeamStartLog{
+	teamStartLogs := []models.RunStartLog{
 		{
-			ID:         gofakeit.UUID(),
-			UserID:     user.ID,
-			TeamID:     gofakeit.UUID(),
-			InstanceID: gofakeit.UUID(),
+			ID:      gofakeit.UUID(),
+			UserID:  user.ID,
+			RunID:   gofakeit.UUID(),
+			QuestID: gofakeit.UUID(),
 		},
 		{
-			ID:         gofakeit.UUID(),
-			UserID:     user.ID,
-			TeamID:     gofakeit.UUID(),
-			InstanceID: gofakeit.UUID(),
+			ID:      gofakeit.UUID(),
+			UserID:  user.ID,
+			RunID:   gofakeit.UUID(),
+			QuestID: gofakeit.UUID(),
 		},
 	}
 	for _, log := range teamStartLogs {
@@ -464,135 +462,9 @@ func TestDeleteService_DeleteUser_WithCompletePurchaseHistory(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All adjustments should be deleted")
 
-	count, err = dbc.NewSelect().Model(&models.TeamStartLog{}).Where("user_id = ?", user.ID).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.RunStartLog{}).Where("user_id = ?", user.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All team start logs should be deleted")
-}
-
-func TestDeleteService_DeleteBlock_ImageBlock(t *testing.T) {
-	_, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	// Create parent chain: user → instance → location → block
-	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
-	_, err := dbc.NewInsert().Model(user).Exec(ctx)
-	require.NoError(t, err)
-	inst := &models.Instance{ID: gofakeit.UUID(), UserID: user.ID, Name: "test"}
-	_, err = dbc.NewInsert().Model(inst).Exec(ctx)
-	require.NoError(t, err)
-	marker := &models.Marker{Code: "TESTMK"}
-	_, err = dbc.NewInsert().Model(marker).Exec(ctx)
-	require.NoError(t, err)
-	loc := &models.Location{ID: gofakeit.UUID(), InstanceID: inst.ID, MarkerID: marker.Code, Name: "test-loc"}
-	_, err = dbc.NewInsert().Model(loc).Exec(ctx)
-	require.NoError(t, err)
-
-	// Create a simple image block
-	imageBlock := createTestImageBlock(t, dbc, loc.ID, "/static/uploads/2025/11/18/test-image.png")
-
-	// Verify block exists
-	count, err := dbc.NewSelect().Model(&models.Block{}).Where("id = ?", imageBlock.ID).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count, "Block should exist before deletion")
-
-	// Note: Full end-to-end test requires actual file creation and async testing
-	// The core deletion flow is tested by existing DeleteService tests
-	// Upload cleanup is tested separately in orphaned_uploads_cleanup_test.go
-}
-
-// Helper functions
-
-func createTestImageBlock(t *testing.T, dbc *bun.DB, locationID string, imageURL string) *models.Block {
-	t.Helper()
-
-	// Create image block data
-	imageData := map[string]interface{}{
-		"content": imageURL,
-		"caption": "Test image",
-	}
-	jsonData, err := json.Marshal(imageData)
-	require.NoError(t, err)
-
-	block := &models.Block{
-		ID:       "block-" + gofakeit.UUID(),
-		OwnerID:  locationID,
-		Type:     "image",
-		Data:     jsonData,
-		Ordering: 0,
-		Points:   0,
-	}
-
-	_, err = dbc.NewInsert().Model(block).Exec(context.Background())
-	require.NoError(t, err)
-
-	return block
-}
-
-func TestDeleteService_ResetTeams_WithUploads(t *testing.T) {
-	svc, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	// Create test user and instance
-	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
-	_, err := dbc.NewInsert().Model(user).Exec(ctx)
-	require.NoError(t, err)
-	instance := &models.Instance{
-		ID:     gofakeit.UUID(),
-		UserID: user.ID,
-		Name:   "Test Instance",
-	}
-	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
-	require.NoError(t, err)
-
-	// Create test team
-	team := &models.Team{
-		ID:         gofakeit.UUID(),
-		Code:       "AAAAA",
-		InstanceID: instance.ID,
-		HasStarted: true,
-	}
-	_, err = dbc.NewInsert().Model(team).Exec(ctx)
-	require.NoError(t, err)
-
-	// Create test uploads for the team
-	upload1 := &models.Upload{
-		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
-		Type:        models.MediaTypeImage,
-		Storage:     "local",
-		OriginalURL: "/static/uploads/2025/01/02/test1.jpg",
-	}
-	upload2 := &models.Upload{
-		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
-		Type:        models.MediaTypeImage,
-		Storage:     "local",
-		OriginalURL: "/static/uploads/2025/01/02/test2.jpg",
-	}
-	_, err = dbc.NewInsert().Model(upload1).Exec(ctx)
-	require.NoError(t, err)
-	_, err = dbc.NewInsert().Model(upload2).Exec(ctx)
-	require.NoError(t, err)
-
-	// Reset the team
-	err = svc.ResetTeams(ctx, instance.ID, []string{team.Code})
-	require.NoError(t, err)
-
-	// Verify team still exists
-	count, err := dbc.NewSelect().Model(&models.Team{}).Where("code = ?", team.Code).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 1, count, "Team should still exist after reset")
-
-	// Verify uploads were deleted from database
-	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("team_code = ?", team.Code).Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count, "All uploads should be deleted after team reset")
 }
 
 func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
@@ -605,7 +477,7 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance",
@@ -614,10 +486,10 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create test team
-	team := &models.Team{
+	team := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "BBBBB",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team).Exec(ctx)
@@ -626,16 +498,16 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	// Create test uploads for the team
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test3.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeVideo,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/test4.mp4",
@@ -650,91 +522,14 @@ func TestDeleteService_DeleteTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify team was deleted
-	count, err := dbc.NewSelect().Model(&models.Team{}).Where("code = ?", team.Code).Count(ctx)
+	count, err := dbc.NewSelect().Model(&models.Run{}).Where("code = ?", team.Code).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "Team should be deleted")
 
 	// Verify uploads were deleted from database
-	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("team_code = ?", team.Code).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("run_code = ?", team.Code).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after team deletion")
-}
-
-func TestDeleteService_ResetTeams_MultipleTeams_WithUploads(t *testing.T) {
-	svc, dbc, cleanup := setupDeleteService(t)
-	defer cleanup()
-
-	ctx := context.Background()
-
-	// Create test user and instance
-	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
-	_, err := dbc.NewInsert().Model(user).Exec(ctx)
-	require.NoError(t, err)
-	instance := &models.Instance{
-		ID:     gofakeit.UUID(),
-		UserID: user.ID,
-		Name:   "Test Instance",
-	}
-	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
-	require.NoError(t, err)
-
-	// Create multiple test teams
-	team1 := &models.Team{
-		ID:         gofakeit.UUID(),
-		Code:       "CCCCC",
-		InstanceID: instance.ID,
-		HasStarted: true,
-	}
-	team2 := &models.Team{
-		ID:         gofakeit.UUID(),
-		Code:       "DDDDD",
-		InstanceID: instance.ID,
-		HasStarted: true,
-	}
-	_, err = dbc.NewInsert().Model(team1).Exec(ctx)
-	require.NoError(t, err)
-	_, err = dbc.NewInsert().Model(team2).Exec(ctx)
-	require.NoError(t, err)
-
-	// Create uploads for both teams
-	upload1 := &models.Upload{
-		ID:          gofakeit.UUID(),
-		TeamCode:    team1.Code,
-		InstanceID:  instance.ID,
-		Type:        models.MediaTypeImage,
-		Storage:     "local",
-		OriginalURL: "/static/uploads/2025/01/02/team1.jpg",
-	}
-	upload2 := &models.Upload{
-		ID:          gofakeit.UUID(),
-		TeamCode:    team2.Code,
-		InstanceID:  instance.ID,
-		Type:        models.MediaTypeImage,
-		Storage:     "local",
-		OriginalURL: "/static/uploads/2025/01/02/team2.jpg",
-	}
-	_, err = dbc.NewInsert().Model(upload1).Exec(ctx)
-	require.NoError(t, err)
-	_, err = dbc.NewInsert().Model(upload2).Exec(ctx)
-	require.NoError(t, err)
-
-	// Reset both teams
-	err = svc.ResetTeams(ctx, instance.ID, []string{team1.Code, team2.Code})
-	require.NoError(t, err)
-
-	// Verify both teams still exist
-	count, err := dbc.NewSelect().Model(&models.Team{}).
-		Where("code IN (?)", bun.In([]string{team1.Code, team2.Code})).
-		Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 2, count, "Both teams should still exist after reset")
-
-	// Verify all uploads were deleted
-	count, err = dbc.NewSelect().Model(&models.Upload{}).
-		Where("team_code IN (?)", bun.In([]string{team1.Code, team2.Code})).
-		Count(ctx)
-	require.NoError(t, err)
-	assert.Equal(t, 0, count, "All uploads should be deleted after team reset")
 }
 
 func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
@@ -747,7 +542,7 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
 	_, err := dbc.NewInsert().Model(user).Exec(ctx)
 	require.NoError(t, err)
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance",
@@ -756,16 +551,16 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create multiple test teams
-	team1 := &models.Team{
+	team1 := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "EEEEE",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
-	team2 := &models.Team{
+	team2 := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "FFFFF",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team1).Exec(ctx)
@@ -776,16 +571,16 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	// Create uploads for both teams
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team1.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team1.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team1-delete.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team2.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team2.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeVideo,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/team2-delete.mp4",
@@ -800,7 +595,7 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Verify both teams were deleted
-	count, err := dbc.NewSelect().Model(&models.Team{}).
+	count, err := dbc.NewSelect().Model(&models.Run{}).
 		Where("code IN (?)", bun.In([]string{team1.Code, team2.Code})).
 		Count(ctx)
 	require.NoError(t, err)
@@ -808,13 +603,13 @@ func TestDeleteService_DeleteTeams_MultipleTeams_WithUploads(t *testing.T) {
 
 	// Verify all uploads were deleted
 	count, err = dbc.NewSelect().Model(&models.Upload{}).
-		Where("team_code IN (?)", bun.In([]string{team1.Code, team2.Code})).
+		Where("run_code IN (?)", bun.In([]string{team1.Code, team2.Code})).
 		Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after team deletion")
 }
 
-func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
+func TestDeleteService_DeleteQuest_WithUploads(t *testing.T) {
 	svc, dbc, cleanup := setupDeleteService(t)
 	defer cleanup()
 
@@ -830,7 +625,7 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create test instance owned by the user
-	instance := &models.Instance{
+	instance := &models.Quest{
 		ID:     gofakeit.UUID(),
 		UserID: user.ID,
 		Name:   "Test Instance with Media",
@@ -839,10 +634,10 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Create test team for the instance
-	team := &models.Team{
+	team := &models.Run{
 		ID:         gofakeit.UUID(),
 		Code:       "CCCCC",
-		InstanceID: instance.ID,
+		QuestID:    instance.ID,
 		HasStarted: true,
 	}
 	_, err = dbc.NewInsert().Model(team).Exec(ctx)
@@ -851,16 +646,16 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	// Create test uploads for the instance
 	upload1 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeImage,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/instance_test1.jpg",
 	}
 	upload2 := &models.Upload{
 		ID:          gofakeit.UUID(),
-		TeamCode:    team.Code,
-		InstanceID:  instance.ID,
+		RunCode:     team.Code,
+		QuestID:     instance.ID,
 		Type:        models.MediaTypeVideo,
 		Storage:     "local",
 		OriginalURL: "/static/uploads/2025/01/02/instance_test2.mp4",
@@ -871,16 +666,408 @@ func TestDeleteService_DeleteInstance_WithUploads(t *testing.T) {
 	require.NoError(t, err)
 
 	// Delete the instance
-	err = svc.DeleteInstance(ctx, user.ID, instance.ID)
+	err = svc.DeleteQuest(ctx, user.ID, instance.ID)
 	require.NoError(t, err)
 
 	// Verify instance was deleted
-	count, err := dbc.NewSelect().Model(&models.Instance{}).Where("id = ?", instance.ID).Count(ctx)
+	count, err := dbc.NewSelect().Model(&models.Quest{}).Where("id = ?", instance.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "Instance should be deleted")
 
 	// Verify uploads were deleted from database
-	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("instance_id = ?", instance.ID).Count(ctx)
+	count, err = dbc.NewSelect().Model(&models.Upload{}).Where("quest_id = ?", instance.ID).Count(ctx)
 	require.NoError(t, err)
 	assert.Equal(t, 0, count, "All uploads should be deleted after instance deletion")
+}
+
+// Objective blocks are polymorphic (owner_id has no FK), so DeleteQuest must
+// delete them explicitly, the same as it does for location and instance blocks.
+func TestDeleteService_DeleteQuest_DeletesObjectiveBlocks(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+
+	instance := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Test Instance"}
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
+	require.NoError(t, err)
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: instance.ID,
+		Slug:    gofakeit.Word() + "-objective",
+		Title:   gofakeit.Sentence(3),
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	block := &models.Block{
+		ID:      gofakeit.UUID(),
+		OwnerID: objective.ID,
+		Type:    "markdown",
+		Data:    json.RawMessage(`{}`),
+	}
+	_, err = dbc.NewInsert().Model(block).Exec(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, svc.DeleteQuest(ctx, user.ID, instance.ID))
+
+	count, err := dbc.NewSelect().Model((*models.Block)(nil)).Where("owner_id = ?", objective.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "objective blocks should be deleted when the owning quest is deleted")
+}
+
+// Same gap as DeleteQuest: objective blocks are polymorphic and must be
+// deleted explicitly when a user (and all their quests) is deleted.
+func TestDeleteService_DeleteUser_DeletesObjectiveBlocks(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+
+	instance := &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Test Instance"}
+	_, err = dbc.NewInsert().Model(instance).Exec(ctx)
+	require.NoError(t, err)
+
+	objective := &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: instance.ID,
+		Slug:    gofakeit.Word() + "-objective",
+		Title:   gofakeit.Sentence(3),
+	}
+	_, err = dbc.NewInsert().Model(objective).Exec(ctx)
+	require.NoError(t, err)
+
+	block := &models.Block{
+		ID:      gofakeit.UUID(),
+		OwnerID: objective.ID,
+		Type:    "markdown",
+		Data:    json.RawMessage(`{}`),
+	}
+	_, err = dbc.NewInsert().Model(block).Exec(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, svc.DeleteUser(ctx, user.ID))
+
+	count, err := dbc.NewSelect().Model((*models.Block)(nil)).Where("owner_id = ?", objective.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "objective blocks should be deleted when the owning user is deleted")
+}
+
+// deleteObjectiveFixture builds root -> doomed -> grandchild, with a survivor
+// beside the doomed one, so a delete has both a sibling to leave alone and a
+// child that would be stranded.
+func deleteObjectiveFixture(
+	t *testing.T,
+	dbc *bun.DB,
+) (quest *models.Quest, doomedID, survivorID, grandchildID string) {
+	t.Helper()
+	ctx := context.Background()
+
+	user := &models.User{ID: gofakeit.UUID(), Name: gofakeit.Name(), Email: gofakeit.Email()}
+	_, err := dbc.NewInsert().Model(user).Exec(ctx)
+	require.NoError(t, err)
+
+	quest = &models.Quest{ID: gofakeit.UUID(), UserID: user.ID, Name: "Structure prune"}
+	_, err = dbc.NewInsert().Model(quest).Exec(ctx)
+	require.NoError(t, err)
+
+	insert := func(parentID string) string {
+		id := gofakeit.UUID()
+		position, countErr := dbc.NewSelect().
+			Model((*models.Objective)(nil)).
+			Where("parent_id = ?", parentID).
+			Count(ctx)
+		require.NoError(t, countErr)
+
+		objective := &models.Objective{
+			ID: id, QuestID: quest.ID, ParentID: parentID, Position: position,
+			Slug: gofakeit.Word() + "-" + id[:4], Title: gofakeit.Sentence(3),
+		}
+		_, insertErr := dbc.NewInsert().Model(objective).Exec(ctx)
+		require.NoError(t, insertErr)
+		return id
+	}
+
+	rootID := insert("")
+	doomedID = insert(rootID)
+	survivorID = insert(rootID)
+	grandchildID = insert(doomedID)
+
+	return quest, doomedID, survivorID, grandchildID
+}
+
+// Deleting a section removes the section, not everything under it: its
+// children move up to its own parent, where a walk from the root still reaches
+// them.
+func TestDeleteService_DeleteObjective_AdoptsChildren(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	_, doomedID, survivorID, grandchildID := deleteObjectiveFixture(t, dbc)
+
+	var doomed models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&doomed).Where("id = ?", doomedID).Scan(ctx))
+
+	require.NoError(t, svc.DeleteObjective(ctx, doomedID))
+
+	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("id = ?", doomedID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count, "the deleted objective is gone")
+
+	var grandchild models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&grandchild).Where("id = ?", grandchildID).Scan(ctx))
+	assert.Equal(t, doomed.ParentID, grandchild.ParentID,
+		"its child moves up rather than being stranded")
+
+	var survivor models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&survivor).Where("id = ?", survivorID).Scan(ctx))
+	assert.Equal(t, doomed.ParentID, survivor.ParentID, "its sibling is untouched")
+}
+
+func TestDeleteService_DeleteObjective_LeavesOtherObjectivesAlone(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	_, doomedID, survivorID, _ := deleteObjectiveFixture(t, dbc)
+
+	require.NoError(t, svc.DeleteObjective(context.Background(), doomedID))
+
+	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("id = ?", survivorID).Count(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, 1, count)
+}
+
+func TestDeleteService_DeleteObjective_DeletesBlocks(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	_, doomedID, survivorID, _ := deleteObjectiveFixture(t, dbc)
+
+	for _, ownerID := range []string{doomedID, survivorID} {
+		block := &models.Block{
+			ID:      gofakeit.UUID(),
+			OwnerID: ownerID,
+			Type:    "markdown",
+			Data:    json.RawMessage(`{}`),
+		}
+		_, err := dbc.NewInsert().Model(block).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, svc.DeleteObjective(ctx, doomedID))
+
+	count, err := dbc.NewSelect().Model((*models.Block)(nil)).
+		Where("owner_id = ?", doomedID).Count(ctx)
+	require.NoError(t, err)
+	assert.Zero(t, count)
+
+	count, err = dbc.NewSelect().Model((*models.Block)(nil)).
+		Where("owner_id = ?", survivorID).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 1, count, "blocks belonging to other objectives survive")
+}
+
+// Re-deleting must not error, so a retry after a partial failure is safe.
+func TestDeleteService_DeleteObjective_UnknownIDIsNoOp(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	quest, _, _, _ := deleteObjectiveFixture(t, dbc)
+
+	before, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("quest_id = ?", quest.ID).Count(ctx)
+	require.NoError(t, err)
+
+	require.NoError(t, svc.DeleteObjective(ctx, gofakeit.UUID()))
+
+	after, err := dbc.NewSelect().Model((*models.Objective)(nil)).
+		Where("quest_id = ?", quest.ID).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, before, after, "the tree is untouched when the id matched nothing")
+}
+
+// Deleting the root would leave its children parentless alongside it, and a
+// quest with several parentless rows is one no walk can read and no screen can
+// mend. The route is live, so the guard is the only thing standing in the way.
+func TestDeleteService_DeleteObjective_RefusesTheRoot(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: questID, Slug: "start", Title: "Start"}
+	_, err := dbc.NewInsert().Model(root).Exec(ctx)
+	require.NoError(t, err)
+	child := &models.Objective{
+		ID: gofakeit.UUID(), QuestID: questID, ParentID: root.ID, Slug: "one", Title: "One",
+	}
+	_, err = dbc.NewInsert().Model(child).Exec(ctx)
+	require.NoError(t, err)
+
+	require.ErrorIs(t, svc.DeleteObjective(ctx, root.ID), services.ErrCannotDeleteRoot)
+
+	count, err := dbc.NewSelect().Model((*models.Objective)(nil)).Where("quest_id = ?", questID).Count(ctx)
+	require.NoError(t, err)
+	assert.Equal(t, 2, count, "the refused delete removed nothing")
+}
+
+// Adopted children are appended after the destination's existing ones and the
+// whole list renumbered, because carrying old positions across collides with
+// the positions already in use and the tie is broken arbitrarily by id.
+func TestDeleteService_DeleteObjective_RenumbersAdoptedSiblings(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	insert := func(id, parentID, slug string, position int) {
+		_, iErr := dbc.NewInsert().Model(&models.Objective{
+			ID: id, QuestID: questID, ParentID: parentID, Slug: slug, Title: slug, Position: position,
+		}).Exec(ctx)
+		require.NoError(t, iErr)
+	}
+
+	root := gofakeit.UUID()
+	section := gofakeit.UUID()
+	insert(root, "", "start", 0)
+	insert(gofakeit.UUID(), root, "keeper", 0)
+	insert(section, root, "doomed", 1)
+	// Both children of the doomed section carry positions already in use above.
+	insert(gofakeit.UUID(), section, "adopted-a", 0)
+	insert(gofakeit.UUID(), section, "adopted-b", 1)
+
+	require.NoError(t, svc.DeleteObjective(ctx, section))
+
+	var survivors []models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&survivors).
+		Where("parent_id = ?", root).Order("position ASC").Scan(ctx))
+
+	slugs := make([]string, len(survivors))
+	positions := make([]int, len(survivors))
+	for i, obj := range survivors {
+		slugs[i] = obj.Slug
+		positions[i] = obj.Position
+	}
+	assert.Equal(t, []string{"keeper", "adopted-a", "adopted-b"}, slugs,
+		"the existing child keeps its place and the adopted ones follow")
+	assert.Equal(t, []int{0, 1, 2}, positions, "positions are dense and distinct")
+}
+
+// A drafted section is the only thing holding its children out of play. Tidying
+// it away must not put them back into a live quest, so the flag goes with them.
+func TestDeleteService_DeleteObjective_AdoptedChildrenInheritDraft(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	insert := func(id, parentID, slug string, position int, draft bool) {
+		_, err := dbc.NewInsert().Model(&models.Objective{
+			ID: id, QuestID: questID, ParentID: parentID, Slug: slug, Title: slug,
+			Position: position, Draft: draft,
+		}).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	root, parked := gofakeit.UUID(), gofakeit.UUID()
+	buried := gofakeit.UUID()
+	insert(root, "", "root", 0, false)
+	insert(parked, root, "parked", 0, true)
+	insert(buried, parked, "buried", 0, false)
+
+	require.NoError(t, svc.DeleteObjective(ctx, parked))
+
+	var adopted models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&adopted).Where("id = ?", buried).Scan(ctx))
+	assert.Equal(t, root, adopted.ParentID, "the child moves up")
+	assert.True(t, adopted.Draft, "and stays out of play, where the deleted section had it")
+}
+
+// Deleting a published section leaves its children exactly as they were.
+func TestDeleteService_DeleteObjective_AdoptedChildrenKeepTheirOwnState(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	questID := validQuestID(t, dbc)
+	insert := func(id, parentID, slug string, position int, draft bool) {
+		_, err := dbc.NewInsert().Model(&models.Objective{
+			ID: id, QuestID: questID, ParentID: parentID, Slug: slug, Title: slug,
+			Position: position, Draft: draft,
+		}).Exec(ctx)
+		require.NoError(t, err)
+	}
+
+	root, section := gofakeit.UUID(), gofakeit.UUID()
+	live, hidden := gofakeit.UUID(), gofakeit.UUID()
+	insert(root, "", "root", 0, false)
+	insert(section, root, "section", 0, false)
+	insert(live, section, "live", 0, false)
+	insert(hidden, section, "hidden", 1, true)
+
+	require.NoError(t, svc.DeleteObjective(ctx, section))
+
+	var objectives []models.Objective
+	require.NoError(t, dbc.NewSelect().Model(&objectives).
+		Where("id IN (?)", bun.In([]string{live, hidden})).Scan(ctx))
+	byID := map[string]models.Objective{}
+	for _, obj := range objectives {
+		byID[obj.ID] = obj
+	}
+	assert.False(t, byID[live].Draft)
+	assert.True(t, byID[hidden].Draft, "its own flag is untouched")
+}
+
+// A double-submitted delete finds the row already gone. Carrying on from there
+// ran the adoption with an empty parent, which is a real value the backfill
+// wrote into every migrated quest's root, so it reached rows in quests the
+// request never named.
+//
+// Rows are inserted with raw SQL because that is the shape production holds:
+// the model writes NULL for an empty parent, the backfill wrote ”.
+func TestDeleteService_DeleteObjective_RepeatDeleteLeavesOtherQuestsAlone(t *testing.T) {
+	svc, dbc, cleanup := setupDeleteService(t)
+	defer cleanup()
+	ctx := context.Background()
+
+	type root struct{ id, questID string }
+	roots := []root{
+		{gofakeit.UUID(), validQuestID(t, dbc)},
+		{gofakeit.UUID(), validQuestID(t, dbc)},
+	}
+	for i, r := range roots {
+		_, err := dbc.ExecContext(ctx,
+			`INSERT INTO objectives (id, quest_id, parent_id, position, slug, title)`+
+				` VALUES (?, ?, '', ?, 'root', 'Root')`, r.id, r.questID, i)
+		require.NoError(t, err)
+	}
+
+	require.NoError(t, svc.DeleteObjective(ctx, gofakeit.UUID()), "deleting nothing is a no-op")
+
+	for i, r := range roots {
+		var parentID sql.NullString
+		var position int
+		require.NoError(t, dbc.QueryRowContext(ctx,
+			`SELECT parent_id, position FROM objectives WHERE id = ?`, r.id).Scan(&parentID, &position))
+		// Valid, not just empty: a NULL scans into String as "" too, so
+		// checking the string alone cannot tell an untouched row from one the
+		// adoption rewrote.
+		assert.True(t, parentID.Valid, "still the literal '' the backfill wrote")
+		assert.Empty(t, parentID.String)
+		assert.Equal(t, i, position, "and untouched")
+	}
 }

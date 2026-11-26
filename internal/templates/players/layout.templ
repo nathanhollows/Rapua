@@ -1,8 +1,9 @@
 package templates
 
 import (
+	"github.com/nathanhollows/Rapua/v8/internal/assets"
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"os"
 )
 
@@ -13,24 +14,9 @@ templ Layout(contents templ.Component, title string, messages []models.Notificat
 		class="h-full"
 	>
 		<head>
-			<meta charset="UTF-8"/>
-			<meta
-				name="viewport"
-				content="width=device-width, initial-scale=1.0"
-			/>
-			<title>{ title } | Rapua</title>
-			<link rel="stylesheet" href={ "/static/css/tailwind.css" + getCSSVersion() }/>
-			<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
-			<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
-			<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
-			<link href="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.css" rel="stylesheet"/>
-			<script src="https://api.mapbox.com/mapbox-gl-js/v2.10.0/mapbox-gl.js"></script>
-			<script src="https://unpkg.com/htmx.org@1.8.5" integrity="sha384-7aHh9lqPYGYZ7sTHvzP1t3BAfLhYSTy9ArHdP3Xsr9/3TlGurYgcPBoFmXX2TX/w" crossorigin="anonymous" defer></script>
-			<script src="/static/js/csrf.js"></script>
-			<script src="/static/js/mapbox-satellite-view.js"></script>
-			<script src="https://unpkg.com/hyperscript.org@0.9.13"></script>
+			@appHead(title)
 		</head>
-		<body class="h-lvh" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+		<body class="player bg-base-200 h-lvh" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
 			<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
 			<div class="toast toast-center z-50 w-full text-wrap" id="alerts"></div>
 			<div class="flex min-h-full flex-col justify-center px-6 py-12 lg:px-8">
@@ -72,21 +58,83 @@ templ Messages(messages []models.Notification) {
 	}
 }
 
-templ footer(team models.Team) {
-	<footer class="text-center text-sm text-gray-500 mt-8">
-		<div class="mt-4">
-			<p>
-				{ team.Instance.Name }
-			</p>
-			<p>
-				<a href="/start" class="link">Rules</a> · { team.Code }
-				if team.Name != "" {
-					· { team.Name }
-				}
-				if team.Instance.Settings.EnablePoints {
-					· { fmt.Sprint(team.Points) } pts
-				}
-			</p>
-		</div>
-	</footer>
+// appHead is shared so a change to one layout cannot leave the other behind.
+templ appHead(title string) {
+		<meta charset="UTF-8"/>
+		<meta
+			name="viewport"
+			content="width=device-width, initial-scale=1.0"
+		/>
+		<title>{ title } | Rapua</title>
+		<link rel="stylesheet" href={ assets.URL("/static/css/tailwind.css") }/>
+		<link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg"/>
+		<link rel="icon" type="image/png" href="/static/images/favicon.png"/>
+		<link rel="icon" type="image/x-icon" href="/static/images/favicon.ico"/>
+		<script src={ assets.URL("/static/js/htmx.min.js") } defer></script>
+		<script src={ assets.URL("/static/js/csrf.js") }></script>
+		<!-- Not deferred: a map block's inline script calls loadMapbox while the page parses. -->
+		<script src={ assets.URL("/static/js/mapbox-lazy.js") }></script>
+		<script src={ assets.URL("/static/js/scan.js") } defer></script>
+		<script src={ assets.URL("/static/js/Sortable.min.js") } defer></script>
+		<script src={ assets.URL("/static/js/geofence.js") } defer></script>
+		<!-- Local: unpkg redirected every load and blocked the page meanwhile. -->
+		<script src={ assets.URL("/static/js/hyperscript-0.9.13.min.js") } defer></script>
 }
+
+type AppChrome struct {
+	Run models.Run
+	// Active is "quest", "journal", "you", or "" on any other page. The dock
+	// shows regardless: one that comes and goes disorients.
+	Active string
+}
+
+// AppLayout wraps a run in progress. Pre-game pages keep Layout because a dock
+// of dead tabs is worse than none.
+templ AppLayout(contents templ.Component, chrome AppChrome, title string, messages []models.Notification) {
+	<!DOCTYPE html>
+	<html lang="en" class="h-full">
+		<head>
+			@appHead(title)
+		</head>
+		<body class="player min-h-lvh bg-base-200" hx-headers={ fmt.Sprintf("{\"X-CSRF-TOKEN\": \"%s\"}", ctx.Value("gorilla.csrf.Token")) }>
+			<span id="mapbox_key" class="hidden" data-key={ os.Getenv("MAPBOX_KEY") }></span>
+			<div class="toast toast-center z-50 w-full text-wrap" id="alerts"></div>
+			<!-- pb-24 clears the fixed dock. -->
+			<main class="mx-auto w-full max-w-md px-4 pt-4 pb-24">
+				@Messages(messages)
+				@contents
+			</main>
+			@appDock(chrome.Active)
+		</body>
+	</html>
+}
+
+// PreviewDock is the real dock, for an editor drawing a player's screen. It is
+// the same component, not a picture of it, so it cannot drift from the app, and
+// inert so a click in the preview never leaves the page being edited.
+templ PreviewDock(active string) {
+	<div class="cf-dock player" inert aria-hidden="true">
+		@appDock(active)
+	</div>
+}
+
+// appDock is the only navigation, placed where a thumb reaches while walking.
+templ appDock(active string) {
+	<!-- Padding aligns the items with the content column (28rem is max-w-md)
+	without a wrapper, which would break daisyUI's direct-child styling. -->
+	<nav class="dock dock-sm bg-base-100 border-t border-base-300 px-[max(0.5rem,calc((100%-28rem)/2))]">
+		<a href="/objectives" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "quest") }>
+			@icon("compass", templ.Attributes{"class": "w-5 h-5"})
+			<span class="dock-label">Quest</span>
+		</a>
+		<a href="/journal" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "journal") }>
+			@icon("book-check", templ.Attributes{"class": "w-5 h-5"})
+			<span class="dock-label">Journal</span>
+		</a>
+		<a href="/you" hx-boost="true" class={ templ.KV("dock-active text-primary", active == "you") }>
+			@icon("users", templ.Attributes{"class": "w-5 h-5"})
+			<span class="dock-label">You</span>
+		</a>
+	</nav>
+}
+

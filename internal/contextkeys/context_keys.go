@@ -8,7 +8,7 @@ type ContextKey string
 // Predefined context keys for the application.
 const (
 	UserKey    ContextKey = "user"
-	TeamKey    ContextKey = "team"
+	RunKey     ContextKey = "run"
 	PreviewKey ContextKey = "preview"
 	StatusKey  ContextKey = "status"
 )

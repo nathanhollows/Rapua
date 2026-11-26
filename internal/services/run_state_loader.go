@@ -1,0 +1,135 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"slices"
+
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
+	"github.com/nathanhollows/Rapua/v8/navigation"
+)
+
+// runStateLoader gathers a quest's objectives and the facts one run has
+// recorded against them. It is the player engine's only door onto a quest: what
+// it returns is what a run can reach, and nothing downstream has to know that
+// drafts exist. Every consumer of "is this complete" reads from here,
+// so completion has one definition: the band derivation in navigation. Answers
+// drawn from the completion log alone disagree with it, because a section
+// completes through its children and never earns a row of its own.
+type runStateLoader struct {
+	objectiveRepo                  repositories.ObjectiveRepository
+	objectiveContextCompletionRepo repositories.ObjectiveContextCompletionRepository
+	sectionFinishRepo              repositories.SectionFinishRepository
+	blockRepo                      repositories.BlockRepository
+	runVariableRepo                repositories.RunVariableRepository
+}
+
+// load returns a quest's objectives and one run's state against them.
+func (l runStateLoader) load(
+	ctx context.Context, team *models.Run,
+) ([]models.Objective, navigation.RunState, map[string]bool, error) {
+	objectives, err := l.objectiveRepo.FindTreeByQuestID(ctx, team.QuestID)
+	if err != nil {
+		return nil, navigation.RunState{}, nil, fmt.Errorf("loading objective tree: %w", err)
+	}
+
+	state := navigation.RunState{RunCode: team.Code}
+
+	state.HasProofBlocks, err = l.proofBlockOwners(ctx, objectives)
+	if err != nil {
+		return nil, navigation.RunState{}, nil, err
+	}
+
+	proofCompleted, err := l.objectiveContextCompletionRepo.
+		FindCompletedObjectiveIDs(ctx, team.Code, game.ContextObjectiveProof)
+	if err != nil {
+		return nil, navigation.RunState{}, nil, fmt.Errorf("loading completed proof contexts: %w", err)
+	}
+	state.ProofCompleted = setOf(proofCompleted)
+
+	finished, err := l.sectionFinishRepo.FindFinishedObjectiveIDs(ctx, team.Code)
+	if err != nil {
+		return nil, navigation.RunState{}, nil, fmt.Errorf("loading finished sections: %w", err)
+	}
+	state.SectionFinished = setOf(finished)
+
+	// Only reachability reads the variables, and only through an objective's
+	// depends, so a quest with no gated objective needs no query.
+	if slices.ContainsFunc(objectives, func(o models.Objective) bool { return len(o.Depends) > 0 }) {
+		var vars []string
+		vars, err = l.runVariableRepo.FindNamesByRunCode(ctx, team.Code)
+		if err != nil {
+			return nil, navigation.RunState{}, nil, fmt.Errorf("loading run variables: %w", err)
+		}
+		state.Vars = setOf(vars)
+	}
+
+	state.Discovered, err = l.discoveredSecrets(ctx, objectives, team.Code)
+	if err != nil {
+		return nil, navigation.RunState{}, nil, err
+	}
+
+	// Completion is derived once, over every row, drafts included: what a run
+	// did, it did, and a gate it opened stays open even once the objective is
+	// taken out of play. Deriving it from what is still in play would answer a
+	// different question with the same name: parking a section would shrink its
+	// ancestors' bands and complete a quest nobody finished.
+	//
+	// The whole tree goes back, not the pruned one. ComputeFrontier prunes for
+	// itself because it needs both views, and pruning here would take the
+	// difference away before it got there.
+	complete := navigation.ComputeCompleted(objectives, state)
+
+	return objectives, state, complete, nil
+}
+
+// proofBlockOwners returns the objectives with at least one proof block. An
+// objective with none has nothing to prove.
+func (l runStateLoader) proofBlockOwners(
+	ctx context.Context, objectives []models.Objective,
+) (map[string]bool, error) {
+	ownerIDs := make([]string, 0, len(objectives))
+	for _, obj := range objectives {
+		ownerIDs = append(ownerIDs, obj.ID)
+	}
+
+	owners, err := l.blockRepo.FindOwnerIDsWithContext(ctx, ownerIDs, game.ContextObjectiveProof)
+	if err != nil {
+		return nil, fmt.Errorf("loading proof block owners: %w", err)
+	}
+	return setOf(owners), nil
+}
+
+// discoveredSecrets returns the secrets whose discovery block the run has
+// completed. Most quests have no secrets, so they cost no query.
+func (l runStateLoader) discoveredSecrets(
+	ctx context.Context, objectives []models.Objective, runCode string,
+) (map[string]bool, error) {
+	var secretIDs []string
+	for _, obj := range objectives {
+		if obj.Secret {
+			secretIDs = append(secretIDs, obj.ID)
+		}
+	}
+	if len(secretIDs) == 0 {
+		return map[string]bool{}, nil
+	}
+
+	owners, err := l.blockRepo.FindOwnerIDsWithCompletedBlock(
+		ctx, secretIDs, runCode, game.ContextObjectiveProof, game.DiscoveryBlockTypes(),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("loading discovered secrets: %w", err)
+	}
+	return setOf(owners), nil
+}
+
+func setOf(ids []string) map[string]bool {
+	set := make(map[string]bool, len(ids))
+	for _, id := range ids {
+		set[id] = true
+	}
+	return set
+}

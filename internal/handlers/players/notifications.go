@@ -14,7 +14,14 @@ func (h *PlayerHandler) DismissNotificationPost(w http.ResponseWriter, r *http.R
 	// Handle HTMX request
 	if r.Header.Get("Hx-Request") == "true" {
 		if err != nil {
-			h.logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
+			h.logger.ErrorContext(
+				r.Context(),
+				"dismissing notification",
+				"error",
+				err.Error(),
+				"notificationID",
+				notificationID,
+			)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -23,7 +30,14 @@ func (h *PlayerHandler) DismissNotificationPost(w http.ResponseWriter, r *http.R
 	}
 
 	if err != nil {
-		h.logger.Error("dismissing notification", "error", err.Error(), "notificationID", notificationID)
+		h.logger.ErrorContext(
+			r.Context(),
+			"dismissing notification",
+			"error",
+			err.Error(),
+			"notificationID",
+			notificationID,
+		)
 		http.Redirect(w, r, r.Header.Get("Referer"), http.StatusSeeOther)
 
 		return

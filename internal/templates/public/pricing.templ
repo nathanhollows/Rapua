@@ -2,209 +2,91 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/internal/config"
+	"github.com/nathanhollows/Rapua/v8/internal/config"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 )
 
-templ Pricing() {
-	<!-- Decorative Background Elements -->
-	<div class="absolute top-1/4 left-1/4 w-64 h-64 bg-accent/20 dark:bg-accent/10 rounded-full blur-3xl"></div>
-	<div class="absolute bottom-1/3 right-1/3 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
-	<!-- Main Content -->
-	<main class="max-w-7xl mx-auto px-8 py-16 space-y-24">
-		<!-- Hero Section -->
-		<section class="relative z-10 max-w-6xl mx-auto text-center px-8">
-			<h1 class="text-5xl md:text-6xl xl:text-7xl font-bold mb-8">
-				<span class="font-light">Simple,</span>
-				<br class="hidden md:block"/>
-				<span class="font-bold">Fair Pricing</span>
-			</h1>
-			<p class="text-xl md:text-2xl max-w-3xl mx-auto font-medium mb-8">
-				One credit = one team starts playing. 
-				<br/>
-				No premium tiers, no locked functionality.
-			</p>
-		</section>
-		<!-- Pricing Cards -->
-		<section class="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-5xl mx-auto">
-			<!-- Free Credits Card -->
-			<div class="card indicator indicator-center w-full bg-gradient-to-br from-secondary/10 dark:from-secondary/5 to-secondary/20 dark:to-secondary/10 border border-secondary/50 dark:border-secondary/20 hover:border-secondary/80 dark:hover:border-secondary/40 transition-all hover:shadow-lg">
-				<div class="indicator-item badge badge-secondary badge-lg">Free</div>
-				<div class="card-body p-8">
-					<div class="text-center mb-6">
-						<h2 class="text-2xl font-bold mb-2">Monthly Credits</h2>
-					</div>
-					<div class="flex flex-row justify-around w-full md:w-8/12 mx-auto text-center space-y-4 mb-6">
-						<div>
-							<div class="text-4xl font-bold mb-1">
-								{ config.RegularUserFreeCredits() }
-							</div>
-							<div class="text-base-content/80">For all users</div>
-						</div>
-						<div class="divider divider-horizontal my-2">OR</div>
-						<div>
-							<div class="text-4xl font-bold mb-1">
-								{ config.EducatorFreeCredits() }
-							</div>
-							<div class="text-base-content/80">For Educators</div>
-						</div>
-					</div>
-					<div class="space-y-2">
-						<div class="flex items-center gap-3">
-							<div class="w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-									<path d="M20 6 9 17l-5-5"></path>
-								</svg>
-							</div>
-							<span class="text-sm">Credits topped up monthly</span>
-						</div>
-						<div class="flex items-center gap-3">
-							<div class="w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 6 9 17l-5-5"></path> </svg>
-							</div>
-							<span class="text-sm">All features included</span>
-						</div>
-						<div class="flex items-center gap-3">
-							<div class="w-8 h-8 bg-secondary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-secondary text-secondary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M20 6 9 17l-5-5"></path> </svg>
-							</div>
-							<span class="text-sm">No credit card required</span>
-						</div>
-					</div>
-				</div>
+func priceLabel(cents int) string {
+	if cents%100 == 0 {
+		return fmt.Sprintf("$%d", cents/100)
+	}
+	return fmt.Sprintf("$%.2f", float64(cents)/100)
+}
+
+templ PricingPage(authed bool) {
+	@siteDocument("Pricing", nil) {
+		@siteHeader(authed, "/pricing")
+		<main id="main" class="relative isolate flex-1">
+			<div class="site-ground">
+				<svg class="site-topo pricing-topo" data-topo aria-hidden="true"></svg>
+				<section class="pt-18 px-5 text-center">
+					<h1 class="site-h1">Pay per team.<br/><span class="text-accent">That's it.</span></h1>
+					<p class="mt-6 text-[clamp(1.25rem,4vw,1.6rem)] font-black tracking-[-0.02em]">1 credit = 1 team.</p>
+					<p class="mt-2 text-lg font-medium text-base-content/78">No tiers. Nothing locked.</p>
+				</section>
+				<ul class="max-w-[56rem] mx-auto mt-14 px-5 grid gap-9 md:grid-cols-3 md:gap-5">
+					@pricingNumber("secondary", -6, "calendar", fmt.Sprint(config.RegularUserFreeCredits()), "free teams a month") {
+						For every account.
+					}
+					@pricingNumber("info", 5, "graduation-cap", fmt.Sprint(config.EducatorFreeCredits()), "free teams a month for educators") {
+						Schools, universities, museums, zoos and galleries.
+					}
+					@pricingNumber("accent", -4, "coins", priceLabel(config.CreditPriceCents()), "per team after that") {
+						NZD. Bought credits never expire.
+					}
+				</ul>
 			</div>
-			<!-- Paid Credits Card -->
-			<div class="card indicator indicator-center w-full bg-gradient-to-br from-primary/10 dark:from-primary/5 to-primary/20 dark:to-primary/10 border border-primary/20 hover:border-primary/40 transition-all hover:shadow-lg">
-				<div class="indicator-item badge badge-primary badge-lg">Paid</div>
-				<div class="card-body p-8">
-					<div class="text-center mb-6">
-						<h2 class="text-2xl font-bold mb-2">Extra Credits</h2>
-					</div>
-					<div class="text-center mb-6">
-						<div class="text-5xl font-bold mb-2">
-							${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100) }
-						</div>
-						<div class="text-base-content/80 mb-2">per credit</div>
-					</div>
-					<div class="space-y-2 mt-auto">
-						<div class="flex items-center gap-3">
-							<div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-									<path d="M20 6 9 17l-5-5"></path>
-								</svg>
-							</div>
-							<span class="text-sm">Credits never expire</span>
-						</div>
-						<div class="flex items-center gap-3">
-							<div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-									<path d="M20 6 9 17l-5-5"></path>
-								</svg>
-							</div>
-							<span class="text-sm">Free credits used first</span>
-						</div>
-						<div class="flex items-center gap-3">
-							<div class="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0 border border-primary text-primary">
-								<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4">
-									<path d="M20 6 9 17l-5-5"></path>
-								</svg>
-							</div>
-							<span class="text-sm">Still receive free monthly credits!</span>
-						</div>
-					</div>
+			<section class="pt-18 pb-20 px-5">
+				<h2 class="site-h2 text-center">Good to know.</h2>
+				<div class="max-w-[40rem] mx-auto mt-10 grid gap-2.5">
+					@pricingQuestion("What counts as a team?", true) {
+						<p>Whoever plays under one game code. However many players share the phone, and however long they play, it's one credit, spent when the first of them starts.</p>
+					}
+					@pricingQuestion("Do test runs cost a credit?", false) {
+						<p>Yes. A test run starts a team like any other, so it uses a credit. Your free ones cover it.</p>
+					}
+					@pricingQuestion("Do free credits pile up?", false) {
+						<p>No. On the first of each month, New Zealand time, you're topped back up to your full allowance.</p>
+						<p>Bought credits are different: they stay in your account until you use them, and free ones are always used first.</p>
+					}
+					@pricingQuestion("How do I get educator credits?", false) {
+						<p>Create your account with your work email and Rapua will usually spot that you're at an educational institution. If it doesn't, <a href="/contact">get in touch</a> and I'll sort it.</p>
+					}
+					@pricingQuestion("Why do educators get more?", false) {
+						<p>They do incredible work with very little time or money. And I'm hoping to do a PhD in informal game-based learning, so this is my way of backing the field.</p>
+					}
+					@pricingQuestion("What if I run out mid-event?", false) {
+						<p>Teams that have already started keep playing. New teams can't start until you have credits again: they'll see a friendly message, and you'll get a heads-up when you log in.</p>
+					}
+					@pricingQuestion("Is there a minimum, or a bulk discount?", false) {
+						<p>The minimum purchase is { fmt.Sprint(services.MinCreditsPerPurchase) } credits ({ priceLabel(config.CreditPriceCents() * services.MinCreditsPerPurchase) } NZD), so transaction fees don't eat it. There's no bulk discount: every team is { priceLabel(config.CreditPriceCents()) }, however many you run.</p>
+					}
+					@pricingQuestion("Where do I see my balance?", false) {
+						<p>Your balance is on the <a href="/admin/runs">Runs</a> page, and the full history, free and paid, is under <a href="/admin/settings/credits">Settings, Credits</a>.</p>
+					}
 				</div>
-			</div>
-		</section>
-		<section class="my-16">
-			<h2 class="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
-			<div class="grid grid-cols-1 space-y-3 max-w-xl mx-auto">
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">What is a credit?</div>
-					<div class="collapse-content prose">
-						<p>
-							Think of a credit as a ticket for one team to join game. When the first player in a team enters their team code to start playing, the system deducts a credit from your account.
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">When do my credits top up?</div>
-					<div class="collapse-content prose">
-						<p>
-							Free credits top-up on the first day of each month (NZT time).
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Do credits accrue over time?</div>
-					<div class="collapse-content prose">
-						<p>
-							Free credits don't accumulate. The system will only top up free credits based on what you actually used. So if you used 6 free credits this month, the system tops you back up by 6 back the next month.
-						</p>
-						<p>
-							Paid credits, on the other hand, never expire and will stay in your account until you use them.
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">How do I track my credits?</div>
-					<div class="collapse-content prose">
-						<p>
-							Check your <a href="/admin/teams" class="link">Teams</a> page for a quick look at your current balance (both free and paid credits). For the full picture, head to the <a href="/admin/settings/credits" class="link">Credits</a> page in settings - it shows your total, usage history, and when you topped up.
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">What happens if I run out of credits?</div>
-					<div class="collapse-content prose">
-						<p>
-							Teams can't start playing until you have credits again. Players will see a friendly error message, and the system will give you a heads up when you log in so you're not caught off guard.
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">How do I qualify for educator credits?</div>
-					<div class="collapse-content prose">
-						<p>
-							Sign up with your work email address and Rapua will automatically detect if you're at an educational institution. If the system doesn't pick it up, <a href="/contact" class="link">get in touch</a> and I'll sort it out.
-						</p>
-						<p>
-							Educators include anyone working at schools, museums, universities, zoos, or art galleries.
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Why do educators get more free credits?</div>
-					<div class="collapse-content prose">
-						<p>
-							Because they do incredible work with limited time and resources. Plus, I'm hoping to do a PhD in informal game-based learning someday, so this is my way of supporting the field I love.
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Is there a minimum purchase?</div>
-					<div class="collapse-content prose">
-						<p>
-							The minimum purchase is 3 credits (${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100*3) } NZD). This is so I don't lose money in transaction fees.
-						</p>
-					</div>
-				</div>
-				<div class="collapse bg-base-200 border-base-300 border">
-					<input type="checkbox"/>
-					<div class="collapse-title font-semibold">Do you offer bulk discounts?</div>
-					<div class="collapse-content prose">
-						<p>
-							No. At ${ fmt.Sprintf("%.2f",float32(config.CreditPriceCents())/100) } NZD per credit, it's already pretty fair. 
-						</p>
-					</div>
-				</div>
-			</div>
-		</section>
-	</main>
+			</section>
+		</main>
+		@siteFooter(false)
+	}
+}
+
+templ pricingNumber(color string, tilt int, iconName, figure, label string) {
+	<li class="pricing-num" style={ stickerStyle(color, tilt) }>
+		<span class="site-st">
+			@icon(iconName, templ.Attributes{"aria-hidden": "true"})
+		</span>
+		<strong class="block text-[3.25rem] leading-none font-black tracking-[-0.04em] text-[var(--c)]">{ figure }</strong>
+		<b class="block mt-2 text-[1.0625rem] font-extrabold">{ label }</b>
+		<p class="mt-2 text-[.9375rem] leading-normal text-base-content/72 text-balance">{ children... }</p>
+	</li>
+}
+
+templ pricingQuestion(question string, open bool) {
+	<details class="pricing-q" open?={ open }>
+		<summary>{ question }</summary>
+		<div>
+			{ children... }
+		</div>
+	</details>
 }

@@ -6,13 +6,14 @@ import (
 	"mime/multipart"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type mockUploadStorage struct{}
+type mockUploadStorage struct{ deleted []string }
 
 func (m *mockUploadStorage) Upload(
 	_ context.Context,
@@ -25,6 +26,11 @@ func (m *mockUploadStorage) Upload(
 	return map[string]string{"original": "https://cdn.example.com/" + filename}, "delete-token", nil
 }
 
+func (m *mockUploadStorage) Delete(_ context.Context, deleteData string) error {
+	m.deleted = append(m.deleted, deleteData)
+	return nil
+}
+
 func (m *mockUploadStorage) Type() string {
 	return "mock"
 }
@@ -35,7 +41,9 @@ func setupUploadService(t *testing.T) (services.UploadService, func()) {
 	uploadsRepository := repositories.NewUploadRepository(dbc)
 	mockStorage := &mockUploadStorage{}
 
-	uploadService := services.NewUploadService(uploadsRepository, mockStorage)
+	uploadService := services.NewUploadService(
+		db.NewTransactor(dbc), uploadsRepository, repositories.NewRunEventRepository(dbc), mockStorage,
+	)
 	return *uploadService, cleanup
 }
 
@@ -104,13 +112,15 @@ func TestUploadService_Search(t *testing.T) {
 			expectErr: false,
 		},
 		{
-			name:      "Search by LocationID",
+			// location_id left the whitelist with the Location model: a stale
+			// filter must be rejected like any other unknown key.
+			name:      "Search by location_id is rejected",
 			filters:   map[string]string{"location_id": "456"},
-			expectErr: false,
+			expectErr: true,
 		},
 		{
-			name:      "Search by InstanceID and TeamID",
-			filters:   map[string]string{"instance_id": "789", "team_code": "team1"},
+			name:      "Search by QuestID and RunID",
+			filters:   map[string]string{"quest_id": "789", "run_code": "team1"},
 			expectErr: false,
 		},
 		{
@@ -136,4 +146,30 @@ func TestUploadService_Search(t *testing.T) {
 			}
 		})
 	}
+}
+
+// The file reaches storage before the row is written, so a row that fails to
+// land would otherwise leave a file nothing refers to.
+func TestUploadService_UploadFile_RemovesTheFileWhenTheRowFails(t *testing.T) {
+	dbc, cleanup := setupDB(t)
+	defer cleanup()
+	storage := &mockUploadStorage{}
+	svc := services.NewUploadService(
+		db.NewTransactor(dbc), repositories.NewUploadRepository(dbc),
+		repositories.NewRunEventRepository(dbc), storage,
+	)
+
+	fileHeader := &multipart.FileHeader{
+		Filename: "photo.jpg",
+		Header:   map[string][]string{"Content-Type": {"image/jpeg"}},
+	}
+	// A run that does not exist trips the event's foreign key inside the
+	// transaction, after the file has been stored.
+	result, err := svc.UploadFile(context.Background(), nil, fileHeader, services.UploadMetadata{
+		QuestID: "no-such-quest", RunID: "NOPE", BlockID: "b",
+	})
+
+	require.Error(t, err)
+	assert.Nil(t, result)
+	assert.Equal(t, []string{"delete-token"}, storage.deleted)
 }

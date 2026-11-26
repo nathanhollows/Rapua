@@ -2,15 +2,19 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-templ dividerPlayer(_ models.InstanceSettings, block blocks.DividerBlock) {
-	<div class="divider">{ block.Title }</div>
+templ dividerPlayer(_ models.QuestSettings, block blocks.DividerBlock) {
+	<div class="qb-div" role="separator">
+		if block.Title != "" {
+			<span class="qb-div-lbl">{ block.Title }</span>
+		}
+	</div>
 }
 
-templ dividerAdmin(_ models.InstanceSettings, block blocks.DividerBlock) {
+templ dividerAdmin(_ models.QuestSettings, block blocks.DividerBlock) {
 	<form
 		id={ fmt.Sprintf("form-%s", block.ID) }
 		hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }

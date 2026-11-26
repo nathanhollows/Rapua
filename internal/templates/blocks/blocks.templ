@@ -2,11 +2,11 @@ package blocks
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
-func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ.Component {
+func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -20,6 +20,12 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordAdmin(settings, *b)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanAdmin(settings, *b)
+	case "geofence":
+		b := block.(*blocks.GeofenceBlock)
+		return geofenceAdmin(settings, *b)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodeAdmin(settings, *b)
@@ -41,18 +47,18 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "clue":
 		b := block.(*blocks.ClueBlock)
 		return clueAdmin(settings, *b)
-	case "broker":
-		b := block.(*blocks.BrokerBlock)
-		return brokerAdmin(settings, *b)
+	case "free_text":
+		b := block.(*blocks.FreeTextBlock)
+		return freeTextAdmin(settings, *b)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoAdmin(settings, *b)
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonAdmin(settings, *b)
-	case "random_clue":
-		b := block.(*blocks.RandomClueBlock)
-		return randomClueAdmin(settings, *b)
+	case "random_text":
+		b := block.(*blocks.RandomTextBlock)
+		return randomTextAdmin(settings, *b)
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerAdmin(settings, *b)
@@ -65,20 +71,23 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
 	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonAdmin(settings, *b)
-	case "task":
-		b := block.(*blocks.TaskBlock)
-		return taskAdmin(settings, *b)
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingAdmin(settings, *b)
 	case "toggle_text":
 		b := block.(*blocks.ToggleTextBlock)
 		return toggleTextAdmin(settings, *b)
+	case "map":
+		b := block.(*blocks.MapBlock)
+		return mapAdmin(settings, *b)
+	case "choice":
+		b := block.(*blocks.ChoiceBlock)
+		return choiceAdmin(settings, *b)
 	}
 	return nil
 }
 
-func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -92,6 +101,12 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayer(settings, *b, state)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanPlayer(settings, *b, state)
+	case "geofence":
+		b := block.(*blocks.GeofenceBlock)
+		return geofencePlayer(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayer(settings, *b, state)
@@ -113,18 +128,18 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "clue":
 		b := block.(*blocks.ClueBlock)
 		return cluePlayer(settings, *b, state)
-	case "broker":
-		b := block.(*blocks.BrokerBlock)
-		return brokerPlayer(settings, *b, state)
+	case "free_text":
+		b := block.(*blocks.FreeTextBlock)
+		return freeTextPlayer(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayer(settings, *b, state)
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonPlayer(settings, *b)
-	case "random_clue":
-		b := block.(*blocks.RandomClueBlock)
-		return randomCluePlayer(settings, *b, state)
+	case "random_text":
+		b := block.(*blocks.RandomTextBlock)
+		return randomTextPlayer(settings, *b, state)
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)
@@ -137,20 +152,23 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
 	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
-	case "task":
-		b := block.(*blocks.TaskBlock)
-		return taskPlayer(settings, *b)
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayer(settings, *b, state)
 	case "toggle_text":
 		b := block.(*blocks.ToggleTextBlock)
 		return toggleTextPlayer(settings, *b)
+	case "map":
+		b := block.(*blocks.MapBlock)
+		return mapPlayer(settings, *b)
+	case "choice":
+		b := block.(*blocks.ChoiceBlock)
+		return choicePlayer(settings, *b, state)
 	}
 	return nil
 }
 
-func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
 	switch block.GetType() {
 	case "text":
 		b := block.(*blocks.MarkdownBlock)
@@ -164,12 +182,18 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "password":
 		b := block.(*blocks.PasswordBlock)
 		return passwordPlayerUpdate(settings, *b, state)
+	case "scan":
+		b := block.(*blocks.ScanBlock)
+		return scanPlayerUpdate(settings, *b, state)
+	case "geofence":
+		b := block.(*blocks.GeofenceBlock)
+		return geofencePlayerUpdate(settings, *b, state)
 	case "pincode":
 		b := block.(*blocks.PincodeBlock)
 		return pincodePlayerUpdate(settings, *b, state)
 	case "checklist":
 		b := block.(*blocks.ChecklistBlock)
-		return checklistPlayer(settings, *b, state)
+		return checklistPlayerUpdate(settings, *b, state)
 	case "youtube":
 		b := block.(*blocks.YoutubeBlock)
 		return youtubePlayer(settings, *b)
@@ -178,25 +202,25 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 		return alertPlayer(settings, *b)
 	case "sorting":
 		b := block.(*blocks.SortingBlock)
-		return sortingPlayer(settings, *b, state)
+		return sortingPlayerUpdate(settings, *b, state)
 	case "quiz":
 		b := block.(*blocks.QuizBlock)
 		return quizPlayerUpdate(settings, *b, state)
 	case "clue":
 		b := block.(*blocks.ClueBlock)
 		return cluePlayerUpdate(settings, *b, state)
-	case "broker":
-		b := block.(*blocks.BrokerBlock)
-		return brokerPlayerUpdate(settings, *b, state)
+	case "free_text":
+		b := block.(*blocks.FreeTextBlock)
+		return freeTextPlayerUpdate(settings, *b, state)
 	case "photo":
 		b := block.(*blocks.PhotoBlock)
 		return photoPlayerUpdate(settings, *b, state)
 	case "button":
 		b := block.(*blocks.ButtonBlock)
 		return buttonPlayer(settings, *b)
-	case "random_clue":
-		b := block.(*blocks.RandomClueBlock)
-		return randomCluePlayer(settings, *b, state)
+	case "random_text":
+		b := block.(*blocks.RandomTextBlock)
+		return randomTextPlayer(settings, *b, state)
 	case "header":
 		b := block.(*blocks.HeaderBlock)
 		return headerPlayer(settings, *b)
@@ -209,153 +233,100 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 	case "start_button":
 		b := block.(*blocks.StartGameButtonBlock)
 		return startGameButtonPlayer(settings, *b)
-	case "task":
-		b := block.(*blocks.TaskBlock)
-		return taskPlayer(settings, *b)
 	case "rating":
 		b := block.(*blocks.RatingBlock)
 		return ratingPlayerUpdate(settings, *b, state)
 	case "toggle_text":
 		b := block.(*blocks.ToggleTextBlock)
 		return toggleTextPlayer(settings, *b)
+	case "map":
+		b := block.(*blocks.MapBlock)
+		return mapPlayer(settings, *b)
+	case "choice":
+		b := block.(*blocks.ChoiceBlock)
+		return choicePlayerUpdate(settings, *b, state)
 	}
 	return nil
 }
 
-templ RenderAdminBlock(settings models.InstanceSettings, block blocks.Block, open bool) {
-	<div
-		id={ fmt.Sprint("block-", block.GetID()) }
-		class="content-block collapse collapse-arrow bg-base-200 border-base-300 border"
-		data-block-id={ block.GetID() }
-		data-block-type={ block.GetType() }
-		_="on mouseenter
-			js(me)
-				const blockId = me.id.substring(6);
-				const targetId = 'preview-block-' + blockId;
-				const previewBlock = document.getElementById(targetId);
-				me.classList.add('admin-block-highlighted');
-				if (previewBlock) {
-					previewBlock.classList.add('preview-block-highlighted');
+// completionBadge marks a block that is done. A block not yet done says
+// nothing: that is how every block starts, so a label for it is only noise.
+templ completionBadge(data blocks.PlayerState) {
+	if data.IsComplete() {
+		@completeMark()
+	}
+}
 
-					// Find the scrolling container (mockup-phone-display)
-					const container = document.querySelector('.mockup-phone-display');
-					if (container) {
-						// Get positions relative to the scrolling container
-						const containerRect = container.getBoundingClientRect();
-						const blockRect = previewBlock.getBoundingClientRect();
-
-						// Calculate if block is outside visible area
-						const isAbove = blockRect.top < containerRect.top;
-						const isBelow = blockRect.bottom > containerRect.bottom;
-
-						if (isAbove || isBelow) {
-							// Calculate scroll position to center the block
-							const relativeTop = previewBlock.offsetTop - document.getElementById('mobile-preview-container').offsetTop;
-							const centerOffset = (container.clientHeight / 2) - (blockRect.height / 2);
-
-							container.scrollTo({
-								top: relativeTop - centerOffset,
-								behavior: 'smooth'
-							});
-						}
-					}
-				}
-			end
-		on mouseleave
-			js(me)
-				const blockId = me.id.substring(6);
-				const targetId = 'preview-block-' + blockId;
-				const previewBlock = document.getElementById(targetId);
-				me.classList.remove('admin-block-highlighted');
-				if (previewBlock) {
-					previewBlock.classList.remove('preview-block-highlighted');
-				}
-			end"
+templ completeMark() {
+	<span
+		class="indicator-item indicator-top indicator-right badge badge-success q-check"
+		role="img"
+		aria-label="Complete"
 	>
-		<input
-			type="checkbox"
-			if open {
-				checked
-			}
-		/>
-		<div class="collapse-title font-semibold w-full flex flex-row items-center gap-3">
-			@templ.Raw(block.GetIconSVG())
-			{ block.GetName() }
-			if settings.EnablePoints && block.RequiresValidation() {
-				<span
-					if block.GetPoints() > 0 {
-						class="badge badge-sm"
-					} else {
-						class="badge badge-sm badge-warning"
-					}
-					_="on keyup from next <input[name=points] /> 
-							set :el to next <input[name=points] />
-							if :el's value == '' 
-								then set my innerHTML to '0 pts'
-							else
-								set my innerHTML to (next <input[name=points] />)'s value + ' pts'
-							end"
-				>{ fmt.Sprint(block.GetPoints()) } pts</span>
-			}
-			<div class="flex gap-3 z-10 ml-auto">
-				if block.GetType() != "task" {
-					<button
-						type="button"
-						class="block-delete btn btn-sm btn-circle shadow-none btn-ghost hover:btn-error tooltip tooltip-bottom flex"
-						data-tip="Delete"
-						data-location={ block.GetOwnerID() }
-						data-block={ block.GetID() }
-					>
-						<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trash-2 w-3 h-3"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path><line x1="10" x2="10" y1="11" y2="17"></line><line x1="14" x2="14" y1="11" y2="17"></line></svg>
-					</button>
-					<span class="join join-horizontal">
-						<button
-							type="button"
-							class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-up-btn"
-							data-tip="Move up"
-							onclick="moveblock(event, 'up')"
-							hx-post={ fmt.Sprint("/admin/blocks/reorder") }
-							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()) }
-							hx-trigger="click delay:400ms"
-							hx-swap="none"
-							hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-up w-3 h-3"><path d="M8 6L12 2L16 6"></path><path d="M12 2V22"></path></svg>
-						</button>
-						<button
-							type="button"
-							class="btn btn-sm btn-ghost join-item tooltip tooltip-bottom move-down-btn"
-							data-tip="Move down"
-							onclick="moveblock(event, 'down')"
-							hx-post={ fmt.Sprint("/admin/blocks/reorder") }
-							hx-vals={ fmt.Sprintf(`{"owner": "%s"}`, block.GetOwnerID()) }
-							hx-trigger="click delay:400ms"
-							hx-swap="none"
-							hx-include={ fmt.Sprintf(".blocks:has(#block-%s) [name=block_id]", block.GetID()) }
-						>
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-move-down w-3 h-3"><path d="M8 18L12 22L16 18"></path><path d="M12 2V22"></path></svg>
-						</button>
-					</span>
-				} else {
-					<span
-						class="badge badge-sm tooltip tooltip-left badge-neutral"
-						data-tip="This page is part of a task list"
-					>Required</span>
-				}
-			</div>
-			<input type="hidden" name="block_id" value={ block.GetID() }/>
-		</div>
-		<div class="collapse-content">
-			@RenderAdminEdit(settings, block)
+		@icon("check", templ.Attributes{"class": "w-4 h-4", "stroke-width": "3"})
+	</span>
+}
+
+// qbTop is the head of a raised card: what kind of block it is, and its points.
+templ qbTop(iconName, kind string, settings models.QuestSettings, points int, data blocks.PlayerState) {
+	<div class="qb-top">
+		<span class="qb-sticker xs" aria-hidden="true">
+			@icon(iconName, templ.Attributes{})
+		</span>
+		<span class="qb-kind">{ kind }</span>
+		@qbChip(settings, points, data)
+	</div>
+}
+
+// qbRightRow is an answer that was accepted, drawn as a quiz draws a right one: a
+// green edge, a ticked mark, and the same words.
+templ qbRightRow(text string) {
+	<div class="qb-opt locked is-ok">
+		<span class="qb-mark">
+			@icon("check", templ.Attributes{"aria-hidden": "true"})
+		</span>
+		<div class="qb-t">
+			<div class="qb-tt">{ text }</div>
+			<span class="qb-verdict">
+				@icon("check", templ.Attributes{"aria-hidden": "true"})
+				That's right
+			</span>
 		</div>
 	</div>
 }
 
-templ completionBadge(data blocks.PlayerState) {
+// qbDoneMessage is a status the block gives, not an answer: a white block with a
+// green icon, the same shape as the messages for a miss.
+templ qbDoneMessage(text string) {
+	<p class="qb-msg ok" role="status">
+		@icon("circle-check", templ.Attributes{"aria-hidden": "true"})
+		<span>{ text }</span>
+	</p>
+}
+
+// qbChip is points and completion in one pill: plain while there is something
+// to earn, green once it is done. A block with no points says nothing until it
+// is finished.
+templ qbChip(settings models.QuestSettings, points int, data blocks.PlayerState) {
 	if data.IsComplete() {
-		<span class="indicator-item indicator-top indicator-right badge badge-success mr-12">Complete</span>
-	} else {
-		<span class="indicator-item indicator-top indicator-right badge mr-12">Incomplete</span>
+		<span class="qb-chip earned">
+			if awarded := data.GetPointsAwarded(); settings.EnablePoints && awarded > 0 {
+				+{ fmt.Sprint(awarded) } pts
+			} else if settings.EnablePoints && awarded < 0 {
+				-{ fmt.Sprint(-awarded) } pts
+			} else {
+				Done
+			}
+			@icon("check", templ.Attributes{"aria-hidden": "true"})
+		</span>
+	} else if settings.EnablePoints && points != 0 {
+		<span class="qb-chip">
+			if points < 0 {
+				-{ fmt.Sprint(-points) } pts
+			} else {
+				{ fmt.Sprint(points) } pts
+			}
+		</span>
 	}
 }
 

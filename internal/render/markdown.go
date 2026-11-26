@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"sync"
 
-	enclave "github.com/quail-ink/goldmark-enclave"
 	"github.com/microcosm-cc/bluemonday"
+	enclave "github.com/quail-ink/goldmark-enclave"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"

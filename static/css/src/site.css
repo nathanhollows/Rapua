@@ -1,0 +1,17 @@
+@import 'tailwindcss' source(none);
+@import './theme.css';
+@import './shared.css';
+@import './logo.css';
+@import './map.css';
+@import './public.css';
+@import './player.css';
+
+@source "../../../internal/templates/public";
+@source "../../../internal/templates/brand";
+@source "../../../internal/templates/players";
+@source "../../../internal/templates/blocks";
+@source "../../../internal/handlers/public";
+@source "../../../internal/handlers/players";
+@source "../../../blocks";
+@source "../../../docs";
+@source "../../js";

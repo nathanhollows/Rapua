@@ -7,10 +7,10 @@
 *.dll
 *.so
 *.dylib
-./ScanScout
-./Rapua
-./rapua
-./main
+/ScanScout
+/Rapua
+/rapua
+/main
 
 # Test binary, built with `go test -c`
 *.test
@@ -38,3 +38,8 @@ assets/codes/*
 tmp/*
 static/uploads/*
 internal/templates/**/*.txt
+
+# Scratch/thinking space
+/converse/
+/templates/
+/dev.sh

@@ -1,0 +1,97 @@
+package templates
+
+import (
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+type ObjectiveViewData struct {
+	Settings models.QuestSettings
+	Title       string
+	Description string
+	Zone        game.BlockContext
+	Blocks      blocks.Blocks
+	States      map[string]blocks.PlayerState
+	// Hidden names the blocks still waiting on a variable the run has not set.
+	Hidden map[string]bool
+	// Preview shows every block, noting on the gated ones what they wait for.
+	Preview bool
+	// Slug is where the proof hands off to the reveal. Unused on a preview.
+	Slug string
+	// Hue is zero for the default. Only the proof wears it.
+	Hue int
+}
+
+// The reveal drops the section's hue, as the group no longer helps once a player
+// is reading what they found. It has no next-task button because the next task
+// may be in another group: the list is where that choice is made. The page is at
+// least screen height so "Back to the quest" sits where the thumb expects.
+templ ObjectiveView(data ObjectiveViewData) {
+	{{ reveal := data.Zone == game.ContextObjectiveReveal }}
+	<div
+		id="objective-page"
+		class={
+			"q-sec q-page flex flex-col gap-6",
+			templ.KV("q-neutral", reveal),
+			templ.KV(hueClass(data.Hue), data.Hue != 0 && !reveal),
+		}
+	>
+		<div class="q-dim flex flex-col gap-2">
+			<h1 class="text-2xl font-extrabold leading-snug text-pretty">{ data.Title }</h1>
+			if data.Description != "" && !reveal {
+				<p class="text-lg q-soft text-pretty">{ data.Description }</p>
+			}
+		</div>
+		<div id="objective-zone" class="q-dim flex flex-col gap-8" data-block-list>
+			@objectiveZoneContents(data)
+		</div>
+		if !data.Preview {
+			<!-- So the page never changes unannounced. -->
+			<div id="reveal-toast" aria-live="polite"></div>
+			<div class="q-dim mt-auto pt-2">
+				<a href="/objectives" hx-boost="true" class="q-back">
+					@icon("compass", templ.Attributes{"class": "w-5 h-5"})
+					Back to the quest
+				</a>
+			</div>
+		}
+	</div>
+}
+
+// A swap at once reads as the page jumping under a thumb, so the proof stays for
+// a beat with a bar draining. The reveal is already complete on the server, and
+// a tap skips the wait.
+templ RevealToast(slug string) {
+	<div id="reveal-toast" hx-swap-oob="true" aria-live="polite">
+		<button
+			type="button"
+			class="q-toast"
+			hx-get={ "/objective/" + slug }
+			hx-trigger="load delay:1700ms, click"
+			hx-target="#objective-page"
+			hx-select="#objective-page"
+			hx-swap="outerHTML"
+		>
+			@icon("check", templ.Attributes{"class": "w-6 h-6 shrink-0"})
+			<span class="grow text-left">Got it. Here is what you found.</span>
+			<i aria-hidden="true"></i>
+		</button>
+	</div>
+}
+
+func ObjectiveChrome(team models.Run) AppChrome {
+	return AppChrome{Run: team, Active: "quest"}
+}
+
+templ ObjectiveZoneUpdate(data ObjectiveViewData) {
+	<div id="objective-zone" class="q-dim flex flex-col gap-8" data-block-list hx-swap-oob="true">
+		@objectiveZoneContents(data)
+	</div>
+}
+
+templ objectiveZoneContents(data ObjectiveViewData) {
+	for _, block := range data.Blocks {
+		@PlayerBlockSlot(data.Settings, block, data.States[block.GetID()], data.Hidden[block.GetID()], data.Preview)
+	}
+}

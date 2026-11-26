@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
 )
 
 func TestDefaultUserStatus(t *testing.T) {
@@ -93,7 +93,7 @@ func TestWithUserStatus(t *testing.T) {
 func TestContextKeyUniqueness(t *testing.T) {
 	keys := []contextkeys.ContextKey{
 		contextkeys.UserKey,
-		contextkeys.TeamKey,
+		contextkeys.RunKey,
 		contextkeys.PreviewKey,
 		contextkeys.StatusKey,
 	}

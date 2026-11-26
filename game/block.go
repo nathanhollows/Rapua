@@ -11,10 +11,19 @@ var ErrBlockTypeNotFound = errors.New("block type not found")
 // FormValueTrue is the string value "true" used in form checkbox comparisons.
 const FormValueTrue = "true"
 
+// DiscoveryBlockTypes are the proof blocks that can find a secret: the player
+// has nothing else on screen to answer, since a secret is never listed. A
+// geofence is not among them because a hidden fence would have to be sent to
+// the player's device to be checked there.
+func DiscoveryBlockTypes() []string { return []string{"scan"} }
+
 // PlayerState tracks a player's progress on a block.
 type PlayerState interface {
 	GetBlockID() string
 	GetPlayerID() string
+	// GetQuestID returns the quest the state belongs to. It is part of the
+	// state's primary key, so implementations must return it.
+	GetQuestID() string
 	GetPlayerData() json.RawMessage
 	SetPlayerData(data json.RawMessage)
 	IsComplete() bool
@@ -43,6 +52,21 @@ type Block interface {
 	// Validation and Points Calculation
 	RequiresValidation() bool
 	ValidatePlayerInput(state PlayerState, input map[string][]string) (newState PlayerState, err error)
+
+	// Variables
+	GetSets() string
+	GetDepends() DependsField
+	SetVars(sets string, depends DependsField)
+}
+
+// SubmissionReporter is implemented by blocks that record what a submission
+// carried when it did not solve the block: a wrong guess, an incomplete
+// checklist, a position outside the area. A block that cannot be failed, or
+// whose state already is the whole record (free text), does not implement it.
+type SubmissionReporter interface {
+	// Submission returns what the player submitted, as JSON, or nil when there
+	// is nothing to keep. state is the result of validation.
+	Submission(input map[string][]string, state PlayerState) json.RawMessage
 }
 
 // Blocks is a slice of Block.
@@ -56,11 +80,31 @@ type BaseBlock struct {
 	Data    json.RawMessage `json:"-"`
 	Order   int             `json:"-"`
 	Points  int             `json:"-"`
+	// Sets and Depends live in the block's data rather than columns, so every
+	// block type carries them through its own marshalling and the document
+	// round-trips them without a per-type change.
+	Sets    string       `json:"sets,omitempty"`
+	Depends DependsField `json:"depends,omitempty"`
+}
+
+// GetSets returns the variable the block writes when completed.
+func (b *BaseBlock) GetSets() string { return b.Sets }
+
+// GetDepends returns the variables that must be set before the block shows.
+func (b *BaseBlock) GetDepends() DependsField { return b.Depends }
+
+// SetVars replaces the block's sets and depends.
+func (b *BaseBlock) SetVars(sets string, depends DependsField) {
+	b.Sets = sets
+	b.Depends = depends
 }
 
 // RegisteredBlock holds block metadata for the registry.
 type RegisteredBlock struct {
-	BlockType         string
-	Instance          Block
+	BlockType string
+	// Prototype is a zero-value exemplar of the block type, kept so the
+	// registry can interrogate the type itself (specs, doc vars, capabilities).
+	// It carries no per-block data and is never rendered.
+	Prototype         Block
 	SupportedContexts []BlockContext
 }

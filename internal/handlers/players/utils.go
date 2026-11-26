@@ -7,93 +7,115 @@ import (
 	"log/slog"
 	"mime/multipart"
 	"net/http"
+	"time"
 
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/internal/sessions"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/players"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/sessions"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/players"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 type BlockService interface {
-	// GetByBlockID fetches a content block by its ID
 	GetByBlockID(ctx context.Context, blockID string) (blocks.Block, error)
-	// NewMockBlockState creates a mock player state (for testing/demo scenarios)
-	NewMockBlockState(ctx context.Context, blockID, teamCode string) (blocks.PlayerState, error)
-	// FindByOwnerIDAndContext fetches all content blocks for an owner with specific context
+	GetBlockContext(ctx context.Context, blockID string) (blocks.BlockContext, error)
+	NewMockBlockState(ctx context.Context, blockID, runCode, questID string) (blocks.PlayerState, error)
 	FindByOwnerIDAndContext(
 		ctx context.Context,
 		ownerID string,
 		blockContext blocks.BlockContext,
 	) (blocks.Blocks, error)
-	// FindByOwnerIDAndTeamCodeWithStateAndContext fetches all blocks and their states
-	// for the given owner, team, and context
-	FindByOwnerIDAndTeamCodeWithStateAndContext(
+	FindByOwnerIDAndRunCodeWithStateAndContext(
 		ctx context.Context,
-		ownerID, teamCode string,
+		ownerID, runCode, questID string,
 		blockContext blocks.BlockContext,
 	) ([]blocks.Block, map[string]blocks.PlayerState, error)
 }
 
 type CheckInService interface {
-	CheckIn(ctx context.Context, team *models.Team, locationCode string) error
-	CheckOut(ctx context.Context, team *models.Team, locationCode string) error
 	ValidateAndUpdateBlockState(
 		ctx context.Context,
-		team models.Team,
+		team models.Run,
 		data map[string][]string,
 	) (blocks.PlayerState, blocks.Block, error)
+	GetObjectiveByQuestIDAndSlug(ctx context.Context, questID, slug string) (*models.Objective, error)
+	GetObjectiveByID(ctx context.Context, objectiveID string) (*models.Objective, error)
+	ObjectiveIsReachable(ctx context.Context, team *models.Run, objective *models.Objective) (bool, error)
+	IsObjectiveContextPending(
+		ctx context.Context,
+		team *models.Run,
+		objectiveID string,
+		blockContext blocks.BlockContext,
+	) (bool, error)
+	CompleteObjectiveContext(
+		ctx context.Context,
+		team *models.Run,
+		objectiveID string,
+		blockContext blocks.BlockContext,
+	) error
+	// RunVars returns the variables the run has set, none in preview.
+	RunVars(ctx context.Context, team *models.Run) (map[string]bool, error)
+	ScanCode(
+		ctx context.Context, team *models.Run, value string, modality blocks.ScanModality,
+	) (*models.Objective, error)
 }
 
-type InstanceService interface {
-	GetInstanceSettings(ctx context.Context, instanceID string) (*models.InstanceSettings, error)
-	GetByID(ctx context.Context, instanceID string) (*models.Instance, error)
-}
-
-type MarkerService interface {
-	GetMarkerByCode(ctx context.Context, locationCode string) (models.Marker, error)
+type QuestService interface {
+	GetQuestSettings(ctx context.Context, questID string) (*models.QuestSettings, error)
+	GetByID(ctx context.Context, questID string) (*models.Quest, error)
 }
 
 type NavigationService interface {
-	// IsValidLocation(ctx context.Context, team *models.Team, markerID string) (bool, error)
-	GetNextLocations(ctx context.Context, team *models.Team) ([]models.Location, error)
-	GetPlayerNavigationView(ctx context.Context, team *models.Team) (*services.PlayerNavigationView, error)
-	GetPreviewNavigationView(
+	GetQuestObjectives(ctx context.Context, questID string) ([]models.Objective, error)
+	GetPlayerObjectiveView(ctx context.Context, team *models.Run) (*services.PlayerObjectiveView, error)
+	// GetJournal builds the run's diary from its event stream.
+	GetJournal(ctx context.Context, team *models.Run) (services.JournalView, error)
+	FinishSection(ctx context.Context, team *models.Run, objectiveID string) (bool, error)
+	// RecordObjectiveView notes a run opening an objective.
+	RecordObjectiveView(ctx context.Context, team *models.Run, objectiveID string) error
+	// RecordObjectivesListed notes a run opening the list of objectives.
+	RecordObjectivesListed(ctx context.Context, team *models.Run) error
+	GetPreviewObjectiveView(
 		ctx context.Context,
-		team *models.Team,
-		locationID string,
-	) (*services.PlayerNavigationView, error)
-	// HasVisited(checkins []models.CheckIn, locationID string) bool
-}
-
-type LocationService interface {
-	GetByID(ctx context.Context, locationID string) (*models.Location, error)
-	GetByInstanceAndCode(ctx context.Context, instanceID string, code string) (*models.Location, error)
-	LoadBlocks(ctx context.Context, location *models.Location) error
+		team *models.Run,
+		objectiveID string,
+	) (*services.PlayerObjectiveView, error)
 }
 
 type NotificationService interface {
-	GetNotifications(ctx context.Context, teamCode string) ([]models.Notification, error)
+	GetNotifications(ctx context.Context, runCode string) ([]models.Notification, error)
 	DismissNotification(ctx context.Context, notificationID string) error
 }
 
-type TeamService interface {
-	// GetTeamByCode returns a team by code
-	GetTeamByCode(ctx context.Context, code string) (*models.Team, error)
-	// Update updates a team in the database
-	Update(ctx context.Context, team *models.Team) error
-	// LoadRelation loads relations for a team
-	LoadRelation(ctx context.Context, team *models.Team, relation string) error
-	// LoadRelations loads all relations for a team
-	LoadRelations(ctx context.Context, team *models.Team) error
-	// StartPlaying starts a team playing the game
-	StartPlaying(ctx context.Context, teamCod string) error
+// LeaderBoardService ranks the runs of one quest. The player's copy is
+// read-only and takes no sort from the URL: a player is shown one board, the
+// way the quest's own settings decide it.
+type LeaderBoardService interface {
+	GetLeaderBoardData(
+		ctx context.Context,
+		teams []models.Run,
+		lastSeen map[string]time.Time,
+		summaries map[string]services.RunSummary,
+		rankingScheme string,
+		sortField string,
+		sortOrder string,
+	) ([]services.LeaderBoardTeamData, error)
+}
+
+type RunService interface {
+	GetRunByCode(ctx context.Context, code string) (*models.Run, error)
+	RenameRun(ctx context.Context, team *models.Run, name string) error
+	LoadRelations(ctx context.Context, run *models.Run) error
+	LoadQuest(ctx context.Context, run *models.Run) error
+	StartPlaying(ctx context.Context, runCode string) error
+	RecordJoined(ctx context.Context, team *models.Run, via string) error
+	FindAll(ctx context.Context, questID string) ([]models.Run, error)
+	GetQuestRunSummaries(ctx context.Context, questID string) (map[string]services.RunSummary, error)
 }
 
 type UploadService interface {
-	// UploadFile uploads a file with metadata
 	UploadFile(
 		ctx context.Context,
 		file multipart.File,
@@ -107,12 +129,11 @@ type PlayerHandler struct {
 	logger              *slog.Logger
 	blockService        BlockService
 	checkInService      CheckInService
-	instanceService     InstanceService
-	locationService     LocationService
-	markerService       MarkerService
+	questService        QuestService
+	leaderBoardService  LeaderBoardService
 	navigationService   NavigationService
 	notificationService NotificationService
-	teamService         TeamService
+	runService          RunService
 	uploadService       UploadService
 }
 
@@ -120,53 +141,47 @@ func NewPlayerHandler(
 	logger *slog.Logger,
 	blockService BlockService,
 	checkInService CheckInService,
-	instanceService InstanceService,
-	locationService LocationService,
-	markerService MarkerService,
+	questService QuestService,
+	leaderBoardService LeaderBoardService,
 	navigationService NavigationService,
 	notificationService NotificationService,
-	teamService TeamService,
+	runService RunService,
 	uploadService UploadService,
 ) *PlayerHandler {
 	return &PlayerHandler{
 		logger:              logger,
 		blockService:        blockService,
 		checkInService:      checkInService,
-		instanceService:     instanceService,
-		locationService:     locationService,
-		markerService:       markerService,
+		questService:        questService,
+		leaderBoardService:  leaderBoardService,
 		navigationService:   navigationService,
 		notificationService: notificationService,
-		teamService:         teamService,
+		runService:          runService,
 		uploadService:       uploadService,
 	}
 }
 
-func (h PlayerHandler) GetInstanceService() InstanceService {
-	return h.instanceService
+func (h PlayerHandler) GetQuestService() QuestService {
+	return h.questService
 }
 
-func (h PlayerHandler) GetTeamService() TeamService {
-	return h.teamService
+func (h PlayerHandler) GetRunService() RunService {
+	return h.runService
 }
 
-// GetTeamFromContext retrieves the team from the context.
-// Team will always be in the context because the middleware.
-// However the Team could be nil if the team was not found.
-func (h PlayerHandler) getTeamFromContext(ctx context.Context) (*models.Team, error) {
-	val := ctx.Value(contextkeys.TeamKey)
+// getRunFromContext retrieves the run from the context.
+func (h PlayerHandler) getRunFromContext(ctx context.Context) (*models.Run, error) {
+	val := ctx.Value(contextkeys.RunKey)
 	if val == nil {
-		return nil, errors.New("team not found")
+		return nil, errors.New("run not found")
 	}
-	team, ok := val.(*models.Team)
-	if !ok || team == nil {
-		return nil, errors.New("team not found")
+	run, ok := val.(*models.Run)
+	if !ok || run == nil {
+		return nil, errors.New("run not found")
 	}
-	return team, nil
+	return run, nil
 }
 
-// redirect is a helper function to redirect the user to a new page.
-// It accounts for htmx requests.
 func (h PlayerHandler) redirect(w http.ResponseWriter, r *http.Request, path string) {
 	if r.Header.Get("Hx-Request") == "true" {
 		w.Header().Set("Hx-Redirect", path)
@@ -175,12 +190,24 @@ func (h PlayerHandler) redirect(w http.ResponseWriter, r *http.Request, path str
 	http.Redirect(w, r, path, http.StatusFound)
 }
 
+// sessionHoldsRun reports whether this browser is already attached to the run,
+// so a refresh or a revisited link is not counted as a second arrival. Read it
+// before startSession, which overwrites it.
+func (h *PlayerHandler) sessionHoldsRun(r *http.Request, runCode string) bool {
+	session, err := sessions.Get(r, "scanscout")
+	if err != nil {
+		return false
+	}
+	held, _ := session.Values["run"].(string)
+	return held == runCode
+}
+
 func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, teamCode string) error {
 	session, err := sessions.Get(r, "scanscout")
 	if err != nil {
 		return fmt.Errorf("getting session: %w", err)
 	}
-	session.Values["team"] = teamCode
+	session.Values["run"] = teamCode
 	session.Options.Path = "/"
 	session.Options.HttpOnly = true
 	session.Options.SameSite = http.SameSiteLaxMode
@@ -193,15 +220,6 @@ func (h *PlayerHandler) startSession(w http.ResponseWriter, r *http.Request, tea
 	return nil
 }
 
-// checkinURL returns the player-facing URL for a check-in, using the location slug.
-func (h PlayerHandler) checkinURL(ctx context.Context, instanceID, markerCode string) (string, error) {
-	loc, err := h.locationService.GetByInstanceAndCode(ctx, instanceID, markerCode)
-	if err != nil {
-		return "", fmt.Errorf("resolving slug for marker %s: %w", markerCode, err)
-	}
-	return "/checkins/" + loc.Slug, nil
-}
-
 func (h *PlayerHandler) handleError(
 	w http.ResponseWriter,
 	r *http.Request,
@@ -209,9 +227,9 @@ func (h *PlayerHandler) handleError(
 	flashMsg string,
 	params ...any,
 ) {
-	h.logger.Error(logMsg, params...)
+	h.logger.ErrorContext(r.Context(), logMsg, params...)
 	err := templates.Toast(*flash.NewError(flashMsg)).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error(logMsg+" - rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), logMsg+" - rendering template", "error", err)
 	}
 }

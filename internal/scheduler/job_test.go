@@ -3,17 +3,16 @@ package scheduler_test
 import (
 	"context"
 	"errors"
-	"io"
 	"log/slog"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v8/internal/scheduler"
 	"github.com/stretchr/testify/assert"
 )
 
-var jobLogger = slog.New(slog.NewTextHandler(io.Discard, nil))
+var jobLogger = slog.New(slog.DiscardHandler)
 
 func TestJob_Creation(t *testing.T) {
 	tests := []struct {

@@ -3,24 +3,25 @@ package models
 import (
 	"encoding/json"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 type Block struct {
-	ID                 string           `bun:"id,pk,notnull"`
-	OwnerID            string           `bun:"owner_id,notnull"`
-	Type               string           `bun:"type,type:int"`
+	ID                 string            `bun:"id,pk,notnull"`
+	OwnerID            string            `bun:"owner_id,notnull"`
+	Type               string            `bun:"type,type:int"`
 	Context            game.BlockContext `bun:"context,type:string"`
-	Data               json.RawMessage  `bun:"data,type:jsonb"`
-	Ordering           int              `bun:"ordering,type:int"`
-	Points             int              `bun:"points,type:int"`
-	ValidationRequired bool             `bun:"validation_required,type:bool"`
+	Data               json.RawMessage   `bun:"data,type:jsonb"`
+	Ordering           int               `bun:"ordering,type:int"`
+	Points             int               `bun:"points,type:int"`
+	ValidationRequired bool              `bun:"validation_required,type:bool"`
 }
 
-type TeamBlockState struct {
+type RunBlockState struct {
 	baseModel
-	TeamCode      string          `bun:"team_code,pk,notnull"`
+	RunCode       string          `bun:"run_code,pk,notnull"`
 	BlockID       string          `bun:"block_id,pk,notnull"`
+	QuestID       string          `bun:"quest_id,pk,notnull"`
 	IsComplete    bool            `bun:"is_complete,type:bool"`
 	PointsAwarded int             `bun:"points_awarded,type:int"`
 	PlayerData    json.RawMessage `bun:"player_data,type:jsonb"`

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/nathanhollows/Rapua/v7/blocks"
 	"github.com/uptrace/bun"
 )
 
@@ -17,7 +16,6 @@ const (
 	m20250927115843_NavigationDisplayCustom = 4 // Block content navigation
 )
 
-// Migration models for this specific migration.
 type m20250927115843_Clue struct {
 	bun.BaseModel `bun:"table:clues"`
 
@@ -37,7 +35,6 @@ type m20250927115843_Location struct {
 	InstanceID string `bun:"instance_id,notnull"`
 }
 
-// RandomClueBlockData represents the JSON structure for random_clue blocks.
 type m20250927115843_RandomClueBlockData struct {
 	Clues []string `json:"clues"`
 }
@@ -64,7 +61,6 @@ type InstanceSettings struct {
 
 func init() {
 	Migrations.MustRegister(func(ctx context.Context, db *bun.DB) error {
-		// Get all clues grouped by location
 		var clues []m20250927115843_Clue
 		err := db.NewSelect().
 			Model(&clues).
@@ -74,24 +70,20 @@ func init() {
 			return fmt.Errorf("failed to fetch clues: %w", err)
 		}
 
-		// Group clues by location
 		cluesByLocation := make(map[string][]string)
 		for _, clue := range clues {
 			content := clue.Content
-			// Add "> " prefix if not already present
 			if !strings.HasPrefix(content, "> ") {
 				content = "> " + content
 			}
 			cluesByLocation[clue.LocationID] = append(cluesByLocation[clue.LocationID], content)
 		}
 
-		// Create random_clue blocks for each location that has clues
 		for locationID, locationClues := range cluesByLocation {
 			if len(locationClues) == 0 {
 				continue
 			}
 
-			// Create the JSON data for the random_clue block
 			blockData := m20250927115843_RandomClueBlockData{
 				Clues: locationClues,
 			}
@@ -101,12 +93,11 @@ func init() {
 				return fmt.Errorf("failed to marshal block data for location %s: %w", locationID, jsonErr)
 			}
 
-			// Create the block
 			block := m20250926120511_Block{
 				ID:                 uuid.New().String(),
 				LocationID:         locationID,
 				Type:               "random_clue",
-				Context:            blocks.ContextLocationClues, // New context for clue-based navigation
+				Context:            "location_clues", // New context for clue-based navigation
 				Data:               jsonData,
 				Ordering:           0, // Default ordering
 				Points:             0, // Default points
@@ -119,7 +110,6 @@ func init() {
 			}
 		}
 
-		// Update instance_settings using clue-based navigation (3) to custom content navigation (4)
 		_, err = db.NewUpdate().
 			Model((*m20250921065956_InstanceSettings)(nil)).
 			Set("navigation_method = ?", m20250927115843_NavigationDisplayCustom).
@@ -129,7 +119,6 @@ func init() {
 			return fmt.Errorf("failed to update navigation display mode: %w", err)
 		}
 
-		// Drop the clues table as it's no longer needed
 		_, err = db.NewDropTable().
 			Model((*m20250927115843_Clue)(nil)).
 			IfExists().
@@ -140,7 +129,6 @@ func init() {
 
 		return nil
 	}, func(ctx context.Context, db *bun.DB) error {
-		// Recreate the clues table
 		_, err := db.NewCreateTable().
 			Model((*m20250927115843_Clue)(nil)).
 			IfNotExists().
@@ -149,11 +137,10 @@ func init() {
 			return fmt.Errorf("failed to recreate clues table: %w", err)
 		}
 
-		// Get all random_clue blocks with nav context (these were created from clues)
 		var clueBlocks []m20250926120511_Block
 		err = db.NewSelect().
 			Model(&clueBlocks).
-			Where("type = ? AND context = ?", "random_clue", blocks.ContextLocationClues).
+			Where("type = ? AND context = ?", "random_clue", "location_clues").
 			Scan(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to fetch random_clue blocks: %w", err)
@@ -161,7 +148,6 @@ func init() {
 
 		cluesCreated := 0
 		for _, block := range clueBlocks {
-			// Get the InstanceID from the location
 			var location m20250927115843_Location
 			err = db.NewSelect().
 				Model(&location).
@@ -171,16 +157,13 @@ func init() {
 				return fmt.Errorf("failed to fetch location for block %s: %w", block.ID, err)
 			}
 
-			// Parse the block data to extract clues
 			var blockData m20250927115843_RandomClueBlockData
 			err = json.Unmarshal(block.Data, &blockData)
 			if err != nil {
 				return fmt.Errorf("failed to unmarshal block data for block %s: %w", block.ID, err)
 			}
 
-			// Create individual clue records for each clue in the block
 			for _, clueContent := range blockData.Clues {
-				// Remove the "> " prefix when converting back to clues
 				content := clueContent
 				content = strings.TrimPrefix(content, "> ")
 
@@ -199,16 +182,14 @@ func init() {
 			}
 		}
 
-		// Now remove the random_clue blocks with nav context
 		_, err = db.NewDelete().
 			Model((*m20250926120511_Block)(nil)).
-			Where("type = ? AND context = ?", "random_clue", blocks.ContextLocationClues).
+			Where("type = ? AND context = ?", "random_clue", "location_clues").
 			Exec(ctx)
 		if err != nil {
 			return fmt.Errorf("failed to delete random_clue blocks: %w", err)
 		}
 
-		// Revert instance_settings using custom content navigation (4) back to clue-based navigation (3)
 		_, err = db.NewUpdate().
 			Model((*m20250921065956_InstanceSettings)(nil)).
 			Set("navigation_method = ?", m20250927115843_NavigationDisplayClues).

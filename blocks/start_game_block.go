@@ -75,7 +75,6 @@ func (b *StartGameButtonBlock) ToYAML() map[string]any {
 	return m
 }
 
-
 // Validation and Points Calculation
 
 func (b *StartGameButtonBlock) RequiresValidation() bool {
@@ -96,4 +95,3 @@ func (b *StartGameButtonBlock) GetButtonStyles() map[string]string {
 		"neutral":   "Neutral",
 	}
 }
-

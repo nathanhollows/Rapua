@@ -57,7 +57,7 @@ func (b *YourBlock) GetType() string { return "your_block_type" }
 
 func (b *YourBlock) GetID() string { return b.ID }
 
-func (b *YourBlock) GetLocationID() string { return b.LocationID }
+func (b *YourBlock) GetOwnerID() string { return b.OwnerID }
 
 func (b *YourBlock) GetOrder() int { return b.Order }
 
@@ -140,6 +140,36 @@ func (b *YourBlock) ValidatePlayerInput(state PlayerState, input map[string][]st
 }
 ```
 
+A validating block that completes must call `SetPointsAwarded` on every completing path: the value it computes is what the run is credited and what the event log records. A completion that never sets it earns nothing, and nothing will say so.
+
+#### Reporting what a failed submission carried
+
+The run event stream records that a submission happened, and for a block that can be failed it also keeps *what* was submitted: a wrong guess, a checklist ticked part way, a position outside the area. State keeps the latest value and nothing dates it, so the stream is the only place a study can see the attempts themselves.
+
+Implement [`game.SubmissionReporter`](https://github.com/nathanhollows/Rapua/blob/main/game/block.go) when a failure carries something worth keeping:
+
+```go
+// Submission returns what the player sent, or nil where there is nothing to
+// keep. It is read only when the submission did not solve the block, and it
+// must be pure: it reads the input and the state it is handed and changes
+// nothing.
+func (b *YourBlock) Submission(input map[string][]string, state PlayerState) json.RawMessage {
+    if state.IsComplete() || len(input["answer"]) == 0 {
+        return nil
+    }
+    return marshalSubmission(map[string]string{"answer": reportText(input["answer"][0])})
+}
+```
+
+Four rules, each of which the tests behind this will hold you to:
+
+- **Pure.** It is called inside the submission's transaction, after the write is known to have been won, so it must not touch the database or anything else shared.
+- **Nil means nothing to keep**, and the field is omitted entirely (it is `omitempty`). An empty value is not the same as no value: a password posted empty is data.
+- **Cap anything the player types** with `reportText`. A reported value goes into an append-only table that every view of the run reads whole, so a long one is paid for forever.
+- **Report the failure, not the state.** A retry-less quiz completes on a wrong answer, so key on whether the answer was right (`IsCorrect`), not on whether the block completed; keying on completion silently drops exactly the answers a study wants.
+
+A block that cannot be failed, or whose state already is the whole record (`free_text` keeps the response itself), does not implement the interface. `TestSubmission_EveryInteractiveBlockDecides` in `blocks/submission_reporter_test.go` insists on that choice: a block that requires validation either reports, or joins the exempt map with a reason saying why its state is enough.
+
 ### 3. Create Player Data Structure
 
 If your block needs to track player progress or state, define a player data structure:
@@ -192,7 +222,7 @@ func CreateFromBaseBlock(baseBlock BaseBlock) (Block, error) {
 
 ### 5. Create Block Templates
 
-Create a new template file in `/internal/templates/blocks/your_block.templ` with admin and player views:
+Create a new template file, `your_block.templ`, in `/internal/templates/blocks/` with admin and player views:
 
 ```html
 package blocks
@@ -204,10 +234,10 @@ import (
 )
 
 // Admin view
-templ yourBlockAdmin(settings models.InstanceSettings, block blocks.YourBlock) {
+templ yourBlockAdmin(settings models.QuestSettings, block blocks.YourBlock) {
     <form
         id={ fmt.Sprintf("form-%s", block.ID) }
-        hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+        hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
         hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, change from:(#form-%s input) delay:500ms", block.ID, block.ID) }
         hx-swap="none"
     >
@@ -245,7 +275,7 @@ templ yourBlockAdmin(settings models.InstanceSettings, block blocks.YourBlock) {
 }
 
 // Player view
-templ yourBlockPlayer(settings models.InstanceSettings, block blocks.YourBlock, data blocks.PlayerState) {
+templ yourBlockPlayer(settings models.QuestSettings, block blocks.YourBlock, data blocks.PlayerState) {
     <div
         id={ fmt.Sprintf("player-block-%s", block.ID) }
         class="indicator w-full"
@@ -292,7 +322,7 @@ templ yourBlockPlayer(settings models.InstanceSettings, block blocks.YourBlock, 
 Add your block to the rendering functions in `/internal/templates/blocks/blocks.templ`:
 
 ```go
-func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ.Component {
+func RenderAdminEdit(settings models.QuestSettings, block blocks.Block) templ.Component {
     switch block.GetType() {
     // ... other cases
     case "your_block_type":
@@ -302,7 +332,7 @@ func RenderAdminEdit(settings models.InstanceSettings, block blocks.Block) templ
     return nil
 }
 
-func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerView(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
     switch block.GetType() {
     // ... other cases
     case "your_block_type":
@@ -312,7 +342,7 @@ func RenderPlayerView(settings models.InstanceSettings, block blocks.Block, stat
     return nil
 }
 
-func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
+func RenderPlayerUpdate(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) templ.Component {
     switch block.GetType() {
     // ... other cases
     case "your_block_type":
@@ -325,7 +355,7 @@ func RenderPlayerUpdate(settings models.InstanceSettings, block blocks.Block, st
 
 ### 7. Write Tests
 
-Create a test file (e.g., `/blocks/your_block_test.go`) to test your block implementation:
+Create a test file in `/blocks/` (e.g. `your_block_test.go`) to test your block implementation:
 
 ```go
 package blocks
@@ -494,10 +524,10 @@ func (b *SortingBlock) ValidatePlayerInput(state PlayerState, input map[string][
 
 Admin view:
 ```html
-templ sortingAdmin(settings models.InstanceSettings, block blocks.SortingBlock) {
+templ sortingAdmin(settings models.QuestSettings, block blocks.SortingBlock) {
     <form
         id={ fmt.Sprintf("form-%s", block.ID) }
-        hx-post={ fmt.Sprint("/admin/locations/", block.LocationID, "/blocks/", block.ID, "/update") }
+        hx-put={ fmt.Sprint("/admin/blocks/", block.ID) }
         hx-trigger={ fmt.Sprintf("keyup changed from:(#form-%s textarea) delay:500ms, click from:(#form-%s button) delay:100ms", block.ID, block.ID) }
         hx-swap="none"
     >

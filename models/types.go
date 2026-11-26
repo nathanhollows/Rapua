@@ -6,37 +6,25 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/nathanhollows/Rapua/v7/game"
+	"github.com/nathanhollows/Rapua/v8/game"
 )
 
 //nolint:recvcheck // Value() requires value receiver, Scan() requires pointer receiver per database/sql interface
 type StrArray []string
 
-// Type aliases — models re-exports game/ vocabulary so existing callers don't need to update imports.
-// Methods (String, Description) are automatically available via the alias.
+// RouteStrategy is a type alias; re-exported from game/ so existing callers don't need to update imports.
 type RouteStrategy = game.RouteStrategy
-type NavigationMode = game.NavigationMode
 
 type GameStatus int
 type Provider string
 
 type RouteStrategies []RouteStrategy
-type NavigationModes []NavigationMode
 type GameStatuses []GameStatus
 
 const (
 	RouteStrategyRandomised = game.RouteStrategyRandomised
 	RouteStrategyFreeRoam   = game.RouteStrategyFreeRoam
 	RouteStrategyOrdered    = game.RouteStrategyOrdered
-	RouteStrategySecret     = game.RouteStrategySecret
-)
-
-const (
-	NavigationMap         = game.NavigationMap
-	NavigationLabelledMap = game.NavigationLabelledMap
-	NavigationList        = game.NavigationList
-	NavigationCustom      = game.NavigationCustom
-	NavigationTasks       = game.NavigationTasks
 )
 
 const (
@@ -77,18 +65,7 @@ func (s *StrArray) Scan(value any) error {
 
 // GetRouteStrategies returns a list of route strategies.
 func GetRouteStrategies() RouteStrategies {
-	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandomised, RouteStrategySecret}
-}
-
-// GetNavigationModes returns a list of navigation modes.
-func GetNavigationModes() NavigationModes {
-	return []NavigationMode{
-		NavigationMap,
-		NavigationLabelledMap,
-		NavigationList,
-		NavigationCustom,
-		NavigationTasks,
-	}
+	return []RouteStrategy{RouteStrategyOrdered, RouteStrategyFreeRoam, RouteStrategyRandomised}
 }
 
 // GetGameStatuses returns a list of game statuses.
@@ -113,11 +90,6 @@ func (g GameStatus) Description() string {
 // ParseRouteStrategy returns a RouteStrategy from a string.
 func ParseRouteStrategy(s string) (RouteStrategy, error) {
 	return game.ParseRouteStrategy(s)
-}
-
-// ParseNavigationMode returns a NavigationMode from a string.
-func ParseNavigationMode(s string) (NavigationMode, error) {
-	return game.ParseNavigationMode(s)
 }
 
 // ParseGameStatus returns a GameStatus from a string.

@@ -2,14 +2,16 @@ package services_test
 
 import (
 	"context"
+	"log/slog"
+	"slices"
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -17,9 +19,9 @@ import (
 
 func setupImportService(t *testing.T) (
 	*services.ImportService,
-	repositories.InstanceRepository,
-	repositories.InstanceSettingsRepository,
-	repositories.LocationRepository,
+	repositories.QuestRepository,
+	repositories.QuestSettingsRepository,
+	repositories.ObjectiveRepository,
 	repositories.BlockRepository,
 	*bun.DB,
 	func(),
@@ -30,47 +32,74 @@ func setupImportService(t *testing.T) (
 	transactor := db.NewTransactor(dbc)
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
-	markerRepo := repositories.NewMarkerRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
 	svc := services.NewImportService(
-		transactor, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, markerRepo,
+		slog.Default(), transactor, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo,
 	)
-	return svc, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
+	return svc, instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo, dbc, cleanup
 }
 
 // minimalValidDoc returns a valid GameDoc with no locations and no blocks.
 func minimalValidDoc(name string) *game.GameDoc {
 	return &game.GameDoc{
-		Rapua: "v7",
+		Rapua: "v8",
 		Name:  name,
 		Settings: game.SettingsDoc{
 			EnablePoints: true,
 		},
 		Start:  []game.BlockDoc{},
 		Finish: []game.BlockDoc{},
-		Structure: game.StructureDoc{
-			Routing:    game.RouteStrategyOrdered,
-			Navigation: game.NavigationMap,
-			Completion: game.CompletionAll,
-			Children:   []game.ChildDoc{},
+		Structure: game.ObjectiveDoc{
+			Slug:     "root",
+			Title:    name,
+			Routing:  game.RouteStrategyOrdered,
+			Children: []game.ObjectiveDoc{},
 		},
 	}
 }
 
-// docWithLocation returns a GameDoc with a single location containing a text content block.
-func docWithLocation(gameName, slug, locName string) *game.GameDoc {
-	doc := minimalValidDoc(gameName)
-	doc.Structure.Children = []game.ChildDoc{
+// boolPtr names a draft state in a document, where omitting the key and writing
+// false are different statements.
+func boolPtr(b bool) *bool { return &b }
+
+// importedChildren returns the quest's objectives without the root, which every
+// import writes from the document's structure node.
+func importedChildren(
+	t *testing.T, repo repositories.ObjectiveRepository, questID string,
+) []models.Objective {
+	t.Helper()
+	objectives, err := repo.FindByQuestID(context.Background(), questID)
+	require.NoError(t, err)
+
+	out := make([]models.Objective, 0, len(objectives))
+	for _, obj := range objectives {
+		if obj.ParentID != "" {
+			out = append(out, obj)
+		}
+	}
+	return out
+}
+
+// docWithObjective returns a GameDoc with a single objective: an interactive
+// proof block (satisfies PROOF_CONTEXT_NO_INTERACTIVE_BLOCK) and a content
+// reveal block.
+func docWithObjective(slug, title string) *game.GameDoc {
+	doc := minimalValidDoc("Hunt")
+	doc.Structure.Children = []game.ObjectiveDoc{
 		{
-			Location: &game.LocationDoc{
-				Slug:   slug,
-				Name:   locName,
-				Points: 5,
-				Content: []game.BlockDoc{
-					{"type": "text", "content": "Hello, world!"},
+			Slug:  slug,
+			Title: title,
+			Proof: game.ObjectiveContextDoc{
+				Blocks: []game.BlockDoc{
+					{"type": "free_text", "prompt": "What is the answer?"},
+				},
+			},
+			Reveal: game.ObjectiveContextDoc{
+				Blocks: []game.BlockDoc{
+					{"type": "text", "content": "You found it!"},
 				},
 			},
 		},
@@ -102,50 +131,63 @@ func TestImportService_ImportCreate_MinimalDoc(t *testing.T) {
 	doc := minimalValidDoc("Fresh Game")
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
-	require.NotEmpty(t, result.InstanceID)
+	require.NotEmpty(t, result.QuestID)
 
 	// Verify instance was created
-	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	inst, err := instanceRepo.GetByID(ctx, result.QuestID)
 	require.NoError(t, err)
 	assert.Equal(t, "Fresh Game", inst.Name)
 	assert.Equal(t, userID, inst.UserID)
 
 	// Verify settings
-	settings, err := settingsRepo.GetByInstanceID(ctx, result.InstanceID)
+	settings, err := settingsRepo.GetByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
 	assert.True(t, settings.EnablePoints)
 }
 
-func TestImportService_ImportCreate_WithLocationsAndBlocks(t *testing.T) {
-	svc, _, _, locationRepo, blockRepo, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportUpdate_ReconcilesObjective(t *testing.T) {
+	svc, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	doc := docWithLocation("Hunt", "park", "City Park")
-	result, err := svc.ImportCreate(ctx, userID, doc)
+	doc := docWithObjective("find-the-key", "Find the key")
+	createResult, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	assert.Equal(t, 1, result.Created.Locations)
-	assert.Equal(t, 1, result.Created.Blocks)
+	objectivesBefore := importedChildren(t, objectiveRepo, createResult.QuestID)
+	require.Len(t, objectivesBefore, 1)
 
-	locations, err := locationRepo.FindByInstance(ctx, result.InstanceID)
+	// Re-import the same slug with a changed title: must update, not duplicate.
+	updateDoc := docWithObjective("find-the-key", "Find the hidden key")
+	updateResult, err := svc.ImportUpdate(ctx, userID, createResult.QuestID, updateDoc)
 	require.NoError(t, err)
-	require.Len(t, locations, 1)
-	assert.Equal(t, "park", locations[0].Slug)
-	assert.Equal(t, "City Park", locations[0].Name)
-	assert.Equal(t, 5, locations[0].Points)
+	assert.Equal(t, 2, updateResult.Updated.Objectives, "the root is reconciled alongside its child")
+	assert.Equal(t, 0, updateResult.Created.Objectives)
 
-	contentBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, locations[0].ID, game.ContextLocationContent)
+	objectivesAfter := importedChildren(t, objectiveRepo, createResult.QuestID)
+	require.Len(t, objectivesAfter, 1)
+	assert.Equal(t, objectivesBefore[0].ID, objectivesAfter[0].ID, "same objective, not a new row")
+	assert.Equal(t, "Find the hidden key", objectivesAfter[0].Title)
+
+	// Re-import with no objectives at all: the orphan must be deleted.
+	orphanObjID := objectivesAfter[0].ID
+	emptyDoc := minimalValidDoc("Hunt")
+	finalResult, err := svc.ImportUpdate(ctx, userID, createResult.QuestID, emptyDoc)
 	require.NoError(t, err)
-	require.Len(t, contentBlocks, 1)
-	assert.Equal(t, "text", contentBlocks[0].GetType())
+	assert.Equal(t, 1, finalResult.Deleted.Objectives)
+
+	assert.Empty(t, importedChildren(t, objectiveRepo, createResult.QuestID))
+
+	remainingBlocks, err := blockRepo.FindByOwnerID(ctx, orphanObjID)
+	require.NoError(t, err)
+	assert.Empty(t, remainingBlocks, "the orphan's blocks must not be left behind — owner_id has no FK to cascade them")
 }
 
-func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
-	svc, instanceRepo, _, _, _, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportCreate_RootStructurePreserved(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -154,22 +196,20 @@ func TestImportService_ImportCreate_GameStructurePreserved(t *testing.T) {
 
 	doc := minimalValidDoc("Structure Test")
 	doc.Structure.Routing = game.RouteStrategyFreeRoam
-	doc.Structure.Navigation = game.NavigationList
-	doc.Structure.Completion = game.CompletionAll
 
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	root, err := objectiveRepo.FindRoot(ctx, result.QuestID)
 	require.NoError(t, err)
-	assert.Equal(t, game.RouteStrategyFreeRoam, inst.GameStructure.Routing)
-	assert.Equal(t, game.NavigationList, inst.GameStructure.Navigation)
-	assert.Equal(t, game.CompletionAll, inst.GameStructure.CompletionType)
-	assert.True(t, inst.GameStructure.IsRoot)
+	assert.Equal(t, game.RouteStrategyFreeRoam, root.Routing)
+	assert.Empty(t, root.ParentID)
+	assert.Nil(t, root.ChildrenMin, "an omitted band stays omitted")
+	assert.Nil(t, root.ChildrenMax)
 }
 
-func TestImportService_ImportCreate_WithGroup(t *testing.T) {
-	svc, instanceRepo, _, locationRepo, _, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportCreate_WithSection(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
@@ -177,41 +217,35 @@ func TestImportService_ImportCreate_WithGroup(t *testing.T) {
 	insertTestUser(t, dbc, userID)
 
 	doc := minimalValidDoc("Grouped Hunt")
-	doc.Structure.Children = []game.ChildDoc{
+	// A node with children is what storage keeps as a section.
+	doc.Structure.Children = []game.ObjectiveDoc{
 		{
-			Group: &game.GroupDoc{
-				Name:       "Wave 1",
-				Color:      "primary",
-				Routing:    game.RouteStrategyOrdered,
-				Navigation: game.NavigationMap,
-				Completion: game.CompletionAll,
-				Children: []game.ChildDoc{
-					{
-						Location: &game.LocationDoc{
-							Slug:    "checkpoint-a",
-							Name:    "Checkpoint A",
-							Content: []game.BlockDoc{},
-						},
-					},
-				},
+			Slug:    "wave-1",
+			Title:   "Wave 1",
+			Routing: game.RouteStrategyOrdered,
+			Children: []game.ObjectiveDoc{
+				{Slug: "checkpoint-a", Title: "Checkpoint A"},
 			},
 		},
 	}
 
 	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
-	assert.Equal(t, 1, result.Created.Groups)
-	assert.Equal(t, 1, result.Created.Locations)
+	assert.Equal(t, 2, result.Created.Groups, "the root and wave-1 both have children")
+	assert.Equal(t, 1, result.Created.Objectives)
 
-	inst, err := instanceRepo.GetByID(ctx, result.InstanceID)
+	objectives, err := objectiveRepo.FindTreeByQuestID(ctx, result.QuestID)
 	require.NoError(t, err)
-	require.Len(t, inst.GameStructure.SubGroups, 1)
-	assert.Equal(t, "Wave 1", inst.GameStructure.SubGroups[0].Name)
+	require.Len(t, objectives, 3)
 
-	locations, err := locationRepo.FindByInstance(ctx, result.InstanceID)
-	require.NoError(t, err)
-	require.Len(t, locations, 1)
-	assert.Equal(t, "checkpoint-a", locations[0].Slug)
+	bySlug := make(map[string]models.Objective, len(objectives))
+	for _, obj := range objectives {
+		bySlug[obj.Slug] = obj
+	}
+	section := bySlug["wave-1"]
+	assert.Equal(t, "Wave 1", section.Title)
+	assert.Equal(t, game.RouteStrategyOrdered, section.Routing)
+	assert.Equal(t, section.ID, bySlug["checkpoint-a"].ParentID)
 }
 
 func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
@@ -223,9 +257,9 @@ func TestImportService_ImportUpdate_NotOwner(t *testing.T) {
 	otherUserID := gofakeit.UUID()
 	insertTestUser(t, dbc, ownerID)
 
-	inst := &models.Instance{Name: "Someone's Game", UserID: ownerID}
+	inst := &models.Quest{Name: "Someone's Game", UserID: ownerID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	doc := minimalValidDoc("Hijack Attempt")
 	_, err := svc.ImportUpdate(ctx, otherUserID, inst.ID, doc)
@@ -240,9 +274,9 @@ func TestImportService_ImportUpdate_InvalidDoc(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{Name: "My Game", UserID: userID}
+	inst := &models.Quest{Name: "My Game", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
 	bad := &game.GameDoc{Rapua: "v99", Name: "Bad"}
 	_, err := svc.ImportUpdate(ctx, userID, inst.ID, bad)
@@ -257,130 +291,439 @@ func TestImportService_ImportUpdate_UpdatesInstanceAndSettings(t *testing.T) {
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{Name: "Old Name", UserID: userID}
+	inst := &models.Quest{Name: "Old Name", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{
-		InstanceID:  inst.ID,
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{
+		QuestID:      inst.ID,
 		EnablePoints: false,
 	}))
 
 	doc := minimalValidDoc("New Name")
 	doc.Settings.EnablePoints = true
 	doc.Settings.ShowLeaderboard = true
+	doc.Settings.ProgressFeedback = "none"
 
 	result, err := svc.ImportUpdate(ctx, userID, inst.ID, doc)
 	require.NoError(t, err)
-	assert.Equal(t, inst.ID, result.InstanceID)
+	assert.Equal(t, inst.ID, result.QuestID)
 
 	updated, err := instanceRepo.GetByID(ctx, inst.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "New Name", updated.Name)
 
-	settings, err := settingsRepo.GetByInstanceID(ctx, inst.ID)
+	settings, err := settingsRepo.GetByQuestID(ctx, inst.ID)
 	require.NoError(t, err)
 	assert.True(t, settings.EnablePoints)
 	assert.True(t, settings.ShowLeaderboard)
+	assert.Equal(t, game.ProgressFeedbackNone, settings.ProgressFeedback)
 }
 
-func TestImportService_ImportUpdate_OrphanLocationsDeleted(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupImportService(t)
+func TestImportService_ImportUpdate_RejectsForeignObjectiveID(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	// Create instance with a location that won't be in the update doc
-	inst := &models.Instance{Name: "Game", UserID: userID}
-	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
-
-	orphanLocID := insertTestLocation(t, dbc, inst.ID)
-
-	// GameStructure references the orphan
-	inst.GameStructure = models.GameStructure{
-		ID:             gofakeit.UUID(),
-		IsRoot:         true,
-		Routing:        game.RouteStrategyOrdered,
-		Navigation:     game.NavigationMap,
-		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{orphanLocID},
-		SubGroups:      []models.GameStructure{},
-	}
-	require.NoError(t, instanceRepo.Update(ctx, inst))
-
-	// Update doc has no locations
-	doc := minimalValidDoc("Game")
-	result, err := svc.ImportUpdate(ctx, userID, inst.ID, doc)
+	createResult, err := svc.ImportCreate(ctx, userID, docWithObjective("spot", "The Spot"))
 	require.NoError(t, err)
-	assert.Equal(t, 1, result.Deleted.Locations)
 
-	locations, err := locationRepo.FindByInstance(ctx, inst.ID)
-	require.NoError(t, err)
-	assert.Empty(t, locations)
+	before := importedChildren(t, objectiveRepo, createResult.QuestID)
+	require.Len(t, before, 1)
+
+	updateDoc := docWithObjective("spot", "Renamed")
+	updateDoc.Structure.Children[0].ID = gofakeit.UUID()
+
+	_, err = svc.ImportUpdate(ctx, userID, createResult.QuestID, updateDoc)
+	require.ErrorIs(t, err, services.ErrObjectiveIDNotInQuest)
+
+	after := importedChildren(t, objectiveRepo, createResult.QuestID)
+	require.Len(t, after, 1)
+	assert.Equal(t, "The Spot", after[0].Title, "the rejected import changed nothing")
 }
 
-func TestImportService_ImportUpdate_ReconcileLocations(t *testing.T) {
-	svc, instanceRepo, _, locationRepo, blockRepo, dbc, cleanup := setupImportService(t)
+// The draft state survives a round trip, so exporting a quest mid-edit and
+// importing it back does not quietly publish everything.
+func TestImportService_ImportCreate_CarriesDraft(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	// Create via ImportCreate so we have real IDs
-	createDoc := docWithLocation("My Hunt", "base", "Base Camp")
-	createResult, err := svc.ImportCreate(ctx, userID, createDoc)
+	doc := minimalValidDoc("Mid Edit")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "live", Title: "Live"},
+		{Slug: "parked", Title: "Parked", Draft: boolPtr(true)},
+	}
+
+	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	locs, err := locationRepo.FindByInstance(ctx, createResult.InstanceID)
-	require.NoError(t, err)
-	require.Len(t, locs, 1)
-	existingLocID := locs[0].ID
+	bySlug := make(map[string]models.Objective)
+	for _, obj := range importedChildren(t, objectiveRepo, result.QuestID) {
+		bySlug[obj.Slug] = obj
+	}
+	require.Len(t, bySlug, 2)
+	assert.False(t, bySlug["live"].Draft)
+	assert.True(t, bySlug["parked"].Draft)
+}
 
-	// Build export doc that references existing location by ID, plus a new one
-	updateDoc := minimalValidDoc("My Hunt")
-	updateDoc.Structure.Children = []game.ChildDoc{
+// Re-importing an edited document is the workflow the format exists for, and
+// every edit but a tail append moves a row onto a slot another row still holds.
+func TestImportService_ImportUpdate_RearrangesSiblings(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Rearrange")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "a", Title: "A"}, {Slug: "b", Title: "B"}, {Slug: "c", Title: "C"},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	orderedSlugs := func() []string {
+		objectives, findErr := objectiveRepo.FindTreeByQuestID(ctx, created.QuestID)
+		require.NoError(t, findErr)
+		slugs := []string{}
+		for _, obj := range objectives {
+			if obj.ParentID != "" {
+				slugs = append(slugs, obj.Slug)
+			}
+		}
+		return slugs
+	}
+	require.Equal(t, []string{"a", "b", "c"}, orderedSlugs())
+
+	t.Run("reversing the order", func(t *testing.T) {
+		reversed := minimalValidDoc("Rearrange")
+		reversed.Structure.Children = []game.ObjectiveDoc{
+			{Slug: "c", Title: "C"}, {Slug: "b", Title: "B"}, {Slug: "a", Title: "A"},
+		}
+		_, updateErr := svc.ImportUpdate(ctx, userID, created.QuestID, reversed)
+		require.NoError(t, updateErr)
+		assert.Equal(t, []string{"c", "b", "a"}, orderedSlugs())
+	})
+
+	t.Run("dropping one from the middle", func(t *testing.T) {
+		shorter := minimalValidDoc("Rearrange")
+		shorter.Structure.Children = []game.ObjectiveDoc{
+			{Slug: "c", Title: "C"}, {Slug: "a", Title: "A"},
+		}
+		_, updateErr := svc.ImportUpdate(ctx, userID, created.QuestID, shorter)
+		require.NoError(t, updateErr)
+		assert.Equal(t, []string{"c", "a"}, orderedSlugs())
+	})
+
+	t.Run("inserting into the middle", func(t *testing.T) {
+		longer := minimalValidDoc("Rearrange")
+		longer.Structure.Children = []game.ObjectiveDoc{
+			{Slug: "c", Title: "C"}, {Slug: "new", Title: "New"}, {Slug: "a", Title: "A"},
+		}
+		_, updateErr := svc.ImportUpdate(ctx, userID, created.QuestID, longer)
+		require.NoError(t, updateErr)
+		assert.Equal(t, []string{"c", "new", "a"}, orderedSlugs())
+	})
+}
+
+// A document that never mentions draft has no opinion about it. Publishing a
+// section somebody deliberately parked, on a routine content update from
+// tooling that predates the field, is the one thing draft must never do.
+func TestImportService_ImportUpdate_OmittedDraftKeyLeavesStateAlone(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Parked")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "parked", Title: "Parked", Draft: boolPtr(true)},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	drafted := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, drafted, 1)
+	require.True(t, drafted[0].Draft)
+
+	// The same document with the key absent entirely.
+	silent := minimalValidDoc("Parked")
+	silent.Structure.Children = []game.ObjectiveDoc{{Slug: "parked", Title: "Renamed"}}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, silent)
+	require.NoError(t, err)
+
+	after := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, after, 1)
+	assert.Equal(t, "Renamed", after[0].Title, "the update applied")
+	assert.True(t, after[0].Draft, "and left draft where it was")
+
+	// Saying false explicitly does publish it.
+	explicit := minimalValidDoc("Parked")
+	explicit.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "parked", Title: "Renamed", Draft: boolPtr(false)},
+	}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, explicit)
+	require.NoError(t, err)
+
+	published := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, published, 1)
+	assert.False(t, published[0].Draft)
+}
+
+// Pass-through survives a round trip, so a quest keeps its hidden pools when it
+// is exported and imported back.
+func TestImportService_ImportCreate_CarriesPassThrough(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Zoo")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "shown", Title: "Shown"},
+		{Slug: "birds", Title: "Birds", PassThrough: boolPtr(true)},
+	}
+
+	result, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	bySlug := make(map[string]models.Objective)
+	for _, obj := range importedChildren(t, objectiveRepo, result.QuestID) {
+		bySlug[obj.Slug] = obj
+	}
+	require.Len(t, bySlug, 2)
+	assert.False(t, bySlug["shown"].PassThrough)
+	assert.True(t, bySlug["birds"].PassThrough)
+}
+
+func TestImportService_ImportCreate_CarriesSecret(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Trace")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "library", Title: "Library"},
 		{
-			Location: &game.LocationDoc{
-				ID:      existingLocID,
-				Slug:    "base",
-				Name:    "Base Camp Updated",
-				Points:  20,
-				Content: []game.BlockDoc{},
-			},
-		},
-		{
-			Location: &game.LocationDoc{
-				Slug:    "new-spot",
-				Name:    "New Spot",
-				Content: []game.BlockDoc{},
-			},
+			Slug: "rooftop", Title: "Rooftop", Secret: boolPtr(true),
+			Proof: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{{
+				"type": "scan", "prompt": "Scan the sign",
+				"codes": []any{map[string]any{"value": "ROOF"}}, "match": "exact",
+			}}},
 		},
 	}
 
-	inst, err := instanceRepo.GetByID(ctx, createResult.InstanceID)
+	result, err := svc.ImportCreate(ctx, userID, doc)
 	require.NoError(t, err)
 
-	result, err := svc.ImportUpdate(ctx, userID, inst.ID, updateDoc)
-	require.NoError(t, err)
-	assert.Equal(t, 1, result.Updated.Locations)
-	assert.Equal(t, 1, result.Created.Locations)
+	bySlug := make(map[string]models.Objective)
+	for _, obj := range importedChildren(t, objectiveRepo, result.QuestID) {
+		bySlug[obj.Slug] = obj
+	}
+	require.Len(t, bySlug, 2)
+	assert.False(t, bySlug["library"].Secret)
+	assert.True(t, bySlug["rooftop"].Secret)
+}
 
-	updatedLocs, err := locationRepo.FindByInstance(ctx, inst.ID)
-	require.NoError(t, err)
-	require.Len(t, updatedLocs, 2)
+// The tree posts a visible row's index in its own list, which is only its
+// position while secrets keep to the tail, so import puts them there whatever
+// order the document lists them in.
+func TestImportService_SecretsLandAtTheTail(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
 
-	// Find updated location by ID
-	var updatedLoc *models.Location
-	for i := range updatedLocs {
-		if updatedLocs[i].ID == existingLocID {
-			updatedLoc = &updatedLocs[i]
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	rooftop := game.ObjectiveDoc{
+		Slug: "rooftop", Title: "Rooftop", Secret: boolPtr(true),
+		Proof: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{{
+			"type": "scan", "prompt": "Scan the sign",
+			"codes": []any{map[string]any{"value": "ROOF"}}, "match": "exact",
+		}}},
+	}
+	order := func(questID string) []string {
+		children := importedChildren(t, objectiveRepo, questID)
+		slices.SortFunc(children, func(a, b models.Objective) int { return a.Position - b.Position })
+		slugs := make([]string, len(children))
+		for i, c := range children {
+			slugs[i] = c.Slug
+		}
+		return slugs
+	}
+
+	doc := minimalValidDoc("Trace")
+	doc.Structure.Children = []game.ObjectiveDoc{rooftop, {Slug: "library", Title: "Library"}}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"library", "rooftop"}, order(created.QuestID))
+
+	silent := rooftop
+	silent.Secret = nil
+	update := minimalValidDoc("Trace")
+	update.Structure.Children = []game.ObjectiveDoc{
+		silent, {Slug: "library", Title: "Library"}, {Slug: "gallery", Title: "Gallery"},
+	}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, update)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"library", "gallery", "rooftop"}, order(created.QuestID),
+		"a document silent on secret keeps the stored flag, and the tail with it")
+}
+
+// A document that never mentions pass_through has no opinion about it, so a
+// routine update from tooling that predates the field must not draw a pool the
+// author hid. Only an explicit false clears it.
+func TestImportService_ImportUpdate_OmittedPassThroughKeyLeavesStateAlone(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	doc := minimalValidDoc("Zoo")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "birds", Title: "Birds", PassThrough: boolPtr(true)},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	flagged := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, flagged, 1)
+	require.True(t, flagged[0].PassThrough)
+
+	silent := minimalValidDoc("Zoo")
+	silent.Structure.Children = []game.ObjectiveDoc{{Slug: "birds", Title: "Renamed"}}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, silent)
+	require.NoError(t, err)
+
+	after := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, after, 1)
+	assert.Equal(t, "Renamed", after[0].Title, "the update applied")
+	assert.True(t, after[0].PassThrough, "and left the flag where it was")
+
+	explicit := minimalValidDoc("Zoo")
+	explicit.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "birds", Title: "Renamed", PassThrough: boolPtr(false)},
+	}
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, explicit)
+	require.NoError(t, err)
+
+	cleared := importedChildren(t, objectiveRepo, created.QuestID)
+	require.Len(t, cleared, 1)
+	assert.False(t, cleared[0].PassThrough)
+}
+
+// A document that never mentions the description leaves the stored one alone.
+// Omitting a key and writing an empty one are different statements, the same
+// rule draft follows: a document written by other tooling, or before the field
+// existed, must not wipe what an author typed.
+func TestImportService_OmittedDescriptionLeavesTheStoredOne(t *testing.T) {
+	svc, _, _, objectiveRepo, _, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	described := "Level 2, past the model-making room."
+	doc := minimalValidDoc("Described")
+	doc.Structure.Children = []game.ObjectiveDoc{
+		{Slug: "chest", Title: "Find the plan chest", Description: &described},
+	}
+	created, err := svc.ImportCreate(ctx, userID, doc)
+	require.NoError(t, err)
+
+	stored, err := objectiveRepo.FindByQuestID(ctx, created.QuestID)
+	require.NoError(t, err)
+	for _, objective := range stored {
+		if objective.ParentID == "" {
+			doc.Structure.ID = objective.ID
+			continue
+		}
+		doc.Structure.Children[0].ID = objective.ID
+	}
+
+	// The same document with the key gone, as hand-written tooling would send.
+	doc.Structure.Children[0].Description = nil
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, doc)
+	require.NoError(t, err)
+
+	after, err := objectiveRepo.FindByQuestID(ctx, created.QuestID)
+	require.NoError(t, err)
+	for _, objective := range after {
+		if objective.Slug == "chest" {
+			assert.Equal(t, described, objective.Description,
+				"an omitted key is not an instruction to clear")
 		}
 	}
-	require.NotNil(t, updatedLoc)
-	assert.Equal(t, "Base Camp Updated", updatedLoc.Name)
-	assert.Equal(t, 20, updatedLoc.Points)
+}
 
-	_ = blockRepo
+// A gate is part of how the quest plays, so it is carried in both directions,
+// and a document that leaves depends out removes it rather than keeping it.
+func TestImportService_CarriesDepends(t *testing.T) {
+	svc, _, _, objectiveRepo, blockRepo, dbc, cleanup := setupImportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	gated := func(withDepends bool) *game.GameDoc {
+		doc := minimalValidDoc("Gates")
+		door := game.ObjectiveDoc{Slug: "door", Title: "Door"}
+		if withDepends {
+			door.Depends = game.DependsField{"key"}
+		}
+		doc.Structure.Children = []game.ObjectiveDoc{
+			{
+				Slug: "gate", Title: "Gate",
+				Proof: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{{
+					"type":    "choice",
+					"prompt":  "Take the key?",
+					"options": []any{map[string]any{"label": "Take it", "sets": "key"}},
+				}}},
+				Reveal: game.ObjectiveContextDoc{Blocks: []game.BlockDoc{
+					{"type": "text", "content": "The lock clicks.", "depends": []any{"key"}},
+				}},
+			},
+			door,
+		}
+		return doc
+	}
+
+	created, err := svc.ImportCreate(ctx, userID, gated(true))
+	require.NoError(t, err)
+
+	bySlug := func() map[string]models.Objective {
+		out := make(map[string]models.Objective)
+		for _, obj := range importedChildren(t, objectiveRepo, created.QuestID) {
+			out[obj.Slug] = obj
+		}
+		return out
+	}
+	objectives := bySlug()
+	assert.Equal(t, game.DependsField{"key"}, objectives["door"].Depends)
+
+	revealBlocks, err := blockRepo.FindByOwnerIDAndContext(ctx, objectives["gate"].ID, game.ContextObjectiveReveal)
+	require.NoError(t, err)
+	require.Len(t, revealBlocks, 1)
+	assert.Equal(t, game.DependsField{"key"}, revealBlocks[0].GetDepends(), "a block's depends rides in its data")
+
+	_, err = svc.ImportUpdate(ctx, userID, created.QuestID, gated(false))
+	require.NoError(t, err)
+	assert.Empty(t, bySlug()["door"].Depends)
 }

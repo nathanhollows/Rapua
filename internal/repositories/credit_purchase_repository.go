@@ -5,7 +5,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/uptrace/bun"
 )
 
@@ -209,4 +209,3 @@ func (r *CreditPurchaseRepository) UpdateReceiptURLWithTx(
 		Exec(ctx)
 	return err
 }
-

@@ -71,7 +71,14 @@ func ServeResizedImage(baseDir string) http.HandlerFunc {
 
 		// Generate resized image
 		if err := resizeImage(originalPath, cachedPath, maxWidth); err != nil {
-			slog.Error("failed to resize image", "path", originalPath, "err", err) //nolint:sloglint // no injected logger
+			slog.ErrorContext(
+				r.Context(),
+				"failed to resize image",
+				"path",
+				originalPath,
+				"err",
+				err,
+			)
 			http.Error(w, "Failed to resize image", http.StatusInternalServerError)
 			return
 		}

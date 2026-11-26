@@ -11,10 +11,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/internal/handlers/admin"
-	"github.com/nathanhollows/Rapua/v7/internal/handlers/players"
-	"github.com/nathanhollows/Rapua/v7/internal/handlers/public"
-	"github.com/nathanhollows/Rapua/v7/internal/scheduler"
+	"github.com/nathanhollows/Rapua/v8/internal/handlers/admin"
+	"github.com/nathanhollows/Rapua/v8/internal/handlers/players"
+	"github.com/nathanhollows/Rapua/v8/internal/handlers/public"
+	"github.com/nathanhollows/Rapua/v8/internal/scheduler"
 )
 
 const (
@@ -51,9 +51,9 @@ func Start(
 	go func() {
 		err := server.ListenAndServe()
 		if errors.Is(err, http.ErrServerClosed) {
-			slog.Info("server closed")
+			logger.Info("server closed")
 		} else {
-			slog.Error("server failed to start", "err", err)
+			logger.Error("server failed to start", "err", err)
 			os.Exit(1)
 		}
 	}()

@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
-	"github.com/nathanhollows/Rapua/v7/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 	"gopkg.in/yaml.v3"
 )
 
@@ -346,6 +347,75 @@ Final content`
 		if page.Headings[i].ID != expected.ID {
 			t.Errorf("heading %d: expected ID '%s', got '%s'", i, expected.ID, page.Headings[i].ID)
 		}
+	}
+}
+
+func TestPageTags_Expire(t *testing.T) {
+	tempDir := t.TempDir()
+	createTempMarkdownFile(t, tempDir, "dated.md",
+		"---\ntitle: Dated\norder: 1\ntag: new\ntag_until: 2027-03-01\n---\n# Dated\n")
+	createTempMarkdownFile(t, tempDir, "open-ended.md",
+		"---\ntitle: Open Ended\norder: 2\ntag: new\n---\n# Open Ended\n")
+	createTempMarkdownFile(t, tempDir, "system.md",
+		"---\ntitle: System\norder: 3\ntag: System\n---\n# System\n")
+
+	docsService, err := services.NewDocsService(tempDir)
+	if err != nil {
+		t.Fatalf("failed to create DocsService: %v", err)
+	}
+
+	dated, err := docsService.GetPage("/docs/dated")
+	if err != nil {
+		t.Fatalf("failed to get dated page: %v", err)
+	}
+	openEnded, err := docsService.GetPage("/docs/open-ended")
+	if err != nil {
+		t.Fatalf("failed to get open-ended page: %v", err)
+	}
+
+	lastDay := time.Date(2027, 3, 1, 23, 59, 0, 0, time.UTC)
+	nextDay := time.Date(2027, 3, 2, 0, 0, 0, 0, time.UTC)
+
+	if got := dated.TagAt(lastDay); got != "new" {
+		t.Errorf("on the last day the tag should still show, got %q", got)
+	}
+	if got := dated.TagAt(nextDay); got != "" {
+		t.Errorf("the day after tag_until the tag should be gone, got %q", got)
+	}
+	if got := openEnded.TagAt(nextDay.AddDate(10, 0, 0)); got != "new" {
+		t.Errorf("a tag with no tag_until never expires, got %q", got)
+	}
+}
+
+func TestPageTags_ExpireOnTheViewersDay(t *testing.T) {
+	tempDir := t.TempDir()
+	createTempMarkdownFile(t, tempDir, "dated.md",
+		"---\ntitle: Dated\norder: 1\ntag: new\ntag_until: 2027-03-01\n---\n# Dated\n")
+	docsService, err := services.NewDocsService(tempDir)
+	if err != nil {
+		t.Fatalf("failed to create DocsService: %v", err)
+	}
+	page, err := docsService.GetPage("/docs/dated")
+	if err != nil {
+		t.Fatalf("failed to get page: %v", err)
+	}
+
+	auckland := time.FixedZone("NZDT", 13*60*60)
+	if got := page.TagAt(time.Date(2027, 3, 1, 23, 30, 0, 0, auckland)); got != "new" {
+		t.Errorf("1 March 23:30 in Auckland is still the last day, got %q", got)
+	}
+	if got := page.TagAt(time.Date(2027, 3, 2, 0, 30, 0, 0, auckland)); got != "" {
+		t.Errorf("2 March 00:30 in Auckland is the next day, got %q", got)
+	}
+}
+
+func TestPageTags_BadDateFailsAtStartup(t *testing.T) {
+	tempDir := t.TempDir()
+	createTempMarkdownFile(t, tempDir, "bad.md",
+		"---\ntitle: Bad\norder: 1\ntag: new\ntag_until: soon\n---\n# Bad\n")
+
+	if _, err := services.NewDocsService(tempDir); err == nil {
+		t.Error("a tag_until that is not a date should fail rather than never expire")
 	}
 }
 

@@ -1,0 +1,206 @@
+/* Reserved on every page, so a page tall enough to scroll does not sit a few
+   pixels in from one that is not when moving between them. */
+:root { scrollbar-gutter: stable; }
+
+/* Tokens derive from the theme and stay out of the theme blocks, which
+   theme_colours_test.go guards. Buttons set daisyUI's variables, not its
+   properties, so a utility on one element still wins. */
+:root {
+  --hover-dim: color-mix(in oklab, black 6%, transparent);
+  --line: color-mix(in oklab, var(--color-base-content) 13%, transparent);
+  --line-strong: color-mix(in oklab, var(--color-base-content) 24%, transparent);
+  --soft: color-mix(in oklab, var(--color-base-content) 66%, var(--color-base-100));
+  --act: color-mix(in oklab, var(--color-primary) 76%, white);
+  --act-on: oklch(14% .04 135);
+  --act-secondary: color-mix(in oklab, var(--color-secondary) 76%, white);
+  --live: oklch(60% .17 148);
+  --display-font: ui-rounded, "SF Pro Rounded", system-ui, sans-serif;
+  --soft-shadow: 0 1px 2px rgba(20,10,30,.06), 0 8px 18px -10px rgba(20,10,30,.28);
+  --btn-edge: var(--line-strong);
+  --nav-ink: color-mix(in oklab, var(--color-base-content) 88%, var(--color-base-100));
+  --danger-bg: oklch(95% .045 27); --danger-fg: oklch(42% .18 27); --danger-edge: oklch(80% .08 27);
+  --tint-info: oklch(95% .035 225); --tint-success: oklch(95% .04 148);
+  --tint-warning: oklch(95% .05 80); --tint-error: oklch(95% .045 27);
+  --ico-info: oklch(48% .12 225); --ico-success: oklch(45% .14 148);
+  --ico-warning: oklch(52% .13 75); --ico-error: oklch(50% .19 27);
+  --radius-field: 14px; --radius-box: 1.25rem; --border: 1.5px; --depth: 0; --noise: 0;
+  font-weight: 500;
+}
+:root[data-theme="dracula"] {
+  --hover-dim: color-mix(in oklab, black 14%, transparent);
+  --act: var(--color-primary); --act-on: var(--color-primary-content);
+  --act-secondary: var(--color-secondary);
+  --live: oklch(78% .17 148);
+  --soft-shadow: 0 1px 1px rgba(0,0,0,.18), 0 4px 10px -8px rgba(0,0,0,.35);
+  --btn-edge: oklch(17% .02 277);
+  --danger-bg: oklch(31% .045 27); --danger-fg: oklch(84% .13 27); --danger-edge: oklch(30% .06 27);
+  --tint-info: oklch(31% .04 225); --tint-success: oklch(31% .045 148);
+  --tint-warning: oklch(33% .05 80); --tint-error: oklch(31% .05 27);
+  --ico-info: var(--color-info); --ico-success: var(--color-success);
+  --ico-warning: oklch(80% .14 85); --ico-error: oklch(80% .13 27);
+}
+:root h1 { font-family: var(--display-font); letter-spacing: -.03em; }
+
+/* Only pressable things get the lip. */
+:root .btn:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--btn-color, var(--color-base-100));
+  --btn-border: var(--btn-color, var(--btn-edge));
+  --btn-inset: 0 0 0 0 transparent;
+  --btn-shadow: 0 2px 0 var(--btn-lip, var(--btn-edge));
+  font-weight: 700;
+  transition-property: color, background-color, border-color, box-shadow, transform;
+}
+:root .btn:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link):active {
+  transform: translateY(2px); translate: none; scale: 1; --btn-shadow: 0 0 0 transparent;
+}
+:root .btn-primary, :root .btn-secondary, :root .btn-accent, :root .btn-info,
+:root .btn-success, :root .btn-warning, :root .btn-neutral {
+  --btn-lip: color-mix(in oklab, var(--btn-color) 55%, black);
+}
+:root .btn-primary:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--act); --btn-fg: var(--act-on); --btn-border: transparent;
+}
+:root .btn-secondary:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--act-secondary); --btn-fg: oklch(14% .04 154); --btn-border: transparent;
+}
+:root[data-theme="dracula"] .btn-secondary:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) { --btn-fg: var(--color-secondary-content); }
+:root .btn-error:not(.btn-ghost, .btn-outline, .btn-soft, .btn-dash, .btn-link) {
+  --btn-bg: var(--danger-bg); --btn-fg: var(--danger-fg);
+  --btn-border: var(--danger-edge); --btn-lip: var(--danger-edge);
+}
+
+/* Tinted, never outlined: covers the lint panels' alert-outline too. */
+:root .alert, :root .alert-outline, :root .alert-soft, :root .alert-dash {
+  --alert-tint: var(--color-base-200); --alert-ico: var(--soft);
+  background: var(--alert-tint); background-image: none;
+  border: 0; border-radius: 16px; box-shadow: none;
+  color: var(--color-base-content); padding: 12px 16px; gap: 12px;
+  font-size: .9375rem; line-height: 1.4;
+}
+:root .alert-info { --alert-tint: var(--tint-info); --alert-ico: var(--ico-info); }
+:root .alert-success { --alert-tint: var(--tint-success); --alert-ico: var(--ico-success); }
+:root .alert-warning { --alert-tint: var(--tint-warning); --alert-ico: var(--ico-warning); }
+:root .alert-error { --alert-tint: var(--tint-error); --alert-ico: var(--ico-error); }
+:root .alert > svg:first-child { color: var(--alert-ico); }
+
+.topnav { border-bottom: 3px dotted var(--line); }
+/* Else the tooltip covers the menu it opened. */
+:root .dropdown:focus-within > .tooltip::before, :root .dropdown:focus-within > .tooltip::after { display: none; }
+.topnav-tabs { display: flex; gap: .25rem; font-size: .875rem; font-weight: 700; }
+.topnav-tab { display: inline-flex; align-items: center; gap: .5rem; padding: .5rem .875rem; border: 2px solid transparent; border-radius: 999px; color: var(--nav-ink); }
+.topnav-tab:hover { color: var(--color-base-content); background: var(--line); }
+.topnav .menu-title { color: var(--nav-ink); opacity: 1; }
+.topnav-tab[aria-current="page"] { background: var(--act); border-color: var(--act); color: var(--act-on); box-shadow: 0 2px 0 color-mix(in oklab, var(--color-primary) 55%, black); }
+.topnav-tab:focus-visible { outline: 2px solid var(--color-base-content); outline-offset: 2px; }
+
+.panel { background: var(--color-base-100); border: 1px solid var(--line); border-radius: 24px; box-shadow: var(--soft-shadow); }
+.kicker { font-size: .75rem; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--soft); }
+:root .progress-primary, :root .progress-success { color: var(--live); }
+
+.stat-strip { display: grid; grid-template-columns: repeat(4, 1fr); border-radius: 26px; }
+.stat-cell { display: grid; align-content: start; gap: .15rem; padding: 1.1rem 1.5rem 1.2rem; }
+.stat-cell + .stat-cell { border-left: 1px solid var(--line); }
+.stat-cell small { color: var(--soft); font-size: .875rem; }
+.stat-strip-2 { grid-template-columns: repeat(2, 1fr); }
+.stat-strip-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 760px) {
+  .stat-strip-3 { grid-template-columns: 1fr; }
+  .stat-strip-3 .stat-cell + .stat-cell { border-left: 0; border-top: 1px solid var(--line); }
+}
+.side-nav { display: grid; gap: .25rem; align-content: start; flex: none; width: 15rem; }
+.side-nav .kicker { padding: .75rem .875rem .25rem; }
+.side-nav .topnav-tab { width: 100%; }
+.side-nav svg { width: 1.25rem; height: 1.25rem; }
+.stat-num { font-family: var(--display-font); font-size: 2.75rem; font-weight: 800; letter-spacing: -.04em; line-height: 1.05; }
+@media (max-width: 760px) {
+  .stat-strip { grid-template-columns: 1fr 1fr; }
+  .stat-cell:nth-child(3) { border-left: 0; }
+  .stat-cell:nth-child(n+3) { border-top: 1px solid var(--line); }
+}
+
+.game { overflow: hidden; }
+.game-open { background: color-mix(in oklab, var(--live) 8%, var(--color-base-100)); }
+.game-scheduled { background: color-mix(in oklab, var(--color-info) 8%, var(--color-base-100)); }
+.game-main { display: flex; flex-wrap: wrap; align-items: center; gap: 1rem 1.4rem; padding: 1.1rem 1.4rem; }
+.game-chipw { position: relative; flex: none; }
+.game-chip { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 18px; background: var(--color-base-300); color: var(--soft); transform: rotate(-4deg); }
+.game-open .game-chip { background: color-mix(in oklab, var(--live) 38%, var(--color-base-100)); color: var(--color-base-content); }
+.game-scheduled .game-chip { background: color-mix(in oklab, var(--color-info) 38%, var(--color-base-100)); color: var(--color-base-content); }
+/* Sibling of the chip, so it sets its own tilt. */
+.game-open .game-chipw::after { content: ""; position: absolute; inset: 0; border: 2px solid var(--live); border-radius: 18px; transform: rotate(-4deg); animation: game-ping 1.8s ease-out infinite; pointer-events: none; }
+@keyframes game-ping { 0% { transform: rotate(-4deg) scale(1); opacity: .65; } 100% { transform: rotate(-4deg) scale(1.55); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .game-open .game-chipw::after { animation: none; opacity: 0; } }
+.game-text { flex: 1 1 15rem; min-width: 0; }
+.game-text h2 { font-family: var(--display-font); font-size: 1.65rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.15; }
+.game-text p { margin-top: .15rem; color: var(--soft); }
+.game-cdw { display: grid; gap: .3rem; }
+.game-cd { display: flex; gap: .5rem; }
+.game-cd span { display: grid; justify-items: center; min-width: 3.4rem; padding: .35rem .5rem; border-radius: 12px; background: color-mix(in oklab, var(--color-base-100) 75%, transparent); color: var(--soft); font-size: .75rem; font-weight: 700; }
+.game-cd b { color: var(--color-base-content); font: 800 1.5rem/1.1 ui-monospace, monospace; font-variant-numeric: tabular-nums; }
+.game-act { display: flex; flex-wrap: wrap; gap: .5rem; }
+.game-sched { padding: 1rem 1.4rem 1.1rem; border-top: 1px solid var(--line); background: color-mix(in oklab, var(--color-base-100) 70%, transparent); }
+.game-row { display: grid; grid-template-columns: 7rem 11rem 8rem 1fr; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+.game-row small, .game-foot small { color: var(--soft); }
+.game-foot { display: flex; align-items: center; gap: .5rem; margin-top: .25rem; }
+@media (max-width: 760px) { .game-row { grid-template-columns: 1fr 1fr; } .game-row small { display: none; } }
+
+.split { display: grid; gap: 1.25rem; grid-template-columns: minmax(0, 1fr); align-items: start; }
+.split:has(.feed) { grid-template-columns: minmax(0, 1fr) 22rem; }
+@media (max-width: 1000px) { .split:has(.feed) { grid-template-columns: minmax(0, 1fr); } }
+
+.feed-list { display: grid; gap: .5rem; margin-top: .5rem; }
+.event { display: grid; grid-template-columns: 2rem minmax(0, 1fr) auto; align-items: center; gap: .75rem; padding: .6rem .75rem; border-radius: 16px; background: var(--color-base-200); }
+.event-ok { background: color-mix(in oklab, var(--live) 10%, var(--color-base-100)); }
+.event-gold { background: color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100)); }
+.event-ico { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 11px; background: color-mix(in oklab, var(--color-base-100) 70%, transparent); color: var(--soft); }
+.event small { color: var(--soft); }
+.event-r { display: grid; justify-items: end; text-align: right; white-space: nowrap; }
+.empty { margin-top: .75rem; padding: 1.25rem; border: 1.5px dashed var(--line-strong); border-radius: 14px; text-align: center; color: var(--soft); }
+
+.runs, .row-list { display: flex; flex-wrap: wrap; gap: .5rem; padding: .75rem; }
+.event:hover, .run-row:hover, .list-row:hover, .run-entry:hover { box-shadow: inset 0 0 0 100vmax var(--hover-dim); }
+.run-row, .list-row { position: relative; flex: 1 1 100%; border-radius: 16px; background: var(--color-base-200); transition: box-shadow .15s; }
+.run-row { isolation: isolate; }
+.list-row:focus-within { z-index: 2; }
+.run-link::after { content: ""; position: absolute; inset: 0; border-radius: 16px; }
+.run-link:focus-visible { outline: none; }
+.run-link:focus-visible::after { outline: 2px solid var(--color-base-content); outline-offset: -2px; }
+.run-row .tooltip { position: relative; z-index: 1; }
+.run-row-live, .list-row-on { background: color-mix(in oklab, var(--live) 10%, var(--color-base-100)); }
+.run-row-stalled { background: color-mix(in oklab, var(--color-warning) 12%, var(--color-base-100)); }
+.run-unused { padding: .35rem .8rem; border: 1.5px dashed var(--line-strong); border-radius: 12px; }
+.run-unused .code-chip { padding: 0; background: none; }
+.when-empty { flex-basis: 100%; padding: 1rem; border-radius: 16px; background: var(--color-base-200); color: var(--soft); text-align: center; }
+.when-empty:not(:only-child) { display: none; }
+/* Which advice is true depends on whether any unused code exists, which changes as runs are added without a reload. */
+.runs-grid:has(.run-unused) .wh-none, .runs-grid:not(:has(.run-unused)) .wh-codes { display: none; }
+.unused-card:not(:has(.run-unused)) .copy-all { display: none; }
+.code-chip { padding: 0; background: none; }
+.code-chip { padding: .15rem .6rem; border-radius: 10px; background: var(--color-base-100); font: 700 .875rem ui-monospace, monospace; letter-spacing: .06em; }
+:root .join .btn.btn-active, :root .join .btn:checked, :root .filter .btn:checked { --btn-bg: var(--color-base-content); --btn-fg: var(--color-base-100); --btn-border: var(--color-base-content); --btn-shadow: 0 0 0 transparent; }
+
+:root .btn.credits-low { --btn-bg: color-mix(in oklab, var(--color-warning) 14%, var(--color-base-100)); }
+:root .btn.credits-none { --btn-bg: color-mix(in oklab, var(--color-error) 12%, var(--color-base-100)); }
+.credits-pop { width: 21.5rem; padding: 1.1rem 1.1rem 1rem; }
+.credits-pop p { margin-top: .5rem; color: var(--soft); line-height: 1.45; }
+.credits-pop p.alert { color: var(--color-base-content); }
+.credits-big { display: block; font-family: var(--display-font); font-size: 2.1rem; font-weight: 800; letter-spacing: -.03em; line-height: 1.1; }
+.credits-big span { font-size: 1rem; font-weight: 700; letter-spacing: 0; color: var(--soft); }
+.credits-foot { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-top: .9rem; padding-top: .9rem; border-top: 1px solid var(--line); }
+.credits-side { display: grid; justify-items: end; gap: .1rem; line-height: 1.25; }
+.credits-side b { font-size: .95rem; }
+
+.row-table { border-collapse: separate; border-spacing: 0 8px; }
+.row-table thead th { padding: 4px 14px; border: 0; background: transparent; color: var(--soft); }
+.row-table tbody td { padding: 10px 14px; border: 0; background: var(--color-base-200); }
+.row-table tbody td:first-child { border-radius: 16px 0 0 16px; }
+.row-table tbody td:last-child { border-radius: 0 16px 16px 0; }
+
+/* A tooltip takes its text from the element it sits on, so a bold or spaced
+   label would otherwise make its tip bold and spaced too. */
+:root .tooltip::before {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
+}

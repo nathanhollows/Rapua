@@ -1,0 +1,43 @@
+package templates
+
+import (
+	"strings"
+
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/blocks"
+	"github.com/nathanhollows/Rapua/v8/models"
+)
+
+// PlayerBlockSlot draws one block on a player page. A block still waiting on a
+// variable keeps its place as an empty element and gives nothing away, so the
+// answer that unlocks it can swap it in where the author put it.
+//
+// preview shows every block, since an author previewing has no run to unlock
+// anything, and notes on the gated ones what they wait for.
+templ PlayerBlockSlot(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState, hidden, preview bool) {
+	if hidden {
+		<div class="block-view hidden" id={ "preview-block-" + block.GetID() }></div>
+	} else {
+		<div class="block-view" id={ "preview-block-" + block.GetID() }>
+			if preview && len(block.GetDepends()) > 0 {
+				@gateNote(block)
+			}
+			@templates.RenderPlayerView(settings, block, state)
+		</div>
+	}
+}
+
+// PlayerBlockSlotOOB swaps a block that has just unlocked into the slot
+// PlayerBlockSlot left for it.
+templ PlayerBlockSlotOOB(settings models.QuestSettings, block blocks.Block, state blocks.PlayerState) {
+	<div class="block-view" id={ "preview-block-" + block.GetID() } hx-swap-oob="true">
+		@templates.RenderPlayerView(settings, block, state)
+	</div>
+}
+
+templ gateNote(block blocks.Block) {
+	<div class="badge badge-ghost badge-sm gap-1 mb-2">
+		@icon("lock", templ.Attributes{"class": "w-3 h-3"})
+		Shown after { strings.Join(block.GetDepends(), ", ") }
+	</div>
+}

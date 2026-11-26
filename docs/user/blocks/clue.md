@@ -1,7 +1,7 @@
 ---
 title: "Clue"
 sidebar: true
-order: 5
+order: 6
 ---
 
 # Clue Block
@@ -29,7 +29,7 @@ The cost will always be shown if points are enabled. If points are not enabled, 
 **Player Experience:**
 1. Player sees: "Stuck on the puzzle? This clue will reveal the pattern you need to find. **Costs 15 points.**"
 2. Player clicks "Get Pattern Hint" 
-3. Button changes to "Confirm Reveal Clue?" for 3 seconds
+3. Button changes to "Are you sure? Tap again" for 3 seconds
 4. Player clicks again to confirm
 5. Clue is revealed: "Look for the **Fibonacci sequence** in the arrangement of objects. Start counting from the red item."
 6. Player loses 15 points and clue remains visible

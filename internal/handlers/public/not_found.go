@@ -3,8 +3,8 @@ package public
 import (
 	"net/http"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
 )
 
 // NotFound shows the not found page.
@@ -16,6 +16,6 @@ func (h *Handler) NotFound(w http.ResponseWriter, r *http.Request) {
 	err := templates.PublicLayout(c, "Not Found", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.logger.Error("rendering NotFound page", "err", err)
+		h.logger.ErrorContext(r.Context(), "rendering NotFound page", "err", err)
 	}
 }

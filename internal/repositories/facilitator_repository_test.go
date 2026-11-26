@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/brianvoe/gofakeit/v7"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -29,10 +30,11 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 
 	parents := createTestParents(t, dbc)
 
+	tokenValue := gofakeit.UUID()
 	token := models.FacilitatorToken{
-		Token:      "jsonTest123",
-		InstanceID: parents.InstanceID,
-		Locations:  []string{parents.LocationID},
+		Token:      tokenValue,
+		QuestID:    parents.QuestID,
+		Objectives: []string{"objective-1"},
 		ExpiresAt:  time.Now().Add(24 * time.Hour),
 	}
 
@@ -41,10 +43,10 @@ func TestFacilitatorRepo_SaveAndRetrieveToken(t *testing.T) {
 	require.NoError(t, err)
 
 	// Retrieve token
-	retrieved, err := repo.GetToken(ctx, "jsonTest123")
+	retrieved, err := repo.GetToken(ctx, tokenValue)
 	require.NoError(t, err)
 	assert.NotNil(t, retrieved)
 	assert.Equal(t, token.Token, retrieved.Token)
-	assert.Equal(t, token.InstanceID, retrieved.InstanceID)
-	assert.ElementsMatch(t, token.Locations, retrieved.Locations) // JSON-safe comparison
+	assert.Equal(t, token.QuestID, retrieved.QuestID)
+	assert.ElementsMatch(t, token.Objectives, retrieved.Objectives) // JSON-safe comparison.
 }

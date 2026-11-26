@@ -7,35 +7,46 @@ import (
 	"mime/multipart"
 	"time"
 
-	"github.com/nathanhollows/Rapua/v7/models"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // UploadService provides methods for uploading files and managing metadata.
 type UploadService struct {
-	repo    repositories.UploadsRepository
-	storage UploadStorage
+	transactor   db.Transactor
+	repo         repositories.UploadsRepository
+	runEventRepo repositories.RunEventRepository
+	storage      UploadStorage
 }
 
 // NewUploadService creates a new UploadService.
-func NewUploadService(repo repositories.UploadsRepository, storage UploadStorage) *UploadService {
+func NewUploadService(
+	transactor db.Transactor,
+	repo repositories.UploadsRepository,
+	runEventRepo repositories.RunEventRepository,
+	storage UploadStorage,
+) *UploadService {
 	return &UploadService{
-		repo:    repo,
-		storage: storage,
+		transactor:   transactor,
+		repo:         repo,
+		runEventRepo: runEventRepo,
+		storage:      storage,
 	}
 }
 
 // UploadMetadata contains metadata for an uploaded file.
 type UploadMetadata struct {
-	InstanceID string `json:"instanceID,omitempty"`
-	TeamID     string `json:"teamID,omitempty"`
-	BlockID    string `json:"blockID,omitempty"`
-	LocationID string `json:"locationID,omitempty"`
+	QuestID string `json:"questID,omitempty"`
+	RunID   string `json:"teamID,omitempty"`
+	BlockID string `json:"blockID,omitempty"`
 }
 
 // UploadStorage is an interface for storing files.
 type UploadStorage interface {
 	Upload(ctx context.Context, file multipart.File, filename string) (map[string]string, string, error)
+	// Delete removes a file using the delete data its Upload returned.
+	Delete(ctx context.Context, deleteData string) error
 	Type() string
 }
 
@@ -79,7 +90,7 @@ func (s *UploadService) UploadFile(
 
 	originalURL, ok := links["original"]
 	if !ok {
-		return nil, errors.New("storage did not return original URL")
+		return nil, s.discardStored(ctx, deleteData, errors.New("storage did not return original URL"))
 	}
 
 	upload := &models.Upload{
@@ -88,18 +99,60 @@ func (s *UploadService) UploadFile(
 		Storage:     s.storage.Type(),
 		DeleteData:  deleteData,
 		Type:        fileType,
-		InstanceID:  data.InstanceID,
-		TeamCode:    data.TeamID,
+		QuestID:     data.QuestID,
+		RunCode:     data.RunID,
 		BlockID:     data.BlockID,
-		LocationID:  data.LocationID,
 	}
 
-	// Save metadata to database
-	if err = s.repo.Create(ctx, upload); err != nil {
-		return nil, fmt.Errorf("failed to store metadata: %w", err)
+	// The file is already in storage, so a failure from here leaves it with no
+	// row to find it by: nothing else would ever clean it up.
+	if err = s.saveUpload(ctx, upload); err != nil {
+		return nil, s.discardStored(ctx, deleteData, err)
 	}
 
 	return upload, nil
+}
+
+// discardStored removes a file whose row never landed, and returns cause
+// together with any failure to remove it.
+func (s *UploadService) discardStored(ctx context.Context, deleteData string, cause error) error {
+	// The request may be what failed, and a cancelled context would skip the
+	// very cleanup it triggered.
+	if err := s.storage.Delete(context.WithoutCancel(ctx), deleteData); err != nil {
+		return errors.Join(cause, fmt.Errorf("removing unsaved upload: %w", err))
+	}
+	return cause
+}
+
+// saveUpload writes the row and its event together, so a saved upload is
+// always one the stream knows about.
+func (s *UploadService) saveUpload(ctx context.Context, upload *models.Upload) error {
+	tx, err := s.transactor.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	if err = s.repo.CreateWithTx(ctx, tx, upload); err != nil {
+		return fmt.Errorf("failed to store metadata: %w", err)
+	}
+
+	// Only a run's own upload belongs in its stream: the block editor's media
+	// carries no run code.
+	if upload.RunCode != "" {
+		event := uploadAddedEvent(
+			upload.RunCode, upload.QuestID, upload.BlockID, upload.OriginalURL, string(upload.Type),
+		)
+		if err = s.runEventRepo.RecordWithTx(ctx, tx, event); err != nil {
+			return fmt.Errorf("recording upload: %w", err)
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("committing upload: %w", err)
+	}
+
+	return nil
 }
 
 // Search retrieves uploads based on search criteria.

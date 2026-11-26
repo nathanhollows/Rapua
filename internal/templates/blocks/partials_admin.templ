@@ -24,51 +24,23 @@ templ markdownBadge() {
 }
 
 // ADMIN FIELDS
-templ adminPointsField(points int) {
-	<fieldset class="fieldset">
-		<legend class="fieldset-legend">Points</legend>
-		<label class="input">
-			<input
-				type="number"
-				name="points"
-				class="grow"
-				placeholder="Points"
-				value={ fmt.Sprint(points) }
-				_="on change if my value == '' then set my value to 0 end"
-			/>
-			<span
-				class="badge badge-neutral badge-xs tooltip tooltip-left"
-				data-tip="Set to 0 to disable points"
-			>
-				Optional
-			</span>
-		</label>
-	</fieldset>
-}
+//
+// Points are not a field here. The header's picker owns them, so a block form
+// never mentions points and cannot disagree with it.
 
-templ adminPointCostField(points int) {
-	<fieldset class="fieldset">
-		<legend class="fieldset-legend">Point cost</legend>
-		<label class="input">
-			<input
-				type="number"
-				name="points"
-				class="grow"
-				placeholder="Points"
-				value={ fmt.Sprint(points) }
-				_="on change if my value == '' then set my value to 0 end"
-			/>
-			<span
-				class="badge badge-neutral badge-xs tooltip tooltip-left"
-				data-tip="Set to 0 to deduct no points"
-			>
-				Optional
-			</span>
-		</label>
-		<span class="label">
-			The number of points to <span class="font-bold">deduct</span> from the team when they reveal the clue.
+// adminSwitch is the one on/off control in a block form: the switch, what it is
+// called, and a line saying what it does. Extra attributes go on the input, so a
+// block can hang its own script off it.
+templ adminSwitch(name, title, hint string, checked bool, attrs templ.Attributes) {
+	<label class="sw">
+		<input type="checkbox" name={ name } class="toggle toggle-primary" checked?={ checked } { attrs... }/>
+		<span class="sw-text">
+			<b>{ title }</b>
+			if hint != "" {
+				<small>{ hint }</small>
+			}
 		</span>
-	</fieldset>
+	</label>
 }
 
 // Textarea field
@@ -82,12 +54,23 @@ type TextareaParams struct {
 	Required     bool
 	Markdown     bool
 	HyperScript  string
+	// MinLines is the least height the box opens at, for fields that hold prose.
+	MinLines int
 }
 
 func (params TextareaParams) SetValue(value string) TextareaParams {
 	val := params
 	val.Value = value
 	return val
+}
+
+// Inline because the form field rules set min-height outside any layer, which a
+// utility class cannot beat.
+func textareaStyle(minLines int) templ.SafeCSS {
+	if minLines <= 0 {
+		return "field-sizing: content;"
+	}
+	return templ.SafeCSS(fmt.Sprintf("field-sizing: content; min-height: calc(%dlh + 1.3rem);", minLines))
 }
 
 templ TextareaField(params TextareaParams) {
@@ -113,7 +96,7 @@ templ TextareaField(params TextareaParams) {
 			} else {
 				class={ fmt.Sprintf("textarea w-full %s", params.ExtraClasses) }
 			}
-			style="field-sizing: content;"
+			style={ textareaStyle(params.MinLines) }
 			if params.Placeholder != "" {
 				placeholder={ params.Placeholder }
 			} else {

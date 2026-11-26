@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/brianvoe/gofakeit/v7"
-	"github.com/nathanhollows/Rapua/v7/blocks"
-	"github.com/nathanhollows/Rapua/v7/game"
-	"github.com/nathanhollows/Rapua/v7/internal/db"
-	"github.com/nathanhollows/Rapua/v7/internal/repositories"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/blocks"
+	"github.com/nathanhollows/Rapua/v8/game"
+	"github.com/nathanhollows/Rapua/v8/internal/db"
+	"github.com/nathanhollows/Rapua/v8/internal/repositories"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/uptrace/bun"
@@ -19,9 +19,8 @@ import (
 
 func setupExportService(t *testing.T) (
 	*services.ExportService,
-	repositories.InstanceRepository,
-	repositories.InstanceSettingsRepository,
-	repositories.LocationRepository,
+	repositories.QuestRepository,
+	repositories.QuestSettingsRepository,
 	repositories.BlockRepository,
 	*bun.DB,
 	func(),
@@ -31,12 +30,20 @@ func setupExportService(t *testing.T) (
 
 	blockStateRepo := repositories.NewBlockStateRepository(dbc)
 	blockRepo := repositories.NewBlockRepository(dbc, blockStateRepo)
-	instanceRepo := repositories.NewInstanceRepository(dbc)
-	instanceSettingsRepo := repositories.NewInstanceSettingsRepository(dbc)
-	locationRepo := repositories.NewLocationRepository(dbc)
+	instanceRepo := repositories.NewQuestRepository(dbc)
+	instanceSettingsRepo := repositories.NewQuestSettingsRepository(dbc)
+	objectiveRepo := repositories.NewObjectiveRepository(dbc)
 
-	svc := services.NewExportService(instanceRepo, instanceSettingsRepo, locationRepo, blockRepo)
-	return svc, instanceRepo, instanceSettingsRepo, locationRepo, blockRepo, dbc, cleanup
+	svc := services.NewExportService(instanceRepo, instanceSettingsRepo, objectiveRepo, blockRepo)
+	return svc, instanceRepo, instanceSettingsRepo, blockRepo, dbc, cleanup
+}
+
+// insertObjective writes an objective row directly, bypassing the repository so
+// tests can pin IDs and positions.
+func insertObjective(t *testing.T, dbc *bun.DB, obj *models.Objective) {
+	t.Helper()
+	_, err := dbc.NewInsert().Model(obj).Exec(context.Background())
+	require.NoError(t, err)
 }
 
 // newTextBlock creates a MarkdownBlock for use in tests.
@@ -49,126 +56,116 @@ func newTextBlock(ownerID string) blocks.Block {
 }
 
 func TestExportService_ExportInstance_NotFound(t *testing.T) {
-	svc, _, _, _, _, _, cleanup := setupExportService(t)
+	svc, _, _, _, _, cleanup := setupExportService(t)
 	defer cleanup()
 
-	_, err := svc.ExportInstance(context.Background(), "does-not-exist")
+	_, _, err := svc.ExportInstance(context.Background(), "does-not-exist")
 	assert.Error(t, err)
 }
 
 func TestExportService_ExportInstance_MinimalInstance(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, _, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{
-		Name:   "My Game",
-		UserID: userID,
-		GameStructure: models.GameStructure{
-			ID:             gofakeit.UUID(),
-			IsRoot:         true,
-			Routing:        game.RouteStrategyOrdered,
-			Navigation:     game.NavigationMap,
-			CompletionType: game.CompletionAll,
-			LocationIDs:    []string{},
-			SubGroups:      []models.GameStructure{},
-		},
-	}
+	inst := &models.Quest{Name: "My Game", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{
-		InstanceID:      inst.ID,
-		EnablePoints:    true,
-		ShowLeaderboard: true,
+	insertObjective(t, dbc, &models.Objective{
+		ID:      gofakeit.UUID(),
+		QuestID: inst.ID,
+		Slug:    "root",
+		Title:   "My Game",
+		Routing: game.RouteStrategyOrdered,
+	})
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{
+		QuestID:          inst.ID,
+		EnablePoints:     true,
+		ShowLeaderboard:  true,
+		ProgressFeedback: game.ProgressFeedbackCount,
 	}))
 
-	doc, err := svc.ExportInstance(ctx, inst.ID)
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
 	require.NoError(t, err)
 
-	assert.Equal(t, "v7", doc.Rapua)
+	assert.Equal(t, "v8", doc.Rapua)
 	assert.Equal(t, inst.ID, doc.ID)
 	assert.Equal(t, "My Game", doc.Name)
 	assert.True(t, doc.Settings.EnablePoints)
 	assert.True(t, doc.Settings.ShowLeaderboard)
+	assert.Equal(t, "count", doc.Settings.ProgressFeedback)
 	assert.Equal(t, game.RouteStrategyOrdered, doc.Structure.Routing)
-	assert.Equal(t, game.NavigationMap, doc.Structure.Navigation)
-	assert.Equal(t, game.CompletionAll, doc.Structure.Completion)
 	assert.Empty(t, doc.Structure.Children)
+	assert.Nil(t, doc.Structure.ChildrenMin, "an unset band exports as omitted")
+	assert.Nil(t, doc.Structure.ChildrenMax)
 	assert.Empty(t, doc.Start)
 	assert.Empty(t, doc.Finish)
 }
 
-func TestExportService_ExportInstance_WithLocationsAndBlocks(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, blockRepo, dbc, cleanup := setupExportService(t)
+func TestExportService_ExportInstance_WithObjectiveAndBlocks(t *testing.T) {
+	svc, instanceRepo, settingsRepo, blockRepo, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	markerCode := gofakeit.LetterN(5)
-	insertTestMarker(t, dbc, markerCode)
-
-	inst := &models.Instance{Name: "Export Test", UserID: userID}
+	inst := &models.Quest{Name: "Objective Export Test", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
-	loc := &models.Location{
-		InstanceID: inst.ID,
-		MarkerID:   markerCode,
-		Name:       "Park",
-		Slug:       "park",
-		Points:     10,
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	obj := &models.Objective{
+		ID:       gofakeit.UUID(),
+		QuestID:  inst.ID,
+		ParentID: root.ID,
+		Slug:     "find-the-key",
+		Title:    "Find the key",
 	}
-	require.NoError(t, locationRepo.Create(ctx, loc))
+	insertObjective(t, dbc, obj)
 
 	transactor := db.NewTransactor(dbc)
+	var err error
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
 	require.NoError(t, err)
-	createdBlock, err := blockRepo.CreateTx(ctx, tx, newTextBlock(loc.ID), loc.ID, game.ContextLocationContent)
+	proofBlock, err := blockRepo.CreateTx(ctx, tx, newTextBlock(obj.ID), obj.ID, game.ContextObjectiveProof)
+	require.NoError(t, err)
+	revealBlock, err := blockRepo.CreateTx(ctx, tx, newTextBlock(obj.ID), obj.ID, game.ContextObjectiveReveal)
 	require.NoError(t, err)
 	require.NoError(t, tx.Commit())
 
-	inst.GameStructure = models.GameStructure{
-		ID:             gofakeit.UUID(),
-		IsRoot:         true,
-		Routing:        game.RouteStrategyFreeRoam,
-		Navigation:     game.NavigationList,
-		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{loc.ID},
-		SubGroups:      []models.GameStructure{},
-	}
-	require.NoError(t, instanceRepo.Update(ctx, inst))
-
-	doc, err := svc.ExportInstance(ctx, inst.ID)
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
 	require.NoError(t, err)
 
 	require.Len(t, doc.Structure.Children, 1)
 	child := doc.Structure.Children[0]
-	require.NotNil(t, child.Location)
-	assert.Equal(t, loc.ID, child.Location.ID)
-	assert.Equal(t, "park", child.Location.Slug)
-	assert.Equal(t, "Park", child.Location.Name)
-	assert.Equal(t, 10, child.Location.Points)
+	assert.Equal(t, obj.ID, child.ID)
+	assert.Equal(t, "find-the-key", child.Slug)
+	assert.Equal(t, "Find the key", child.Title)
+	assert.Empty(t, child.Children, "an objective row exports as a leaf")
 
-	require.Len(t, child.Location.Content, 1)
-	assert.Equal(t, "text", child.Location.Content[0]["type"])
-	assert.Equal(t, createdBlock.GetID(), child.Location.Content[0]["id"])
+	require.Len(t, child.Proof.Blocks, 1)
+	assert.Equal(t, proofBlock.GetID(), child.Proof.Blocks[0]["id"])
+
+	require.Len(t, child.Reveal.Blocks, 1)
+	assert.Equal(t, revealBlock.GetID(), child.Reveal.Blocks[0]["id"])
 }
 
 func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
-	svc, instanceRepo, settingsRepo, _, blockRepo, dbc, cleanup := setupExportService(t)
+	svc, instanceRepo, settingsRepo, blockRepo, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	inst := &models.Instance{Name: "Start Finish Test", UserID: userID}
+	inst := &models.Quest{Name: "Start Finish Test", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+	insertObjective(t, dbc, &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"})
 
 	transactor := db.NewTransactor(dbc)
 	tx, err := transactor.BeginTx(ctx, &sql.TxOptions{})
@@ -179,18 +176,7 @@ func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, tx.Commit())
 
-	inst.GameStructure = models.GameStructure{
-		ID:             gofakeit.UUID(),
-		IsRoot:         true,
-		Routing:        game.RouteStrategyOrdered,
-		Navigation:     game.NavigationMap,
-		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{},
-		SubGroups:      []models.GameStructure{},
-	}
-	require.NoError(t, instanceRepo.Update(ctx, inst))
-
-	doc, err := svc.ExportInstance(ctx, inst.ID)
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
 	require.NoError(t, err)
 
 	require.Len(t, doc.Start, 1)
@@ -199,61 +185,186 @@ func TestExportService_ExportInstance_StartFinishBlocks(t *testing.T) {
 	assert.Equal(t, "text", doc.Finish[0]["type"])
 }
 
-func TestExportService_ExportInstance_GroupedStructure(t *testing.T) {
-	svc, instanceRepo, settingsRepo, locationRepo, _, dbc, cleanup := setupExportService(t)
+func TestExportService_ExportInstance_NestedSection(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
 	defer cleanup()
 
 	ctx := context.Background()
 	userID := gofakeit.UUID()
 	insertTestUser(t, dbc, userID)
 
-	markerCode := gofakeit.LetterN(5)
-	insertTestMarker(t, dbc, markerCode)
-
-	inst := &models.Instance{Name: "Grouped Game", UserID: userID}
+	inst := &models.Quest{Name: "Nested Game", UserID: userID}
 	require.NoError(t, instanceRepo.Create(ctx, inst))
-	require.NoError(t, settingsRepo.Create(ctx, &models.InstanceSettings{InstanceID: inst.ID}))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
 
-	loc := &models.Location{
-		InstanceID: inst.ID,
-		MarkerID:   markerCode,
-		Name:       "Spot",
-		Slug:       "spot",
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	section := &models.Objective{
+		ID:       gofakeit.UUID(),
+		QuestID:  inst.ID,
+		ParentID: root.ID,
+		Slug:     "wave-1",
+		Title:    "Wave 1",
+		Routing:  game.RouteStrategyOrdered,
 	}
-	require.NoError(t, locationRepo.Create(ctx, loc))
+	insertObjective(t, dbc, section)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: section.ID, Slug: "spot", Title: "Spot",
+	})
 
-	groupID := gofakeit.UUID()
-	inst.GameStructure = models.GameStructure{
-		ID:             gofakeit.UUID(),
-		IsRoot:         true,
-		Routing:        game.RouteStrategyOrdered,
-		Navigation:     game.NavigationMap,
-		CompletionType: game.CompletionAll,
-		LocationIDs:    []string{},
-		SubGroups: []models.GameStructure{
-			{
-				ID:             groupID,
-				Name:           "Wave 1",
-				Color:          "primary",
-				Routing:        game.RouteStrategyOrdered,
-				Navigation:     game.NavigationMap,
-				CompletionType: game.CompletionAll,
-				LocationIDs:    []string{loc.ID},
-				SubGroups:      []models.GameStructure{},
-			},
-		},
-	}
-	require.NoError(t, instanceRepo.Update(ctx, inst))
-
-	doc, err := svc.ExportInstance(ctx, inst.ID)
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
 	require.NoError(t, err)
 
 	require.Len(t, doc.Structure.Children, 1)
 	child := doc.Structure.Children[0]
-	require.NotNil(t, child.Group)
-	assert.Equal(t, "Wave 1", child.Group.Name)
-	assert.Equal(t, groupID, child.Group.ID)
-	require.Len(t, child.Group.Children, 1)
-	require.NotNil(t, child.Group.Children[0].Location)
-	assert.Equal(t, "spot", child.Group.Children[0].Location.Slug)
+	assert.Equal(t, section.ID, child.ID)
+	assert.Equal(t, "wave-1", child.Slug)
+	assert.Equal(t, "Wave 1", child.Title)
+	require.Len(t, child.Children, 1)
+	assert.Equal(t, "spot", child.Children[0].Slug)
+}
+
+// A quest with two parentless rows has no single tree. Picking one and dropping
+// the rest exports a document missing whole subtrees, and re-importing it
+// sweeps those objectives away as orphans, so the export is refused instead.
+func TestExportService_ExportInstance_RefusesAmbiguousRoot(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Two Roots", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	insertObjective(t, dbc, &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "a", Title: "A"})
+	insertObjective(t, dbc, &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "b", Title: "B"})
+
+	_, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.ErrorIs(t, err, repositories.ErrAmbiguousRootObjective)
+}
+
+// Draft is part of the document, so a quest can be exported mid-edit and come
+// back with the same things out of play.
+func TestExportService_ExportInstance_CarriesDraft(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Mid Edit", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "live", Title: "Live", Position: 0,
+	})
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "parked", Title: "Parked", Position: 1, Draft: true,
+	})
+
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 2, "a draft is exported, not omitted")
+	assert.False(t, doc.Structure.Children[0].IsDraft())
+	assert.True(t, doc.Structure.Children[1].IsDraft())
+}
+
+// Pass-through is part of the document, so a quest keeps its hidden pools across
+// an export and import.
+func TestExportService_ExportInstance_CarriesPassThrough(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Zoo", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "shown", Title: "Shown", Position: 0,
+	})
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "birds", Title: "Birds", Position: 1, PassThrough: true,
+	})
+
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 2)
+	assert.False(t, doc.Structure.Children[0].IsPassThrough())
+	assert.True(t, doc.Structure.Children[1].IsPassThrough())
+}
+
+func TestExportService_ExportInstance_CarriesSecret(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Trace", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "library", Title: "Library", Position: 0,
+	})
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "rooftop", Title: "Rooftop", Position: 1, Secret: true,
+	})
+
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 2)
+	assert.False(t, doc.Structure.Children[0].IsSecret())
+	assert.True(t, doc.Structure.Children[1].IsSecret())
+}
+
+func TestExportService_ExportInstance_CarriesDepends(t *testing.T) {
+	svc, instanceRepo, settingsRepo, _, dbc, cleanup := setupExportService(t)
+	defer cleanup()
+
+	ctx := context.Background()
+	userID := gofakeit.UUID()
+	insertTestUser(t, dbc, userID)
+
+	inst := &models.Quest{Name: "Doors", UserID: userID}
+	require.NoError(t, instanceRepo.Create(ctx, inst))
+	require.NoError(t, settingsRepo.Create(ctx, &models.QuestSettings{QuestID: inst.ID}))
+
+	root := &models.Objective{ID: gofakeit.UUID(), QuestID: inst.ID, Slug: "root", Title: "Root"}
+	insertObjective(t, dbc, root)
+	insertObjective(t, dbc, &models.Objective{
+		ID: gofakeit.UUID(), QuestID: inst.ID, ParentID: root.ID,
+		Slug: "door", Title: "Door", Depends: game.DependsField{"key"},
+	})
+
+	doc, _, err := svc.ExportInstance(ctx, inst.ID)
+	require.NoError(t, err)
+
+	require.Len(t, doc.Structure.Children, 1)
+	assert.Equal(t, game.DependsField{"key"}, doc.Structure.Children[0].Depends)
 }

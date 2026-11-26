@@ -2,23 +2,25 @@ package templates
 
 import (
 	"fmt"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"strings"
+	"time"
+
+	"github.com/nathanhollows/Rapua/v8/internal/services"
 )
 
 templ FacilitatorLinkModal() {
 	<div class="modal-box">
 		<form method="dialog">
-			<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			<button class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3" aria-label="Close">✕</button>
 		</form>
-		<h3 class="text-lg font-bold">Share activity overview with Facilitators</h3>
-		<div class="prose py-4">
-			<p>Create a link to share the activity overview with facilitators. They will see a list of all locations and how many teams are yet to visit.</p>
-			<p>These links are only valid for a limited time and can be shared with anyone. Be cautious when sharing.</p>
+		<h3 class="text-2xl font-extrabold">Share the activity tracker</h3>
+		<div class="py-4 flex flex-col gap-3 text-base-content/80">
+			<p>Create a link for facilitators. They will see how many teams have started and the objectives to look after.</p>
+			<p>Anyone with the link can open it until it expires, so be careful where you share it.</p>
 		</div>
 		<fieldset class="fieldset">
-			<legend class="fieldset-legend">Validity</legend>
-			<select id="link-duration" name="duration" class="select w-full" name="duration">
+			<legend class="fieldset-legend">Valid for</legend>
+			<select id="link-duration" name="duration" class="select w-full">
 				<option value="hour">1 hour</option>
 				<option value="day" selected>1 day</option>
 				<option value="week">1 week</option>
@@ -44,15 +46,16 @@ templ FacilitatorLinkModal() {
 templ FacilitatorLinkCopyModal(url string) {
 	<div class="modal-box">
 		<form method="dialog">
-			<button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2">✕</button>
+			<button class="btn btn-sm btn-circle btn-ghost absolute right-3 top-3" aria-label="Close">✕</button>
 		</form>
-		<h3 class="text-lg font-bold">Share activity overview with Facilitators</h3>
-		<p class="prose pt-4 font-bold label-text mb-2">Share this link with facilitators:</p>
+		<h3 class="text-2xl font-extrabold">Share the activity tracker</h3>
+		<p class="kicker pt-4 pb-2">Send this link to facilitators</p>
 		<div class="join w-full">
 			<input
 				id="facilitator_link"
 				class="input join-item w-full"
 				value={ url }
+				readonly
 			/>
 			<button
 				class="btn join-item"
@@ -65,8 +68,8 @@ templ FacilitatorLinkCopyModal(url string) {
 						set my innerHTML to copyText
 					"
 			>
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-copy w-4 h-4"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"></rect><path d="M8 4H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"></path><path d="M16 4h2a2 2 0 0 1 2 2v4"></path><path d="M21 14H11"></path><path d="m15 10-4 4 4 4"></path></svg>
-				Copy Link
+				@icon("clipboard-copy", templ.Attributes{"class": "w-4 h-4"})
+				Copy link
 			</button>
 		</div>
 		<div class="modal-action">
@@ -78,109 +81,405 @@ templ FacilitatorLinkCopyModal(url string) {
 	</div>
 }
 
-templ FacilitatorDashboard(locations []models.Location, activity []services.TeamActivity) {
-	<script>
-	window.setTimeout( function() {
-		window.location.reload();
-	}, 30000);
-	</script>
-	<main class="max-w-7xl m-auto pb-8">
-		<h1 class="text-2xl font-bold m-5">
-			Activity tracker
-		</h1>
-		<div class="grid stats my-5">
-			<div class="stat">
-				<div class="stat-figure text-primary">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users inline-block w-8 h-8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-				</div>
-				<div class="stat-title">Teams</div>
-				<div class="stat-value">
-					{ fmt.Sprintf("%d", len(activity)) }
-				</div>
-			</div>
-			<div class="stat">
-				<div class="stat-figure text-primary">
-					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-map-pin inline-block w-8 h-8"><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"></path><circle cx="12" cy="10" r="3"></circle></svg>
-				</div>
-				<div class="stat-title">Locations</div>
-				<div class="stat-value">
-					{ fmt.Sprint(len(locations)) }
-				</div>
-			</div>
+// FacilitatorDashboard is what a facilitator sees from a shared link, built to
+// answer three things for someone at a station who may know nothing of the game:
+// do I have to keep waiting, how long have I got, and can I leave. It reloads
+// itself, as a facilitator leaves it open.
+templ FacilitatorDashboard(data FacilitatorDashboardData) {
+	{{ watched := data.Watched() }}
+	<div class="px-5">
+		<div class="pt-5 pb-3">
+			<span class="kicker">{ data.QuestName }</span>
+			<h1 class="text-4xl font-black">Your stations</h1>
 		</div>
-		<div class="relative flex flex-col md:flex-row px-5 md:space-x-5">
-			<div class="w-full">
-				<div class="join join-vertical w-full">
-					if len(locations) == 0 {
-						<div role="alert" class="alert">
-							<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users inline-block w-8 h-8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
-							<span>No locations available</span>
-							<div>
-								<a href="/admin/locations/new" class="btn btn-sm btn-secondary">Add a location</a>
-							</div>
+		<div class="fv" data-facilitator>
+			@gameBanner(data)
+			if len(data.Report.Stations) == 0 {
+				<div role="alert" class="alert alert-info">
+					@icon("info", templ.Attributes{"class": "w-5 h-5"})
+					<span>There is nothing to track yet.</span>
+				</div>
+			} else if len(watched) == 0 {
+				<section class="panel fv-first">
+					<b>Which stations are you looking after?</b>
+					<p>Pick them once and this page will tell you, for each one, whether teams are still on their way. Your choice is kept on this device.</p>
+					<button type="button" class="btn btn-primary" data-open-picker>Choose stations</button>
+				</section>
+			} else {
+				{{ text, class := summaryLine(data) }}
+				<section class="panel fv-watch">
+					<div class="fv-watch-text">
+						<b>Watching { fmt.Sprintf("%d station%s", len(watched), plural(len(watched))) }</b>
+						<span class={ class }>{ text }</span>
+					</div>
+					<button type="button" class="btn" data-open-picker>Choose stations</button>
+				</section>
+				for _, station := range watched {
+					@stationRow(station, data, len(watched) == 1)
+				}
+				<p class="fv-updated">Updated <time datetime={ data.Now.UTC().Format("2006-01-02T15:04:05Z") } data-clock>{ data.Now.UTC().Format("3:04 PM") }</time>. This page refreshes itself.</p>
+			}
+		</div>
+	</div>
+	@stationPicker(data)
+	@facilitatorScript()
+}
+
+// gameBanner is the game's state in the words and style of the activity page's
+// banner, so an admin and a facilitator read one thing the same way. The state
+// is said once: the headline is the state, the line under it is what follows.
+templ gameBanner(data FacilitatorDashboardData) {
+	{{ clock := data.Clock }}
+	{{ target, label := countdownFor(clock) }}
+	<section class={ "panel game", templ.KV("game-open", clock.Kind == services.ClockOpen), templ.KV("game-scheduled", clock.Kind == services.ClockSoon) }>
+		<div class="game-main">
+			<span class="game-chipw">
+				<span class="game-chip">
+					@icon(bannerIcon(clock.Kind), templ.Attributes{"class": "w-7 h-7"})
+				</span>
+			</span>
+			<div class="game-text">
+				switch clock.Kind {
+					case services.ClockOpen:
+						<h2>The game is open</h2>
+						if clock.HasEnd() {
+							<p>@localDate("It closes at ", clock.Closes, ".")</p>
+						} else {
+							<p>There is no closing time set. Ask the organiser when it finishes.</p>
+						}
+					case services.ClockSoon:
+						<h2>Not open yet</h2>
+						<p>@localDate("It opens at ", clock.Opens, ".")</p>
+					case services.ClockOver:
+						<h2>The game is closed</h2>
+						<p>It closed { ago(clock.Closes, data.Now) }. Nobody else can play.</p>
+					case services.ClockClosed:
+						<h2>The game is closed</h2>
+						<p>Nobody can play until it is opened.</p>
+				}
+				<p class="fv-meta">
+					{ teamsPlaying(data.Report.Playing) }, { fmt.Sprint(data.Report.NotStarted) } not started yet.
+					if data.Report.Stopped > 0 {
+						{ teamsHave(data.Report.Stopped) } stopped playing and { notCounted(data.Report.Stopped) } below.
+					}
+				</p>
+			</div>
+			if !target.IsZero() {
+				<div class="game-cdw">
+					<span class="kicker">{ label }</span>
+					<div class="game-cd" role="timer" data-countdown={ target.UTC().Format("2006-01-02T15:04:05Z") }>
+						<span><b data-u="d">0</b>days</span>
+						<span><b data-u="h">0</b>hrs</span>
+						<span><b data-u="m">0</b>min</span>
+						<span><b data-u="s">0</b>sec</span>
+					</div>
+				</div>
+			}
+		</div>
+	</section>
+}
+
+func notCounted(n int) string {
+	if n == 1 {
+		return "isn’t counted"
+	}
+	return "aren’t counted"
+}
+
+// localDate is a date and time shown in the viewer's own timezone, which only the
+// browser knows. The server's reading, in UTC, is the fallback.
+templ localDate(before string, t time.Time, after string) {
+	{ before }<time datetime={ t.UTC().Format("2006-01-02T15:04:05Z") } data-local>{ t.UTC().Format("Mon 2 Jan, 3:04pm") } UTC</time>{ after }
+}
+
+templ stationRow(station services.StationReading, data FacilitatorDashboardData, open bool) {
+	{{ say := stationCopyFor(station, data.Clock, data.Report) }}
+	{{ verdict := station.Verdict(data.Clock, data.Report.Playing) }}
+	{{ numbers := verdict != services.VerdictWait && verdict != services.VerdictDone }}
+	<section class="panel fv-st" data-station={ station.Objective.ID } data-open={ fmt.Sprint(open) }>
+		<button type="button" class={ "fv-head", say.Class } aria-expanded={ fmt.Sprint(open) } data-toggle>
+			<span class="fv-ico">
+				@icon(say.Icon, templ.Attributes{})
+			</span>
+			<span class="nm">
+				<b>{ station.Objective.Title }</b>
+				if station.Parent != "" {
+					<small>{ station.Parent }</small>
+				} else if station.Section {
+					<small>Section</small>
+				}
+			</span>
+			<span class="fv-pill">{ say.Pill }</span>
+			@icon("chevron-down", templ.Attributes{"class": "fv-chev"})
+		</button>
+		<div class="fv-body">
+			<div class={ "fv-why", say.Class }>
+				<small>{ say.Tag }</small>
+				<h2>{ say.Title }</h2>
+				<p>{ say.Text }</p>
+			</div>
+			if numbers {
+				<div class="fv-counts">
+					<div><b>{ fmt.Sprint(len(station.ToCome)) }</b><small>Still to come</small></div>
+					<div><b>{ fmt.Sprint(len(station.Here)) }</b><small>With you now</small></div>
+					<div><b>{ fmt.Sprint(len(station.Been)) }</b><small>Have been</small></div>
+				</div>
+			}
+			<div class="fv-list">
+				if len(station.Here) > 0 {
+					<h3 class="kicker">With you now</h3>
+					for _, team := range station.Here {
+						<div class="fv-row">
+							<span class="fv-dot here"></span><b>{ team.Name }</b>
+							<span class="when">arrived { ago(team.Arrived, data.Now) }</span>
 						</div>
 					}
-					if len(locations) > 0 {
-						<table class="table-pin-rows md:table-lg table w-full">
-							<thead>
-								<tr class="border-b-0">
-									<th class="bg-base-200 rounded-s-box flex items-center gap-2 lg:py-3 text-base-content">
-										<span>
-											Location
-										</span>
-									</th>
-									<th class="bg-base-200 lg:py-3 rounded-e-box text-end text-base-content">
-										<span class="mr-7">
-											Status
-										</span>
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								for _, location := range locations {
-									<tr>
-										<th class="font-normal">
-											{ location.Name }
-										</th>
-										<td class="text-end flex flex-col gap-2 items-end">
-											if location.TotalVisits == 0 {
-												<span class="badge badge-ghost whitespace-nowrap">
-													No visits yet
-												</span>
-											} else if location.TotalVisits >= len(activity) && location.CurrentCount == 0 {
-												<span class="badge badge-success whitespace-nowrap">
-													Complete!
-												</span>
-												if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
-													<span class="badge badge-info whitespace-nowrap">
-														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
-													</span>
-												}
-											} else {
-												if location.Instance.Settings.MustCheckOut {
-													if location.CurrentCount > 0 {
-														<span class="badge badge-accent whitespace-nowrap">
-															{ fmt.Sprintf("%d", location.CurrentCount) } Currently Visiting
-														</span>
-													}
-												}
-												<span class="badge badge-secondary whitespace-nowrap">
-													{ fmt.Sprintf("%d / %d", location.TotalVisits, len(activity)) } Visited
-												</span>
-												if location.Instance.Settings.MustCheckOut && location.AvgDuration > 0 {
-													<span class="badge badge-info whitespace-nowrap">
-														Avg: { fmt.Sprintf("%.0f", location.AvgDuration/60) }m
-													</span>
-												}
-											}
-										</td>
-									</tr>
-								}
-							</tbody>
-						</table>
+				}
+				if len(station.ToCome) > 0 {
+					<h3 class="kicker">Still to come</h3>
+					for _, team := range station.ToCome {
+						@teamRow(team, data.Now)
 					}
-				</div>
+				} else if numbers && len(station.Here) == 0 {
+					<div class="fv-empty">Nobody is on their way to you.</div>
+				}
+				if len(station.Later) > 0 {
+					<h3 class="kicker">Could reach you later</h3>
+					for _, team := range station.Later {
+						@teamRow(team, data.Now)
+					}
+				}
+				if len(station.Been) > 0 {
+					<details>
+						<summary><span>Teams that have been ({ fmt.Sprint(len(station.Been)) })</span><span>Show</span></summary>
+						for _, team := range station.Been {
+							<div class="fv-row"><span class="fv-dot" style="opacity:.35"></span><b class="fv-been">{ team.Name }</b></div>
+						}
+					</details>
+				}
+			</div>
+			if notes := notCountedNote(station); notes != "" {
+				<div class="fv-foot">{ notes }</div>
+			}
+		</div>
+	</section>
+}
+
+templ teamRow(team services.StationTeam, now time.Time) {
+	<div class="fv-row">
+		<span class={ "fv-dot", templ.KV("quiet", team.Quiet) }></span>
+		<b>{ team.Name }</b>
+		if team.Quiet {
+			<em>may have stopped</em>
+		}
+		if !team.LastSeen.IsZero() {
+			<span class={ "when", templ.KV("warn", team.Quiet) }>last seen { ago(team.LastSeen, now) }</span>
+		}
+	</div>
+}
+
+// notCountedNote says why a number is not larger, so a facilitator is not left
+// wondering where a team went.
+func notCountedNote(station services.StationReading) string {
+	var parts []string
+	if station.Finished > 0 {
+		parts = append(parts, teamsHave(station.Finished)+" finished the game")
+	}
+	if station.Stopped > 0 {
+		parts = append(parts, teamsHave(station.Stopped)+" stopped playing")
+	}
+	if station.Skipped > 0 {
+		parts = append(parts, teams(station.Skipped)+" whose route skips this stop")
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return "Not counted: " + strings.Join(parts, ", ") + "."
+}
+
+// stationPicker lists everything the link covers as it is nested in the quest, so a
+// facilitator can tick the places they look after. Ticking a section ticks only
+// itself; "Select all" ticks what is inside it.
+templ stationPicker(data FacilitatorDashboardData) {
+	<dialog id="fv-picker" class="modal modal-bottom sm:modal-middle fv-pick" data-watching={ data.WatchedKeys() }>
+		<div class="modal-box">
+			<div class="fv-pick-head">
+				<h3>Which stations are you looking after?</h3>
+				<p>Tick as many as you like. We’ll remember them on this device.</p>
+				<label class="input">
+					@icon("search", templ.Attributes{"class": "w-4 h-4"})
+					<input type="search" placeholder="Search stations" aria-label="Search stations" data-pick-search/>
+				</label>
+			</div>
+			<div class="fv-pick-list">
+				for i, station := range data.Report.Stations {
+					<div class="fv-opt-row" data-name={ strings.ToLower(station.Objective.Title) }>
+						<label class="fv-opt" style={ fmt.Sprintf("padding-left:%.2frem", 0.8+float64(station.Depth)*1.4) }>
+							<input
+								type="checkbox"
+								class="checkbox checkbox-primary"
+								value={ services.StationKey(station.Objective.ID) }
+								checked?={ data.Watching[station.Objective.ID] }
+							/>
+							<span class={ templ.KV("fv-opt-section", station.Section) }>{ station.Objective.Title }</span>
+						</label>
+						if station.Section {
+							if inside := data.inside(i); inside != "" {
+								<button type="button" class="fv-all" data-inside={ inside }>Select all inside</button>
+							}
+						}
+					</div>
+				}
+				<p class="fv-empty" data-pick-none hidden>No station matches.</p>
+			</div>
+			<div class="fv-pick-foot">
+				<span data-pick-count></span>
+				<span class="fv-limit" data-pick-limit hidden role="status"></span>
+				<button type="button" class="btn btn-primary" data-pick-done>Done</button>
 			</div>
 		</div>
-	</main>
+		<form method="dialog" class="modal-backdrop">
+			<button>close</button>
+		</form>
+	</dialog>
+}
+
+// facilitatorScript keeps the page small and honest: it opens and closes rows,
+// remembers the choice of stations, shows times in the viewer's own timezone, and
+// reloads to stay current unless the picker is open.
+templ facilitatorScript() {
+	<script>
+	(() => {
+		const root = document.querySelector('[data-facilitator]');
+		if (!root) return;
+
+		// Times arrive in UTC and read in the viewer's own, as on the activity page.
+		document.querySelectorAll('time[data-local]').forEach((el) => {
+			const when = new Date(el.getAttribute('datetime'));
+			if (!isNaN(when)) el.textContent = when.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+		});
+		// A phone's clock can run ahead of the server's, so it reaches zero while the
+		// server still says open. Reloading then would loop, because the page comes back
+		// with the same countdown. Reload once for a given time, after the server has had a
+		// moment to catch up, and leave the page's own refresh to do the rest.
+		const SEEN = 'facilitator.countdown';
+		let waiting = false;
+		const reloadOnce = (target) => {
+			if (waiting) return;
+			try {
+				if (sessionStorage.getItem(SEEN) === target) return;
+				sessionStorage.setItem(SEEN, target);
+			} catch (e) { return; /* without storage it cannot be made safe, so the refresh decides */ }
+			waiting = true;
+			window.setTimeout(() => window.location.reload(), 3000);
+		};
+		const tick = () => {
+			document.querySelectorAll('[data-countdown]').forEach((box) => {
+				const left = Math.floor((new Date(box.dataset.countdown) - Date.now()) / 1000);
+				if (left <= 0) { reloadOnce(box.dataset.countdown); return; }
+				const parts = { d: Math.floor(left / 86400), h: Math.floor(left % 86400 / 3600), m: Math.floor(left % 3600 / 60), s: left % 60 };
+				Object.keys(parts).forEach((key) => { box.querySelector('[data-u="' + key + '"]').textContent = parts[key]; });
+			});
+		};
+		tick();
+		window.setInterval(tick, 1000);
+		document.querySelectorAll('time[data-clock]').forEach((el) => {
+			const when = new Date(el.getAttribute('datetime'));
+			if (isNaN(when)) return;
+			const sameDay = when.toDateString() === new Date().toDateString();
+			const clock = when.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+			el.textContent = sameDay ? clock : when.toLocaleDateString([], { weekday: 'short' }) + ' ' + clock;
+		});
+
+		// Rows stay open across the page's own reloads.
+		const KEY = 'facilitator.open';
+		let open = [];
+		try { open = JSON.parse(sessionStorage.getItem(KEY) || '[]'); } catch (e) { open = []; }
+		const store = () => { try { sessionStorage.setItem(KEY, JSON.stringify(open)); } catch (e) { /* private window */ } };
+		root.querySelectorAll('.fv-st').forEach((row) => {
+			if (open.includes(row.dataset.station)) setOpen(row, true);
+		});
+		function setOpen(row, on) {
+			row.dataset.open = String(on);
+			row.querySelector('[data-toggle]').setAttribute('aria-expanded', String(on));
+		}
+		root.addEventListener('click', (evt) => {
+			const toggle = evt.target.closest('[data-toggle]');
+			if (!toggle) return;
+			const row = toggle.closest('.fv-st');
+			const on = row.dataset.open !== 'true';
+			setOpen(row, on);
+			open = open.filter((id) => id !== row.dataset.station);
+			if (on) open.push(row.dataset.station);
+			store();
+		});
+
+		const picker = document.getElementById('fv-picker');
+		const boxes = () => [...picker.querySelectorAll('input[type=checkbox]')];
+		const chosen = () => boxes().filter((box) => box.checked).map((box) => box.value);
+		const count = () => {
+			const n = chosen().length;
+			picker.querySelector('[data-pick-count]').textContent = n + (n === 1 ? ' station chosen' : ' stations chosen');
+		};
+		// The choice rides in a cookie the server reads, so the page it renders is already right.
+		// A cookie over about 4KB is dropped by the browser without a word, which would lose
+		// the choice invisibly. Stop short of that and say so.
+		const LIMIT = 3600;
+		const encoded = () => encodeURIComponent(chosen().join(','));
+		const limit = picker.querySelector('[data-pick-limit]');
+		const save = () => {
+			document.cookie = 'rapua_watch=' + encoded() + '; path=/facilitator; max-age=2592000; samesite=lax';
+		};
+		const before = picker.dataset.watching || '';
+		let picking = false;
+		document.querySelectorAll('[data-open-picker]').forEach((button) => button.addEventListener('click', () => {
+			picking = true; count(); picker.showModal();
+		}));
+		picker.addEventListener('change', (evt) => {
+			if (!evt.target.matches('input[type=checkbox]')) return;
+			limit.hidden = true;
+			if (encoded().length > LIMIT) {
+				evt.target.checked = false;
+				limit.textContent = 'That is as many stations as this device can remember (' + chosen().length + '). Untick one to add another.';
+				limit.hidden = false;
+			}
+			save(); count();
+		});
+		picker.addEventListener('click', (evt) => {
+			const all = evt.target.closest('[data-inside]');
+			if (!all) return;
+			const ids = all.dataset.inside.split(',');
+			const targets = boxes().filter((box) => ids.includes(box.value));
+			const on = targets.some((box) => !box.checked);
+			limit.hidden = true;
+			for (const box of targets) {
+				box.checked = on;
+				if (on && encoded().length > LIMIT) {
+					box.checked = false;
+					limit.textContent = 'That is as many stations as this device can remember (' + chosen().length + '). The rest were left unticked.';
+					limit.hidden = false;
+					break;
+				}
+			}
+			all.textContent = targets.every((box) => box.checked) ? 'None inside' : 'Select all inside';
+			save(); count();
+		});
+		picker.querySelector('[data-pick-search]').addEventListener('input', (evt) => {
+			const term = evt.target.value.trim().toLowerCase();
+			let shown = 0;
+			picker.querySelectorAll('.fv-opt-row').forEach((row) => {
+				const hit = !term || row.dataset.name.includes(term);
+				row.hidden = !hit;
+				if (hit) shown++;
+			});
+			picker.querySelector('[data-pick-none]').hidden = shown > 0;
+		});
+		const finish = () => { picking = false; if (chosen().join(',') !== before) window.location.reload(); };
+		picker.querySelector('[data-pick-done]').addEventListener('click', () => picker.close());
+		picker.addEventListener('close', finish);
+
+		// Left open, the page keeps itself current.
+		window.setTimeout(() => { if (!picking) window.location.reload(); }, 30000);
+	})();
+	</script>
 }

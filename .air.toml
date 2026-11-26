@@ -5,7 +5,7 @@ tmp_dir = "tmp"
 [build]
   args_bin = []
   bin = "./tmp/main"
-  cmd = "go build -o ./tmp/main cmd/rapua/main.go"
+  cmd = "go build -o ./tmp/main ./cmd/rapua/"
   delay = 100
   exclude_dir = ["assets", "tmp", "vendor", "testdata", "node_modules", "static", "docs"]
   exclude_file = []

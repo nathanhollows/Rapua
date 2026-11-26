@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/markbates/goth/gothic"
-	"github.com/nathanhollows/Rapua/v7/internal/config"
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/flash"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	"github.com/nathanhollows/Rapua/v7/internal/sessions"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
-	"github.com/nathanhollows/Rapua/v7/models"
+	"github.com/nathanhollows/Rapua/v8/internal/config"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/flash"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	"github.com/nathanhollows/Rapua/v8/internal/sessions"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v8/models"
 )
 
 // Login is the handler for the admin login page.
@@ -30,10 +30,10 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Login(h.identityService.AllowGoogleLogin())
-	err := templates.AuthLayout(c, "Login", false).Render(r.Context(), w)
+	err := templates.AuthLayout(c, "Admin login", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.logger.Error("Error rendering login page", "err", err)
+		h.logger.ErrorContext(r.Context(), "Error rendering login page", "err", err)
 	}
 }
 
@@ -51,7 +51,7 @@ func (h *Handler) LoginPost(w http.ResponseWriter, r *http.Request) {
 	user, err := h.identityService.AuthenticateUser(r.Context(), email, password)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
-			h.logger.Error("authenticating user", "err", err)
+			h.logger.ErrorContext(r.Context(), "authenticating user", "err", err)
 		}
 		w.WriteHeader(http.StatusUnauthorized)
 		c := templates.LoginError("Invalid email or password.")
@@ -64,7 +64,7 @@ func (h *Handler) LoginPost(w http.ResponseWriter, r *http.Request) {
 
 	session, err := sessions.NewFromUser(r, *user)
 	if err != nil {
-		h.logger.Error("creating session", "err", err)
+		h.logger.ErrorContext(r.Context(), "creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
 		err = c.Render(r.Context(), w)
@@ -85,7 +85,7 @@ func (h *Handler) LoginPost(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Logout(w http.ResponseWriter, r *http.Request) {
 	session, err := sessions.Get(r, "admin")
 	if err != nil {
-		h.logger.Error("getting session for logout", "err", err)
+		h.logger.ErrorContext(r.Context(), "getting session for logout", "err", err)
 		// Redirect to the login page
 		http.Redirect(w, r, config.SiteURL("/login"), http.StatusSeeOther)
 		return
@@ -109,10 +109,10 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c := templates.Register(h.identityService.AllowGoogleLogin())
-	err := templates.AuthLayout(c, "Register", false).Render(r.Context(), w)
+	err := templates.AuthLayout(c, "Create an account", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.logger.Error("rendering register page", "err", err)
+		h.logger.ErrorContext(r.Context(), "rendering register page", "err", err)
 	}
 }
 
@@ -133,22 +133,23 @@ func (h *Handler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 	// Create the user
 	err = h.userService.CreateUser(r.Context(), &user, confirmPassword)
 	if err != nil {
-		h.logger.Error("creating user", "err", err)
+		h.logger.ErrorContext(r.Context(), "creating user", "err", err)
 		w.WriteHeader(http.StatusUnauthorized)
 		if errors.Is(err, services.ErrPasswordsDoNotMatch) {
 			c := templates.RegisterError("Passwords do not match.")
 			err = c.Render(r.Context(), w)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
-
-				return
 			}
+			return
 		}
 		c := templates.RegisterError("Something went wrong! Please try again.")
 		err = c.Render(r.Context(), w)
 		if err != nil {
 			h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
 		}
+		// No user was created, so there is no one to send a verification to.
+		return
 	}
 
 	// Send the email verification
@@ -160,15 +161,15 @@ func (h *Handler) RegisterPost(w http.ResponseWriter, r *http.Request) {
 				h.handleError(w, r, "RegisterPost: deleting user", "Error deleting user", "error", err)
 				return
 			}
-			h.logger.Error("sending email verification", "err", err)
+			h.logger.ErrorContext(r.Context(), "sending email verification", "err", err)
 			c := templates.RegisterError(
 				"Your account was created, but an error occurred while trying to send the email verification. Please try again.",
 			)
 			err = c.Render(r.Context(), w)
 			if err != nil {
 				h.handleError(w, r, "RegisterPost: rendering template", "Error registering user", "error", err)
-				return
 			}
+			return
 		}
 	}
 
@@ -192,7 +193,7 @@ func (h *Handler) ForgotPassword(w http.ResponseWriter, r *http.Request) {
 	err := templates.AuthLayout(c, "Forgot Password", false).Render(r.Context(), w)
 
 	if err != nil {
-		h.logger.Error("rendering forgot password page", "err", err)
+		h.logger.ErrorContext(r.Context(), "rendering forgot password page", "err", err)
 	}
 }
 
@@ -231,7 +232,7 @@ func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.magicTokenService.GenerateToken(user.ID, 1*time.Hour)
 	if err != nil {
-		h.logger.Error("ForgotPasswordPost: generating token", "error", err)
+		h.logger.ErrorContext(r.Context(), "ForgotPasswordPost: generating token", "error", err)
 		time.Sleep(minDuration - time.Since(start))
 		c := templates.ForgotMessage(*flash.NewInfo(successMsg))
 		_ = c.Render(r.Context(), w)
@@ -239,8 +240,8 @@ func (h *Handler) ForgotPasswordPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resetURL := fmt.Sprintf("%s/reset/%s", os.Getenv("SITE_URL"), token)
-	if err := h.emailService.SendPasswordResetEmail(r.Context(), *user, resetURL); err != nil {
-		h.logger.Warn("ForgotPasswordPost: sending email failed", "error", err)
+	if sendErr := h.emailService.SendPasswordResetEmail(r.Context(), *user, resetURL); sendErr != nil {
+		h.logger.WarnContext(r.Context(), "ForgotPasswordPost: sending email failed", "error", sendErr)
 	}
 
 	time.Sleep(minDuration - time.Since(start))
@@ -272,7 +273,7 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 		c := templates.ResetPasswordExpired()
 		err = templates.AuthLayout(c, "Reset Password", false).Render(r.Context(), w)
 		if err != nil {
-			h.logger.Error("ResetPassword: rendering expired template", "error", err)
+			h.logger.ErrorContext(r.Context(), "ResetPassword: rendering expired template", "error", err)
 		}
 		return
 	}
@@ -280,7 +281,7 @@ func (h *Handler) ResetPassword(w http.ResponseWriter, r *http.Request) {
 	c := templates.ResetPassword(token)
 	err = templates.AuthLayout(c, "Reset Password", false).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ResetPassword: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ResetPassword: rendering template", "error", err)
 	}
 }
 
@@ -310,7 +311,7 @@ func (h *Handler) ResetPasswordPost(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.userService.GetUserByID(r.Context(), userID)
 	if err != nil {
-		h.logger.Error("ResetPasswordPost: fetching user", "error", err, "userID", userID)
+		h.logger.ErrorContext(r.Context(), "ResetPasswordPost: fetching user", "error", err, "userID", userID)
 		c := templates.ResetPasswordError(*flash.NewError("Something went wrong. Please try again."))
 		_ = c.Render(r.Context(), w)
 		return
@@ -340,7 +341,7 @@ func (h *Handler) ResetPasswordSuccess(w http.ResponseWriter, r *http.Request) {
 	c := templates.ResetPasswordSuccess()
 	err := templates.AuthLayout(c, "Password Reset", false).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("ResetPasswordSuccess: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "ResetPasswordSuccess: rendering template", "error", err)
 	}
 }
 
@@ -370,20 +371,20 @@ func (h *Handler) AuthCallback(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.identityService.CompleteUserAuth(w, r)
 	if err != nil {
-		h.logger.Error("completing auth", "error", err)
+		h.logger.ErrorContext(r.Context(), "completing auth", "error", err)
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	if user == nil {
-		h.logger.Error("completing auth", "error", "user is nil")
+		h.logger.ErrorContext(r.Context(), "completing auth", "error", "user is nil")
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
 
 	session, err := sessions.NewFromUser(r, *user)
 	if err != nil {
-		h.logger.Error("creating session", "err", err)
+		h.logger.ErrorContext(r.Context(), "creating session", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.LoginError("An error occurred while trying to log in. Please try again.")
 		err = c.Render(r.Context(), w)
@@ -425,7 +426,7 @@ func (h *Handler) VerifyEmail(w http.ResponseWriter, r *http.Request) {
 	err = templates.AuthLayout(c, "Verify Email", authed).Render(r.Context(), w)
 
 	if err != nil {
-		h.logger.Error("rendering verify email page", "err", err)
+		h.logger.ErrorContext(r.Context(), "rendering verify email page", "err", err)
 	}
 }
 
@@ -450,7 +451,7 @@ func (h *Handler) VerifyEmailWithToken(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 			return
 		}
-		h.logger.Error("verifying email", "err", err)
+		h.logger.ErrorContext(r.Context(), "verifying email", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		http.Redirect(w, r, "/verify-email", http.StatusSeeOther)
 		return
@@ -511,7 +512,7 @@ func (h *Handler) ResendEmailVerification(w http.ResponseWriter, r *http.Request
 			}
 		}
 
-		h.logger.Error("sending email verification", "err", err)
+		h.logger.ErrorContext(r.Context(), "sending email verification", "err", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		c := templates.Toast(
 			*flash.NewError("An error occurred while trying to send the email. Please try again."),
@@ -552,7 +553,7 @@ func (h *Handler) ResendEmailVerification(w http.ResponseWriter, r *http.Request
 func (h *Handler) MagicLogin(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
 	if token == "" {
-		h.logger.Warn("magic login: empty token")
+		h.logger.WarnContext(r.Context(), "magic login: empty token")
 		http.Error(w, "Invalid or expired token", http.StatusBadRequest)
 		return
 	}
@@ -560,7 +561,7 @@ func (h *Handler) MagicLogin(w http.ResponseWriter, r *http.Request) {
 	// Validate the token
 	userID, err := h.magicTokenService.ValidateToken(token)
 	if err != nil {
-		h.logger.Info("magic login: invalid token", "err", err)
+		h.logger.InfoContext(r.Context(), "magic login: invalid token", "err", err)
 		http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 		return
 	}
@@ -568,7 +569,7 @@ func (h *Handler) MagicLogin(w http.ResponseWriter, r *http.Request) {
 	// Lookup user by ID
 	user, err := h.userService.GetUserByID(r.Context(), userID)
 	if err != nil {
-		h.logger.Error("magic login: fetching user", "err", err, "userID", userID)
+		h.logger.ErrorContext(r.Context(), "magic login: fetching user", "err", err, "userID", userID)
 		http.Error(w, "Invalid or expired token", http.StatusUnauthorized)
 		return
 	}
@@ -576,18 +577,18 @@ func (h *Handler) MagicLogin(w http.ResponseWriter, r *http.Request) {
 	// Create session
 	session, err := sessions.NewFromUser(r, *user)
 	if err != nil {
-		h.logger.Error("magic login: creating session", "err", err)
+		h.logger.ErrorContext(r.Context(), "magic login: creating session", "err", err)
 		http.Error(w, "An error occurred while logging in", http.StatusInternalServerError)
 		return
 	}
 
 	err = session.Save(r, w)
 	if err != nil {
-		h.logger.Error("magic login: saving session", "err", err)
+		h.logger.ErrorContext(r.Context(), "magic login: saving session", "err", err)
 		http.Error(w, "An error occurred while logging in", http.StatusInternalServerError)
 		return
 	}
 
-	h.logger.Info("magic login: successful", "userID", userID, "email", user.Email)
+	h.logger.InfoContext(r.Context(), "magic login: successful", "userID", userID, "email", user.Email)
 	http.Redirect(w, r, "/admin", http.StatusSeeOther)
 }

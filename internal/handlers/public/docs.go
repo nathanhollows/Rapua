@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/nathanhollows/Rapua/v7/internal/contextkeys"
-	"github.com/nathanhollows/Rapua/v7/internal/services"
-	templates "github.com/nathanhollows/Rapua/v7/internal/templates/public"
+	"github.com/nathanhollows/Rapua/v8/internal/contextkeys"
+	"github.com/nathanhollows/Rapua/v8/internal/services"
+	templates "github.com/nathanhollows/Rapua/v8/internal/templates/public"
 )
 
 func (h *Handler) Docs(w http.ResponseWriter, r *http.Request) {
 	docsService, err := services.NewDocsService("./docs")
 	if err != nil {
-		h.logger.Error("Docs: creating docs service", "error", err)
+		h.logger.ErrorContext(r.Context(), "Docs: creating docs service", "error", err)
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -42,8 +42,8 @@ func (h *Handler) Docs(w http.ResponseWriter, r *http.Request) {
 	}
 	c := templates.Docs(page, docsService.Pages)
 	authed := contextkeys.GetUserStatus(r.Context()).IsAdminLoggedIn
-	err = templates.PublicLayout(c, page.Title+" - Docs", authed).Render(r.Context(), w)
+	err = templates.DocsLayout(c, page.Title+" - Docs", authed).Render(r.Context(), w)
 	if err != nil {
-		h.logger.Error("Contact: rendering template", "error", err)
+		h.logger.ErrorContext(r.Context(), "Contact: rendering template", "error", err)
 	}
 }

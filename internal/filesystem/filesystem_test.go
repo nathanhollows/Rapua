@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi"
-	"github.com/nathanhollows/Rapua/v7/internal/filesystem"
+	"github.com/nathanhollows/Rapua/v8/internal/filesystem"
 )
 
 func TestOpenFile(t *testing.T) {

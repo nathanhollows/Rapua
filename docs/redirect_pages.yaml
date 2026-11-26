@@ -1,2 +1,22 @@
-- from: /docs/example-deprecation
+# Location groups became sections when objectives and groups collapsed into one
+# recursive type: a section is an objective with things inside it.
+- from: /docs/user/location-groups
+  to: /docs/user/sections
+
+# The broker block was retired with nothing in its place, so this lands on the
+# page that explains a removal rather than pretending something replaced it.
+- from: /docs/user/blocks/broker
   to: /docs/deprecations
+
+# The task block pointed at a second location and completed when that location
+# did. Locations, location groups and the Task List display are all gone, and
+# what replaced them is a section rather than a block, so this lands on the
+# removal page rather than on a block that only half resembles it.
+- from: /docs/user/blocks/task
+  to: /docs/deprecations
+
+# The random clue block kept the vocabulary of the retired clue-and-QR model in
+# its name. It was renamed for what it does: shows each team one of several
+# texts.
+- from: /docs/user/blocks/random-clue
+  to: /docs/user/blocks/random-text

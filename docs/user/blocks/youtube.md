@@ -1,12 +1,12 @@
 ---
 title: "YouTube"
 sidebar: true
-order: 19
+order: 22
 ---
 
 # YouTube Block
 
-The YouTube block allows you to embed a YouTube video directly into a location page. This block is not interactive and does not award points. It accepts any valid YouTube URL, including YouTube Shorts.
+The YouTube block allows you to embed a YouTube video directly into an objective. This block is not interactive and does not award points. It accepts any valid YouTube URL, including YouTube Shorts.
 
 ## Notes
 

@@ -1,27 +1,26 @@
 package specgen
 
-import "github.com/nathanhollows/Rapua/v7/game"
+import "github.com/nathanhollows/Rapua/v8/game"
 
-// FullSpec is the complete machine-readable specification for the v7 game format.
+// FullSpec is the complete machine-readable specification for the v8 game format.
 type FullSpec struct {
-	Version  string           `json:"version"`
-	Document ObjectSpec       `json:"document"`
-	Enums    EnumDefs         `json:"enums"`
-	Contexts []ContextDef     `json:"contexts"`
-	Blocks   []game.BlockSpec `json:"blocks"`
+	Version           string           `json:"version"`
+	Document          ObjectSpec       `json:"document"`
+	Enums             EnumDefs         `json:"enums"`
+	Contexts          []ContextDef     `json:"contexts"`
+	BlockSharedFields []game.FieldSpec `json:"block_shared_fields"` // fields shared by all/some blocks; referenced by name in BlockSpec.shared_fields
+	Blocks            []game.BlockSpec `json:"blocks"`
 }
 
 // ObjectSpec describes a named object with a set of fields.
 type ObjectSpec struct {
-	Description string          `json:"description"`
+	Description string           `json:"description"`
 	Fields      []game.FieldSpec `json:"fields"`
 }
 
 // EnumDefs holds all enum definitions used in the document format.
 type EnumDefs struct {
-	Routing    []EnumValue `json:"routing"`
-	Navigation []EnumValue `json:"navigation"`
-	Completion []EnumValue `json:"completion"`
+	Routing []EnumValue `json:"routing"`
 }
 
 // EnumValue is a single allowed enum value with a human-readable label and description.
@@ -37,128 +36,314 @@ type ContextDef struct {
 	Description string `json:"description"`
 }
 
-// GenerateFullSpec assembles the complete v7 spec.
+// GenerateFullSpec assembles the complete v8 spec.
 func GenerateFullSpec() FullSpec {
 	return FullSpec{
-		Version:  "v7",
-		Document: documentSpec(),
-		Enums:    enumDefs(),
-		Contexts: contextDefs(),
-		Blocks:   GenerateBlockSpecs(),
+		Version:           "v8",
+		Document:          documentSpec(),
+		Enums:             enumDefs(),
+		Contexts:          contextDefs(),
+		BlockSharedFields: []game.FieldSpec{pointsFieldSpec(), setsFieldSpec(), dependsFieldSpec()},
+		Blocks:            GenerateBlockSpecs(),
 	}
 }
 
-func documentSpec() ObjectSpec {
-	structureFields := []game.FieldSpec{
-		{Name: "routing", Type: "enum", Required: true, Description: "How players are routed through locations. See enums.routing."},
-		{Name: "navigation", Type: "enum", Required: true, Description: "How the navigation UI is presented. See enums.navigation."},
-		{Name: "completion", Type: "enum", Required: true, Description: "When the group is considered complete. See enums.completion."},
-		{Name: "minimum_required", Type: "int", Description: "Number of locations required when completion is \"minimum\"."},
-		{Name: "children", Type: "list", Required: true, Description: "Ordered list of location or group children.",
-			Items: &game.FieldSpec{
-				Type:        "object",
-				Description: "Tagged union: set exactly one of \"location\" or \"group\".",
-				Fields: []game.FieldSpec{
-					{Name: "location", Type: "object", Description: "A single game location. See location schema."},
-					{Name: "group", Type: "object", Description: "A named sub-group with its own routing/navigation/completion settings."},
-				},
-			}},
+// pointsFieldSpec returns the `points` field spec used on interactive blocks
+// (RequiresValidation() true). Content blocks (markdown, alert, divider, etc.)
+// never complete, so their inherited Points field is structurally present but
+// functionally inert, and specgen.GenerateBlockSpecs omits "points" from their
+// SharedFields.
+func pointsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "points",
+		Type: "int",
+		Description: "Points awarded to the player when this block completes. Negative for a block framed " +
+			"as a cost rather than a reward (e.g. paying points to reveal a clue). Ignored unless " +
+			"settings.enable_points is true. An objective's total point value is the sum of its blocks' " +
+			"points; it is not a field set on the objective itself.",
 	}
+}
 
-	locationFields := []game.FieldSpec{
-		{Name: "id", Type: "string", Description: "Location UUID. Present on export; omit on create-import to generate a new UUID."},
-		{Name: "slug", Type: "string", Required: true, Description: "Short alphanumeric code used in QR/URLs. Must be unique within the game."},
-		{Name: "name", Type: "string", Required: true, Description: "Display name shown to players."},
-		{Name: "points", Type: "int", Description: "Points awarded on check-in (requires enable_points in settings)."},
-		{Name: "marker", Type: "object", Description: "Geographic map pin. Omit if the location has no map position.",
-			Fields: []game.FieldSpec{
-				{Name: "lat", Type: "float", Required: true, Description: "Latitude in decimal degrees."},
-				{Name: "lng", Type: "float", Required: true, Description: "Longitude in decimal degrees."},
-			}},
-		{Name: "content", Type: "list", Required: true, Description: "Blocks shown to players after check-in. Always present, even if empty."},
-		{Name: "clues", Type: "list", Description: "Clue blocks shown in navigation to help players find this location."},
-		{Name: "tasks", Type: "list", Description: "Task blocks shown in the task checklist (tasks navigation mode)."},
-		{Name: "checkpoint", Type: "list", Description: "Validation blocks that must pass before check-in completes."},
+// setsFieldSpec returns the `sets` field spec used on interactive blocks other
+// than those whose player picks the variable, such as a choice.
+func setsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "sets",
+		Type: "string",
+		Description: "A variable set the moment the player completes this block. Variables are " +
+			"lowercase letters, digits and underscores, and once set stay set. Only interactive " +
+			"blocks set variables (SETS_ON_STATIC_BLOCK); a choice sets the variable of each option " +
+			"picked instead (SETS_ON_CHOICE).",
 	}
+}
 
-	blockField := game.FieldSpec{
-		Type:        "object",
-		Description: "Flat map with a \"type\" discriminator. See blocks for per-type fields.",
-		Fields: []game.FieldSpec{
-			{Name: "type", Type: "string", Required: true, Description: "Block type identifier. See blocks[].type."},
-			{Name: "id", Type: "string", Description: "Block UUID. Present on export; omit on create-import to generate a new UUID."},
-			{Name: "points", Type: "int", Description: "Points awarded when this block is completed."},
+// dependsFieldSpec returns the `depends` field spec used on content blocks.
+func dependsFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name:  "depends",
+		Type:  "list",
+		Items: &game.FieldSpec{Type: "string"},
+		Description: "Variables that must all be set before this block is shown. Until then it is " +
+			"hidden entirely. Only content blocks can depend on a variable " +
+			"(DEPENDS_ON_INTERACTIVE_BLOCK).",
+	}
+}
+
+func documentSpec() ObjectSpec { //nolint:funlen
+	objectiveContextFields := []game.FieldSpec{
+		{
+			Name:        "blocks",
+			Type:        "list",
+			Description: "Blocks shown to players while this context is active.",
 		},
 	}
-	_ = blockField
+
+	objectiveFields := []game.FieldSpec{
+		{
+			Name:        "id",
+			Type:        "string",
+			Description: "Objective UUID. Present on export; omit on create-import to generate a new UUID.",
+		},
+		{
+			Name:        "slug",
+			Type:        "string",
+			Required:    true,
+			Description: "Short alphanumeric code identifying this objective. Must be unique within the game.",
+		},
+		{
+			Name:     "title",
+			Type:     "string",
+			Required: true,
+			Description: "What the player is asked to do, shown on the quest list and at the top of " +
+				"the page they open. The task, not the place: \"Find the plan chest\" rather than " +
+				"\"Architecture Library\".",
+		},
+		{
+			Name: "description",
+			Type: "string",
+			Description: "The detail a player needs once they are there, shown under the title. " +
+				"What will not fit in a name short enough to read in a list.",
+		},
+		{
+			Name: "draft",
+			Type: "bool",
+			Description: "Holds this objective out of play along with everything beneath it, without " +
+				"moving any of them: it keeps its place and its children, so publishing restores exactly " +
+				"what was there. The flag is never written downward, so a child of a draft carries none " +
+				"of its own. Omitting the key leaves an existing objective's state alone; only an " +
+				"explicit false publishes one. The root may not be a draft (ROOT_DRAFT), and a section " +
+				"whose children are all drafts behaves as a leaf (ALL_CHILDREN_DRAFT).",
+		},
+		{
+			Name:     "proof",
+			Type:     "object",
+			Required: true,
+			Description: "Blocks shown while the objective is unproven. A non-empty proof " +
+				"must contain at least one interactive block, or it gates nothing. Proof gates children " +
+				"too: nothing below this objective is reachable until its proof clears. Clearing the " +
+				"proof is what completes an objective, which is what the frontier, the journal and the " +
+				"leaderboard all count. The root carries no proof or reveal content of its own " +
+				"(ROOT_HAS_CONTENT).",
+			Fields: objectiveContextFields,
+		},
+		{
+			Name:     "reveal",
+			Type:     "object",
+			Required: true,
+			Description: "Blocks shown once proof completes. On a section this is its own " +
+				"content, and the section is offered to a player until they have seen it, then steps " +
+				"back and its children are offered in its place.",
+			Fields: objectiveContextFields,
+		},
+		{
+			Name: "pass_through",
+			Type: "bool",
+			Description: "Stops this section being a place the player stands. It still routes, bands " +
+				"and gates its children, but they are shown as if they sat in the nearest section that " +
+				"is drawn, so a pool can hand a player one pick without saying it came from a pool. " +
+				"A pass-through section does not count toward the depth the player's screen draws. " +
+				"Omitting the key leaves an existing objective's state alone. The root may not be a " +
+				"pass-through (ROOT_PASS_THROUGH), and it has no effect on an objective with no " +
+				"children (PASS_THROUGH_ON_LEAF).",
+		},
+		{
+			Name: "secret",
+			Type: "bool",
+			Description: "Keeps this objective unlisted until a player finds it by scanning one of its " +
+				"proof codes, from anywhere inside its parent while the parent is open. It sits outside " +
+				"the parent's routing. Once found it joins the parent's band like any other child: " +
+				"required under complete-all, counted toward a minimum. An unfound secret is never " +
+				"required. A secret with children becomes a side quest once found, and closes with its " +
+				"parent. Omitting the key leaves an existing objective's state alone. Needs a scan block " +
+				"in its proof (SECRET_NEEDS_SCAN); the root may not be secret (ROOT_SECRET), nor may a " +
+				"secret section pass through (SECRET_PASS_THROUGH).",
+		},
+		{
+			Name:  "depends",
+			Type:  "list",
+			Items: &game.FieldSpec{Type: "string"},
+			Description: "Variables that must all be set before this objective opens; until then it " +
+				"shows as locked. Variables are set by interactive blocks and choice options. Absent " +
+				"or empty means no gate. The root is always open (ROOT_DEPENDS), and a gate whose " +
+				"variables are only set behind it can never open (DEPENDS_UNSATISFIABLE).",
+		},
+		{
+			Name: "routing",
+			Type: "enum",
+			Description: "How players are routed through this objective's children. Required when there " +
+				"are children, meaningless without them. See enums.routing.",
+		},
+		childrenMinFieldSpec(),
+		childrenMaxFieldSpec(),
+		{
+			Name:        "max_next",
+			Type:        "int",
+			Description: "How many children a randomised objective offers at once. 0 means all of them.",
+		},
+		{
+			Name: "finish_label",
+			Type: "string",
+			Description: "Label for the finish button. Only an objective in a range ever shows one, so " +
+				"setting this where children_min equals children_max warns (FINISH_LABEL_UNREACHABLE).",
+		},
+		{
+			Name: "children",
+			Type: "list",
+			Description: "Ordered list of child objectives, each with this same schema. An objective with " +
+				"children is a section; one without is a leaf. Nothing else distinguishes them.",
+		},
+	}
 
 	return ObjectSpec{
-		Description: "Top-level v7 game document.",
+		Description: "Top-level v8 game document.",
 		Fields: []game.FieldSpec{
-			{Name: "rapua", Type: "string", Required: true, Description: "Format version. Must be \"v7\"."},
-			{Name: "id", Type: "string", Description: "Instance UUID. Present on export; omit on create-import to generate a new UUID."},
+			{Name: "rapua", Type: "string", Required: true, Description: "Format version. Must be \"v8\"."},
+			{
+				Name:        "id",
+				Type:        "string",
+				Description: "Quest UUID. Present on export; omit on create-import to generate a new UUID.",
+			},
 			{Name: "name", Type: "string", Required: true, Description: "Game name."},
 			{
-				Name:        "settings",
-				Type:        "object",
-				Required:    true,
-				Description: "Game-wide settings.",
+				Name:     "settings",
+				Type:     "object",
+				Required: true,
+				Description: "Game-wide settings. Each changes what players experience, so two games are only " +
+					"comparable when these match as well as their structure.",
 				Fields: []game.FieldSpec{
-					{Name: "must_check_out", Type: "bool", Description: "Players must explicitly check out of each location before moving on."},
-					{Name: "show_team_count", Type: "bool", Description: "Show how many teams are at each location."},
-					{Name: "enable_points", Type: "bool", Description: "Enable the points system."},
-					{Name: "enable_bonus_points", Type: "bool", Description: "Enable bonus points on blocks."},
-					{Name: "show_leaderboard", Type: "bool", Description: "Show the leaderboard to players."},
+					{
+						Name: "enable_points",
+						Type: "bool",
+						Description: "Whether points count and are shown to players. Off, every block's `points` is " +
+							"ignored and no score is shown. Omitted means false.",
+					},
+					{
+						Name: "show_leaderboard",
+						Type: "bool",
+						Description: "Whether players see how their team compares to the others. The board ranks " +
+							"by points when `enable_points` is true, otherwise by share of objectives done, and a tie " +
+							"goes to the team seen earlier. Off, players see no ranking. Omitted means false.",
+					},
+					{
+						Name: "progress_feedback",
+						Type: "string",
+						Description: "What the player is told about their progress: \"fraction\" (objectives done " +
+							"out of those done plus the fewest still needed), \"count\" (objectives done, no target) " +
+							"or \"none\". Omitted means \"fraction\".",
+					},
 				},
 			},
-			{Name: "start", Type: "list", Required: true, Description: "Blocks shown on the start page. Always present, even if empty."},
-			{Name: "finish", Type: "list", Required: true, Description: "Blocks shown on the finish page. Always present, even if empty."},
 			{
-				Name:        "structure",
-				Type:        "object",
+				Name:        "start",
+				Type:        "list",
 				Required:    true,
-				Description: "Root group defining routing, navigation, and the location tree.",
-				Fields:      structureFields,
+				Description: "Blocks shown on the start page. Always present, even if empty.",
 			},
 			{
-				Name:        "location",
-				Type:        "object",
-				Description: "Schema for location objects within structure.children.",
-				Fields:      locationFields,
+				Name:        "finish",
+				Type:        "list",
+				Required:    true,
+				Description: "Blocks shown on the finish page. Always present, even if empty.",
+			},
+			{
+				Name:     "structure",
+				Type:     "object",
+				Required: true,
+				Description: "The root objective. An ordinary objective with no parent, using the schema " +
+					"below: the tree is one recursive type, not a container wrapping a different one.",
+				Fields: objectiveFields,
+			},
+			{
+				Name: "objective",
+				Type: "object",
+				Description: "Schema for every objective, root and children alike. Has no points field of " +
+					"its own; its total point value is the sum of its blocks' points.",
+				Fields: objectiveFields,
 			},
 		},
 	}
 }
 
-func enumDefs() EnumDefs {
-	return EnumDefs{
-		Routing: []EnumValue{
-			{Value: "randomised", Label: "Randomised Route", Description: "The game randomly selects locations for each player/team. Good for large groups."},
-			{Value: "free_roam", Label: "Open Exploration", Description: "Players visit locations in any order. All locations are visible."},
-			{Value: "ordered", Label: "Guided Path", Description: "Players must visit locations in a fixed order."},
-			{Value: "secret", Label: "Secret", Description: "Locations never explicitly shown; players access them out of sequence."},
-		},
-		Navigation: []EnumValue{
-			{Value: "map", Label: "Map Only", Description: "Players are shown a map with unlabelled pins."},
-			{Value: "labelled_map", Label: "Labelled Map", Description: "Players are shown a map with location names."},
-			{Value: "location_list", Label: "Location List", Description: "Players are shown a list of location names."},
-			{Value: "custom", Label: "Custom Clues", Description: "Players see custom content (e.g. randomised clues) built with the block builder."},
-			{Value: "tasks", Label: "Tasks", Description: "Players see a scavenger-hunt-style checklist with completion tracking."},
-		},
-		Completion: []EnumValue{
-			{Value: "all", Label: "All", Description: "All locations/groups in this group must be completed."},
-			{Value: "minimum", Label: "Minimum", Description: "At least minimum_required locations/groups must be completed."},
-		},
+// childrenMinFieldSpec and childrenMaxFieldSpec document the completion band as
+// the single rule it is, rather than as two independent integers: the
+// relationship between the two bounds is what decides the node's behaviour, and
+// it is the thing authors get wrong.
+func childrenMinFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "children_min",
+		Type: "int",
+		Description: "How many children must complete before the player may finish this objective. " +
+			bandRuleDescription,
 	}
+}
+
+func childrenMaxFieldSpec() game.FieldSpec {
+	return game.FieldSpec{
+		Name: "children_max",
+		Type: "int",
+		Description: "How many completed children finish this objective on their own. " +
+			bandRuleDescription,
+	}
+}
+
+const bandRuleDescription = "The pair forms a completion band. When min equals max the objective " +
+	"auto-completes at that count with no player action. When min is lower, reaching min only reveals " +
+	"a finish button and the player's press is what completes the objective, which also auto-completes " +
+	"at max. Omitting both means every child is required ([n, n]). Naming either bound widens the other " +
+	"to its extreme: an omitted min is 0, an omitted max is the child count. So an explicit " +
+	"children_min of 0 is not the same as omitting it. min greater than max is an error " +
+	"(BAND_MIN_EXCEEDS_MAX), as is either bound outside 0..child count (BAND_OUT_OF_RANGE). Both are " +
+	"meaningless on an objective with no children (BAND_ON_LEAF)."
+
+func enumDefs() EnumDefs {
+	// Label/Description come from RouteStrategy's own String()/Description()
+	// methods (game/enums.go), not a second hand-maintained copy of the same
+	// text that could drift out of sync with it.
+	routing := []game.RouteStrategy{
+		game.RouteStrategyRandomised, game.RouteStrategyFreeRoam, game.RouteStrategyOrdered,
+	}
+	routingValues := make([]EnumValue, len(routing))
+	for i, r := range routing {
+		routingValues[i] = EnumValue{Value: string(r), Label: r.String(), Description: r.Description()}
+	}
+
+	return EnumDefs{Routing: routingValues}
 }
 
 func contextDefs() []ContextDef {
 	return []ContextDef{
-		{Value: "location_content", Description: "Blocks shown to players after checking in to a location."},
-		{Value: "location_clues", Description: "Clue blocks shown in the navigation UI to help players find this location."},
-		{Value: "task", Description: "Task blocks shown in the tasks navigation checklist."},
-		{Value: "checkpoint", Description: "Validation blocks that must pass before a check-in is accepted."},
-		{Value: "start", Description: "Blocks shown on the game start page (introductions, rules, team name, start button)."},
+		{
+			Value:       "start",
+			Description: "Blocks shown on the game start page (introductions, rules, team name, start button).",
+		},
 		{Value: "finish", Description: "Blocks shown on the game finish/end page."},
+		{
+			Value:       "objective_proof",
+			Description: "Blocks a player must complete to prove an objective. Once every block here completes, the reveal context is shown.",
+		},
+		{
+			Value:       "objective_reveal",
+			Description: "Blocks shown once an objective's proof context is complete.",
+		},
 	}
 }
